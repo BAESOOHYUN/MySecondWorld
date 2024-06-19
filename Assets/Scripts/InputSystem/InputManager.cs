@@ -17,10 +17,9 @@ public enum ControlType
     Mouse,
 }
 
-public class InputManager : MonoBehaviour, ActionMaps.IPlayerActions, ActionMaps.ICameraActions, ActionMaps.ITouchActions
+public class InputManager : MonoBehaviour, ActionMap.IPlayerActions, ActionMap.ICameraActions, ActionMap.ITouchActions
 {
     [SerializeField] private PlayerInput _playerInput;
-    //[SerializeField] private ActionMaps _actionMaps;
     public ControlType controlType;
 
     #region Property
@@ -71,14 +70,11 @@ public class InputManager : MonoBehaviour, ActionMaps.IPlayerActions, ActionMaps
 
     private void Awake()
     {
-        //_actionMaps = new ActionMaps();
-        //_actionMaps?.Enable();
         _playerInput?.actions.Enable();
     }
 
     private void OnDisable()
     {
-        //_actionMaps.Disable();
         _playerInput.actions.Disable();
     }
 
@@ -111,7 +107,6 @@ public class InputManager : MonoBehaviour, ActionMaps.IPlayerActions, ActionMaps
             LeftMouseButtonPhase = TouchPhase.Ended;
         }
 
-        Debug.Log($"Left Mouse ButtonPhase: {LeftMouseButtonPhase}");
         OnLeftClickEventListener?.Invoke(LeftMouseButtonPhase);
     }
 
@@ -130,7 +125,6 @@ public class InputManager : MonoBehaviour, ActionMaps.IPlayerActions, ActionMaps
             RightMouseButtonPhase = TouchPhase.Ended;
         }
 
-        Debug.Log($"Right Mouse ButtonPhase: {RightMouseButtonPhase}");
         OnRightClickEventListener?.Invoke(RightMouseButtonPhase);
     }
 
@@ -155,9 +149,10 @@ public class InputManager : MonoBehaviour, ActionMaps.IPlayerActions, ActionMaps
         OnWheelEventListener?.Invoke(ScrollWheel);
     }
 
-    public void OnRotate(InputAction.CallbackContext context)
+    public void OnLook(InputAction.CallbackContext context)
     {
         Delta = context.ReadValue<Vector2>();
+
         OnDeltaListener?.Invoke(Delta);
     }
 

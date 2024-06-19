@@ -1,4 +1,6 @@
 using System.Collections;
+using System.Collections.Generic;
+using Unity.Cinemachine;
 using UnityEngine;
 using TouchPhase = UnityEngine.InputSystem.TouchPhase;
 
@@ -41,7 +43,6 @@ public class MovementController : MonoBehaviour
         if (_isGround && _playerVelocity.y < 0)
             _playerVelocity.y = 0f;
 
-
         // TODO : 컨트롤러가 너무 뻑뻑하게 움직여서 렉걸린거 같음. 스무스하게 움직이도록 하기.
         if (_inputManager?.controlType == ControlType.Mouse)
         {
@@ -53,22 +54,24 @@ public class MovementController : MonoBehaviour
         }
 
         Jump();
+        Gravity();
     }
 
     public void OnEnable()
     {
-        //_inputManager = InputManager.instance;
-        //_animatorController = CharacterManager.Instance.animatorController;
-        //_characterController = GetComponent<CharacterController>();
         _mainCamera = Camera.main;
         _cameraTransform = _mainCamera.transform;
     }
 
+    // TODO : UI위에서 시작한 터치가 UI밖에서 끝났을때 이동 버벅거리는 거 처리
+    // InputDebug Simulated TouchScreen이 아닐때에만 버벅거림
     private void ControlTypeJoystick()
     {
         var joystickValue = _inputManager.MoveValue;
         _moveVec = new Vector3(joystickValue.x, 0, joystickValue.y);
-        _characterController.Move(_moveVec * _moveSpeed * Time.deltaTime);
+        _moveVec = _cameraTransform.TransformDirection(_moveVec);
+        _moveVec.y = 0;
+        _characterController.Move( _moveVec * _moveSpeed * Time.deltaTime);
 
         if (_moveVec != Vector3.zero) // 안해주면 조이스틱 놨을때 정방향 보면서 돌아감
             transform.forward = _moveVec;
@@ -126,9 +129,13 @@ public class MovementController : MonoBehaviour
 
     private void Jump()
     {
+        // TODO : 마우스 먼저 찍어서 이동 중에 점프 가능하도록 하기, 점프 중에 마우스 클릭으로 이동 금지
         if (_inputManager.isJumped && _isGround)
             _playerVelocity.y += Mathf.Sqrt(_jumpHeight * _jumpSpeed * -_gravity);
+    }
 
+    private void Gravity()
+    {
         _playerVelocity.y += _gravity * Time.deltaTime;
         _characterController.Move(_playerVelocity * Time.deltaTime);
     }
