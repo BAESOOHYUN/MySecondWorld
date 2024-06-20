@@ -2,39 +2,45 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.Cinemachine;
 using UnityEngine;
-using TouchPhase = UnityEngine.InputSystem.TouchPhase;
 
 [RequireComponent(typeof(CharacterController))]
-public class MovementController : MonoBehaviour
+public class MovementController : MonoBehaviour, IInputAxisOwner
 {
-    [SerializeField] private InputManager _inputManager;
+    [SerializeField] private TouchEventListener _touchListener;
     [SerializeField] private CharacterController _characterController;
     //private AnimatorController _animatorController;
+    [SerializeField] private float _moveSpeed = 3.0f; // 속력
+    [SerializeField] private float _jumpSpeed = 3.0f; //점프 속력
+    [SerializeField] private float _jumpHeight = 1.0f; //점프 높이
+
     private Camera _mainCamera;
     private Transform _cameraTransform;
     private Vector3 _moveVec; // 플레이어 방향
-    [SerializeField] private float _moveSpeed = 3.0f; // 속력
-    //[SerializeField] private float _rotationSpeed = 4.0f; //회전 속력
-    [SerializeField] private float _jumpSpeed = 3.0f; //점프 속력
-    [SerializeField] private float _jumpHeight = 1.0f; //점프 높이
     private Vector3 _playerVelocity; // 속도
     private float _gravity = -9.81f; // 중력
     private bool _isGround;
     private Vector3 _targetPosition;
     private Coroutine _mouseMoveCo;
+    private bool _isInitialClickOnUI = false;
+    private bool _isMouseDown = false;
+    public bool _isJoystickTouch = false;
 
-    public bool IsMove
-    {
-        get
-        {
-            return (_inputManager != null) ? _inputManager.isMove : false;
-        }
-    }
+    public InputAxis MoveX = InputAxis.DefaultMomentary;
+    public InputAxis MoveY = InputAxis.DefaultMomentary;
+    public InputAxis Jump = InputAxis.DefaultMomentary;
+    public InputAxis Attack = InputAxis.DefaultMomentary;
+
 
     private void OnDrawGizmos()
     {
         Gizmos.color = Color.red;
         Gizmos.DrawSphere(_targetPosition, 0.5f);
+    }
+
+    public void OnEnable()
+    {
+        _mainCamera = Camera.main;
+        _cameraTransform = _mainCamera.transform;
     }
 
     private void Update()
@@ -44,60 +50,85 @@ public class MovementController : MonoBehaviour
             _playerVelocity.y = 0f;
 
         // TODO : 컨트롤러가 너무 뻑뻑하게 움직여서 렉걸린거 같음. 스무스하게 움직이도록 하기.
-        if (_inputManager?.controlType == ControlType.Mouse)
-        {
-            ControlTypeMouse();
-        }
-        else if (_inputManager?.controlType == ControlType.Joystick || _inputManager?.controlType == ControlType.Keyboard)
-        {
-            ControlTypeJoystick();
-        }
+        // TODO : 마비노기처럼 PC에서 조이스틱과 마우스 이동 둘 다 되게 하려면?
+        if (_touchListener.deviceType == DeviceType.PC && _touchListener.controllerType == ControllerType.Mouse)
+            CheckMouseStartPosition();
+        else if ((_touchListener.deviceType == DeviceType.PC && _touchListener.controllerType == ControllerType.KeyBoard)
+               || (_touchListener.deviceType == DeviceType.Mobile && _touchListener.controllerType == ControllerType.Joystick))
+            JoyStickMove();
 
-        Jump();
+        Jumpping();
         Gravity();
     }
 
-    public void OnEnable()
+    public void GetInputAxes(List<IInputAxisOwner.AxisDescriptor> axes)
     {
-        _mainCamera = Camera.main;
-        _cameraTransform = _mainCamera.transform;
+        axes.Add(new() { DrivenAxis = () => ref MoveX, Name = nameof(MoveX), Hint = IInputAxisOwner.AxisDescriptor.Hints.X });
+        axes.Add(new() { DrivenAxis = () => ref MoveY, Name = nameof(MoveY), Hint = IInputAxisOwner.AxisDescriptor.Hints.Y });
+        axes.Add(new() { DrivenAxis = () => ref Jump, Name = nameof(Jump) });
+        axes.Add(new() { DrivenAxis = () => ref Attack, Name = nameof(Attack) });
     }
 
-    // TODO : UI위에서 시작한 터치가 UI밖에서 끝났을때 이동 버벅거리는 거 처리
-    // InputDebug Simulated TouchScreen이 아닐때에만 버벅거림
-    private void ControlTypeJoystick()
+    // TODO : 고스트 터치 문제
+    private void JoyStickMove()
     {
-        var joystickValue = _inputManager.MoveValue;
-        _moveVec = new Vector3(joystickValue.x, 0, joystickValue.y);
-        _moveVec = _cameraTransform.TransformDirection(_moveVec);
-        _moveVec.y = 0;
-        _characterController.Move( _moveVec * _moveSpeed * Time.deltaTime);
+        _moveVec = new Vector3(MoveX.Value, 0, MoveY.Value);
 
-        if (_moveVec != Vector3.zero) // 안해주면 조이스틱 놨을때 정방향 보면서 돌아감
-            transform.forward = _moveVec;
-    }
-
-    private void ControlTypeMouse()
-    {
-        if (_inputManager.LeftMouseButtonPhase == TouchPhase.Moved
-            && !_inputManager.isMouseCursorOnUI) // UI를 터치하는게 아닐때만 이동
+        if (_moveVec != Vector3.zero) //조이스틱을 움직였음
         {
-            Vector3 mousePosition = _inputManager.Position;
-            Ray ray = _mainCamera.ScreenPointToRay(mousePosition);
-
-            if (Physics.Raycast(ray: ray, hitInfo: out RaycastHit hit, maxDistance: 1000.0f, 
-                layerMask: SetTargetableLayerMask("Ground")))
+            if (_touchListener.PriContact.Value > 0 && _touchListener.isPriStartPositionOnUI //첫번째 터치 시작점이 UI위가 아님 
+            || _touchListener.SecContact.Value > 0 && _touchListener.isSecStartPositionOnUI) //두번째 터치 시작점이 UI위가 아님
             {
-                _targetPosition = hit.point;
-
-                if (_mouseMoveCo != null)
-                    StopCoroutine(_mouseMoveCo);
-                _mouseMoveCo = StartCoroutine(PlayerMoveTowards(_targetPosition));
+                _isJoystickTouch = true;
+                _moveVec = _cameraTransform.TransformDirection(_moveVec);
+                _moveVec.y = 0;
+                _characterController.Move(_moveVec * _moveSpeed * Time.deltaTime);                
             }
 
-            if (_moveVec != Vector3.zero)
-                transform.forward = _moveVec;
+            transform.forward = _moveVec; // 안해주면 조이스틱 놨을때 정방향 보면서 돌아감
         }
+        else
+            _isJoystickTouch = false;
+    }
+
+    // 첫 입력이 UI를 클릭하는 게 아닐 때에만 이동
+    private void CheckMouseStartPosition()
+    {
+        if (_touchListener.PriContact.Value > 0)
+        {
+            if (!_isMouseDown)
+            {
+                // 마우스 클릭이 시작되는 순간
+                _isInitialClickOnUI = _touchListener.isPriPositionOnUI;
+                _isMouseDown = true;
+            }
+
+            // 마우스가 눌려있는 동안
+            if (!_isInitialClickOnUI)
+                MouseMove();
+        }
+        else
+            // 마우스 클릭이 해제된 순간
+            _isMouseDown = false;
+    }
+
+    private void MouseMove()
+    {
+        Vector3 mousePosition = new Vector3(_touchListener.PriPositionX.Value, _touchListener.PriPositionY.Value);
+        Ray ray = _mainCamera.ScreenPointToRay(mousePosition);
+
+        if (Physics.Raycast(ray: ray, hitInfo: out RaycastHit hit, maxDistance: 1000.0f,
+            layerMask: SetTargetableLayerMask("Ground")))
+        {
+            _targetPosition = hit.point;
+
+            if (_mouseMoveCo != null)
+                StopCoroutine(_mouseMoveCo);
+            _mouseMoveCo = StartCoroutine(PlayerMoveTowards(_targetPosition));
+        }
+
+        if (_moveVec != Vector3.zero)
+            transform.forward = _moveVec;
     }
 
     private IEnumerator PlayerMoveTowards(Vector3 targetPoint)
@@ -127,10 +158,10 @@ public class MovementController : MonoBehaviour
         }
     }
 
-    private void Jump()
+    private void Jumpping()
     {
         // TODO : 마우스 먼저 찍어서 이동 중에 점프 가능하도록 하기, 점프 중에 마우스 클릭으로 이동 금지
-        if (_inputManager.isJumped && _isGround)
+        if (Jump.Value > 0 && _isGround)
             _playerVelocity.y += Mathf.Sqrt(_jumpHeight * _jumpSpeed * -_gravity);
     }
 

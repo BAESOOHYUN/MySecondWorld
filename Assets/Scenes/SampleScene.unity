@@ -13,7 +13,7 @@ OcclusionCullingSettings:
 --- !u!104 &2
 RenderSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 9
+  serializedVersion: 10
   m_Fog: 0
   m_FogColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   m_FogMode: 3
@@ -38,13 +38,11 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.18028378, g: 0.22571412, b: 0.30692285, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 12
-  m_GIWorkflowMode: 1
   m_GISettings:
     serializedVersion: 2
     m_BounceScale: 1
@@ -67,9 +65,6 @@ LightmapSettings:
     m_LightmapParameters: {fileID: 0}
     m_LightmapsBakeMode: 1
     m_TextureCompression: 1
-    m_FinalGather: 0
-    m_FinalGatherFiltering: 1
-    m_FinalGatherRayCount: 256
     m_ReflectionCompression: 2
     m_MixedBakeMode: 2
     m_BakeBackend: 1
@@ -132,10 +127,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 238792633}
-  - component: {fileID: 238792635}
   - component: {fileID: 238792634}
+  - component: {fileID: 238792635}
   m_Layer: 0
-  m_Name: InputManager
+  m_Name: CameraManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -165,252 +160,23 @@ MonoBehaviour:
   m_GameObject: {fileID: 238792632}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 62899f850307741f2a39c98a8b639597, type: 3}
+  m_Script: {fileID: 11500000, guid: e6515a86ca61c7d4a85d6343271e41cf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Actions: {fileID: -944628639613478452, guid: d42f727529826a041bcb663999120136,
-    type: 3}
-  m_NotificationBehavior: 2
-  m_UIInputModule: {fileID: 0}
-  m_DeviceLostEvent:
-    m_PersistentCalls:
-      m_Calls: []
-  m_DeviceRegainedEvent:
-    m_PersistentCalls:
-      m_Calls: []
-  m_ControlsChangedEvent:
-    m_PersistentCalls:
-      m_Calls: []
-  m_ActionEvents:
-  - m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 238792635}
-        m_TargetAssemblyTypeName: InputManager, Assembly-CSharp
-        m_MethodName: OnMove
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-    m_ActionId: 364d1cf1-9256-456a-be50-6e4190a0a4fe
-    m_ActionName: Player/Move[/Keyboard/w,/Keyboard/s,/Keyboard/a,/Keyboard/d,/Keyboard/upArrow,/Keyboard/downArrow,/Keyboard/leftArrow,/Keyboard/rightArrow]
-  - m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 238792635}
-        m_TargetAssemblyTypeName: InputManager, Assembly-CSharp
-        m_MethodName: OnPosition
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-    m_ActionId: 84700573-2367-4902-8206-c0c1b0a68b3b
-    m_ActionName: Player/Position[/Mouse/position]
-  - m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 238792635}
-        m_TargetAssemblyTypeName: InputManager, Assembly-CSharp
-        m_MethodName: OnClickLeftMouseButton
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-    m_ActionId: 3a82a343-41d6-453e-848e-82e717968020
-    m_ActionName: Player/ClickLeftMouseButton[/Mouse/leftButton]
-  - m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 238792635}
-        m_TargetAssemblyTypeName: InputManager, Assembly-CSharp
-        m_MethodName: OnJump
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-    m_ActionId: 2272c24b-8141-4943-bae6-48cddf806f43
-    m_ActionName: Player/Jump[/Keyboard/space]
-  - m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 238792635}
-        m_TargetAssemblyTypeName: InputManager, Assembly-CSharp
-        m_MethodName: OnAttack
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-    m_ActionId: ab4a663c-cdfe-4031-9cfa-0e1f858d1056
-    m_ActionName: Player/Attack
-  - m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 238792635}
-        m_TargetAssemblyTypeName: InputManager, Assembly-CSharp
-        m_MethodName: OnLook
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-    m_ActionId: 20d718f6-a7d4-43be-8cee-9f9be20bc096
-    m_ActionName: Camera/Look[/Mouse/delta]
-  - m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 238792635}
-        m_TargetAssemblyTypeName: InputManager, Assembly-CSharp
-        m_MethodName: OnZoom
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-    m_ActionId: eece0e4b-78af-4f1a-a850-771e22a85da2
-    m_ActionName: Camera/Zoom[/Mouse/scroll]
-  - m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 238792635}
-        m_TargetAssemblyTypeName: InputManager, Assembly-CSharp
-        m_MethodName: OnClickRightMouseButton
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-    m_ActionId: 46e008c2-5dd6-4e07-8fa2-fc42466f31f2
-    m_ActionName: Camera/ClickRightMouseButton[/Mouse/rightButton]
-  - m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 238792635}
-        m_TargetAssemblyTypeName: InputManager, Assembly-CSharp
-        m_MethodName: OnPrimaryTouchContact
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-    m_ActionId: 50e8a789-744b-411f-9778-e5645c3cfb58
-    m_ActionName: Touch/PrimaryTouchContact
-  - m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 238792635}
-        m_TargetAssemblyTypeName: InputManager, Assembly-CSharp
-        m_MethodName: OnSecondaryTouchContact
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-    m_ActionId: f33088a3-52d4-4092-9588-ea1942bfe536
-    m_ActionName: Touch/SecondaryTouchContact
-  - m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 238792635}
-        m_TargetAssemblyTypeName: InputManager, Assembly-CSharp
-        m_MethodName: OnPrimaryTouchPosition
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-    m_ActionId: 27437235-0217-45b5-9e77-89cc031abcd4
-    m_ActionName: Touch/PrimaryTouchPosition
-  - m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 238792635}
-        m_TargetAssemblyTypeName: InputManager, Assembly-CSharp
-        m_MethodName: OnSecondaryTouchPosition
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-    m_ActionId: 0d67554b-6e42-4f52-9e9b-d00da76456e1
-    m_ActionName: Touch/SecondaryTouchPosition
-  - m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 238792635}
-        m_TargetAssemblyTypeName: InputManager, Assembly-CSharp
-        m_MethodName: OnPrimaryTouchDelta
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-    m_ActionId: ca4c8841-5826-410b-b779-7a65b1a4b1d9
-    m_ActionName: Touch/PrimaryTouchDelta
-  - m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 238792635}
-        m_TargetAssemblyTypeName: InputManager, Assembly-CSharp
-        m_MethodName: OnSecondaryTouchDelta
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-    m_ActionId: 31ee9f9c-2e68-47dd-b367-dac49242587b
-    m_ActionName: Touch/SecondaryTouchDelta
-  m_NeverAutoSwitchControlSchemes: 0
-  m_DefaultControlScheme: 
-  m_DefaultActionMap: Player
-  m_SplitScreenIndex: -1
-  m_Camera: {fileID: 0}
+  _orbitFollow: {fileID: 1235529341}
+  _followZoom: {fileID: 1235529343}
+  _touchListener: {fileID: 1507210986}
+  _movementController: {fileID: 540730252041627799}
+  Zoom:
+    Value: 0
+    Center: 0
+    Range: {x: -1, y: 1}
+    Wrap: 0
+    Recentering:
+      Enabled: 0
+      Wait: 0
+      Time: 0
+    Restrictions: 6
 --- !u!114 &238792635
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -420,12 +186,28 @@ MonoBehaviour:
   m_GameObject: {fileID: 238792632}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1087180022e8fac4ab6973d2a09e4a29, type: 3}
+  m_Script: {fileID: 11500000, guid: 89875cdc57c54474a8a74efd9b2a3b5d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _playerInput: {fileID: 238792634}
-  controlType: 0
-  isMouseCursorOnUI: 0
+  ScanRecursively: 1
+  SuppressInputWhileBlending: 1
+  IgnoreTimeScale: 0
+  m_ControllerManager:
+    Controllers:
+    - Name: Zoom
+      Owner: {fileID: 238792634}
+      Enabled: 1
+      Input:
+        InputAction: {fileID: -6778753134052926460, guid: 1ef879bb94aacac45a5965f49648d8e3,
+          type: 3}
+        Gain: 1
+        CancelDeltaTime: 0
+      InputValue: 0
+      Driver:
+        AccelTime: 0
+        DecelTime: 0
+  PlayerIndex: -1
+  AutoEnableInputs: 1
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
@@ -558,12 +340,12 @@ MonoBehaviour:
   m_RequiresColorTexture: 0
   m_Version: 2
   m_TaaSettings:
-    quality: 3
-    frameInfluence: 0.1
-    jitterScale: 1
-    mipBias: 0
-    varianceClampScale: 0.9
-    contrastAdaptiveSharpening: 0
+    m_Quality: 3
+    m_FrameInfluence: 0.1
+    m_JitterScale: 1
+    m_MipBias: 0
+    m_VarianceClampScale: 0.9
+    m_ContrastAdaptiveSharpening: 0
 --- !u!114 &330585548
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -622,9 +404,8 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 410087039}
   m_Enabled: 1
-  serializedVersion: 10
+  serializedVersion: 11
   m_Type: 1
-  m_Shape: 0
   m_Color: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}
   m_Intensity: 1
   m_Range: 10
@@ -674,8 +455,12 @@ Light:
   m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
+  m_ForceVisible: 0
   m_ShadowRadius: 0
   m_ShadowAngle: 0
+  m_LightUnit: 1
+  m_LuxAtDistance: 1
+  m_EnableSpotReflector: 1
 --- !u!4 &410087041
 Transform:
   m_ObjectHideFlags: 0
@@ -786,6 +571,9 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -923,6 +711,9 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -1067,9 +858,9 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 1878136132}
   - {fileID: 1507210982}
   - {fileID: 238792633}
-  - {fileID: 1878136132}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1034210529
@@ -1144,6 +935,9 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -1249,6 +1043,9 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -1465,7 +1262,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Width: 4.74
-  Damping: 1
+  Damping: 0.4
   FovRange: {x: 3, y: 60}
 --- !u!1 &1253171675
 GameObject:
@@ -1825,6 +1622,9 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -1867,11 +1667,11 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1507210982}
-  - component: {fileID: 1507210984}
-  - component: {fileID: 1507210985}
+  - component: {fileID: 1507210987}
   - component: {fileID: 1507210986}
+  - component: {fileID: 1507210985}
   m_Layer: 0
-  m_Name: CameraManager
+  m_Name: InputManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1892,197 +1692,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 959943606}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1507210984
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1507210981}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e6515a86ca61c7d4a85d6343271e41cf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _orbitFollow: {fileID: 1235529341}
-  _inputManager: {fileID: 238792635}
-  _postHorizontalAxis: 0
-  _postVerticalAxis: 0
-  ClickRightMouseButton:
-    Value: 0
-    Center: 0
-    Range: {x: -1, y: 1}
-    Wrap: 0
-    Recentering:
-      Enabled: 0
-      Wait: 0
-      Time: 0
-    Restrictions: 6
-  Pan:
-    Value: 0
-    Center: 0
-    Range: {x: -180, y: 180}
-    Wrap: 1
-    Recentering:
-      Enabled: 0
-      Wait: 0
-      Time: 0
-    Restrictions: 2
-  Tilt:
-    Value: 0
-    Center: 0
-    Range: {x: -10, y: 45}
-    Wrap: 0
-    Recentering:
-      Enabled: 0
-      Wait: 0
-      Time: 0
-    Restrictions: 2
 --- !u!114 &1507210985
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1507210981}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b048c3a58a143bb46955e9d96318724d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _followZoom: {fileID: 1235529343}
-  _inputManager: {fileID: 238792635}
-  Zoom:
-    Value: 0
-    Center: 0
-    Range: {x: -1, y: 1}
-    Wrap: 0
-    Recentering:
-      Enabled: 0
-      Wait: 0
-      Time: 0
-    Restrictions: 2
-  MousePositionX:
-    Value: 0
-    Center: 0
-    Range: {x: -1, y: 1}
-    Wrap: 0
-    Recentering:
-      Enabled: 0
-      Wait: 0
-      Time: 0
-    Restrictions: 6
-  MousePositionY:
-    Value: 0
-    Center: 0
-    Range: {x: -1, y: 1}
-    Wrap: 0
-    Recentering:
-      Enabled: 0
-      Wait: 0
-      Time: 0
-    Restrictions: 6
-  PrimaryTouchContact:
-    Value: 0
-    Center: 0
-    Range: {x: -1, y: 1}
-    Wrap: 0
-    Recentering:
-      Enabled: 0
-      Wait: 0
-      Time: 0
-    Restrictions: 6
-  PrimaryTouchDeltaX:
-    Value: 0
-    Center: 0
-    Range: {x: -1, y: 1}
-    Wrap: 0
-    Recentering:
-      Enabled: 0
-      Wait: 0
-      Time: 0
-    Restrictions: 6
-  PrimaryTouchDeltaY:
-    Value: 0
-    Center: 0
-    Range: {x: -1, y: 1}
-    Wrap: 0
-    Recentering:
-      Enabled: 0
-      Wait: 0
-      Time: 0
-    Restrictions: 6
-  PrimaryTouchPositionX:
-    Value: 0
-    Center: 0
-    Range: {x: -1, y: 1}
-    Wrap: 0
-    Recentering:
-      Enabled: 0
-      Wait: 0
-      Time: 0
-    Restrictions: 6
-  PrimaryTouchPositionY:
-    Value: 0
-    Center: 0
-    Range: {x: -1, y: 1}
-    Wrap: 0
-    Recentering:
-      Enabled: 0
-      Wait: 0
-      Time: 0
-    Restrictions: 6
-  SecondaryTouchContact:
-    Value: 0
-    Center: 0
-    Range: {x: -1, y: 1}
-    Wrap: 0
-    Recentering:
-      Enabled: 0
-      Wait: 0
-      Time: 0
-    Restrictions: 6
-  SecondaryTouchDeltaX:
-    Value: 0
-    Center: 0
-    Range: {x: -1, y: 1}
-    Wrap: 0
-    Recentering:
-      Enabled: 0
-      Wait: 0
-      Time: 0
-    Restrictions: 6
-  SecondaryTouchDeltaY:
-    Value: 0
-    Center: 0
-    Range: {x: -1, y: 1}
-    Wrap: 0
-    Recentering:
-      Enabled: 0
-      Wait: 0
-      Time: 0
-    Restrictions: 6
-  SecondaryTouchPositionX:
-    Value: 0
-    Center: 0
-    Range: {x: -1, y: 1}
-    Wrap: 0
-    Recentering:
-      Enabled: 0
-      Wait: 0
-      Time: 0
-    Restrictions: 6
-  SecondaryTouchPositionY:
-    Value: 0
-    Center: 0
-    Range: {x: -1, y: 1}
-    Wrap: 0
-    Recentering:
-      Enabled: 0
-      Wait: 0
-      Time: 0
-    Restrictions: 6
---- !u!114 &1507210986
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2099,11 +1709,11 @@ MonoBehaviour:
   IgnoreTimeScale: 0
   m_ControllerManager:
     Controllers:
-    - Name: ClickRightMouseButton
-      Owner: {fileID: 1507210984}
+    - Name: PriContact
+      Owner: {fileID: 1507210986}
       Enabled: 1
       Input:
-        InputAction: {fileID: -8099046119332905017, guid: d42f727529826a041bcb663999120136,
+        InputAction: {fileID: 7302797039088496623, guid: 1ef879bb94aacac45a5965f49648d8e3,
           type: 3}
         Gain: 1
         CancelDeltaTime: 0
@@ -2111,11 +1721,11 @@ MonoBehaviour:
       Driver:
         AccelTime: 0
         DecelTime: 0
-    - Name: Pan
-      Owner: {fileID: 1507210984}
+    - Name: PriDeltaX
+      Owner: {fileID: 1507210986}
       Enabled: 1
       Input:
-        InputAction: {fileID: -758836639851063051, guid: d42f727529826a041bcb663999120136,
+        InputAction: {fileID: -2854121704398094914, guid: 1ef879bb94aacac45a5965f49648d8e3,
           type: 3}
         Gain: 1
         CancelDeltaTime: 0
@@ -2123,11 +1733,11 @@ MonoBehaviour:
       Driver:
         AccelTime: 0
         DecelTime: 0
-    - Name: Tilt
-      Owner: {fileID: 1507210984}
+    - Name: PriDeltaY
+      Owner: {fileID: 1507210986}
       Enabled: 1
       Input:
-        InputAction: {fileID: -758836639851063051, guid: d42f727529826a041bcb663999120136,
+        InputAction: {fileID: -2854121704398094914, guid: 1ef879bb94aacac45a5965f49648d8e3,
           type: 3}
         Gain: 1
         CancelDeltaTime: 0
@@ -2135,11 +1745,11 @@ MonoBehaviour:
       Driver:
         AccelTime: 0
         DecelTime: 0
-    - Name: Zoom
-      Owner: {fileID: 1507210985}
+    - Name: PriStartPositionX
+      Owner: {fileID: 1507210986}
       Enabled: 1
       Input:
-        InputAction: {fileID: 5082991133974614888, guid: 1d6e640e716dc4ff6989b73d02023f2b,
+        InputAction: {fileID: -1619933105322165465, guid: 1ef879bb94aacac45a5965f49648d8e3,
           type: 3}
         Gain: 1
         CancelDeltaTime: 0
@@ -2147,11 +1757,11 @@ MonoBehaviour:
       Driver:
         AccelTime: 0
         DecelTime: 0
-    - Name: PrimaryTouchContact
-      Owner: {fileID: 1507210985}
+    - Name: PriStartPositionY
+      Owner: {fileID: 1507210986}
       Enabled: 1
       Input:
-        InputAction: {fileID: -4666323034467110311, guid: d42f727529826a041bcb663999120136,
+        InputAction: {fileID: -1619933105322165465, guid: 1ef879bb94aacac45a5965f49648d8e3,
           type: 3}
         Gain: 1
         CancelDeltaTime: 0
@@ -2159,11 +1769,11 @@ MonoBehaviour:
       Driver:
         AccelTime: 0
         DecelTime: 0
-    - Name: PrimaryTouchDeltaX
-      Owner: {fileID: 1507210985}
+    - Name: PriPositionX
+      Owner: {fileID: 1507210986}
       Enabled: 1
       Input:
-        InputAction: {fileID: -920961676163647491, guid: d42f727529826a041bcb663999120136,
+        InputAction: {fileID: 1426462346491268159, guid: 1ef879bb94aacac45a5965f49648d8e3,
           type: 3}
         Gain: 1
         CancelDeltaTime: 0
@@ -2171,11 +1781,11 @@ MonoBehaviour:
       Driver:
         AccelTime: 0
         DecelTime: 0
-    - Name: PrimaryTouchDeltaY
-      Owner: {fileID: 1507210985}
+    - Name: PriPositionY
+      Owner: {fileID: 1507210986}
       Enabled: 1
       Input:
-        InputAction: {fileID: -920961676163647491, guid: d42f727529826a041bcb663999120136,
+        InputAction: {fileID: 1426462346491268159, guid: 1ef879bb94aacac45a5965f49648d8e3,
           type: 3}
         Gain: 1
         CancelDeltaTime: 0
@@ -2183,11 +1793,11 @@ MonoBehaviour:
       Driver:
         AccelTime: 0
         DecelTime: 0
-    - Name: PrimaryTouchPositionX
-      Owner: {fileID: 1507210985}
+    - Name: SecContact
+      Owner: {fileID: 1507210986}
       Enabled: 1
       Input:
-        InputAction: {fileID: 580834608218036658, guid: d42f727529826a041bcb663999120136,
+        InputAction: {fileID: -8525218518530149154, guid: 1ef879bb94aacac45a5965f49648d8e3,
           type: 3}
         Gain: 1
         CancelDeltaTime: 0
@@ -2195,11 +1805,11 @@ MonoBehaviour:
       Driver:
         AccelTime: 0
         DecelTime: 0
-    - Name: PrimaryTouchPositionY
-      Owner: {fileID: 1507210985}
+    - Name: SecDeltaX
+      Owner: {fileID: 1507210986}
       Enabled: 1
       Input:
-        InputAction: {fileID: 580834608218036658, guid: d42f727529826a041bcb663999120136,
+        InputAction: {fileID: 5071717097981137233, guid: 1ef879bb94aacac45a5965f49648d8e3,
           type: 3}
         Gain: 1
         CancelDeltaTime: 0
@@ -2207,11 +1817,11 @@ MonoBehaviour:
       Driver:
         AccelTime: 0
         DecelTime: 0
-    - Name: SecondaryTouchContact
-      Owner: {fileID: 1507210985}
+    - Name: SecDeltaY
+      Owner: {fileID: 1507210986}
       Enabled: 1
       Input:
-        InputAction: {fileID: 25243786379917625, guid: d42f727529826a041bcb663999120136,
+        InputAction: {fileID: 5071717097981137233, guid: 1ef879bb94aacac45a5965f49648d8e3,
           type: 3}
         Gain: 1
         CancelDeltaTime: 0
@@ -2219,11 +1829,11 @@ MonoBehaviour:
       Driver:
         AccelTime: 0
         DecelTime: 0
-    - Name: SecondaryTouchDeltaX
-      Owner: {fileID: 1507210985}
+    - Name: SecStartPositionX
+      Owner: {fileID: 1507210986}
       Enabled: 1
       Input:
-        InputAction: {fileID: -5615130927130720558, guid: d42f727529826a041bcb663999120136,
+        InputAction: {fileID: -6523047958757084263, guid: 1ef879bb94aacac45a5965f49648d8e3,
           type: 3}
         Gain: 1
         CancelDeltaTime: 0
@@ -2231,11 +1841,11 @@ MonoBehaviour:
       Driver:
         AccelTime: 0
         DecelTime: 0
-    - Name: SecondaryTouchDeltaY
-      Owner: {fileID: 1507210985}
+    - Name: SecStartPositionY
+      Owner: {fileID: 1507210986}
       Enabled: 1
       Input:
-        InputAction: {fileID: -5615130927130720558, guid: d42f727529826a041bcb663999120136,
+        InputAction: {fileID: -6523047958757084263, guid: 1ef879bb94aacac45a5965f49648d8e3,
           type: 3}
         Gain: 1
         CancelDeltaTime: 0
@@ -2243,11 +1853,11 @@ MonoBehaviour:
       Driver:
         AccelTime: 0
         DecelTime: 0
-    - Name: SecondaryTouchPositionX
-      Owner: {fileID: 1507210985}
+    - Name: SecPositionX
+      Owner: {fileID: 1507210986}
       Enabled: 1
       Input:
-        InputAction: {fileID: 8529550193891607673, guid: d42f727529826a041bcb663999120136,
+        InputAction: {fileID: 1131504692475032772, guid: 1ef879bb94aacac45a5965f49648d8e3,
           type: 3}
         Gain: 1
         CancelDeltaTime: 0
@@ -2255,11 +1865,11 @@ MonoBehaviour:
       Driver:
         AccelTime: 0
         DecelTime: 0
-    - Name: SecondaryTouchPositionY
-      Owner: {fileID: 1507210985}
+    - Name: SecPositionY
+      Owner: {fileID: 1507210986}
       Enabled: 1
       Input:
-        InputAction: {fileID: 8529550193891607673, guid: d42f727529826a041bcb663999120136,
+        InputAction: {fileID: 1131504692475032772, guid: 1ef879bb94aacac45a5965f49648d8e3,
           type: 3}
         Gain: 1
         CancelDeltaTime: 0
@@ -2269,6 +1879,367 @@ MonoBehaviour:
         DecelTime: 0
   PlayerIndex: -1
   AutoEnableInputs: 1
+--- !u!114 &1507210986
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1507210981}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 223e1cd3ed5ef7448933e6bc59980b53, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  deviceType: 1
+  controllerType: 0
+  isPriStartPositionOnUI: 0
+  isSecStartPositionOnUI: 0
+  isPriPositionOnUI: 0
+  isSecPositionOnUI: 0
+  isPointerOnUI: 0
+  PriContact:
+    Value: 0
+    Center: 0
+    Range: {x: -1, y: 1}
+    Wrap: 0
+    Recentering:
+      Enabled: 0
+      Wait: 0
+      Time: 0
+    Restrictions: 6
+  PriDeltaX:
+    Value: 0
+    Center: 0
+    Range: {x: -180, y: 180}
+    Wrap: 1
+    Recentering:
+      Enabled: 0
+      Wait: 0
+      Time: 0
+    Restrictions: 2
+  PriDeltaY:
+    Value: 0
+    Center: 0
+    Range: {x: -45, y: 45}
+    Wrap: 0
+    Recentering:
+      Enabled: 0
+      Wait: 0
+      Time: 0
+    Restrictions: 2
+  PriStartPositionX:
+    Value: 0
+    Center: 0
+    Range: {x: 0, y: 1590}
+    Wrap: 0
+    Recentering:
+      Enabled: 0
+      Wait: 0
+      Time: 0
+    Restrictions: 4
+  PriStartPositionY:
+    Value: 0
+    Center: 0
+    Range: {x: 0, y: 795}
+    Wrap: 0
+    Recentering:
+      Enabled: 0
+      Wait: 0
+      Time: 0
+    Restrictions: 4
+  PriPositionX:
+    Value: 0
+    Center: 0
+    Range: {x: 0, y: 1901}
+    Wrap: 0
+    Recentering:
+      Enabled: 0
+      Wait: 0
+      Time: 0
+    Restrictions: 4
+  PriPositionY:
+    Value: 0
+    Center: 0
+    Range: {x: 0, y: 879}
+    Wrap: 0
+    Recentering:
+      Enabled: 0
+      Wait: 0
+      Time: 0
+    Restrictions: 4
+  SecContact:
+    Value: 0
+    Center: 0
+    Range: {x: -1, y: 1}
+    Wrap: 0
+    Recentering:
+      Enabled: 0
+      Wait: 0
+      Time: 0
+    Restrictions: 6
+  SecDeltaX:
+    Value: 0
+    Center: 0
+    Range: {x: -180, y: 180}
+    Wrap: 1
+    Recentering:
+      Enabled: 0
+      Wait: 0
+      Time: 0
+    Restrictions: 2
+  SecDeltaY:
+    Value: 0
+    Center: 0
+    Range: {x: -45, y: 45}
+    Wrap: 0
+    Recentering:
+      Enabled: 0
+      Wait: 0
+      Time: 0
+    Restrictions: 2
+  SecStartPositionX:
+    Value: 0
+    Center: 0
+    Range: {x: 0, y: 1590}
+    Wrap: 0
+    Recentering:
+      Enabled: 0
+      Wait: 0
+      Time: 0
+    Restrictions: 4
+  SecStartPositionY:
+    Value: 0
+    Center: 0
+    Range: {x: 0, y: 795}
+    Wrap: 0
+    Recentering:
+      Enabled: 0
+      Wait: 0
+      Time: 0
+    Restrictions: 4
+  SecPositionX:
+    Value: 0
+    Center: 0
+    Range: {x: 0, y: 1901}
+    Wrap: 0
+    Recentering:
+      Enabled: 0
+      Wait: 0
+      Time: 0
+    Restrictions: 4
+  SecPositionY:
+    Value: 0
+    Center: 0
+    Range: {x: 0, y: 879}
+    Wrap: 0
+    Recentering:
+      Enabled: 0
+      Wait: 0
+      Time: 0
+    Restrictions: 4
+--- !u!114 &1507210987
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1507210981}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62899f850307741f2a39c98a8b639597, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Actions: {fileID: -944628639613478452, guid: 1ef879bb94aacac45a5965f49648d8e3,
+    type: 3}
+  m_NotificationBehavior: 2
+  m_UIInputModule: {fileID: 0}
+  m_DeviceLostEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_DeviceRegainedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ControlsChangedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ActionEvents:
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: InputManager, Assembly-CSharp
+        m_MethodName: OnMove
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: cb67a429-17ef-446f-b62e-30e71d9263d0
+    m_ActionName: 'Player/Move[/Keyboard/w,/Keyboard/s,/Keyboard/a,/Keyboard/d,/Keyboard/upArrow,/Keyboard/downArrow,/Keyboard/leftArrow,/Keyboard/rightArrow]'
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: InputManager, Assembly-CSharp
+        m_MethodName: OnJump
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: 2d43dbff-78bf-4804-a001-b597b92f78de
+    m_ActionName: 'Player/Jump[/Keyboard/space]'
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: InputManager, Assembly-CSharp
+        m_MethodName: OnAttack
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: 35221d19-36db-4e69-9e76-5d8f24a98685
+    m_ActionName: Player/Attack
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: InputManager, Assembly-CSharp
+        m_MethodName: OnZoom
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: f60336df-fb2a-4cb2-bc44-406709e3b8a0
+    m_ActionName: 'Camera/Zoom[/Mouse/scroll]'
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: InputManager, Assembly-CSharp
+        m_MethodName: OnPrimaryTouchPosition
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: 514239ec-1800-4300-ac0e-b2a1e853a6bf
+    m_ActionName: Touch/PrimaryTouchPosition
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: InputManager, Assembly-CSharp
+        m_MethodName: OnSecondaryTouchPosition
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: 2de4b725-e407-4cf1-bb6a-870b804f1dd7
+    m_ActionName: Touch/SecondaryTouchPosition
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: InputManager, Assembly-CSharp
+        m_MethodName: OnPrimaryTouchDelta
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: b911c30f-63be-40e4-afb2-51c50b31c76b
+    m_ActionName: Touch/PrimaryTouchDelta
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: InputManager, Assembly-CSharp
+        m_MethodName: OnSecondaryTouchDelta
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: dca9c857-81ab-4dca-b756-db2be04d538d
+    m_ActionName: Touch/SecondaryTouchDelta
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: InputManager, Assembly-CSharp
+        m_MethodName: OnPrimaryTouchContact
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: cc938dab-537e-44e0-994c-e2ae839d026f
+    m_ActionName: 'Touch/PrimaryTouchContact[/Mouse/leftButton,/Simulated Touchscreen/press]'
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: InputManager, Assembly-CSharp
+        m_MethodName: OnSecondaryTouchContact
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: c1ad3bb5-e5de-4fc6-a627-0afa6c9a39c3
+    m_ActionName: 'Touch/SecondaryTouchContact[/Mouse/rightButton,/Simulated Touchscreen/touch0/press,/Simulated
+      Touchscreen/touch1/press,/Simulated Touchscreen/touch2/press,/Simulated Touchscreen/touch3/press,/Simulated
+      Touchscreen/touch4/press,/Simulated Touchscreen/touch5/press,/Simulated Touchscreen/touch6/press,/Simulated
+      Touchscreen/touch7/press,/Simulated Touchscreen/touch8/press,/Simulated Touchscreen/touch9/press]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 68baff65-4dc0-4806-971f-e0b8498d0994
+    m_ActionName: 'Touch/PrimaryStartTouchPosition[/Simulated Touchscreen/primaryTouch/startPosition]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 26f7b612-849c-4cba-bb62-72f8a56911e3
+    m_ActionName: 'Touch/SecondaryStartTouchPosition[/Simulated Touchscreen/touch1/startPosition]'
+  m_NeverAutoSwitchControlSchemes: 0
+  m_DefaultControlScheme: 
+  m_DefaultActionMap: Player
+  m_SplitScreenIndex: -1
+  m_Camera: {fileID: 0}
 --- !u!1 &1551477841
 GameObject:
   m_ObjectHideFlags: 0
@@ -2477,6 +2448,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 540730252041627799}
+    - targetCorrespondingSourceObject: {fileID: 7649518523978516262, guid: 5ca390a4c04b52148a2d5b7a3cc65196,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 540730252041627803}
   m_SourcePrefab: {fileID: 100100000, guid: 5ca390a4c04b52148a2d5b7a3cc65196, type: 3}
 --- !u!1 &540730252041627794 stripped
 GameObject:
@@ -2499,7 +2474,6 @@ CharacterController:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
@@ -2522,17 +2496,125 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 53a737e65d1472745ae1fb98e0862894, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _inputManager: {fileID: 238792635}
+  _touchListener: {fileID: 1507210986}
   _characterController: {fileID: 540730252041627796}
   _moveSpeed: 3
   _jumpSpeed: 3
   _jumpHeight: 1
+  _isJoystickTouch: 0
+  MoveX:
+    Value: 0
+    Center: 0
+    Range: {x: -1, y: 1}
+    Wrap: 0
+    Recentering:
+      Enabled: 0
+      Wait: 0
+      Time: 0
+    Restrictions: 6
+  MoveY:
+    Value: 0
+    Center: 0
+    Range: {x: -1, y: 1}
+    Wrap: 0
+    Recentering:
+      Enabled: 0
+      Wait: 0
+      Time: 0
+    Restrictions: 6
+  Jump:
+    Value: 0
+    Center: 0
+    Range: {x: -1, y: 1}
+    Wrap: 0
+    Recentering:
+      Enabled: 0
+      Wait: 0
+      Time: 0
+    Restrictions: 6
+  Attack:
+    Value: 0
+    Center: 0
+    Range: {x: -1, y: 1}
+    Wrap: 0
+    Recentering:
+      Enabled: 0
+      Wait: 0
+      Time: 0
+    Restrictions: 6
 --- !u!4 &540730252041627801 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7647977613998776572, guid: 5ca390a4c04b52148a2d5b7a3cc65196,
     type: 3}
   m_PrefabInstance: {fileID: 540730252041627793}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &540730252041627803
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 540730252041627794}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 89875cdc57c54474a8a74efd9b2a3b5d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ScanRecursively: 1
+  SuppressInputWhileBlending: 1
+  IgnoreTimeScale: 0
+  m_ControllerManager:
+    Controllers:
+    - Name: MoveX
+      Owner: {fileID: 540730252041627799}
+      Enabled: 1
+      Input:
+        InputAction: {fileID: -6634730444897426333, guid: 1ef879bb94aacac45a5965f49648d8e3,
+          type: 3}
+        Gain: 1
+        CancelDeltaTime: 0
+      InputValue: 0
+      Driver:
+        AccelTime: 0
+        DecelTime: 0
+    - Name: MoveY
+      Owner: {fileID: 540730252041627799}
+      Enabled: 1
+      Input:
+        InputAction: {fileID: -6634730444897426333, guid: 1ef879bb94aacac45a5965f49648d8e3,
+          type: 3}
+        Gain: 1
+        CancelDeltaTime: 0
+      InputValue: 0
+      Driver:
+        AccelTime: 0
+        DecelTime: 0
+    - Name: Jump
+      Owner: {fileID: 540730252041627799}
+      Enabled: 1
+      Input:
+        InputAction: {fileID: -6980244004151785336, guid: 1ef879bb94aacac45a5965f49648d8e3,
+          type: 3}
+        Gain: 1
+        CancelDeltaTime: 0
+      InputValue: 0
+      Driver:
+        AccelTime: 0
+        DecelTime: 0
+    - Name: Attack
+      Owner: {fileID: 540730252041627799}
+      Enabled: 1
+      Input:
+        InputAction: {fileID: 8699023130217952208, guid: 1ef879bb94aacac45a5965f49648d8e3,
+          type: 3}
+        Gain: 1
+        CancelDeltaTime: 0
+      InputValue: 0
+      Driver:
+        AccelTime: 0
+        DecelTime: 0
+  PlayerIndex: -1
+  AutoEnableInputs: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
