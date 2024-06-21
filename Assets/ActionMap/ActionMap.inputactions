@@ -33,6 +33,15 @@
                     "initialStateCheck": true
                 },
                 {
+                    "name": "PrimaryStartTouchPosition",
+                    "type": "Value",
+                    "id": "86fa513d-2489-49d8-8ab2-0233c3482e0f",
+                    "expectedControlType": "Vector2",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
+                },
+                {
                     "name": "SecondaryTouchContact",
                     "type": "Button",
                     "id": "c1ad3bb5-e5de-4fc6-a627-0afa6c9a39c3",
@@ -54,6 +63,15 @@
                     "name": "SecondaryTouchPosition",
                     "type": "Value",
                     "id": "2de4b725-e407-4cf1-bb6a-870b804f1dd7",
+                    "expectedControlType": "Vector2",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
+                },
+                {
+                    "name": "SecondaryStartTouchPosition",
+                    "type": "Value",
+                    "id": "524319f0-6725-4e8b-bdbe-c140b5b63e62",
                     "expectedControlType": "Vector2",
                     "processors": "",
                     "interactions": "",
@@ -85,12 +103,34 @@
                 },
                 {
                     "name": "",
+                    "id": "f885edd3-481e-48cd-bf30-232a194f9401",
+                    "path": "<Touchscreen>/touch0/startPosition",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "PrimaryStartTouchPosition",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
                     "id": "711001d3-2ab8-4e22-9094-21bbd2d755ff",
                     "path": "<Touchscreen>/touch1/position",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
                     "action": "SecondaryTouchPosition",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "90fe2e2f-670a-4429-b0ba-4a181274acba",
+                    "path": "<Touchscreen>/touch1/startPosition",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SecondaryStartTouchPosition",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
