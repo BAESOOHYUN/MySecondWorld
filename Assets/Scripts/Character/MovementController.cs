@@ -23,7 +23,6 @@ public class MovementController : MonoBehaviour, IInputAxisOwner
     private Coroutine _mouseMoveCo;
     private bool _isInitialClickOnUI = false;
     private bool _isMouseDown = false;
-    public bool _isJoystickTouch = false;
 
     public InputAxis MoveX = InputAxis.DefaultMomentary;
     public InputAxis MoveY = InputAxis.DefaultMomentary;
@@ -76,19 +75,11 @@ public class MovementController : MonoBehaviour, IInputAxisOwner
 
         if (_moveVec != Vector3.zero) //조이스틱을 움직였음
         {
-            if (_touchListener.PriContact.Value > 0 && _touchListener.isPriStartPositionOnUI //첫번째 터치 시작점이 UI위가 아님 
-            || _touchListener.SecContact.Value > 0 && _touchListener.isSecStartPositionOnUI) //두번째 터치 시작점이 UI위가 아님
-            {
-                _isJoystickTouch = true;
-                _moveVec = _cameraTransform.TransformDirection(_moveVec);
-                _moveVec.y = 0;
-                _characterController.Move(_moveVec * _moveSpeed * Time.deltaTime);                
-            }
-
+            _moveVec = _cameraTransform.TransformDirection(_moveVec);
+            _moveVec.y = 0;
+            _characterController.Move(_moveVec * _moveSpeed * Time.deltaTime);
             transform.forward = _moveVec; // 안해주면 조이스틱 놨을때 정방향 보면서 돌아감
         }
-        else
-            _isJoystickTouch = false;
     }
 
     // 첫 입력이 UI를 클릭하는 게 아닐 때에만 이동

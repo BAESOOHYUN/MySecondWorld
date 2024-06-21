@@ -177,6 +177,8 @@ MonoBehaviour:
       Wait: 0
       Time: 0
     Restrictions: 6
+  _isInitialClickOnUI: 0
+  _isSingleTouchDown: 0
 --- !u!114 &238792635
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1529,13 +1531,23 @@ PrefabInstance:
         type: 3}
     - target: {fileID: 5461270311495778721, guid: 1ef3b2a496e6fbc4f8bab8d99b9541e8,
         type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 400
+      objectReference: {fileID: 0}
+    - target: {fileID: 5461270311495778721, guid: 1ef3b2a496e6fbc4f8bab8d99b9541e8,
+        type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 400
+      objectReference: {fileID: 0}
+    - target: {fileID: 5461270311495778721, guid: 1ef3b2a496e6fbc4f8bab8d99b9541e8,
+        type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: -100
+      value: 15
       objectReference: {fileID: 0}
     - target: {fileID: 5461270311495778721, guid: 1ef3b2a496e6fbc4f8bab8d99b9541e8,
         type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 100
+      value: 516
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:
@@ -1745,30 +1757,6 @@ MonoBehaviour:
       Driver:
         AccelTime: 0
         DecelTime: 0
-    - Name: PriStartPositionX
-      Owner: {fileID: 1507210986}
-      Enabled: 1
-      Input:
-        InputAction: {fileID: -1619933105322165465, guid: 1ef879bb94aacac45a5965f49648d8e3,
-          type: 3}
-        Gain: 1
-        CancelDeltaTime: 0
-      InputValue: 0
-      Driver:
-        AccelTime: 0
-        DecelTime: 0
-    - Name: PriStartPositionY
-      Owner: {fileID: 1507210986}
-      Enabled: 1
-      Input:
-        InputAction: {fileID: -1619933105322165465, guid: 1ef879bb94aacac45a5965f49648d8e3,
-          type: 3}
-        Gain: 1
-        CancelDeltaTime: 0
-      InputValue: 0
-      Driver:
-        AccelTime: 0
-        DecelTime: 0
     - Name: PriPositionX
       Owner: {fileID: 1507210986}
       Enabled: 1
@@ -1829,30 +1817,6 @@ MonoBehaviour:
       Driver:
         AccelTime: 0
         DecelTime: 0
-    - Name: SecStartPositionX
-      Owner: {fileID: 1507210986}
-      Enabled: 1
-      Input:
-        InputAction: {fileID: -6523047958757084263, guid: 1ef879bb94aacac45a5965f49648d8e3,
-          type: 3}
-        Gain: 1
-        CancelDeltaTime: 0
-      InputValue: 0
-      Driver:
-        AccelTime: 0
-        DecelTime: 0
-    - Name: SecStartPositionY
-      Owner: {fileID: 1507210986}
-      Enabled: 1
-      Input:
-        InputAction: {fileID: -6523047958757084263, guid: 1ef879bb94aacac45a5965f49648d8e3,
-          type: 3}
-        Gain: 1
-        CancelDeltaTime: 0
-      InputValue: 0
-      Driver:
-        AccelTime: 0
-        DecelTime: 0
     - Name: SecPositionX
       Owner: {fileID: 1507210986}
       Enabled: 1
@@ -1877,6 +1841,54 @@ MonoBehaviour:
       Driver:
         AccelTime: 0
         DecelTime: 0
+    - Name: PriStartPositionX
+      Owner: {fileID: 1507210986}
+      Enabled: 0
+      Input:
+        InputAction: {fileID: -1619933105322165465, guid: 1ef879bb94aacac45a5965f49648d8e3,
+          type: 3}
+        Gain: 1
+        CancelDeltaTime: 0
+      InputValue: 0
+      Driver:
+        AccelTime: 0
+        DecelTime: 0
+    - Name: PriStartPositionY
+      Owner: {fileID: 1507210986}
+      Enabled: 0
+      Input:
+        InputAction: {fileID: -1619933105322165465, guid: 1ef879bb94aacac45a5965f49648d8e3,
+          type: 3}
+        Gain: 1
+        CancelDeltaTime: 0
+      InputValue: 0
+      Driver:
+        AccelTime: 0
+        DecelTime: 0
+    - Name: SecStartPositionX
+      Owner: {fileID: 1507210986}
+      Enabled: 0
+      Input:
+        InputAction: {fileID: -6523047958757084263, guid: 1ef879bb94aacac45a5965f49648d8e3,
+          type: 3}
+        Gain: 1
+        CancelDeltaTime: 0
+      InputValue: 0
+      Driver:
+        AccelTime: 0
+        DecelTime: 0
+    - Name: SecStartPositionY
+      Owner: {fileID: 1507210986}
+      Enabled: 0
+      Input:
+        InputAction: {fileID: -6523047958757084263, guid: 1ef879bb94aacac45a5965f49648d8e3,
+          type: 3}
+        Gain: 1
+        CancelDeltaTime: 0
+      InputValue: 0
+      Driver:
+        AccelTime: 0
+        DecelTime: 0
   PlayerIndex: -1
   AutoEnableInputs: 1
 --- !u!114 &1507210986
@@ -1893,8 +1905,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   deviceType: 1
   controllerType: 0
-  isPriStartPositionOnUI: 0
-  isSecStartPositionOnUI: 0
   isPriPositionOnUI: 0
   isSecPositionOnUI: 0
   isPointerOnUI: 0
@@ -1928,26 +1938,6 @@ MonoBehaviour:
       Wait: 0
       Time: 0
     Restrictions: 2
-  PriStartPositionX:
-    Value: 0
-    Center: 0
-    Range: {x: 0, y: 1590}
-    Wrap: 0
-    Recentering:
-      Enabled: 0
-      Wait: 0
-      Time: 0
-    Restrictions: 4
-  PriStartPositionY:
-    Value: 0
-    Center: 0
-    Range: {x: 0, y: 795}
-    Wrap: 0
-    Recentering:
-      Enabled: 0
-      Wait: 0
-      Time: 0
-    Restrictions: 4
   PriPositionX:
     Value: 0
     Center: 0
@@ -1998,26 +1988,6 @@ MonoBehaviour:
       Wait: 0
       Time: 0
     Restrictions: 2
-  SecStartPositionX:
-    Value: 0
-    Center: 0
-    Range: {x: 0, y: 1590}
-    Wrap: 0
-    Recentering:
-      Enabled: 0
-      Wait: 0
-      Time: 0
-    Restrictions: 4
-  SecStartPositionY:
-    Value: 0
-    Center: 0
-    Range: {x: 0, y: 795}
-    Wrap: 0
-    Recentering:
-      Enabled: 0
-      Wait: 0
-      Time: 0
-    Restrictions: 4
   SecPositionX:
     Value: 0
     Center: 0
@@ -2032,6 +2002,46 @@ MonoBehaviour:
     Value: 0
     Center: 0
     Range: {x: 0, y: 879}
+    Wrap: 0
+    Recentering:
+      Enabled: 0
+      Wait: 0
+      Time: 0
+    Restrictions: 4
+  PriStartPositionX:
+    Value: 0
+    Center: 0
+    Range: {x: 0, y: 1590}
+    Wrap: 0
+    Recentering:
+      Enabled: 0
+      Wait: 0
+      Time: 0
+    Restrictions: 4
+  PriStartPositionY:
+    Value: 0
+    Center: 0
+    Range: {x: 0, y: 795}
+    Wrap: 0
+    Recentering:
+      Enabled: 0
+      Wait: 0
+      Time: 0
+    Restrictions: 4
+  SecStartPositionX:
+    Value: 0
+    Center: 0
+    Range: {x: 0, y: 1590}
+    Wrap: 0
+    Recentering:
+      Enabled: 0
+      Wait: 0
+      Time: 0
+    Restrictions: 4
+  SecStartPositionY:
+    Value: 0
+    Center: 0
+    Range: {x: 0, y: 795}
     Wrap: 0
     Recentering:
       Enabled: 0
@@ -2227,14 +2237,6 @@ MonoBehaviour:
       Touchscreen/touch1/press,/Simulated Touchscreen/touch2/press,/Simulated Touchscreen/touch3/press,/Simulated
       Touchscreen/touch4/press,/Simulated Touchscreen/touch5/press,/Simulated Touchscreen/touch6/press,/Simulated
       Touchscreen/touch7/press,/Simulated Touchscreen/touch8/press,/Simulated Touchscreen/touch9/press]'
-  - m_PersistentCalls:
-      m_Calls: []
-    m_ActionId: 68baff65-4dc0-4806-971f-e0b8498d0994
-    m_ActionName: 'Touch/PrimaryStartTouchPosition[/Simulated Touchscreen/primaryTouch/startPosition]'
-  - m_PersistentCalls:
-      m_Calls: []
-    m_ActionId: 26f7b612-849c-4cba-bb62-72f8a56911e3
-    m_ActionName: 'Touch/SecondaryStartTouchPosition[/Simulated Touchscreen/touch1/startPosition]'
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: Player
@@ -2501,7 +2503,7 @@ MonoBehaviour:
   _moveSpeed: 3
   _jumpSpeed: 3
   _jumpHeight: 1
-  _isJoystickTouch: 0
+  isJoystickTouch: 0
   MoveX:
     Value: 0
     Center: 0

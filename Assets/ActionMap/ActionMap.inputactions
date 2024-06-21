@@ -24,15 +24,6 @@
                     "initialStateCheck": true
                 },
                 {
-                    "name": "PrimaryStartTouchPosition",
-                    "type": "Value",
-                    "id": "68baff65-4dc0-4806-971f-e0b8498d0994",
-                    "expectedControlType": "Vector2",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": true
-                },
-                {
                     "name": "PrimaryTouchPosition",
                     "type": "Value",
                     "id": "514239ec-1800-4300-ac0e-b2a1e853a6bf",
@@ -54,15 +45,6 @@
                     "name": "SecondaryTouchDelta",
                     "type": "Value",
                     "id": "dca9c857-81ab-4dca-b756-db2be04d538d",
-                    "expectedControlType": "Vector2",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": true
-                },
-                {
-                    "name": "SecondaryStartTouchPosition",
-                    "type": "Value",
-                    "id": "26f7b612-849c-4cba-bb62-72f8a56911e3",
                     "expectedControlType": "Vector2",
                     "processors": "",
                     "interactions": "",
@@ -93,7 +75,7 @@
                 {
                     "name": "",
                     "id": "c81b437b-a3b7-483c-b139-9e3ed205f64f",
-                    "path": "<Touchscreen>/primaryTouch/position",
+                    "path": "<Touchscreen>/touch0/position",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -115,7 +97,7 @@
                 {
                     "name": "",
                     "id": "daa2dc14-c4d3-4afa-9d4a-69711af6d031",
-                    "path": "<Touchscreen>/primaryTouch/delta",
+                    "path": "<Touchscreen>/touch0/delta",
                     "interactions": "",
                     "processors": "DeltaTimeScale,ScaleVector2(x=0.1,y=0.1)",
                     "groups": "",
@@ -139,7 +121,7 @@
                     "id": "b6964f09-ac48-4a69-bdbc-36c777039274",
                     "path": "<Touchscreen>/touch1/delta",
                     "interactions": "",
-                    "processors": "",
+                    "processors": "DeltaTimeScale,ScaleVector2(x=0.1,y=0.1)",
                     "groups": "",
                     "action": "SecondaryTouchDelta",
                     "isComposite": false,
@@ -159,7 +141,7 @@
                 {
                     "name": "",
                     "id": "93798614-1fdc-4f8d-9194-4ab510d4d105",
-                    "path": "<Touchscreen>/Press",
+                    "path": "<Touchscreen>/touch0/press",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -186,28 +168,6 @@
                     "processors": "",
                     "groups": "",
                     "action": "SecondaryTouchContact",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "9a60b28d-56e4-41c1-9fcc-9262523772e1",
-                    "path": "<Touchscreen>/primaryTouch/startPosition",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "PrimaryStartTouchPosition",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "35fa95cc-c901-4493-88ca-d1ce940eca88",
-                    "path": "<Touchscreen>/touch1/startPosition",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "SecondaryStartTouchPosition",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
