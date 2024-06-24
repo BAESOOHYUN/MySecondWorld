@@ -88,22 +88,6 @@ public class TouchEventListener : MonoBehaviour, IInputAxisOwner
         axes.Add(new() { DrivenAxis = () => ref SecStartPositionY, Name = nameof(SecStartPositionY), Hint = IInputAxisOwner.AxisDescriptor.Hints.Y });
     }
 
-    private void Start()
-    {
-        PriDeltaX = DefaultPan;
-        PriDeltaY = DefaultTilt;
-        PriPositionX = DefaultPositionX;
-        PriPositionY = DefaultPositionY;
-        PriStartPositionX = DefaultPositionX;
-        PriStartPositionY = DefaultPositionY;
-        SecDeltaX = DefaultPan;
-        SecDeltaY = DefaultTilt;
-        SecPositionX = DefaultPositionX;
-        SecPositionY = DefaultPositionY;
-        SecStartPositionX = DefaultPositionX;
-        SecStartPositionY = DefaultPositionY;
-    }
-
     // TODO : RX로 바꾸기
     private void Update()
     {
@@ -118,9 +102,10 @@ public class TouchEventListener : MonoBehaviour, IInputAxisOwner
         //if (PriContact.Value > 0)
         //    Debug.Log($"{PriStartPositionX.Value}, {PriStartPositionX.Value}");
 
-        // *순서 주의!
-        // 간헐적으로 Position 값이 제대로 들어오지 않는데 원인을 모르겠음.
-        // 등록순서나 계산 순서가 문제인가 싶었는데 그것도 아니고...
+        // *터치 시간 주의!
+        // 터치 후 바로 움직이지 않고 Stationary 상태로 잠깐 있으면 Position 값이 고정된다.
+        // 이후 터치를 뗐다가 다시 터치해도 고정된 값이 변하지 않음.
+        // 터치 후 바로 움직여도 값이 고정되는 경우도 있어서 헷갈림;;
         var primaryPosition = new Vector2(PriPositionX.Value, PriPositionY.Value);
         isPriPositionOnUI = OnUIChecker.IsPointerOverUIObject(primaryPosition);
 

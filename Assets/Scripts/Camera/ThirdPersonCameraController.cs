@@ -9,12 +9,14 @@ public class ThirdPersonCameraController : MonoBehaviour, IInputAxisOwner
     [SerializeField] private TouchEventListener _touchListener;
     [SerializeField] private MovementController _movementController;
     [SerializeField] private InputAxis Zoom = InputAxis.DefaultMomentary;
-    private float _postHorizontalAxis;
-    private float _postVerticalAxis;
+    [SerializeField] private float _postHorizontalAxis;
+    [SerializeField] private float _postVerticalAxis;
     private const float _minFOV = 0.5f;
     private const float _maxFOV = 4.7f;
     public bool _isInitialClickOnUI = false;
     public bool _isSingleTouchDown = false;
+    public bool _isPriTouchDown = false;
+    public bool _isSecTouchDown = false;
 
 
     private void Update()
@@ -71,65 +73,51 @@ public class ThirdPersonCameraController : MonoBehaviour, IInputAxisOwner
         }
     }
 
-
     // TODO : 조이스틱 이동 중, 두번째 터치로 회전하지 못하는 문제
     private void RotateCamera_Mobile()
     {
         var t = _touchListener;
         var o = _orbitFollow;
 
-        if ((t.PriContact.Value > 0 && !t.isPriPositionOnUI && (t.SecContact.Value == 0 || t.isSecPositionOnUI)) ||
-            (t.SecContact.Value > 0 && t.isSecPositionOnUI && t.PriContact.Value > 0 && !t.isPriPositionOnUI))
+        if (t.PriContact.Value == 0 && t.SecContact.Value == 0)
         {
-            Debug.Log($"[0]번째 손가락으로 회전");
-
-            if (!_isSingleTouchDown)
-            {
-                _isInitialClickOnUI = t.isPriPositionOnUI;
-                _isSingleTouchDown = true;
-            }
-
-            if (!_isInitialClickOnUI)
-            {
-                o.HorizontalAxis.Value = t.PriDeltaX.Value + _postHorizontalAxis;
-                o.VerticalAxis.Value = Mathf.Clamp(-t.PriDeltaY.Value + _postVerticalAxis, -10, 45);
-            }
-
-        }
-        else if (t.PriContact.Value == 0)
-        {
-            Debug.Log($"[1]번째 손가락으로 회전 중지");
-            _isSingleTouchDown = false;
+            //Debug.Log("손 떨어짐~~~");
             _postHorizontalAxis = o.HorizontalAxis.Value;
             _postVerticalAxis = o.VerticalAxis.Value;
-            t.PriDeltaX.Value = 0;
-            t.PriDeltaY.Value = 0;
-        }
-        else if ((t.SecContact.Value > 0 && !t.isSecPositionOnUI && (t.PriContact.Value == 0 || t.isPriPositionOnUI)) ||
-                (t.PriContact.Value > 0 && t.isPriPositionOnUI && t.SecContact.Value > 0 && !t.isSecPositionOnUI))
-        {
-            Debug.Log($"[1]번째 손가락으로 회전");
 
-            if (!_isSingleTouchDown)
-            {
-                _isInitialClickOnUI = t.isSecPositionOnUI;
-                _isSingleTouchDown = true;
-            }
-
-            if (!_isInitialClickOnUI)
-            {
-                o.HorizontalAxis.Value = t.SecDeltaX.Value + _postHorizontalAxis;
-                o.VerticalAxis.Value = Mathf.Clamp(-t.SecDeltaY.Value + _postVerticalAxis, -10, 45);
-            }
+            return;
         }
-        else if (t.SecContact.Value == 0)
+        else if (t.PriContact.Value > 0 && t.isPriStartPositionOnUI 
+            && t.SecContact.Value > 0 && t.isSecStartPositionOnUI)
         {
-            Debug.Log($"[1]번째 손가락으로 회전 중지");
-            _isSingleTouchDown = false;
+            //Debug.Log($"[0]번째, [1]번째 손가락 UI위에서 시작. 회전 무시");
+            return;
+        }
+
+        if (t.PriContact.Value > 0 && !t.isPriStartPositionOnUI && (t.SecContact.Value == 0 || (t.SecContact.Value > 0 && t.isSecStartPositionOnUI)))
+        {
+            //Debug.Log($"[0]번째 터치가 UI 밖에서 시작, [0]번째 손가락으로 회전");
+            o.HorizontalAxis.Value = t.PriDeltaX.Value + _postHorizontalAxis;
+            o.VerticalAxis.Value = Mathf.Clamp(-t.PriDeltaY.Value + _postVerticalAxis, -10, 45);
+        }
+        else if (t.PriContact.Value > 0 && t.isPriStartPositionOnUI && t.SecContact.Value == 0)
+        {
+            //Debug.Log($"[0]번째 터치가 UI 위에서 시작, [0]번째 손가락 회전 무시, [1]번째 손가락 뗌");
             _postHorizontalAxis = o.HorizontalAxis.Value;
             _postVerticalAxis = o.VerticalAxis.Value;
-            t.SecDeltaX.Value = 0;
-            t.SecDeltaY.Value = 0;
+        }
+
+        if (t.SecContact.Value > 0 && !t.isSecStartPositionOnUI && (t.PriContact.Value == 0 || (t.PriContact.Value > 0 && t.isPriStartPositionOnUI)))
+        {
+            //Debug.Log($"[1]번째 터치가 UI 밖에서 시작, [1]번째 손가락으로 회전");
+            o.HorizontalAxis.Value = t.SecDeltaX.Value + _postHorizontalAxis;
+            o.VerticalAxis.Value = Mathf.Clamp(-t.SecDeltaY.Value + _postVerticalAxis, -10, 45);
+        }
+        else if (t.SecContact.Value > 0 && t.isSecStartPositionOnUI && t.PriContact.Value == 0)
+        {
+            //Debug.Log($"[1]번째 터치가 UI 위에서 시작, [1]번째 손가락 회전 무시, [0]번째 손가락 뗌");
+            _postHorizontalAxis = o.HorizontalAxis.Value;
+            _postVerticalAxis = o.VerticalAxis.Value;
         }
     }
 
@@ -147,17 +135,18 @@ public class ThirdPersonCameraController : MonoBehaviour, IInputAxisOwner
         var t = _touchListener;
 
         // 멀티 터치 && UI을 건드리지 않고 있을 때만 줌~
-        if (t.PriContact.Value > 0 && t.SecContact.Value > 0
-            && !t.isPriPositionOnUI && !t.isSecPositionOnUI)
+       if (t.PriContact.Value > 0 && t.SecContact.Value > 0
+            && !t.isPriStartPositionOnUI && !t.isSecStartPositionOnUI)
         {
+            //Debug.Log("줌~~");
             var priPosition = new Vector2(t.PriPositionX.Value, t.PriPositionY.Value);
             var secPosition = new Vector2(t.SecPositionX.Value, t.SecPositionY.Value);
-            var priDelta = new Vector2(t.PriDeltaX.Value, t.PriDeltaY.Value);
-            var secDelta = new Vector2(t.SecDeltaX.Value, t.SecDeltaY.Value);
+            var priDelta = new Vector2(t.PriDeltaX.Value, t.PriDeltaY.Value) * 0.1f;
+            var secDelta = new Vector2(t.SecDeltaX.Value, t.SecDeltaY.Value) * 0.1f;
 
             //직전 프레임의 터치 위치를 구하기 위해 "현재 위치 - 위치 변화량"을 계산
-            Vector2 priPreviousPosition = priPosition - priDelta;
-            Vector2 secPreviousPosition = secPosition - secDelta;
+            Vector2 priPreviousPosition = priDelta - priPosition;
+            Vector2 secPreviousPosition = secDelta - secPosition;
 
             //직전 프레임에서의 터치 위치 거리 값
             float previousPositionDistance = (priPreviousPosition - secPreviousPosition).magnitude;

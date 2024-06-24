@@ -1264,7 +1264,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Width: 4.74
-  Damping: 0.4
+  Damping: 0.1
   FovRange: {x: 3, y: 60}
 --- !u!1 &1253171675
 GameObject:
