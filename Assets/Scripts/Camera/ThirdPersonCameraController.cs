@@ -19,7 +19,7 @@ public class ThirdPersonCameraController : MonoBehaviour, IInputAxisOwner
     public bool _isSecTouchDown = false;
 
 
-    private void Update()
+    private void LateUpdate()
     {
         switch (_touchListener.deviceType)
         {

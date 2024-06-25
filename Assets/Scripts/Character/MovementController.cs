@@ -42,13 +42,12 @@ public class MovementController : MonoBehaviour, IInputAxisOwner
         _cameraTransform = _mainCamera.transform;
     }
 
-    private void Update()
+    private void FixedUpdate()
     {
         _isGround = _characterController.isGrounded;
         if (_isGround && _playerVelocity.y < 0)
             _playerVelocity.y = 0f;
 
-        // TODO : 컨트롤러가 너무 뻑뻑하게 움직여서 렉걸린거 같음. 스무스하게 움직이도록 하기.
         // TODO : 마비노기처럼 PC에서 조이스틱과 마우스 이동 둘 다 되게 하려면?
         if (_touchListener.deviceType == DeviceType.PC && _touchListener.controllerType == ControllerType.Mouse)
             CheckMouseStartPosition();
@@ -151,6 +150,7 @@ public class MovementController : MonoBehaviour, IInputAxisOwner
     private void Jumpping()
     {
         // TODO : 마우스 먼저 찍어서 이동 중에 점프 가능하도록 하기, 점프 중에 마우스 클릭으로 이동 금지
+        // TODO : Falling & Landing
         if (Jump.Value > 0 && _isGround)
             _playerVelocity.y += Mathf.Sqrt(_jumpHeight * _jumpSpeed * -_gravity);
     }
