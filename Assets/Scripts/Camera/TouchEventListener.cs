@@ -91,17 +91,6 @@ public class TouchEventListener : MonoBehaviour, IInputAxisOwner
     // TODO : RX로 바꾸기
     private void Update()
     {
-        // PriPosition는 PriContact보다 우선적으로 값이 들어오는 것으로 보인다.
-        // 왜냐면 PriContact == true/fase 하고 PriPosition 값을 체크하면 값이 변경되지 않기 때문임.
-        //if (PriContact.Value > 0)
-        //    Debug.Log($"{PriPositionX.Value}, {PriPositionY.Value}");
-        // PriDeltaX는 PriContact보다 나중에 값이 들어오는 것으로 보인다. 조건 걸었을때 값이 계속 변함.
-        //if (PriContact.Value > 0)
-        //    Debug.Log($"{PriDeltaX.Value}, {PriDeltaY.Value}");
-        // PriPosition는 PriContact보다 우선적으로 값이 들어오는 것으로 보인다.
-        //if (PriContact.Value > 0)
-        //    Debug.Log($"{PriStartPositionX.Value}, {PriStartPositionX.Value}");
-
         // *터치 시간 주의!
         // 터치 후 바로 움직이지 않고 Stationary 상태로 잠깐 있으면 Position 값이 고정된다.
         // 이후 터치를 뗐다가 다시 터치해도 고정된 값이 변하지 않음.

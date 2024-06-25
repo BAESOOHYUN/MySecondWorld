@@ -68,7 +68,6 @@ public class MovementController : MonoBehaviour, IInputAxisOwner
         axes.Add(new() { DrivenAxis = () => ref Attack, Name = nameof(Attack) });
     }
 
-    // TODO : 고스트 터치 문제
     private void JoyStickMove()
     {
         _moveVec = new Vector3(MoveX.Value, 0, MoveY.Value);
