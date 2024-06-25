@@ -73,7 +73,6 @@ public class ThirdPersonCameraController : MonoBehaviour, IInputAxisOwner
         }
     }
 
-    // TODO : 조이스틱 이동 중, 두번째 터치로 회전하지 못하는 문제
     private void RotateCamera_Mobile()
     {
         var t = _touchListener;
@@ -145,8 +144,8 @@ public class ThirdPersonCameraController : MonoBehaviour, IInputAxisOwner
             var secDelta = new Vector2(t.SecDeltaX.Value, t.SecDeltaY.Value) * 0.1f;
 
             //직전 프레임의 터치 위치를 구하기 위해 "현재 위치 - 위치 변화량"을 계산
-            Vector2 priPreviousPosition = priDelta - priPosition;
-            Vector2 secPreviousPosition = secDelta - secPosition;
+            Vector2 priPreviousPosition = priPosition - priDelta;
+            Vector2 secPreviousPosition = secPosition - secDelta;
 
             //직전 프레임에서의 터치 위치 거리 값
             float previousPositionDistance = (priPreviousPosition - secPreviousPosition).magnitude;
