@@ -49,6 +49,7 @@ Temporary Items
 # unity model asset igonore temp 
 /Assets/[Mm]odels/
 /Assets/[Ee]xternal/
+/Assets/[Pp]lugins/
 
 # MemoryCaptures can get excessive in size.
 # They also could contain extremely sensitive data
