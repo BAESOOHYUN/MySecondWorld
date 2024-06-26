@@ -11,7 +11,7 @@ public class CustomInputHandler : InputAxisControllerBase<CustomInputHandler.Rea
     [Header("Input Source Override")]
     public PlayerInput PlayerInput;
 
-    void Awake()
+    private void Awake()
     {
         // When the PlayerInput receives an input, send it to all the controllers
         if (PlayerInput == null)
@@ -30,7 +30,7 @@ public class CustomInputHandler : InputAxisControllerBase<CustomInputHandler.Rea
     }
 
     // We process user input on the Update clock
-    void Update()
+    private void Update()
     {
         if (Application.isPlaying)
             UpdateControllers();

@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using Unity.Cinemachine;
 using UnityEngine;
+using UniRx;
+
 public enum DeviceType
 {
     PC,
@@ -18,11 +20,11 @@ public class TouchEventListener : MonoBehaviour, IInputAxisOwner
 {
     public DeviceType deviceType;
     public ControllerType controllerType;
-    public bool isPriStartPositionOnUI;
-    public bool isSecStartPositionOnUI;
-    public bool isPriPositionOnUI;
-    public bool isSecPositionOnUI;
-    static InputAxis DefaultPan => new()
+    public BoolReactiveProperty isPriStartPositionOnUI = new BoolReactiveProperty(false);
+    public BoolReactiveProperty isSecStartPositionOnUI = new BoolReactiveProperty(false);
+    public BoolReactiveProperty isPriPositionOnUI = new BoolReactiveProperty(false);
+    public BoolReactiveProperty isSecPositionOnUI = new BoolReactiveProperty(false);
+    private static InputAxis DefaultPan => new()
     {
         Value = 0,
         Range = new Vector2(-180, 180),
@@ -30,7 +32,7 @@ public class TouchEventListener : MonoBehaviour, IInputAxisOwner
         Center = 0,
         Restrictions = InputAxis.RestrictionFlags.NoRecentering
     };
-    static InputAxis DefaultTilt => new()
+    private static InputAxis DefaultTilt => new()
     {
         Value = 0,
         Range = new Vector2(-45, 45),
@@ -38,7 +40,7 @@ public class TouchEventListener : MonoBehaviour, IInputAxisOwner
         Center = 0,
         Restrictions = InputAxis.RestrictionFlags.NoRecentering
     };
-    static InputAxis DefaultPositionX => new()
+    private static InputAxis DefaultPositionX => new()
     {
         Value = 0,
         Range = new Vector2(0, Screen.width),
@@ -46,7 +48,7 @@ public class TouchEventListener : MonoBehaviour, IInputAxisOwner
         Center = 0,
         Restrictions = InputAxis.RestrictionFlags.Momentary
     };
-    static InputAxis DefaultPositionY => new()
+    private static InputAxis DefaultPositionY => new()
     {
         Value = 0,
         Range = new Vector2(0, Screen.height),
@@ -88,49 +90,65 @@ public class TouchEventListener : MonoBehaviour, IInputAxisOwner
         axes.Add(new() { DrivenAxis = () => ref SecStartPositionY, Name = nameof(SecStartPositionY), Hint = IInputAxisOwner.AxisDescriptor.Hints.Y });
     }
 
-    // TODO : RX로 바꾸기
-    private void Update()
+    private void Start()
     {
-        // *터치 시간 주의!
-        // 터치 후 바로 움직이지 않고 Stationary 상태로 잠깐 있으면 Position 값이 고정된다.
-        // 이후 터치를 뗐다가 다시 터치해도 고정된 값이 변하지 않음.
-        // 터치 후 바로 움직여도 값이 고정되는 경우도 있어서 헷갈림;;
+        // 유니티의 Update() 콜백함수와 동일하게 매프레임 호출 되는 Observable 을 생성한다.
+        // Observable.EveryUpdate() 는 static 메소드 이므로 MonoBehaviour 상속 클래스가 아닌 외부에서도 호출이 가능하다.
+        // UniRx.Triggers 의 UpdateAsObservable 과 다르게 특정 GameObject 에 종속되어 있지 않기 때문에 Dispose 시점을 수동으로 지정해줘야 하므로 Subscribe 또는 AddTo 오퍼레이터를 사용해 관리할 필요가 있다
+        // 일반적으로 특정 오브젝트에 종속되지 않는 상황, 예를 들면 FPS 출력이나 마우스 클릭 체크, 네트워크 체크 등의 경우 등에 유용하다.
+        Observable.EveryUpdate()
+            .Subscribe(_ => UpdateTouchPositions())
+            .AddTo(this); // 사용이 끝나면 명시적으로 Dispose
+    }
+
+    private void UpdateTouchPositions()
+    {
         var primaryPosition = new Vector2(PriPositionX.Value, PriPositionY.Value);
-        isPriPositionOnUI = OnUIChecker.IsPointerOverUIObject(primaryPosition);
+        isPriPositionOnUI.Value = OnUIChecker.IsPointerOverUIObject(primaryPosition);
 
         var secondaryPosition = new Vector2(SecPositionX.Value, SecPositionY.Value);
-        isSecPositionOnUI = OnUIChecker.IsPointerOverUIObject(secondaryPosition);
+        isSecPositionOnUI.Value = OnUIChecker.IsPointerOverUIObject(secondaryPosition);
 
         var primaryStartPosition = new Vector2(PriStartPositionX.Value, PriStartPositionY.Value);
-        isPriStartPositionOnUI = OnUIChecker.IsPointerOverUIObject(primaryStartPosition);
+        isPriStartPositionOnUI.Value = OnUIChecker.IsPointerOverUIObject(primaryStartPosition);
 
         var secondaryStartPosition = new Vector2(SecStartPositionX.Value, SecStartPositionY.Value);
-        isSecStartPositionOnUI = OnUIChecker.IsPointerOverUIObject(secondaryStartPosition);
+        isSecStartPositionOnUI.Value = OnUIChecker.IsPointerOverUIObject(secondaryStartPosition);
 
         if (PriContact.Value == 0)
         {
-            PriContact = InputAxis.DefaultMomentary;
-            PriDeltaX = DefaultPan;
-            PriDeltaY = DefaultTilt;
-            PriStartPositionX = DefaultPositionX;
-            PriStartPositionY = DefaultPositionY;
-            PriPositionX = DefaultPositionX;
-            PriPositionY = DefaultPositionY;
-            isPriPositionOnUI = false;
-            isPriStartPositionOnUI = false;
+            ResetPrimaryInputAxes();
         }
 
         if (SecContact.Value == 0)
         {
-            SecContact = InputAxis.DefaultMomentary;
-            SecDeltaX = DefaultPan;
-            SecDeltaY = DefaultTilt;
-            SecStartPositionX = DefaultPositionX;
-            SecStartPositionY = DefaultPositionY;
-            SecPositionX = DefaultPositionX;
-            SecPositionY = DefaultPositionY;
-            isSecPositionOnUI = false;
-            isSecStartPositionOnUI = false;
+            ResetSecondaryInputAxes();
         }
+    }
+
+    private void ResetPrimaryInputAxes()
+    {
+        PriContact = InputAxis.DefaultMomentary;
+        PriDeltaX = DefaultPan;
+        PriDeltaY = DefaultTilt;
+        PriStartPositionX = DefaultPositionX;
+        PriStartPositionY = DefaultPositionY;
+        PriPositionX = DefaultPositionX;
+        PriPositionY = DefaultPositionY;
+        isPriPositionOnUI.Value = false;
+        isPriStartPositionOnUI.Value = false;
+    }
+
+    private void ResetSecondaryInputAxes()
+    {
+        SecContact = InputAxis.DefaultMomentary;
+        SecDeltaX = DefaultPan;
+        SecDeltaY = DefaultTilt;
+        SecStartPositionX = DefaultPositionX;
+        SecStartPositionY = DefaultPositionY;
+        SecPositionX = DefaultPositionX;
+        SecPositionY = DefaultPositionY;
+        isSecPositionOnUI.Value = false;
+        isSecStartPositionOnUI.Value = false;
     }
 }

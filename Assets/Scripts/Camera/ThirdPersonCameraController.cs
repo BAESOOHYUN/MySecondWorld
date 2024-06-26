@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using Unity.Cinemachine;
 using UnityEngine;
+using UniRx;
+
 public class ThirdPersonCameraController : MonoBehaviour, IInputAxisOwner
 {
     // TODO : TouchEventListener, MovementController를 DI에 담아놓고 쓰기
@@ -8,39 +10,37 @@ public class ThirdPersonCameraController : MonoBehaviour, IInputAxisOwner
     [SerializeField] private CinemachineFollowZoom _followZoom;
     [SerializeField] private TouchEventListener _touchListener;
     [SerializeField] private MovementController _movementController;
-    [SerializeField] private InputAxis Zoom = InputAxis.DefaultMomentary;
-    [SerializeField] private float _postHorizontalAxis;
-    [SerializeField] private float _postVerticalAxis;
+    private float _postHorizontalAxis;
+    private float _postVerticalAxis;
     private const float _minFOV = 0.5f;
     private const float _maxFOV = 4.7f;
     public bool _isInitialClickOnUI = false;
     public bool _isSingleTouchDown = false;
-    public bool _isPriTouchDown = false;
-    public bool _isSecTouchDown = false;
 
-
-    private void LateUpdate()
-    {
-        switch (_touchListener.deviceType)
-        {
-            case DeviceType.PC:
-                {
-                    RotateCamera_PC();
-                    ScrollZoom(Zoom.Value);
-                }
-                break;
-            case DeviceType.Mobile:
-                {
-                    RotateCamera_Mobile();
-                    PinchZoom();
-                }
-                break;
-        }
-    }
-
+    private InputAxis Zoom = InputAxis.DefaultMomentary;
     public void GetInputAxes(List<IInputAxisOwner.AxisDescriptor> axes)
     {
         axes.Add(new() { DrivenAxis = () => ref Zoom, Name = nameof(Zoom), Hint = IInputAxisOwner.AxisDescriptor.Hints.Y });
+    }
+
+    private void Start()
+    {
+        Observable.EveryLateUpdate()
+            .Subscribe(_ =>
+            {
+                switch (_touchListener.deviceType)
+                {
+                    case DeviceType.PC:
+                        RotateCamera_PC();
+                        ScrollZoom(Zoom.Value);
+                        break;
+                    case DeviceType.Mobile:
+                        RotateCamera_Mobile();
+                        PinchZoom();
+                        break;
+                }
+            })
+            .AddTo(this);
     }
 
     // 첫 입력이 UI를 클릭하는 게 아닐 때에만 회전
@@ -53,7 +53,7 @@ public class ThirdPersonCameraController : MonoBehaviour, IInputAxisOwner
         {
             if (!_isSingleTouchDown)
             {
-                _isInitialClickOnUI = t.isPriPositionOnUI;
+                _isInitialClickOnUI = t.isPriPositionOnUI.Value;
                 _isSingleTouchDown = true;
             }
 
@@ -86,33 +86,33 @@ public class ThirdPersonCameraController : MonoBehaviour, IInputAxisOwner
 
             return;
         }
-        else if (t.PriContact.Value > 0 && t.isPriStartPositionOnUI 
-            && t.SecContact.Value > 0 && t.isSecStartPositionOnUI)
+        else if (t.PriContact.Value > 0 && t.isPriStartPositionOnUI.Value
+            && t.SecContact.Value > 0 && t.isSecStartPositionOnUI.Value)
         {
             //Debug.Log($"[0]번째, [1]번째 손가락 UI위에서 시작. 회전 무시");
             return;
         }
 
-        if (t.PriContact.Value > 0 && !t.isPriStartPositionOnUI && (t.SecContact.Value == 0 || (t.SecContact.Value > 0 && t.isSecStartPositionOnUI)))
+        if (t.PriContact.Value > 0 && !t.isPriStartPositionOnUI.Value && (t.SecContact.Value == 0 || (t.SecContact.Value > 0 && t.isSecStartPositionOnUI.Value)))
         {
             //Debug.Log($"[0]번째 터치가 UI 밖에서 시작, [0]번째 손가락으로 회전");
             o.HorizontalAxis.Value = t.PriDeltaX.Value + _postHorizontalAxis;
             o.VerticalAxis.Value = Mathf.Clamp(-t.PriDeltaY.Value + _postVerticalAxis, -10, 45);
         }
-        else if (t.PriContact.Value > 0 && t.isPriStartPositionOnUI && t.SecContact.Value == 0)
+        else if (t.PriContact.Value > 0 && t.isPriStartPositionOnUI.Value && t.SecContact.Value == 0)
         {
             //Debug.Log($"[0]번째 터치가 UI 위에서 시작, [0]번째 손가락 회전 무시, [1]번째 손가락 뗌");
             _postHorizontalAxis = o.HorizontalAxis.Value;
             _postVerticalAxis = o.VerticalAxis.Value;
         }
 
-        if (t.SecContact.Value > 0 && !t.isSecStartPositionOnUI && (t.PriContact.Value == 0 || (t.PriContact.Value > 0 && t.isPriStartPositionOnUI)))
+        if (t.SecContact.Value > 0 && !t.isSecStartPositionOnUI.Value && (t.PriContact.Value == 0 || (t.PriContact.Value > 0 && t.isPriStartPositionOnUI.Value)))
         {
             //Debug.Log($"[1]번째 터치가 UI 밖에서 시작, [1]번째 손가락으로 회전");
             o.HorizontalAxis.Value = t.SecDeltaX.Value + _postHorizontalAxis;
             o.VerticalAxis.Value = Mathf.Clamp(-t.SecDeltaY.Value + _postVerticalAxis, -10, 45);
         }
-        else if (t.SecContact.Value > 0 && t.isSecStartPositionOnUI && t.PriContact.Value == 0)
+        else if (t.SecContact.Value > 0 && t.isSecStartPositionOnUI.Value && t.PriContact.Value == 0)
         {
             //Debug.Log($"[1]번째 터치가 UI 위에서 시작, [1]번째 손가락 회전 무시, [0]번째 손가락 뗌");
             _postHorizontalAxis = o.HorizontalAxis.Value;
@@ -122,7 +122,7 @@ public class ThirdPersonCameraController : MonoBehaviour, IInputAxisOwner
 
     private void ScrollZoom(float zoomValue)
     {
-        if (!_touchListener.isPriPositionOnUI)
+        if (!_touchListener.isPriPositionOnUI.Value)
         {
             var preFOV = _followZoom.Width - zoomValue * 0.5f;
             _followZoom.Width = Mathf.Clamp(preFOV, _minFOV, _maxFOV);
@@ -135,7 +135,7 @@ public class ThirdPersonCameraController : MonoBehaviour, IInputAxisOwner
 
         // 멀티 터치 && UI을 건드리지 않고 있을 때만 줌~
        if (t.PriContact.Value > 0 && t.SecContact.Value > 0
-            && !t.isPriStartPositionOnUI && !t.isSecStartPositionOnUI)
+            && !t.isPriStartPositionOnUI.Value && !t.isSecStartPositionOnUI.Value)
         {
             //Debug.Log("줌~~");
             var priPosition = new Vector2(t.PriPositionX.Value, t.PriPositionY.Value);
@@ -153,7 +153,7 @@ public class ThirdPersonCameraController : MonoBehaviour, IInputAxisOwner
             //현재 프레임에서의 터치 위치 거리 값
             float currentPositionDistance = (priPosition - secPosition).magnitude;
 
-            if (t.isPriPositionOnUI || t.isSecPositionOnUI)
+            if (t.isPriPositionOnUI.Value || t.isSecPositionOnUI.Value)
                 return;
 
             var multiTouchDelta = previousPositionDistance - currentPositionDistance;
