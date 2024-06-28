@@ -18,7 +18,7 @@ public class MovementController : MonoBehaviour, IInputAxisOwner
     private Transform _cameraTransform;
     private Vector3 _moveDir; // 플레이어 방향
     private Vector3 _targetPosition; // 목표 방향
-    private Vector3 _playerVelocity; // 속도
+    private float _verticalVelocity; // 수직 속도
     private float _verticalSpeed; // 수직 속력
     private float _gravity = -9.81f; // 중력
     private bool _isInitialClickOnUI = false;
@@ -39,11 +39,11 @@ public class MovementController : MonoBehaviour, IInputAxisOwner
         axes.Add(new() { DrivenAxis = () => ref Attack, Name = nameof(Attack) });
     }
 
-    private void OnDrawGizmos()
-    {
-        Gizmos.color = Color.red;
-        Gizmos.DrawSphere(_targetPosition, 0.5f);
-    }
+    //private void OnDrawGizmos()
+    //{
+    //    Gizmos.color = Color.red;
+    //    Gizmos.DrawSphere(_targetPosition, 0.2f);
+    //}
 
     public void OnEnable()
     {
@@ -55,38 +55,43 @@ public class MovementController : MonoBehaviour, IInputAxisOwner
     {
         // TODO : 마비노기처럼 PC에서 조이스틱과 마우스 이동 둘 다 되게 하려면?
         // TODO : 마우스로 드래그해서 지면을 클릭했을때 버벅거리는 현상
-        Observable.EveryFixedUpdate()
-            .Where(_ => _touchListener.deviceType == DeviceType.PC && _touchListener.controllerType == ControllerType.Mouse)
-            .Subscribe(_ => CheckMouseStartPosition())
-            .AddTo(this);
 
-        Observable.EveryFixedUpdate()
-            .Where(_ => (_touchListener.deviceType == DeviceType.PC && _touchListener.controllerType == ControllerType.KeyBoard) ||
-                        (_touchListener.deviceType == DeviceType.Mobile && _touchListener.controllerType == ControllerType.Joystick))
-            .Subscribe(_ => JoyStickMove())
-            .AddTo(this);
+        if (_touchListener.deviceType == DeviceType.PC && _touchListener.controllerType == ControllerType.Mouse)
+            CheckMouseStartPosition();
+        else if ((_touchListener.deviceType == DeviceType.PC && _touchListener.controllerType == ControllerType.KeyBoard) ||
+                (_touchListener.deviceType == DeviceType.Mobile && _touchListener.controllerType == ControllerType.Joystick))
+            JoyStickMove();
 
-        // Grounded 상태 체크
-        Observable.EveryUpdate()
-            .Select(_ => _characterController.isGrounded) //isGrounded 값으로 교체
-            //.DistinctUntilChanged() //값에 변화가 있는 순간만 통과
-            //.ThrottleFrame(5) // 곡면, 경사각을 이동하게 되면 isGrounded의 True/False가 격렬하게 변화하기 때문에 값이 5프레임간 오지 않으면 최후의 값을 보냄
-            .Subscribe(isGrounded => //isGrounded가 6프레임 이상 안정된 때에 최후의 값을 통지한다.
+        // CombineLatest를 사용하여 점프와 착지 로직 결합
+        Observable.CombineLatest(
+                Observable.EveryUpdate().Select(_ => _characterController.isGrounded),
+                Observable.EveryUpdate().Select(_ => Jump.Value > 0)
+            )
+            .Subscribe(combinedValues =>
             {
+                bool isGrounded = combinedValues[0];
+                bool isJumping = combinedValues[1];
+
                 // Update grounded status
-                _isGrounded.Value = isGrounded;
-                FallingAndLanding(isGrounded); 
+                FallingAndLanding(isGrounded);
+
+                // Jump 처리
+                if (isJumping && isGrounded)
+                {
+                    // 점프 높이에 따라 필요한 초기 속도를 계산하여 플레이어가 지정된 높이까지 도달할 수 있게 함
+                    _verticalSpeed = Mathf.Sqrt(2 * -_gravity * _jumpHeight);
+                    _verticalVelocity = _verticalSpeed;
+                }
             })
             .AddTo(this);
 
-        // Jump 버튼 입력 처리
+        // 캐릭터 이동 처리
         Observable.EveryUpdate()
-            .Where(_ => Jump.Value > 0 && _isGrounded.Value) //_isGrounded.Value 체크 안해주면 무한점프 가능
             .Subscribe(_ =>
             {
-                // 점프 높이에 따라 필요한 초기 속도를 계산하여 플레이어가 지정된 높이까지 도달할 수 있게 함
-                _verticalSpeed = Mathf.Sqrt(2 * -_gravity * _jumpHeight);
-                _playerVelocity.y = _verticalSpeed;
+                Vector3 move = _moveDir * _moveSpeed * Time.deltaTime;
+                move.y = _verticalVelocity * Time.deltaTime;
+                _characterController.Move(move);
             })
             .AddTo(this);
 
@@ -99,37 +104,47 @@ public class MovementController : MonoBehaviour, IInputAxisOwner
 
         if (isGrounded) //캐릭터가 지면에 있을 때 실행
         {
-            _playerVelocity.y = _verticalSpeed += Physics.gravity.y * Time.deltaTime;
+            _verticalVelocity = _verticalSpeed += Physics.gravity.y * Time.deltaTime;
         }
         else if (isFalling) //캐릭터가 낙하 중일 때 실행
         {
             float previousYVelocity = _verticalSpeed;
             _verticalSpeed = _verticalSpeed + (_gravity * falMultiplier * Time.deltaTime);
-            _playerVelocity.y = Mathf.Max((previousYVelocity + _verticalSpeed) * 0.5f, -20.0f);
+            _verticalVelocity = Mathf.Max((previousYVelocity + _verticalSpeed) * 0.5f, -20.0f);
         }
         else // Landing (캐릭터가 상승 중일 때 실행)
         {
             float previousYVelocity = _verticalSpeed;
             _verticalSpeed = _verticalSpeed + (_gravity * Time.deltaTime);
-            _playerVelocity.y = (previousYVelocity + _verticalSpeed) * 0.5f;
+            _verticalVelocity = (previousYVelocity + _verticalSpeed) * 0.5f;
         }
-
-        // 캐릭터 수직 이동
-        _characterController.Move(_playerVelocity * Time.deltaTime);
     }
 
-
+ 
     private void JoyStickMove()
     {
-        _moveDir = new Vector3(MoveX.Value, 0, MoveY.Value);
+        // MoveX와 MoveY의 변화 감지 및 _moveDir 업데이트
+        Observable.EveryUpdate()
+            .Select(_=> new Vector3(MoveX.Value, 0, MoveY.Value))
+            .DistinctUntilChanged() // 값이 변할 때만 통과
+            .Subscribe(dir =>
+            {
+                _moveDir = dir;
 
-        if (_moveDir != Vector3.zero) //조이스틱을 움직였음
-        {
-            _moveDir = _cameraTransform.TransformDirection(_moveDir);
-            _moveDir.y = 0;
-            _characterController.Move(_moveDir * _moveSpeed * Time.deltaTime);
-            transform.forward = _moveDir; // 안해주면 조이스틱 놨을때 정방향 보면서 돌아감
-        }
+                // 입력이 없는 경우 _moveDir를 리셋
+                if (_moveDir == Vector3.zero)
+                {
+                    _moveDir = Vector3.zero;
+                }
+                else if (_moveDir != Vector3.zero)
+                {
+                    _moveDir = _cameraTransform.TransformDirection(_moveDir);
+                    _moveDir.y = 0;
+                    transform.forward = _moveDir; // 캐릭터가 이동 방향을 바라보도록 설정
+                }
+
+            })
+            .AddTo(this);
     }
 
     // 첫 입력이 UI를 클릭하는 게 아닐 때에만 이동
