@@ -167,16 +167,6 @@ MonoBehaviour:
   _followZoom: {fileID: 1235529343}
   _touchListener: {fileID: 1507210986}
   _movementController: {fileID: 540730252041627799}
-  Zoom:
-    Value: 0
-    Center: 0
-    Range: {x: -1, y: 1}
-    Wrap: 0
-    Recentering:
-      Enabled: 0
-      Wait: 0
-      Time: 0
-    Restrictions: 6
   _isInitialClickOnUI: 0
   _isSingleTouchDown: 0
 --- !u!114 &238792635
@@ -1903,12 +1893,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 223e1cd3ed5ef7448933e6bc59980b53, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  deviceType: 1
-  controllerType: 0
-  isPriStartPositionOnUI: 0
-  isSecStartPositionOnUI: 0
-  isPriPositionOnUI: 0
-  isSecPositionOnUI: 0
+  deviceType: 0
+  controllerType: 2
+  isPriStartPositionOnUI:
+    value: 0
+  isSecStartPositionOnUI:
+    value: 0
+  isPriPositionOnUI:
+    value: 0
+  isSecPositionOnUI:
+    value: 0
   PriContact:
     Value: 0
     Center: 0
@@ -2494,8 +2488,8 @@ CharacterController:
   m_Radius: 0.2
   m_SlopeLimit: 45
   m_StepOffset: 0.3
-  m_SkinWidth: 0.0001
-  m_MinMoveDistance: 0.001
+  m_SkinWidth: 0.02
+  m_MinMoveDistance: 0
   m_Center: {x: 0, y: 0.9, z: 0}
 --- !u!114 &540730252041627799
 MonoBehaviour:
@@ -2512,48 +2506,9 @@ MonoBehaviour:
   _touchListener: {fileID: 1507210986}
   _characterController: {fileID: 540730252041627796}
   _moveSpeed: 3
-  _jumpSpeed: 3
-  _jumpHeight: 1
-  MoveX:
-    Value: 0
-    Center: 0
-    Range: {x: -1, y: 1}
-    Wrap: 0
-    Recentering:
-      Enabled: 0
-      Wait: 0
-      Time: 0
-    Restrictions: 6
-  MoveY:
-    Value: 0
-    Center: 0
-    Range: {x: -1, y: 1}
-    Wrap: 0
-    Recentering:
-      Enabled: 0
-      Wait: 0
-      Time: 0
-    Restrictions: 6
-  Jump:
-    Value: 0
-    Center: 0
-    Range: {x: -1, y: 1}
-    Wrap: 0
-    Recentering:
-      Enabled: 0
-      Wait: 0
-      Time: 0
-    Restrictions: 6
-  Attack:
-    Value: 0
-    Center: 0
-    Range: {x: -1, y: 1}
-    Wrap: 0
-    Recentering:
-      Enabled: 0
-      Wait: 0
-      Time: 0
-    Restrictions: 6
+  _jumpHeight: 2
+  _isGrounded:
+    value: 1
 --- !u!4 &540730252041627801 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7647977613998776572, guid: 5ca390a4c04b52148a2d5b7a3cc65196,
