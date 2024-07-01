@@ -1,10 +1,9 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Cinemachine;
 using UnityEngine;
 using UniRx;
-using UniRx.Triggers;
-using System;
 
 [RequireComponent(typeof(CharacterController))]
 public class MovementController : MonoBehaviour, IInputAxisOwner
@@ -25,8 +24,6 @@ public class MovementController : MonoBehaviour, IInputAxisOwner
     private bool _isMouseDown = false;
     private IDisposable _mouseMoveCo;
 
-    [SerializeField] private BoolReactiveProperty _isGrounded = new BoolReactiveProperty(true);
-
     private InputAxis MoveX = InputAxis.DefaultMomentary;
     private InputAxis MoveY = InputAxis.DefaultMomentary;
     private InputAxis Jump = InputAxis.DefaultMomentary;
@@ -39,11 +36,11 @@ public class MovementController : MonoBehaviour, IInputAxisOwner
         axes.Add(new() { DrivenAxis = () => ref Attack, Name = nameof(Attack) });
     }
 
-    //private void OnDrawGizmos()
-    //{
-    //    Gizmos.color = Color.red;
-    //    Gizmos.DrawSphere(_targetPosition, 0.2f);
-    //}
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = Color.red;
+        Gizmos.DrawSphere(_targetPosition, 0.2f);
+    }
 
     public void OnEnable()
     {
@@ -54,10 +51,10 @@ public class MovementController : MonoBehaviour, IInputAxisOwner
     {
         // TODO : 마비노기처럼 PC에서 조이스틱과 마우스 이동 둘 다 되게 하려면?
         // TODO : 점프중 묘하게 카메라 느림.
-        //if (_touchListener.deviceType == DeviceType.PC && _touchListener.controllerType == ControllerType.Mouse)
+        if (_touchListener.deviceType == DeviceType.PC && _touchListener.controllerType == ControllerType.Mouse)
             MouseMove();
-        //else if ((_touchListener.deviceType == DeviceType.PC && _touchListener.controllerType == ControllerType.KeyBoard) ||
-                //(_touchListener.deviceType == DeviceType.Mobile && _touchListener.controllerType == ControllerType.Joystick))
+        else if ((_touchListener.deviceType == DeviceType.PC && _touchListener.controllerType == ControllerType.KeyBoard) ||
+        (_touchListener.deviceType == DeviceType.Mobile && _touchListener.controllerType == ControllerType.Joystick))
             JoyStickMove();
 
         Observable.EveryUpdate()
