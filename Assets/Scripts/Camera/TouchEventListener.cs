@@ -70,6 +70,7 @@ public class TouchEventListener : MonoBehaviour, IInputAxisOwner
     public InputAxis SecStartPositionX = DefaultPositionX;
     public InputAxis SecStartPositionY = DefaultPositionY;
 
+
     public void GetInputAxes(List<IInputAxisOwner.AxisDescriptor> axes)
     {
         axes.Add(new() { DrivenAxis = () => ref PriContact, Name = nameof(PriContact) });
@@ -88,7 +89,6 @@ public class TouchEventListener : MonoBehaviour, IInputAxisOwner
         axes.Add(new() { DrivenAxis = () => ref SecStartPositionY, Name = nameof(SecStartPositionY), Hint = IInputAxisOwner.AxisDescriptor.Hints.Y });
     }
 
-    // TODO : RX로 바꾸기
     private void Update()
     {
         // *터치 시간 주의!
