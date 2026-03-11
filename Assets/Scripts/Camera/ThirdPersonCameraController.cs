@@ -1,41 +1,42 @@
-using System.Collections.Generic;
-using Unity.Cinemachine;
 using UnityEngine;
-public class ThirdPersonCameraController : MonoBehaviour, IInputAxisOwner
-{
-    // TODO : TouchEventListener, MovementController를 DI에 담아놓고 쓰기
-    [SerializeField] private CinemachineOrbitalFollow _orbitFollow; // 3인칭 일 때
-    [SerializeField] private CinemachineFollowZoom _followZoom;
-    [SerializeField] private TouchEventListener _touchListener;
-    [SerializeField] private MovementController _movementController;
-    [SerializeField] private InputAxis Zoom = InputAxis.DefaultMomentary;
-    [SerializeField] private float _postHorizontalAxis;
-    [SerializeField] private float _postVerticalAxis;
-    private const float _minFOV = 0.5f;
-    private const float _maxFOV = 4.7f;
-    public bool _isInitialClickOnUI = false;
-    public bool _isSingleTouchDown = false;
-    public bool _isPriTouchDown = false;
-    public bool _isSecTouchDown = false;
+using Unity.Cinemachine;
+using System.Collections.Generic;
 
+public class SmoothCameraController : MonoBehaviour
+{
+    [Header("Cinemachine Components")]
+    [SerializeField] private CinemachineOrbitalFollow _orbitFollow;
+    [SerializeField] private CinemachineFollowZoom _followZoom;
+    [SerializeField] private TouchEventListener _touchListener; // TouchEventListener 할당
+
+    [Header("Rotation Settings")]
+    [SerializeField] private float _rotSpeed = 0.2f;
+    [SerializeField] private float _verticalMin = -10f, _verticalMax = 45f;
+
+    [Header("Zoom Settings")] 
+    [SerializeField] private InputAxis Zoom = InputAxis.DefaultMomentary;
+    [SerializeField] private float _zoomSpeed = 1.5f;
+    [SerializeField] private float _zoomSensitivity = 0.1f;
+    [SerializeField] private float _zoomSmooth = 10f;
+    [SerializeField] private float _fovMin = 0.5f, _fovMax = 4.7f;
+
+    private float _targetZoom;
+    private int _lastTouchCount;
+
+    private void Start()
+    {
+        _targetZoom = _followZoom.Width;
+    }
 
     private void LateUpdate()
     {
-        switch (_touchListener.deviceType)
-        {
-            case DeviceType.PC:
-                {
-                    RotateCamera_PC();
-                    ScrollZoom(Zoom.Value);
-                }
-                break;
-            case DeviceType.Mobile:
-                {
-                    RotateCamera_Mobile();
-                    PinchZoom();
-                }
-                break;
-        }
+        if (_touchListener.deviceType == DeviceType.PC) 
+            HandlePC();
+        else 
+            HandleMobile();
+
+        // [공통] 부드러운 줌 보간 (CinemachineFollowZoom 직접 제어)
+        _followZoom.Width = Mathf.Lerp(_followZoom.Width, _targetZoom, Time.deltaTime * _zoomSmooth);
     }
 
     public void GetInputAxes(List<IInputAxisOwner.AxisDescriptor> axes)
@@ -43,121 +44,115 @@ public class ThirdPersonCameraController : MonoBehaviour, IInputAxisOwner
         axes.Add(new() { DrivenAxis = () => ref Zoom, Name = nameof(Zoom), Hint = IInputAxisOwner.AxisDescriptor.Hints.Y });
     }
 
-    // 첫 입력이 UI를 클릭하는 게 아닐 때에만 회전
-    private void RotateCamera_PC()
+    #region PC Logic
+    private void HandlePC()
     {
-        var t = _touchListener;
-        var o = _orbitFollow;
-
-        if (t.SecContact.Value > 0) //우클릭을 의미
+        // 회전 (우클릭 유지 시)
+        if (_touchListener.SecContact.Value > 0 && !_touchListener.isPriPositionOnUI) // PC에서 보통 Pri는 마우스 포인터 위치
         {
-            if (!_isSingleTouchDown)
-            {
-                _isInitialClickOnUI = t.isPriPositionOnUI;
-                _isSingleTouchDown = true;
-            }
-
-            if (!_isInitialClickOnUI)
-            {
-                o.HorizontalAxis.Value = t.SecDeltaX.Value + _postHorizontalAxis;
-                o.VerticalAxis.Value = Mathf.Clamp(-t.SecDeltaY.Value + _postVerticalAxis, -10, 45);
-            }
+            ApplyRotation(_touchListener.SecDeltaX, _touchListener.SecDeltaY);
         }
-        else
+
+        // 줌 (InputAxis Zoom 사용)
+        if (Mathf.Abs(Zoom.Value) > 0.001f && !_touchListener.isPriPositionOnUI)
         {
-            _isSingleTouchDown = false;
-            _postHorizontalAxis = o.HorizontalAxis.Value;
-            _postVerticalAxis = o.VerticalAxis.Value;
-            t.SecDeltaX.Value = 0;
-            t.SecDeltaY.Value = 0;
+            // Zoom.Value가 양수면 줌인, 음수면 줌아웃 (인스펙터 설정에 따라 다를 수 있음)
+            // 휠 입력 속도에 맞춰 적절히 가중치(예: 10f)를 곱해 타겟을 갱신.
+            UpdateTargetZoom(Zoom.Value * 10f);
         }
     }
+    #endregion
 
-    private void RotateCamera_Mobile()
+
+    #region Mobile Logic (요청하신 표 조건 100% 적용)
+    private void HandleMobile()
     {
-        var t = _touchListener;
-        var o = _orbitFollow;
+        int touchCount = (_touchListener.PriContact.Value > 0 ? 1 : 0) + (_touchListener.SecContact.Value > 0 ? 1 : 0);
 
-        if (t.PriContact.Value == 0 && t.SecContact.Value == 0)
+        // [방어] 손가락 개수 변할 때 튀는 델타값 무시
+        if (touchCount != _lastTouchCount)
         {
-            //Debug.Log("손 떨어짐~~~");
-            _postHorizontalAxis = o.HorizontalAxis.Value;
-            _postVerticalAxis = o.VerticalAxis.Value;
-
-            return;
-        }
-        else if (t.PriContact.Value > 0 && t.isPriStartPositionOnUI 
-            && t.SecContact.Value > 0 && t.isSecStartPositionOnUI)
-        {
-            //Debug.Log($"[0]번째, [1]번째 손가락 UI위에서 시작. 회전 무시");
+            _lastTouchCount = touchCount;
             return;
         }
 
-        if (t.PriContact.Value > 0 && !t.isPriStartPositionOnUI && (t.SecContact.Value == 0 || (t.SecContact.Value > 0 && t.isSecStartPositionOnUI)))
+        if (touchCount == 1)
         {
-            //Debug.Log($"[0]번째 터치가 UI 밖에서 시작, [0]번째 손가락으로 회전");
-            o.HorizontalAxis.Value = t.PriDeltaX.Value + _postHorizontalAxis;
-            o.VerticalAxis.Value = Mathf.Clamp(-t.PriDeltaY.Value + _postVerticalAxis, -10, 45);
+            // Pri가 UI 밖에서 시작했으면 회전
+            if (_touchListener.PriContact.Value > 0 && !_touchListener.isPriStartPositionOnUI)
+                ApplyRotation(_touchListener.PriDeltaX, _touchListener.PriDeltaY);
+            // 혹은 Sec만 남았는데 UI 밖에서 시작했으면 회전
+            else if (_touchListener.SecContact.Value > 0 && !_touchListener.isSecStartPositionOnUI)
+                ApplyRotation(_touchListener.SecDeltaX, _touchListener.SecDeltaY);
         }
-        else if (t.PriContact.Value > 0 && t.isPriStartPositionOnUI && t.SecContact.Value == 0)
+        else if (touchCount == 2)
         {
-            //Debug.Log($"[0]번째 터치가 UI 위에서 시작, [0]번째 손가락 회전 무시, [1]번째 손가락 뗌");
-            _postHorizontalAxis = o.HorizontalAxis.Value;
-            _postVerticalAxis = o.VerticalAxis.Value;
-        }
+            bool priField = !_touchListener.isPriStartPositionOnUI;
+            bool secField = !_touchListener.isSecStartPositionOnUI;
 
-        if (t.SecContact.Value > 0 && !t.isSecStartPositionOnUI && (t.PriContact.Value == 0 || (t.PriContact.Value > 0 && t.isPriStartPositionOnUI)))
-        {
-            //Debug.Log($"[1]번째 터치가 UI 밖에서 시작, [1]번째 손가락으로 회전");
-            o.HorizontalAxis.Value = t.SecDeltaX.Value + _postHorizontalAxis;
-            o.VerticalAxis.Value = Mathf.Clamp(-t.SecDeltaY.Value + _postVerticalAxis, -10, 45);
-        }
-        else if (t.SecContact.Value > 0 && t.isSecStartPositionOnUI && t.PriContact.Value == 0)
-        {
-            //Debug.Log($"[1]번째 터치가 UI 위에서 시작, [1]번째 손가락 회전 무시, [0]번째 손가락 뗌");
-            _postHorizontalAxis = o.HorizontalAxis.Value;
-            _postVerticalAxis = o.VerticalAxis.Value;
+            if (priField && secField) // 둘 다 UI 밖 -> 줌
+                ProcessPinchZoom();
+            else if (priField && !secField) // Pri만 UI 밖 -> Pri로만 회전 (Sec 무시)
+                ApplyRotation(_touchListener.PriDeltaX, _touchListener.PriDeltaY);
+            else if (!priField && secField) // Sec만 UI 밖 -> Sec으로만 회전 (Pri 무시)
+                ApplyRotation(_touchListener.SecDeltaX, _touchListener.SecDeltaY);
+            // 둘 다 UI 안이면 아무것도 안 함
         }
     }
+    #endregion
 
-    private void ScrollZoom(float zoomValue)
+    #region core Methods
+    private void ApplyRotation(InputAxis deltaXAxis, InputAxis deltaYAxis)
     {
-        if (!_touchListener.isPriPositionOnUI)
-        {
-            var preFOV = _followZoom.Width - zoomValue * 0.5f;
-            _followZoom.Width = Mathf.Clamp(preFOV, _minFOV, _maxFOV);
-        }
+
+        float dx = deltaXAxis.Value;
+        float dy = deltaYAxis.Value;
+
+        if (Mathf.Abs(dx) < 0.01f && Mathf.Abs(dy) < 0.01f) 
+            return;
+
+        _orbitFollow.HorizontalAxis.Value += dx * _rotSpeed;
+
+        float nextV = _orbitFollow.VerticalAxis.Value - dy * _rotSpeed;
+        _orbitFollow.VerticalAxis.Value = Mathf.Clamp(nextV, _verticalMin, _verticalMax);
+
+        // 이번 프레임의 델타를 사용했으므로 0으로 초기화 (회전 폭주 방지)
+        // 인자로 받은 Axis의 Value를 직접 0으로 밀어버림.
+        deltaXAxis.Value = 0;
+        deltaYAxis.Value = 0;
     }
 
-    private void PinchZoom()
+    private void ProcessPinchZoom()
     {
         var t = _touchListener;
 
-        // 멀티 터치 && UI을 건드리지 않고 있을 때만 줌~
-       if (t.PriContact.Value > 0 && t.SecContact.Value > 0
-            && !t.isPriStartPositionOnUI && !t.isSecStartPositionOnUI)
-        {
-            //Debug.Log("줌~~");
-            var priPosition = new Vector2(t.PriPositionX.Value, t.PriPositionY.Value);
-            var secPosition = new Vector2(t.SecPositionX.Value, t.SecPositionY.Value);
-            var priDelta = new Vector2(t.PriDeltaX.Value, t.PriDeltaY.Value) * 0.1f;
-            var secDelta = new Vector2(t.SecDeltaX.Value, t.SecDeltaY.Value) * 0.1f;
+        // 현재 프레임의 거리 계산 (Current Distance)
+        float currDX = t.PriPositionX.Value - t.SecPositionX.Value;
+        float currDY = t.PriPositionY.Value - t.SecPositionY.Value;
+        // x*x + y*y 방식 (Mathf.Pow보다 빠름)
+        float currDist = Mathf.Sqrt(currDX * currDX + currDY * currDY);
 
-            //직전 프레임의 터치 위치를 구하기 위해 "현재 위치 - 위치 변화량"을 계산
-            Vector2 priPreviousPosition = priPosition - priDelta;
-            Vector2 secPreviousPosition = secPosition - secDelta;
+        // 이전 프레임의 위치 역산 및 거리 계산 (Previous Distance)
+        float prevPriX = t.PriPositionX.Value - t.PriDeltaX.Value;
+        float prevPriY = t.PriPositionY.Value - t.PriDeltaY.Value;
+        float prevSecX = t.SecPositionX.Value - t.SecDeltaX.Value;
+        float prevSecY = t.SecPositionY.Value - t.SecDeltaY.Value;
 
-            //직전 프레임에서의 터치 위치 거리 값
-            float previousPositionDistance = (priPreviousPosition - secPreviousPosition).magnitude;
+        float prevDX = prevPriX - prevSecX;
+        float prevDY = prevPriY - prevSecY;
+        float prevDist = Mathf.Sqrt(prevDX * prevDX + prevDY * prevDY);
 
-            //현재 프레임에서의 터치 위치 거리 값
-            float currentPositionDistance = (priPosition - secPosition).magnitude;
+        // 거리 차이 계산 및 타겟 줌 업데이트
+        float delta = prevDist - currDist;
 
-            if (t.isPriPositionOnUI || t.isSecPositionOnUI)
-                return;
-
-            var multiTouchDelta = previousPositionDistance - currentPositionDistance;
-            ScrollZoom(multiTouchDelta);
-        }
+        UpdateTargetZoom(delta);
     }
+
+
+    private void UpdateTargetZoom(float delta)
+    {
+        float zoomAmount = delta * _zoomSensitivity * _zoomSpeed;
+        _targetZoom = Mathf.Clamp(_targetZoom + zoomAmount, _fovMin, _fovMax);
+    }
+    #endregion
 }

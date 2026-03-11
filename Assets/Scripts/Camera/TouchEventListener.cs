@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Unity.Cinemachine;
 using UnityEngine;
@@ -22,6 +23,10 @@ public class TouchEventListener : MonoBehaviour, IInputAxisOwner
     public bool isSecStartPositionOnUI;
     public bool isPriPositionOnUI;
     public bool isSecPositionOnUI;
+
+    public bool wasPriDown;
+    public bool wasSecDown;
+
     static InputAxis DefaultPan => new()
     {
         Value = 0,
@@ -91,46 +96,60 @@ public class TouchEventListener : MonoBehaviour, IInputAxisOwner
 
     private void Update()
     {
-        // *터치 시간 주의!
-        // 터치 후 바로 움직이지 않고 Stationary 상태로 잠깐 있으면 Position 값이 고정된다.
-        // 이후 터치를 뗐다가 다시 터치해도 고정된 값이 변하지 않음.
-        // 터치 후 바로 움직여도 값이 고정되는 경우도 있어서 헷갈림;;
-        var primaryPosition = new Vector2(PriPositionX.Value, PriPositionY.Value);
-        isPriPositionOnUI = OnUIChecker.IsPointerOverUIObject(primaryPosition);
-
-        var secondaryPosition = new Vector2(SecPositionX.Value, SecPositionY.Value);
-        isSecPositionOnUI = OnUIChecker.IsPointerOverUIObject(secondaryPosition);
-
-        var primaryStartPosition = new Vector2(PriStartPositionX.Value, PriStartPositionY.Value);
-        isPriStartPositionOnUI = OnUIChecker.IsPointerOverUIObject(primaryStartPosition);
-
-        var secondaryStartPosition = new Vector2(SecStartPositionX.Value, SecStartPositionY.Value);
-        isSecStartPositionOnUI = OnUIChecker.IsPointerOverUIObject(secondaryStartPosition);
-
-        if (PriContact.Value == 0)
+        // 첫 번째 터치가 시작된 순간에만 StartPosition UI 체크 (최적화)
+        if (PriContact.Value > 0)
         {
-            PriContact = InputAxis.DefaultMomentary;
-            PriDeltaX = DefaultPan;
-            PriDeltaY = DefaultTilt;
-            PriStartPositionX = DefaultPositionX;
-            PriStartPositionY = DefaultPositionY;
-            PriPositionX = DefaultPositionX;
-            PriPositionY = DefaultPositionY;
-            isPriPositionOnUI = false;
-            isPriStartPositionOnUI = false;
+            if (!wasPriDown)
+            {
+                var startPos = new Vector2(PriStartPositionX.Value, PriStartPositionY.Value);
+                isPriStartPositionOnUI = OnUIChecker.IsPointerOverUIObject(startPos);
+                wasPriDown = true;
+            }
+
+            var currPos = new Vector2(PriPositionX.Value, PriPositionY.Value);
+            isPriPositionOnUI = OnUIChecker.IsPointerOverUIObject(currPos);
+        }
+        else //(PriContact.Value == 0)
+        {
+            ResetPri();
         }
 
-        if (SecContact.Value == 0)
+        // 두 번째 터치가 시작된 순간에만 StartPosition UI 체크 (최적화)
+        if (SecContact.Value > 0)
         {
-            SecContact = InputAxis.DefaultMomentary;
-            SecDeltaX = DefaultPan;
-            SecDeltaY = DefaultTilt;
-            SecStartPositionX = DefaultPositionX;
-            SecStartPositionY = DefaultPositionY;
-            SecPositionX = DefaultPositionX;
-            SecPositionY = DefaultPositionY;
-            isSecPositionOnUI = false;
-            isSecStartPositionOnUI = false;
+            if (!wasSecDown)
+            {
+                var startPos = new Vector2(SecStartPositionX.Value, SecStartPositionY.Value);
+                isSecStartPositionOnUI = OnUIChecker.IsPointerOverUIObject(startPos);
+                wasSecDown = true;
+            }
+
+            var currPos = new Vector2(SecPositionX.Value, SecPositionY.Value);
+            isSecPositionOnUI = OnUIChecker.IsPointerOverUIObject(currPos);
         }
+        else //(SecContact.Value == 0)
+        {
+            ResetSec();
+        }
+
     }
+
+    private void ResetPri()
+    {
+        PriDeltaX.Value = 0;
+        PriDeltaY.Value = 0;
+        isPriPositionOnUI = false;
+        isPriStartPositionOnUI = false;
+        wasPriDown = false;
+    }
+
+    private void ResetSec()
+    {
+        SecDeltaX.Value = 0;
+        SecDeltaY.Value = 0;
+        isSecPositionOnUI = false;
+        isSecStartPositionOnUI = false;
+        wasSecDown = false;
+    }
+
 }

@@ -167,7 +167,9 @@ MonoBehaviour:
   _orbitFollow: {fileID: 1235529341}
   _followZoom: {fileID: 1235529343}
   _touchListener: {fileID: 1507210986}
-  _movementController: {fileID: 540730252041627799}
+  _rotSpeed: 0.1
+  _verticalMin: -10
+  _verticalMax: 45
   Zoom:
     Value: 0
     Center: 0
@@ -178,12 +180,11 @@ MonoBehaviour:
       Wait: 0
       Time: 0
     Restrictions: 6
-  _postHorizontalAxis: 0
-  _postVerticalAxis: 0
-  _isInitialClickOnUI: 0
-  _isSingleTouchDown: 0
-  _isPriTouchDown: 0
-  _isSecTouchDown: 0
+  _zoomSpeed: 1.5
+  _zoomSensitivity: 0.1
+  _zoomSmooth: 10
+  _fovMin: 0.5
+  _fovMax: 4.7
 --- !u!114 &238792635
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -200,19 +201,7 @@ MonoBehaviour:
   SuppressInputWhileBlending: 1
   IgnoreTimeScale: 0
   m_ControllerManager:
-    Controllers:
-    - Name: Zoom
-      Owner: {fileID: 238792634}
-      Enabled: 1
-      Input:
-        InputAction: {fileID: -6778753134052926460, guid: 1ef879bb94aacac45a5965f49648d8e3,
-          type: 3}
-        Gain: 1
-        CancelDeltaTime: 0
-      InputValue: 0
-      Driver:
-        AccelTime: 0
-        DecelTime: 0
+    Controllers: []
   PlayerIndex: -1
   AutoEnableInputs: 1
 --- !u!1 &330585543
@@ -376,7 +365,7 @@ MonoBehaviour:
     Enabled: 0
     DefaultMode: 2
   DefaultBlend:
-    Style: 1
+    Style: 6
     Time: 2
     CustomCurve:
       serializedVersion: 2
@@ -411,14 +400,14 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 410087039}
   m_Enabled: 1
-  serializedVersion: 11
+  serializedVersion: 12
   m_Type: 1
   m_Color: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}
   m_Intensity: 1
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
-  m_CookieSize: 10
+  m_CookieSize2D: {x: 10, y: 10}
   m_Shadows:
     m_Type: 2
     m_Resolution: -1
@@ -614,6 +603,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!33 &413057185
 MeshFilter:
@@ -757,6 +747,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!33 &741271061
 MeshFilter:
@@ -984,6 +975,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!33 &1034210533
 MeshFilter:
@@ -1095,6 +1087,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!33 &1151832450
 MeshFilter:
@@ -1117,6 +1110,7 @@ GameObject:
   - component: {fileID: 1235529341}
   - component: {fileID: 1235529342}
   - component: {fileID: 1235529343}
+  - component: {fileID: 1235529344}
   m_Layer: 0
   m_Name: ThirdPersonCamera
   m_TagString: Untagged
@@ -1196,7 +1190,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   TargetOffset: {x: 0, y: 0, z: 0}
   TrackerSettings:
-    BindingMode: 0
+    BindingMode: 1
     PositionDamping: {x: 1, y: 1, z: 1}
     AngularDampingMode: 0
     RotationDamping: {x: 1, y: 1, z: 1}
@@ -1289,6 +1283,45 @@ MonoBehaviour:
   Width: 4.74
   Damping: 0.1
   FovRange: {x: 3, y: 60}
+--- !u!114 &1235529344
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1235529336}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dbe43d662878a7c43bcd44d43c9e2094, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineDeoccluder
+  CollideAgainst:
+    serializedVersion: 2
+    m_Bits: 1
+  IgnoreTag: 
+  TransparentLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  MinimumDistanceFromTarget: 0.3
+  AvoidObstacles:
+    Enabled: 1
+    DistanceLimit: 0
+    MinimumOcclusionTime: 0
+    CameraRadius: 0.4
+    UseFollowTarget:
+      Enabled: 0
+      YOffset: 0
+    Strategy: 0
+    MaximumEffort: 4
+    SmoothingTime: 0
+    Damping: 0.4
+    DampingWhenOccluded: 0.2
+  ShotQualityEvaluation:
+    Enabled: 0
+    OptimalDistance: 10
+    NearLimit: 5
+    FarLimit: 30
+    MaxQualityBoost: 0.2
 --- !u!1 &1253171675
 GameObject:
   m_ObjectHideFlags: 0
@@ -1687,6 +1720,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!33 &1420064970
 MeshFilter:
@@ -1929,12 +1963,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 223e1cd3ed5ef7448933e6bc59980b53, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  deviceType: 0
-  controllerType: 1
+  deviceType: 1
+  controllerType: 3
   isPriStartPositionOnUI: 0
   isSecStartPositionOnUI: 0
   isPriPositionOnUI: 1
   isSecPositionOnUI: 0
+  wasPriDown: 0
+  wasSecDown: 0
   PriContact:
     Value: 0
     Center: 0

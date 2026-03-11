@@ -48,7 +48,7 @@ public class MovementController : MonoBehaviour, IInputAxisOwner
         if (_isGround && _playerVelocity.y < 0)
             _playerVelocity.y = 0f;
 
-        // TODO : 마비노기처럼 PC에서 조이스틱과 마우스 이동 둘 다 되게 하려면?
+        // 마비노기처럼 PC에서 조이스틱과 마우스 이동 둘 다 되게 만듬
         if (_touchListener.deviceType == DeviceType.PC && _touchListener.controllerType == ControllerType.Mouse)
             CheckMouseStartPosition();
         else if ((_touchListener.deviceType == DeviceType.PC && _touchListener.controllerType == ControllerType.KeyBoard)
