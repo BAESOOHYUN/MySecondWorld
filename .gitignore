@@ -43,6 +43,7 @@ Temporary Items
 /[Ll]ogs/
 /[Uu]ser[Ss]ettings/
 /[Rr]ecordings/
+/Assets/MCPForUnity/
 
 *_BackUpThisFolder_ButDontShipItWithYourGame/
 
@@ -180,3 +181,4 @@ Thumbs.db
 # *.mov
 *.wmv
 
+Assets/MCPForUnity.meta
