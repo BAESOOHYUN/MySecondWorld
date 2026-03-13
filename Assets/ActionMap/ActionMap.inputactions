@@ -77,6 +77,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": true
+                },
+                {
+                    "name": "Zoom",
+                    "type": "Value",
+                    "id": "582bd570-d155-4744-9801-ae00fb08961d",
+                    "expectedControlType": "Vector2",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
                 }
             ],
             "bindings": [
@@ -99,6 +108,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "PrimaryTouchPosition",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "3b46d0f0-0548-418f-bda8-bc1ddf660091",
+                    "path": "<Mouse>/position",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "PrimaryStartTouchPosition",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -137,12 +157,12 @@
                 },
                 {
                     "name": "",
-                    "id": "daa2dc14-c4d3-4afa-9d4a-69711af6d031",
-                    "path": "<Touchscreen>/touch0/delta",
+                    "id": "be4b2ace-73db-4e63-97ca-1a77bc49444a",
+                    "path": "<Mouse>/scroll",
                     "interactions": "",
-                    "processors": "DeltaTimeScale",
+                    "processors": "",
                     "groups": "",
-                    "action": "PrimaryTouchDelta",
+                    "action": "Zoom",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -153,7 +173,18 @@
                     "interactions": "",
                     "processors": "DeltaTimeScale,ScaleVector2(x=0.1,y=0.1)",
                     "groups": "",
-                    "action": "SecondaryTouchDelta",
+                    "action": "PrimaryTouchDelta",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "daa2dc14-c4d3-4afa-9d4a-69711af6d031",
+                    "path": "<Touchscreen>/touch0/delta",
+                    "interactions": "",
+                    "processors": "DeltaTimeScale",
+                    "groups": "",
+                    "action": "PrimaryTouchDelta",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -192,7 +223,7 @@
                 },
                 {
                     "name": "",
-                    "id": "8eabe076-bb32-4266-8972-d2a51c14f73a",
+                    "id": "8459fd77-4971-4053-a91b-1151eb7a10b5",
                     "path": "<Mouse>/rightButton",
                     "interactions": "",
                     "processors": "",
@@ -398,34 +429,6 @@
                     "processors": "",
                     "groups": "",
                     "action": "Attack",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                }
-            ]
-        },
-        {
-            "name": "Camera",
-            "id": "931e12fd-fe70-4685-9877-fd8ff482d8d0",
-            "actions": [
-                {
-                    "name": "Zoom",
-                    "type": "Value",
-                    "id": "f60336df-fb2a-4cb2-bc44-406709e3b8a0",
-                    "expectedControlType": "Vector2",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": true
-                }
-            ],
-            "bindings": [
-                {
-                    "name": "",
-                    "id": "8608d8ee-284f-4932-be88-f2a4f129bb79",
-                    "path": "<Mouse>/scroll",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Zoom",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

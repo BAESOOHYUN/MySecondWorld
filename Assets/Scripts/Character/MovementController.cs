@@ -55,7 +55,7 @@ public class MovementController : MonoBehaviour, IInputAxisOwner
                || (_touchListener.deviceType == DeviceType.Mobile && _touchListener.controllerType == ControllerType.Joystick))
             JoyStickMove();
 
-        Jumpping();
+        Jumping();
         Gravity();
     }
 
@@ -88,7 +88,7 @@ public class MovementController : MonoBehaviour, IInputAxisOwner
             if (!_isMouseDown)
             {
                 // 마우스 클릭이 시작되는 순간
-                _isInitialClickOnUI = _touchListener.isPriPositionOnUI;
+                _isInitialClickOnUI = _touchListener.isPriStartPositionOnUI;
                 _isMouseDown = true;
             }
 
@@ -147,7 +147,7 @@ public class MovementController : MonoBehaviour, IInputAxisOwner
         }
     }
 
-    private void Jumpping()
+    private void Jumping()
     {
         // TODO : 마우스 먼저 찍어서 이동 중에 점프 가능하도록 하기, 점프 중에 마우스 클릭으로 이동 금지
         // TODO : Falling & Landing
