@@ -40,19 +40,21 @@ public class TouchEventListener : MonoBehaviour, IInputAxisOwner
     public bool isPriPositionOnUI;
     public bool isSecPositionOnUI;
 
+    private Vector2 _priStartPosition;
+    private Vector2 _secStartPosition;
     private float _prevPriDeltaX;
     private float _prevPriDeltaY;
     private float _prevSecDeltaX;
     private float _prevSecDeltaY;
-    private Vector2 _priStartPosition;
-    private Vector2 _secStartPosition;
-
+    private float _prevPriPositionX;
+    private float _prevPriPositionY;
+    private float _prevSecPositionX;
+    private float _prevSecPositionY;
+    private float _pinchMinDist;
     private bool _wasPriDown;
     private bool _wasSecDown;
     private bool _isPriDragging;
     private bool _isSecDragging;
-
-    private float _pinchMinDist;
 
     #region InputAxis
     static InputAxis DefaultPan => new()
@@ -151,19 +153,18 @@ public class TouchEventListener : MonoBehaviour, IInputAxisOwner
         {
             _priStartPosition = new Vector2(PriStartPositionX.Value, PriStartPositionY.Value);
             isPriStartPositionOnUI = OnUIChecker.IsPointerOverUIObject(_priStartPosition);
-            _prevPriDeltaX = PriDeltaX.Value;
-            _prevPriDeltaY = PriDeltaY.Value;
             OnPriContactStarted?.Invoke(_priStartPosition.x, _priStartPosition.y);
-            Debug.Log($"[0]번째 터치 시작");
         }
         if (secStarted)
         {
             _secStartPosition = new Vector2(SecStartPositionX.Value, SecStartPositionY.Value);
             isSecStartPositionOnUI = OnUIChecker.IsPointerOverUIObject(_secStartPosition);
-            _prevSecDeltaX = SecDeltaX.Value;
-            _prevSecDeltaY = SecDeltaY.Value;
             OnSecContactStarted?.Invoke(_secStartPosition.x, _secStartPosition.y);
-            Debug.Log($"[1]번째 터치 시작");
+            // 핀치 이전 위치 초기화
+            _prevPriPositionX = PriPositionX.Value;
+            _prevPriPositionY = PriPositionY.Value;
+            _prevSecPositionX = SecPositionX.Value;
+            _prevSecPositionY = SecPositionY.Value;
         }
 
         // 터치 종료
@@ -172,26 +173,30 @@ public class TouchEventListener : MonoBehaviour, IInputAxisOwner
             _isPriDragging = false;
             OnPriEndDrag?.Invoke();
             ResetPri();
-            Debug.Log($"[0]번째 터치 종료");
         }
         if (secEnded)
         {
             _isSecDragging = false;
             OnSecEndDrag?.Invoke();
             ResetSec();
-            Debug.Log($"[1]번째 터치 종료");
+            _prevPriPositionX = 0;
+            _prevPriPositionY = 0;
+            _prevSecPositionX = 0;
+            _prevSecPositionY = 0;
         }
 
         _wasPriDown = priDown;
         _wasSecDown = secDown;
         #endregion
         #region 터치 무시
+        // 아무 클릭도 안함
         if (!priDown && !secDown)
             return;
 
+        //둘 다 UI 위에서 시작
         if (priDown && isPriStartPositionOnUI && secDown && isSecStartPositionOnUI)
         {
-            Debug.Log($"둘 다 UI 위에서 시작함");
+            Debug.Log($"함");
             return;
         }
         #endregion
@@ -202,39 +207,35 @@ public class TouchEventListener : MonoBehaviour, IInputAxisOwner
         // [0]번째 단독 드래그
         if (priCanRotate && !secCanRotate)
         {
-            float dx = PriDeltaX.Value - _prevPriDeltaX;
-            float dy = PriDeltaY.Value - _prevPriDeltaY;
+            float dx = Mathf.DeltaAngle(_prevPriDeltaX, PriDeltaX.Value);
+            float dy = Mathf.DeltaAngle(_prevPriDeltaY, PriDeltaY.Value);
+            _prevPriDeltaX = PriDeltaX.Value;
+            _prevPriDeltaY = PriDeltaY.Value;
 
             if (!_isPriDragging)
             {
                 _isPriDragging = true;
                 OnPriStartDrag?.Invoke(dx, dy);
-                Debug.Log($"[0]번째 단독 드래그 시작. UI 밖");
             }
             else
-            {
                 OnPriDrag?.Invoke(dx, dy);
-                Debug.Log($"[0]번째 단독 드래그 중");
-            }
         }
 
         // [1]번째 단독 드래그
         if (secCanRotate && !priCanRotate)
         {
-            float dx = SecDeltaX.Value - _prevSecDeltaX;
-            float dy = SecDeltaY.Value - _prevSecDeltaY;
+            float dx = Mathf.DeltaAngle(_prevSecDeltaX, SecDeltaX.Value);
+            float dy = Mathf.DeltaAngle(_prevSecDeltaY, SecDeltaY.Value);
+            _prevSecDeltaX = SecDeltaX.Value;
+            _prevSecDeltaY = SecDeltaY.Value;
 
             if (!_isSecDragging)
             {
                 _isSecDragging = true;
                 OnSecStartDrag?.Invoke(dx, dy);
-                Debug.Log($"[1]번째 단독 드래그 시작. UI 밖");
             }
             else
-            {
                 OnSecDrag?.Invoke(dx, dy);
-                Debug.Log($"[1]번째 단독 드래그 중");
-            }
         }
         #endregion
         #region 핀치
@@ -245,15 +246,21 @@ public class TouchEventListener : MonoBehaviour, IInputAxisOwner
             return;
 
         // 핀치 거리 계산
-        float prevDX = (PriPositionX.Value - PriDeltaX.Value) - (SecPositionX.Value - SecDeltaX.Value);
-        float prevDY = (PriPositionY.Value - PriDeltaY.Value) - (SecPositionY.Value - SecDeltaY.Value);
+        float prevDX = _prevPriPositionX - _prevSecPositionX;
+        float prevDY = _prevPriPositionY - _prevSecPositionY;
         float currDX = PriPositionX.Value - SecPositionX.Value;
         float currDY = PriPositionY.Value - SecPositionY.Value;
 
         float prevDist = Mathf.Sqrt(prevDX * prevDX + prevDY * prevDY);
         float currDist = Mathf.Sqrt(currDX * currDX + currDY * currDY);
 
-        if (currDist < _pinchMinDist) 
+
+        _prevPriPositionX = PriPositionX.Value;
+        _prevPriPositionY = PriPositionY.Value;
+        _prevSecPositionX = SecPositionX.Value;
+        _prevSecPositionY = SecPositionY.Value;
+
+        if (currDist < _pinchMinDist)
             return;
 
         OnZoom?.Invoke(prevDist - currDist);

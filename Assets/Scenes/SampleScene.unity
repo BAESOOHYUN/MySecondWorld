@@ -761,12 +761,10 @@ MonoBehaviour:
   _orbitFollow: {fileID: 1235529341}
   _followZoom: {fileID: 1235529343}
   _touchListener: {fileID: 1507210988}
-  _pcRotSpeed: 180
-  _mobileRotSpeed: 180
-  _rotSmoothTime: 0.05
-  _pcZoomSpeed: 1.5
-  _mobileZoomSpeed: 10
-  _zoomSmooth: 10
+  _pcRotSpeed: 30
+  _mobileRotSpeed: 3
+  _pcZoomSpeed: 0.4
+  _mobileZoomSpeed: 4
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
@@ -828,7 +826,7 @@ Camera:
     height: 1
   near clip plane: 0.3
   far clip plane: 1000
-  field of view: 60
+  field of view: 27.623419
   orthographic: 0
   orthographic size: 5
   m_Depth: -1
@@ -854,8 +852,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.08045888, y: 0, z: 0, w: 0.9967579}
-  m_LocalPosition: {x: 0, y: 2.25, z: -4}
+  m_LocalRotation: {x: 0.0731733, y: 0.00000003063718, z: -0.0000000022478495, w: 0.9973193}
+  m_LocalPosition: {x: 0, y: 3.0070581, z: -9.537169}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1691,8 +1689,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1235529336}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.08045888, y: 0, z: 0, w: 0.9967579}
-  m_LocalPosition: {x: 0, y: 2.25, z: -4}
+  m_LocalRotation: {x: 0.07317329, y: 0.000000030637178, z: -0.0000000022478488, w: 0.9973193}
+  m_LocalPosition: {x: 0, y: 3.0070581, z: -9.537169}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1760,7 +1758,7 @@ MonoBehaviour:
     AngularDampingMode: 0
     RotationDamping: {x: 1, y: 1, z: 1}
     QuaternionDamping: 1
-  OrbitStyle: 1
+  OrbitStyle: 0
   Radius: 10
   Orbits:
     Top:
@@ -1788,7 +1786,7 @@ MonoBehaviour:
     Value: 17.5
     Center: 17.5
     Range: {x: -10, y: 45}
-    Wrap: 0
+    Wrap: 1
     Recentering:
       Enabled: 0
       Wait: 1
@@ -1846,7 +1844,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Width: 4.74
-  Damping: 0
+  Damping: 1
   FovRange: {x: 3, y: 60}
 --- !u!114 &1235529344
 MonoBehaviour:
@@ -2732,8 +2730,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 223e1cd3ed5ef7448933e6bc59980b53, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TouchEventListener
-  deviceType: 0
-  controllerType: 2
+  deviceType: 1
+  controllerType: 3
   isPriStartPositionOnUI: 0
   isSecStartPositionOnUI: 0
   isPriPositionOnUI: 0
