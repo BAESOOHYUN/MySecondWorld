@@ -9,14 +9,6 @@ public enum DeviceType
     Mobile
 }
 
-public enum ControllerType
-{
-    Joystick,
-    KeyBoard,
-    Mouse,
-    Touch
-}
-
 public class TouchEventListener : MonoBehaviour, IInputAxisOwner
 {
     public event Action<float, float> OnPriContactStarted;
@@ -30,7 +22,6 @@ public class TouchEventListener : MonoBehaviour, IInputAxisOwner
     public event Action<float> OnZoom;
 
     public DeviceType deviceType;
-    public ControllerType controllerType;
 
     // 터치 시작 좌표가 UI 위였는지 여부 (터치 시작 프레임에 1회만 판정)
     public bool isPriStartPositionOnUI;
