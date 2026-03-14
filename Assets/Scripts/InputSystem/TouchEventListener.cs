@@ -186,10 +186,8 @@ public class TouchEventListener : MonoBehaviour, IInputAxisOwner
 
         //둘 다 UI 위에서 시작
         if (priDown && isPriStartPositionOnUI && secDown && isSecStartPositionOnUI)
-        {
-            Debug.Log($"함");
             return;
-        }
+
         #endregion
         #region 단독 드래그
         bool priCanRotate = priDown && !isPriStartPositionOnUI;

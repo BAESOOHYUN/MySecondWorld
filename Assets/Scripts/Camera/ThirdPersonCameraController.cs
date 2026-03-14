@@ -3,7 +3,8 @@ using UnityEngine;
 
 public class ThirdPersonCameraController : MonoBehaviour
 {
-    [SerializeField] private CinemachineOrbitalFollow _orbitFollow; //Lock To Target With World Up. Sphere, 10, Tracking Target
+    // Brain 설정은 Update Method, Blend Update Method => LateUpdate로 바꿔주기 (이동시 화면이 덜덜 떨리는 현상 방지)
+    [SerializeField] private CinemachineOrbitalFollow _orbitFollow; //World Space. Sphere, 10, Tracking Target
     [SerializeField] private CinemachineFollowZoom _followZoom; // With 4.74, Damping 1
     [SerializeField] private TouchEventListener _touchListener;
 
@@ -33,7 +34,6 @@ public class ThirdPersonCameraController : MonoBehaviour
     // Rotation
     private void Rotation(float dx, float dy)
     {
-        Debug.Log($"dx {dx}, dy {dy}");
         float speed = _touchListener.deviceType == DeviceType.PC ? _pcRotSpeed : _mobileRotSpeed;
         // 해상도에 무관하게 동일한 회전감: 화면 가로/세로 픽셀 수로 정규화
         _orbitFollow.HorizontalAxis.Value += (dx / Screen.width) * speed * _deltaCorrectionValue;

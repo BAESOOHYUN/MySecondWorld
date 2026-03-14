@@ -325,8 +325,8 @@ MonoBehaviour:
   IgnoreTimeScale: 0
   WorldUpOverride: {fileID: 0}
   ChannelMask: -1
-  UpdateMethod: 2
-  BlendUpdateMethod: 0
+  UpdateMethod: 1
+  BlendUpdateMethod: 1
   LensModeOverride:
     Enabled: 0
     DefaultMode: 2
@@ -1156,7 +1156,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   TargetOffset: {x: 0, y: 0, z: 0}
   TrackerSettings:
-    BindingMode: 1
+    BindingMode: 4
     PositionDamping: {x: 1, y: 1, z: 1}
     AngularDampingMode: 0
     RotationDamping: {x: 1, y: 1, z: 1}
@@ -2118,7 +2118,7 @@ MonoBehaviour:
     m_ActionName: 'Touch/Zoom[/Mouse/scroll]'
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
-  m_DefaultActionMap: Player
+  m_DefaultActionMap: Touch
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 330585545}
 --- !u!114 &1507210988
@@ -2134,7 +2134,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TouchEventListener
   deviceType: 0
-  controllerType: 2
   isPriStartPositionOnUI: 0
   isSecStartPositionOnUI: 0
   isPriPositionOnUI: 0
@@ -2481,6 +2480,11 @@ PrefabInstance:
       propertyPath: m_TagString
       value: Player
       objectReference: {fileID: 0}
+    - target: {fileID: 7649676662682668092, guid: 5ca390a4c04b52148a2d5b7a3cc65196,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7650298583742994554, guid: 5ca390a4c04b52148a2d5b7a3cc65196,
         type: 3}
       propertyPath: m_IsActive
@@ -2546,11 +2550,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 53a737e65d1472745ae1fb98e0862894, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _touchListener: {fileID: 1507210988}
-  _characterController: {fileID: 540730252041627796}
-  _moveSpeed: 3
+  _cinemachineCamera: {fileID: 1235529340}
+  _controller: {fileID: 540730252041627796}
+  _moveSpeed: 5
+  _rotationSpeed: 10
   _jumpSpeed: 3
   _jumpHeight: 1
+  _airControlMultiplier: 0.5
   MoveX:
     Value: 0
     Center: 0
