@@ -623,7 +623,7 @@ GameObject:
   - component: {fileID: 741271061}
   - component: {fileID: 741271060}
   - component: {fileID: 741271059}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Ceiling
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -963,7 +963,7 @@ GameObject:
   - component: {fileID: 1151832450}
   - component: {fileID: 1151832449}
   - component: {fileID: 1151832448}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Wall
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1263,11 +1263,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineDeoccluder
   CollideAgainst:
     serializedVersion: 2
-    m_Bits: 1
-  IgnoreTag: 
+    m_Bits: 72
+  IgnoreTag: Player
   TransparentLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 1
   MinimumDistanceFromTarget: 0.3
   AvoidObstacles:
     Enabled: 1
@@ -1596,7 +1596,7 @@ GameObject:
   - component: {fileID: 1420064970}
   - component: {fileID: 1420064969}
   - component: {fileID: 1420064968}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Wall
   m_TagString: Untagged
   m_Icon: {fileID: 0}
