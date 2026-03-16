@@ -2490,6 +2490,31 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7746041287841623048, guid: 5ca390a4c04b52148a2d5b7a3cc65196,
+        type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: 27746c0263c863a47a6381a282ff99ab, type: 2}
+    - target: {fileID: 7746041287841623048, guid: 5ca390a4c04b52148a2d5b7a3cc65196,
+        type: 3}
+      propertyPath: m_CullingMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7746041287841623048, guid: 5ca390a4c04b52148a2d5b7a3cc65196,
+        type: 3}
+      propertyPath: m_AnimatePhysics
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7746041287841623048, guid: 5ca390a4c04b52148a2d5b7a3cc65196,
+        type: 3}
+      propertyPath: m_ApplyRootMotion
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7746041287841623050, guid: 5ca390a4c04b52148a2d5b7a3cc65196,
+        type: 3}
+      propertyPath: _movementController
+      value: 
+      objectReference: {fileID: 540730252041627799}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2555,7 +2580,7 @@ MonoBehaviour:
   _moveSpeed: 5
   _rotationSpeed: 10
   _jumpSpeed: 3
-  _jumpHeight: 1
+  _jumpHeight: 8.9
   _airControlMultiplier: 0.5
   MoveX:
     Value: 0
