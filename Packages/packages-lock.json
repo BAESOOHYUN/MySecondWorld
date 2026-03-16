@@ -219,6 +219,14 @@
       },
       "url": "https://packages.unity.com"
     },
+    "com.youngwoocho02.unity-cli-connector": {
+      "version": "file:com.youngwoocho02.unity-cli-connector",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.unity.nuget.newtonsoft-json": "3.2.1"
+      }
+    },
     "com.unity.modules.accessibility": {
       "version": "1.0.0",
       "depth": 0,
