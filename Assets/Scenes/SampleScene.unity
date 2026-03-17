@@ -2503,12 +2503,12 @@ PrefabInstance:
     - target: {fileID: 7746041287841623048, guid: 5ca390a4c04b52148a2d5b7a3cc65196,
         type: 3}
       propertyPath: m_AnimatePhysics
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7746041287841623048, guid: 5ca390a4c04b52148a2d5b7a3cc65196,
         type: 3}
       propertyPath: m_ApplyRootMotion
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7746041287841623050, guid: 5ca390a4c04b52148a2d5b7a3cc65196,
         type: 3}
