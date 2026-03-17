@@ -6,9 +6,10 @@ public class PlayerAnimationController : MonoBehaviour
     [SerializeField] private MovementController _movementController;
     [SerializeField] private Animator _animator;
 
-    private static readonly int JumpTriggerHash = Animator.StringToHash("JumpTrigger");
-    private static readonly int FallTriggerHash = Animator.StringToHash("FallTrigger");
-    private static readonly int LandTriggerHash = Animator.StringToHash("LandTrigger");
+    private static readonly int JumpTrigger = Animator.StringToHash(nameof(JumpTrigger));
+    private static readonly int FallTrigger = Animator.StringToHash(nameof(FallTrigger));
+    private static readonly int LandTrigger = Animator.StringToHash(nameof(LandTrigger));
+    private static readonly int Speed = Animator.StringToHash(nameof(Speed));
 
     private void Awake()
     {
@@ -20,41 +21,59 @@ public class PlayerAnimationController : MonoBehaviour
 
         if (_movementController == null)
         {
-            if (!TryGetComponent(out _movementController))
-                Debug.LogError($"MovementController not found on {gameObject.name}", this);
+            _movementController = GetComponentInParent<MovementController>();
+            if (_movementController == null)
+                Debug.LogError($"MovementController not found in parent hierarchy of {gameObject.name}", this);
         }
     }
 
     private void OnEnable()
     {
-        if (_movementController == null) return;
+        if (_movementController == null)
+            return;
 
         _movementController.OnJump += HandleJump;
         _movementController.OnFall += HandleFall;
         _movementController.OnLand += HandleLand;
+        _movementController.OnSpeedChanged += HandleSpeedChanged;
     }
 
     private void OnDisable()
     {
-        if (_movementController == null) return;
+        if (_movementController == null)
+            return;
 
         _movementController.OnJump -= HandleJump;
         _movementController.OnFall -= HandleFall;
         _movementController.OnLand -= HandleLand;
+        _movementController.OnSpeedChanged -= HandleSpeedChanged;
+    }
+
+    private void HandleSpeedChanged(float speed)
+    {
+        if (_animator == null)
+            return;
+        _animator.SetFloat(Speed, speed);
     }
 
     private void HandleJump()
     {
-        _animator.SetTrigger(JumpTriggerHash);
+        if (_animator == null)
+            return;
+        _animator.SetTrigger(JumpTrigger);
     }
 
     private void HandleFall()
     {
-        _animator.SetTrigger(FallTriggerHash);
+        if (_animator == null)
+            return;
+        _animator.SetTrigger(FallTrigger);
     }
 
     private void HandleLand()
     {
-        _animator.SetTrigger(LandTriggerHash);
+        if (_animator == null)
+            return;
+        _animator.SetTrigger(LandTrigger);
     }
 }
