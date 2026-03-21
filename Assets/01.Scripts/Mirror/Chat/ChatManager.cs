@@ -4,10 +4,6 @@ using UnityEngine;
 
 namespace MySecondWorld.Mirror.Chat
 {
-    /// <summary>
-    /// [Command] : 클라이언트 → 서버
-    /// NetworkServer.SendToAll : 서버 → 전체 (observer 의존 없이 직접 전달)
-    /// </summary>
     public struct ChatMessage : NetworkMessage
     {
         public string content;
@@ -31,17 +27,12 @@ namespace MySecondWorld.Mirror.Chat
         {
             OnMessageReceived?.Invoke(msg.content);
         }
-
-        /// <summary>
-        /// ChatUI에서 호출하는 진입점.
-        /// Host이면 서버 메서드 직접 호출, 일반 클라이언트이면 Command 전송.
-        /// </summary>
         public void TrySendMessage(string message)
         {
             if (isServer)
-                ServerHandleMessage(message, null);
+                ServerHandleMessage(message, null); // Host: 직접 호출
             else
-                CmdSendMessage(message);
+                CmdSendMessage(message);            // 일반 클라이언트: Command 전송
         }
 
         [Command(requiresAuthority = false)]
@@ -55,9 +46,16 @@ namespace MySecondWorld.Mirror.Chat
         {
             string senderName = sender != null ? $"Client{sender.connectionId}" : "Host";
             string formatted = $"[{senderName}] {message}";
+            var msg = new ChatMessage { content = formatted };
 
-            // observer 의존 없이 모든 연결에 직접 전달 (Host 로컬 커넥션 포함)
-            NetworkServer.SendToAll(new ChatMessage { content = formatted });
+            foreach (var conn in NetworkServer.connections.Values)
+            {
+                if (conn.connectionId == 0) continue; // Host 로컬 커넥션 제외
+                conn.Send(msg);
+            }
+
+            if (!isServerOnly)
+                OnMessageReceived?.Invoke(formatted);
         }
     }
 }
