@@ -119,6 +119,53 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &84244720
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 84244721}
+  - component: {fileID: 84244722}
+  m_Layer: 0
+  m_Name: UIManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &84244721
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 84244720}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 959943606}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &84244722
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 84244720}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c34626d2fea0548b01b81cf4aa7680, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIManager
+  uiRoots:
+  - {fileID: 1260053197}
+  alphaThreshold: 0.5
 --- !u!1 &238792632
 GameObject:
   m_ObjectHideFlags: 0
@@ -837,6 +884,7 @@ Transform:
   - {fileID: 1878136132}
   - {fileID: 1507210982}
   - {fileID: 238792633}
+  - {fileID: 84244721}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1034210529
@@ -1754,6 +1802,8 @@ MonoBehaviour:
         InputAction: {fileID: -6439423630130277289, guid: 1ef879bb94aacac45a5965f49648d8e3,
           type: 3}
         Gain: 1
+        LegacyInput: 
+        LegacyGain: 1
         CancelDeltaTime: 0
       InputValue: 0
       Driver:
@@ -1766,6 +1816,8 @@ MonoBehaviour:
         InputAction: {fileID: -6439423630130277289, guid: 1ef879bb94aacac45a5965f49648d8e3,
           type: 3}
         Gain: 1
+        LegacyInput: 
+        LegacyGain: 1
         CancelDeltaTime: 0
       InputValue: 0
       Driver:
@@ -1778,6 +1830,8 @@ MonoBehaviour:
         InputAction: {fileID: 7302797039088496623, guid: 1ef879bb94aacac45a5965f49648d8e3,
           type: 3}
         Gain: 1
+        LegacyInput: 
+        LegacyGain: 1
         CancelDeltaTime: 0
       InputValue: 0
       Driver:
@@ -1790,6 +1844,8 @@ MonoBehaviour:
         InputAction: {fileID: -2854121704398094914, guid: 1ef879bb94aacac45a5965f49648d8e3,
           type: 3}
         Gain: 1
+        LegacyInput: 
+        LegacyGain: 1
         CancelDeltaTime: 0
       InputValue: 0
       Driver:
@@ -1802,6 +1858,8 @@ MonoBehaviour:
         InputAction: {fileID: -2854121704398094914, guid: 1ef879bb94aacac45a5965f49648d8e3,
           type: 3}
         Gain: 1
+        LegacyInput: 
+        LegacyGain: 1
         CancelDeltaTime: 0
       InputValue: 0
       Driver:
@@ -1814,6 +1872,8 @@ MonoBehaviour:
         InputAction: {fileID: 1426462346491268159, guid: 1ef879bb94aacac45a5965f49648d8e3,
           type: 3}
         Gain: 1
+        LegacyInput: 
+        LegacyGain: 1
         CancelDeltaTime: 0
       InputValue: 0
       Driver:
@@ -1826,6 +1886,8 @@ MonoBehaviour:
         InputAction: {fileID: 1426462346491268159, guid: 1ef879bb94aacac45a5965f49648d8e3,
           type: 3}
         Gain: 1
+        LegacyInput: 
+        LegacyGain: 1
         CancelDeltaTime: 0
       InputValue: 0
       Driver:
@@ -1838,6 +1900,8 @@ MonoBehaviour:
         InputAction: {fileID: -3333232498434560749, guid: 1ef879bb94aacac45a5965f49648d8e3,
           type: 3}
         Gain: 1
+        LegacyInput: 
+        LegacyGain: 1
         CancelDeltaTime: 0
       InputValue: 0
       Driver:
@@ -1850,6 +1914,8 @@ MonoBehaviour:
         InputAction: {fileID: -3333232498434560749, guid: 1ef879bb94aacac45a5965f49648d8e3,
           type: 3}
         Gain: 1
+        LegacyInput: 
+        LegacyGain: 1
         CancelDeltaTime: 0
       InputValue: 0
       Driver:
@@ -1862,6 +1928,8 @@ MonoBehaviour:
         InputAction: {fileID: -8525218518530149154, guid: 1ef879bb94aacac45a5965f49648d8e3,
           type: 3}
         Gain: 1
+        LegacyInput: 
+        LegacyGain: 1
         CancelDeltaTime: 0
       InputValue: 0
       Driver:
@@ -1874,6 +1942,8 @@ MonoBehaviour:
         InputAction: {fileID: 5071717097981137233, guid: 1ef879bb94aacac45a5965f49648d8e3,
           type: 3}
         Gain: 1
+        LegacyInput: 
+        LegacyGain: 1
         CancelDeltaTime: 0
       InputValue: 0
       Driver:
@@ -1886,6 +1956,8 @@ MonoBehaviour:
         InputAction: {fileID: 5071717097981137233, guid: 1ef879bb94aacac45a5965f49648d8e3,
           type: 3}
         Gain: 1
+        LegacyInput: 
+        LegacyGain: 1
         CancelDeltaTime: 0
       InputValue: 0
       Driver:
@@ -1898,6 +1970,8 @@ MonoBehaviour:
         InputAction: {fileID: 1131504692475032772, guid: 1ef879bb94aacac45a5965f49648d8e3,
           type: 3}
         Gain: 1
+        LegacyInput: 
+        LegacyGain: 1
         CancelDeltaTime: 0
       InputValue: 0
       Driver:
@@ -1910,6 +1984,8 @@ MonoBehaviour:
         InputAction: {fileID: 1131504692475032772, guid: 1ef879bb94aacac45a5965f49648d8e3,
           type: 3}
         Gain: 1
+        LegacyInput: 
+        LegacyGain: 1
         CancelDeltaTime: 0
       InputValue: 0
       Driver:
@@ -1922,6 +1998,8 @@ MonoBehaviour:
         InputAction: {fileID: -7349196649707239044, guid: 1ef879bb94aacac45a5965f49648d8e3,
           type: 3}
         Gain: -1
+        LegacyInput: 
+        LegacyGain: 1
         CancelDeltaTime: 0
       InputValue: 0
       Driver:
@@ -2652,6 +2730,8 @@ MonoBehaviour:
         InputAction: {fileID: -6634730444897426333, guid: 1ef879bb94aacac45a5965f49648d8e3,
           type: 3}
         Gain: 1
+        LegacyInput: 
+        LegacyGain: 1
         CancelDeltaTime: 0
       InputValue: 0
       Driver:
@@ -2664,6 +2744,8 @@ MonoBehaviour:
         InputAction: {fileID: -6634730444897426333, guid: 1ef879bb94aacac45a5965f49648d8e3,
           type: 3}
         Gain: 1
+        LegacyInput: 
+        LegacyGain: 1
         CancelDeltaTime: 0
       InputValue: 0
       Driver:
@@ -2676,6 +2758,8 @@ MonoBehaviour:
         InputAction: {fileID: -6980244004151785336, guid: 1ef879bb94aacac45a5965f49648d8e3,
           type: 3}
         Gain: 1
+        LegacyInput: 
+        LegacyGain: 1
         CancelDeltaTime: 0
       InputValue: 0
       Driver:
@@ -2688,6 +2772,8 @@ MonoBehaviour:
         InputAction: {fileID: 8699023130217952208, guid: 1ef879bb94aacac45a5965f49648d8e3,
           type: 3}
         Gain: 1
+        LegacyInput: 
+        LegacyGain: 1
         CancelDeltaTime: 0
       InputValue: 0
       Driver:

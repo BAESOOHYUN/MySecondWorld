@@ -6,10 +6,20 @@ public class PlayerAnimationController : MonoBehaviour
     [SerializeField] private MovementController _movementController;
     [SerializeField] private Animator _animator;
 
-    private static readonly int JumpTrigger = Animator.StringToHash(nameof(JumpTrigger));
-    private static readonly int FallTrigger = Animator.StringToHash(nameof(FallTrigger));
-    private static readonly int LandTrigger = Animator.StringToHash(nameof(LandTrigger));
-    private static readonly int Speed = Animator.StringToHash(nameof(Speed));
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    private static void InitStatics()
+    {
+        JumpTrigger = Animator.StringToHash(nameof(JumpTrigger));
+        FallTrigger = Animator.StringToHash(nameof(FallTrigger));
+        LandTrigger = Animator.StringToHash(nameof(LandTrigger));
+        Speed = Animator.StringToHash(nameof(Speed));
+    }
+
+    private static int JumpTrigger = Animator.StringToHash(nameof(JumpTrigger));
+    private static int FallTrigger = Animator.StringToHash(nameof(FallTrigger));
+    private static int LandTrigger = Animator.StringToHash(nameof(LandTrigger));
+    private static int Speed = Animator.StringToHash(nameof(Speed));
+
 
     private void Awake()
     {

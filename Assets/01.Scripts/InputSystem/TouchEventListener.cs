@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TMPro;
 using Unity.Cinemachine;
 using UnityEngine;
 
@@ -48,38 +49,50 @@ public class TouchEventListener : MonoBehaviour, IInputAxisOwner
     private bool _isSecDragging;
 
     #region InputAxis
-    static InputAxis DefaultPan => new()
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    private static void InitDefaults()
     {
-        Value = 0,
-        Range = new Vector2(-180, 180),
-        Wrap = true,
-        Center = 0,
-        Restrictions = InputAxis.RestrictionFlags.NoRecentering
-    };
-    static InputAxis DefaultTilt => new()
-    {
-        Value = 0,
-        Range = new Vector2(-45, 45),
-        Wrap = false,
-        Center = 0,
-        Restrictions = InputAxis.RestrictionFlags.NoRecentering
-    };
-    static InputAxis DefaultPositionX => new()
-    {
-        Value = 0,
-        Range = new Vector2(0, Screen.width),
-        Wrap = false,
-        Center = 0,
-        Restrictions = InputAxis.RestrictionFlags.Momentary
-    };
-    static InputAxis DefaultPositionY => new()
-    {
-        Value = 0,
-        Range = new Vector2(0, Screen.height),
-        Wrap = false,
-        Center = 0,
-        Restrictions = InputAxis.RestrictionFlags.Momentary
-    };
+        DefaultPan = new InputAxis
+        {
+            Value = 0,
+            Range = new Vector2(-180, 180),
+            Wrap = true,
+            Center = 0,
+            Restrictions = InputAxis.RestrictionFlags.NoRecentering
+        };
+
+        DefaultTilt = new InputAxis
+        {
+            Value = 0,
+            Range = new Vector2(-45, 45),
+            Wrap = false,
+            Center = 0,
+            Restrictions = InputAxis.RestrictionFlags.NoRecentering
+        };
+
+        DefaultPositionX = new InputAxis
+        {
+            Value = 0,
+            Range = new Vector2(0, Screen.width),
+            Wrap = false,
+            Center = 0,
+            Restrictions = InputAxis.RestrictionFlags.Momentary
+        };
+
+        DefaultPositionY = new InputAxis
+        {
+            Value = 0,
+            Range = new Vector2(0, Screen.height),
+            Wrap = false,
+            Center = 0,
+            Restrictions = InputAxis.RestrictionFlags.Momentary
+        };
+    }
+    public static InputAxis DefaultPan;
+    public static InputAxis DefaultTilt;
+    public static InputAxis DefaultPositionX;
+    public static InputAxis DefaultPositionY;
 
     public InputAxis PriStartPositionX = DefaultPositionX;
     public InputAxis PriStartPositionY = DefaultPositionY;
@@ -126,6 +139,7 @@ public class TouchEventListener : MonoBehaviour, IInputAxisOwner
         // 현재 위치 UI 판정 (매 프레임)
         isPriPositionOnUI = OnUIChecker.IsPointerOverUIObject(new Vector2(PriPositionX.Value, PriPositionY.Value));
         isSecPositionOnUI = OnUIChecker.IsPointerOverUIObject(new Vector2(SecPositionX.Value, SecPositionY.Value));
+        //UICheckDebug();
 
         if (deviceType == DeviceType.PC && !isPriPositionOnUI)
             OnZoom?.Invoke(Zoom.Value);
@@ -304,5 +318,34 @@ public class TouchEventListener : MonoBehaviour, IInputAxisOwner
         SecPositionY = DefaultPositionY;
         isSecPositionOnUI = false;
         isSecStartPositionOnUI = false;
+    }
+
+    private void UICheckDebug()
+    {
+        if (isPriPositionOnUI == true)
+        {
+            foreach (var hit in OnUIChecker.GetLastResults())
+            {
+                Debug.Log($"{hit.gameObject.name}");
+
+                var img = hit.gameObject.GetComponent<UnityEngine.UI.Image>();
+                if (img != null)
+                    Debug.Log($"{img.name} threshold = {img.alphaHitTestMinimumThreshold}");
+                var tmp = hit.gameObject.GetComponent<TextMeshProUGUI>();
+                if (tmp != null)
+                    Debug.Log($"TMP {tmp.name} raycastTarget = {tmp.raycastTarget}");
+            }
+        }
+        if (isSecPositionOnUI)
+        {
+            foreach (var hit in OnUIChecker.GetLastResults())
+            {
+                var img = hit.gameObject.GetComponent<UnityEngine.UI.Image>();
+                if (img != null)
+                    Debug.Log($"{img.name} threshold = {img.alphaHitTestMinimumThreshold}"); var tmp = hit.gameObject.GetComponent<TextMeshProUGUI>();
+                if (tmp != null)
+                    Debug.Log($"TMP {tmp.name} raycastTarget = {tmp.raycastTarget}");
+            }
+        }
     }
 }
