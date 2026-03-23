@@ -8,7 +8,7 @@ namespace MySecondWorld.Network.Player
         [SerializeField] private MovementController _movementController;
         [SerializeField] private ThirdPersonCameraController _cameraController;
 
-        public void Reset()
+        private void Reset()
         {
             _movementController.enabled = false;
             _cameraController.ActiveCinemachine(false);

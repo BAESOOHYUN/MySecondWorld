@@ -25,10 +25,15 @@ public class ThirdPersonCameraController : MonoBehaviour
     private const float _targetAspect = 16f / 9f;
     private const float _deltaCorrectionValue = 100f;
 
+    private float _horizontalValue;
+    private float _verticalValue;
+
     public float CameraYAngle => _cinemachineCamera.transform.eulerAngles.y;
 
     private void OnEnable()
     {
+        _horizontalValue = _orbitFollow.HorizontalAxis.Value;
+        _verticalValue = _orbitFollow.VerticalAxis.Value;
         TouchEventListener.Instance.OnPriDrag += Rotation;
         TouchEventListener.Instance.OnSecDrag += Rotation;
         TouchEventListener.Instance.OnZoom += Zoom;
@@ -41,6 +46,11 @@ public class ThirdPersonCameraController : MonoBehaviour
         TouchEventListener.Instance.OnZoom -= Zoom;
     }
 
+    private void LateUpdate()
+    {
+        _orbitFollow.HorizontalAxis.Value = _horizontalValue;
+        _orbitFollow.VerticalAxis.Value = _verticalValue;
+    }
 
     public void ActiveCinemachine(bool isActitve)
     {
@@ -52,9 +62,9 @@ public class ThirdPersonCameraController : MonoBehaviour
     {
         float speed = TouchEventListener.Instance.deviceType == DeviceType.PC ? _pcRotSpeed : _mobileRotSpeed;
         // 해상도에 무관하게 동일한 회전감: 화면 가로/세로 픽셀 수로 정규화
-        _orbitFollow.HorizontalAxis.Value += (dx / Screen.width) * speed * _deltaCorrectionValue;
-        _orbitFollow.VerticalAxis.Value = Mathf.Clamp(
-            _orbitFollow.VerticalAxis.Value - (dy / Screen.height) * speed * _deltaCorrectionValue,
+        _horizontalValue += (dx / Screen.width) * speed * _deltaCorrectionValue;
+        _verticalValue = Mathf.Clamp(
+            _verticalValue - (dy / Screen.height) * speed * _deltaCorrectionValue,
             _verticalMin, _verticalMax);
     }
 
