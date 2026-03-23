@@ -1,9 +1,18 @@
 using Mirror;
+using UnityEngine;
 
 namespace MySecondWorld.Network.Chat
 {
     public class ChatNetworkManager : NetworkManager
     {
+        public override void OnDestroy()
+        {
+            if (NetworkServer.active) 
+                StopHost();
+            else if (NetworkClient.isConnected) 
+                StopClient();
+        }
+
         public override void OnServerDisconnect(NetworkConnectionToClient conn)
         {
             if (conn.authenticationData != null)
@@ -17,14 +26,34 @@ namespace MySecondWorld.Network.Chat
 
         public void ToggleHost(bool isOn)
         {
-            if (isOn) StopHost();
-            else StartHost();
+            Debug.Log($"[NM] ToggleHost isOn={isOn}");
+            if (isOn) StartHost();
+            else StopHost();
         }
 
         public void ToggleClient(bool isOn)
         {
-            if (isOn) StopClient();
-            else StartClient();
+            Debug.Log($"[NM] ToggleClient isOn={isOn}");
+            if (isOn) StartClient();
+            else StopClient();
+        }
+
+        public override void OnServerReady(NetworkConnectionToClient conn)
+        {
+            base.OnServerReady(conn);
+            Debug.Log($"[NM] OnServerReady conn={conn.connectionId}");
+        }
+
+        public override void OnServerAddPlayer(NetworkConnectionToClient conn)
+        {
+            base.OnServerAddPlayer(conn);
+            Debug.Log($"[NM] OnServerAddPlayer conn={conn.connectionId}, playerPrefab={playerPrefab?.name ?? "NULL"}");
+        }
+
+        public override void OnClientConnect()
+        {
+            base.OnClientConnect();
+            Debug.Log("[NM] OnClientConnect");
         }
     }
 }

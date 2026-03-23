@@ -62,14 +62,16 @@ namespace MySecondWorld.Network.Chat
         }
 
         public override void OnServerAuthenticate(NetworkConnectionToClient conn)
-        { 
+        {
             //일단 빈 채로 (서버는 메시지가 올 때까지 기다리기만 함)
+            Debug.Log($"[Auth] OnServerAuthenticate conn={conn.connectionId}");
         }
 
         // 실제 인증 처리 메세지
         // 이름 중복 확인 후 ServerAccept(conn) 또는 거부
         public void OnAuthRequestMessage(NetworkConnectionToClient conn, AuthRequestMessage msg)
         {
+            Debug.Log($"[Auth] OnAuthRequestMessage conn={conn.connectionId}, name='{msg.authUsername}'");
             // 이름 중복으로, 거절된 사람 명단에 있으면 무시
             if (connectionsPendingDisconnect.Contains(conn))
                 return;
@@ -96,6 +98,7 @@ namespace MySecondWorld.Network.Chat
 
                 // 서버가 "이 클라이언트 인증 통과"라고 Mirror에 알림
                 // NetworkAuthenticator 상속 클래스
+                Debug.Log($"[Auth] ServerAccept: '{msg.authUsername}'");
                 ServerAccept(conn);
             }
             else //이름이 이미 사용중인 경우 
@@ -157,14 +160,20 @@ namespace MySecondWorld.Network.Chat
         // 서버 연결되자마자 호출됨. Mirror 자동호출
         public override void OnClientAuthenticate()
         {
+            Debug.Log($"[Auth] OnClientAuthenticate localPlayerName='{ChatUI.instance.localPlayerName}'");
             // 이름 없이 연결 시도하면 null이 서버 playerNames에 등록될 수 있으므로 사전 차단
-            if (string.IsNullOrWhiteSpace(ChatBehavior.localPlayerName)) return;
+            if (string.IsNullOrWhiteSpace(ChatUI.instance.localPlayerName))
+            {
+                Debug.LogWarning("[Auth] localPlayerName 비어있음 → 인증 메시지 미전송");
+                return;
+            }
 
-            NetworkClient.Send(new AuthRequestMessage { authUsername = ChatBehavior.localPlayerName });
+            NetworkClient.Send(new AuthRequestMessage { authUsername = ChatUI.instance.localPlayerName });
         }
 
         public void OnAuthResponseMessage(AuthResponseMessage msg)
         {
+            Debug.Log($"[Auth] OnAuthResponseMessage code={msg.code}");
             if (msg.code == AuthResponseMessage.Success)
             {
                 // Mirror에 "클라이언트 인증 완료" 알림
