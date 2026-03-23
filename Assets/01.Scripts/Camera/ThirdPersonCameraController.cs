@@ -4,9 +4,10 @@ using UnityEngine;
 public class ThirdPersonCameraController : MonoBehaviour
 {
     // Brain 설정은 Update Method, Blend Update Method => LateUpdate로 바꿔주기 (이동시 화면이 덜덜 떨리는 현상 방지)
+
+    [SerializeField] private CinemachineCamera _cinemachineCamera;
     [SerializeField] private CinemachineOrbitalFollow _orbitFollow; //World Space. Sphere, 10, Tracking Target
     [SerializeField] private CinemachineFollowZoom _followZoom; // With 4.74, Damping 1
-    [SerializeField] private TouchEventListener _touchListener;
 
     [Header("Rotation")]
     [SerializeField] private float _pcRotSpeed = 30f;
@@ -24,17 +25,32 @@ public class ThirdPersonCameraController : MonoBehaviour
     private const float _targetAspect = 16f / 9f;
     private const float _deltaCorrectionValue = 100f;
 
-    private void Start()
+    public float CameraYAngle => _cinemachineCamera.transform.eulerAngles.y;
+
+    private void OnEnable()
     {
-        _touchListener.OnPriDrag += Rotation;
-        _touchListener.OnSecDrag += Rotation;
-        _touchListener.OnZoom += Zoom;
+        TouchEventListener.Instance.OnPriDrag += Rotation;
+        TouchEventListener.Instance.OnSecDrag += Rotation;
+        TouchEventListener.Instance.OnZoom += Zoom;
+    }
+
+    private void OnDisable()
+    {
+        TouchEventListener.Instance.OnPriDrag -= Rotation;
+        TouchEventListener.Instance.OnSecDrag -= Rotation;
+        TouchEventListener.Instance.OnZoom -= Zoom;
+    }
+
+
+    public void ActiveCinemachine(bool isActitve)
+    {
+        _cinemachineCamera.enabled = isActitve;
     }
 
     // Rotation
     private void Rotation(float dx, float dy)
     {
-        float speed = _touchListener.deviceType == DeviceType.PC ? _pcRotSpeed : _mobileRotSpeed;
+        float speed = TouchEventListener.Instance.deviceType == DeviceType.PC ? _pcRotSpeed : _mobileRotSpeed;
         // 해상도에 무관하게 동일한 회전감: 화면 가로/세로 픽셀 수로 정규화
         _orbitFollow.HorizontalAxis.Value += (dx / Screen.width) * speed * _deltaCorrectionValue;
         _orbitFollow.VerticalAxis.Value = Mathf.Clamp(
@@ -45,9 +61,9 @@ public class ThirdPersonCameraController : MonoBehaviour
     // Zoom
     private void Zoom(float delta)
     {
-        float speed = _touchListener.deviceType == DeviceType.PC ? _pcZoomSpeed : _mobileZoomSpeed;
+        float speed = TouchEventListener.Instance.deviceType == DeviceType.PC ? _pcZoomSpeed : _mobileZoomSpeed;
         // 모바일 핀치는 픽셀 거리이므로 Screen.height로 정규화, PC 스크롤은 그대로
-        float normalized = _touchListener.deviceType == DeviceType.Mobile
+        float normalized = TouchEventListener.Instance.deviceType == DeviceType.Mobile
             ? delta / Screen.height
             : delta;
         delta = normalized * speed * GetAspectCorrection();

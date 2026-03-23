@@ -6,7 +6,6 @@ using UnityEngine;
 [RequireComponent(typeof(CharacterController))]
 public class MovementController : MonoBehaviour, IInputAxisOwner
 {
-    [SerializeField] private CinemachineCamera _cinemachineCamera;
     [SerializeField] private CharacterController _controller;
     [SerializeField] private float _moveSpeed = 5f;
     [SerializeField] private float _rotationSpeed = 10f;
@@ -14,12 +13,13 @@ public class MovementController : MonoBehaviour, IInputAxisOwner
     [SerializeField] private float _jumpHeight = 1f;
     [SerializeField] private float _airControlMultiplier = 0.5f; // 공중 이동 감도
 
+    public Func<float> GetCameraYAngle;  // 외부에서 주입 (NetworkPlayerController)
     public event Action OnJump;
     public event Action OnFall;
     public event Action OnLand;
     public event Action<float> OnSpeedChanged;
     // 향후 착지 취소(공중 재점프 등) 시나리오를 위해 예약된 이벤트. 현재 미사용.
-    public event Action OnLand_Cancel;
+    public event Action OnLand_Cancel; 
 
     public float InputMagnitude { get; private set; }
     public bool IsGrounded { get; private set; } = true;
@@ -45,9 +45,6 @@ public class MovementController : MonoBehaviour, IInputAxisOwner
 
     private void Awake()
     {
-        if (_cinemachineCamera == null)
-            Debug.LogError($"CinemachineCamera가 연결되지 않았습니다. ({gameObject.name})", this);
-
         if (_controller == null)
             TryGetComponent(out _controller);
         if (_controller == null)
@@ -70,7 +67,7 @@ public class MovementController : MonoBehaviour, IInputAxisOwner
 
     private void JoyStickMove()
     {
-        if (_cinemachineCamera == null)
+        if (GetCameraYAngle == null)
             return;
 
         Vector3 rawInput = new Vector3(MoveX.Value, 0f, MoveY.Value);
@@ -87,7 +84,8 @@ public class MovementController : MonoBehaviour, IInputAxisOwner
         _inputDirection = rawInput.normalized;
 
         // 카메라 Y축 회전만 추출해서 이동 방향 계산 (pitch 영향 없음)
-        float cameraAngle = _cinemachineCamera.transform.eulerAngles.y;
+        //float cameraAngle = _cinemachineCamera.transform.eulerAngles.y;
+        float cameraAngle = GetCameraYAngle();
         float targetAngle = Mathf.Atan2(_inputDirection.x, _inputDirection.z) * Mathf.Rad2Deg + cameraAngle;
         Vector3 moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
 
