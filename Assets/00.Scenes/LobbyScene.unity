@@ -179,7 +179,7 @@ GameObject:
   - component: {fileID: 129916183}
   - component: {fileID: 129916185}
   m_Layer: 0
-  m_Name: NetworkManager
+  m_Name: NetworkRoomManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -592,7 +592,8 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1878136132}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1507210985
@@ -1214,7 +1215,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1507210982}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1878136133
 MonoBehaviour:
@@ -1279,7 +1280,6 @@ SceneRoots:
   m_Roots:
   - {fileID: 200230882}
   - {fileID: 158207152}
-  - {fileID: 1878136132}
   - {fileID: 129916182}
   - {fileID: 1507210982}
   - {fileID: 84244721}
