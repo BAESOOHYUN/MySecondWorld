@@ -3,7 +3,7 @@ using Mirror;
 
 namespace MySecondWorld.Network.OpenWorld
 {
-    public class FieldZoneHandler : MonoBehaviour
+    public class ZoneHandler : MonoBehaviour
     {
         [Scene]
         public string subScene;
