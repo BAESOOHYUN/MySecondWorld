@@ -131,6 +131,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Env_Wall_Archway_09
       objectReference: {fileID: 0}
+    - target: {fileID: 196358, guid: 24ae687c2d5de7245ac5884e42b824e4, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 418860, guid: 24ae687c2d5de7245ac5884e42b824e4, type: 3}
       propertyPath: m_RootOrder
       value: 13
@@ -186,6 +190,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1924520121}
     m_Modifications:
+    - target: {fileID: 187514, guid: baad99cbf08303549860656d6f6d6933, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 455104, guid: baad99cbf08303549860656d6f6d6933, type: 3}
       propertyPath: m_RootOrder
       value: 24
@@ -237,6 +245,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1924520121}
     m_Modifications:
+    - target: {fileID: 198458, guid: 6f6053668e9f3ec4f966c505fc71bf60, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 439472, guid: 6f6053668e9f3ec4f966c505fc71bf60, type: 3}
       propertyPath: m_RootOrder
       value: 20
@@ -320,6 +332,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1924520121}
     m_Modifications:
+    - target: {fileID: 155884, guid: f54fdd2e465c1ed478d667930d2ce537, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 419384, guid: f54fdd2e465c1ed478d667930d2ce537, type: 3}
       propertyPath: m_RootOrder
       value: 45
@@ -374,6 +390,10 @@ PrefabInstance:
     - target: {fileID: 106404, guid: f5bef9e1bbbbe9f4a89a3c958ad516c7, type: 3}
       propertyPath: m_Name
       value: SM_Env_Ceiling_Stone_Flat_96
+      objectReference: {fileID: 0}
+    - target: {fileID: 106404, guid: f5bef9e1bbbbe9f4a89a3c958ad516c7, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 460624, guid: f5bef9e1bbbbe9f4a89a3c958ad516c7, type: 3}
       propertyPath: m_RootOrder
@@ -434,6 +454,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Env_Ceiling_Arch_09
       objectReference: {fileID: 0}
+    - target: {fileID: 148044, guid: 8fef903d2d12d3c46b6a046f667b2a2a, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 427280, guid: 8fef903d2d12d3c46b6a046f667b2a2a, type: 3}
       propertyPath: m_RootOrder
       value: 32
@@ -489,6 +513,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1924520121}
     m_Modifications:
+    - target: {fileID: 143784, guid: 76a92264ba847784b8ba58a15913b0fd, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 476296, guid: 76a92264ba847784b8ba58a15913b0fd, type: 3}
       propertyPath: m_RootOrder
       value: 49
@@ -543,6 +571,10 @@ PrefabInstance:
     - target: {fileID: 192550, guid: 3bf01e09059dad54b985779213d8dca8, type: 3}
       propertyPath: m_Name
       value: SM_Env_Tiles_199
+      objectReference: {fileID: 0}
+    - target: {fileID: 192550, guid: 3bf01e09059dad54b985779213d8dca8, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 462572, guid: 3bf01e09059dad54b985779213d8dca8, type: 3}
       propertyPath: m_RootOrder
@@ -599,6 +631,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Env_Wall_270
       objectReference: {fileID: 0}
+    - target: {fileID: 189982, guid: a475e72db2f78ba41b557ca01e7ed990, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 446176, guid: a475e72db2f78ba41b557ca01e7ed990, type: 3}
       propertyPath: m_RootOrder
       value: 7
@@ -653,6 +689,10 @@ PrefabInstance:
     - target: {fileID: 176122, guid: 939f27c57ef13654eafcf37ff873a454, type: 3}
       propertyPath: m_Name
       value: SM_Env_Wall_273
+      objectReference: {fileID: 0}
+    - target: {fileID: 176122, guid: 939f27c57ef13654eafcf37ff873a454, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 449052, guid: 939f27c57ef13654eafcf37ff873a454, type: 3}
       propertyPath: m_RootOrder
@@ -709,6 +749,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Env_Wall_274
       objectReference: {fileID: 0}
+    - target: {fileID: 176122, guid: 939f27c57ef13654eafcf37ff873a454, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 449052, guid: 939f27c57ef13654eafcf37ff873a454, type: 3}
       propertyPath: m_RootOrder
       value: 9
@@ -763,6 +807,10 @@ PrefabInstance:
     - target: {fileID: 117188, guid: 2f502f470bc99cf40a5d520810ab13c3, type: 3}
       propertyPath: m_Name
       value: SM_Env_Wall_End_Coner_Inner_73
+      objectReference: {fileID: 0}
+    - target: {fileID: 117188, guid: 2f502f470bc99cf40a5d520810ab13c3, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 404728, guid: 2f502f470bc99cf40a5d520810ab13c3, type: 3}
       propertyPath: m_RootOrder
@@ -823,6 +871,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Env_Pillar_Square_57
       objectReference: {fileID: 0}
+    - target: {fileID: 124088, guid: 4d74ebab2c4922f4b86d0662b41f9dda, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 439248, guid: 4d74ebab2c4922f4b86d0662b41f9dda, type: 3}
       propertyPath: m_RootOrder
       value: 43
@@ -877,6 +929,10 @@ PrefabInstance:
     - target: {fileID: 124088, guid: 4d74ebab2c4922f4b86d0662b41f9dda, type: 3}
       propertyPath: m_Name
       value: SM_Env_Pillar_Square_58
+      objectReference: {fileID: 0}
+    - target: {fileID: 124088, guid: 4d74ebab2c4922f4b86d0662b41f9dda, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 439248, guid: 4d74ebab2c4922f4b86d0662b41f9dda, type: 3}
       propertyPath: m_RootOrder
@@ -933,6 +989,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Env_Pillar_Square_59
       objectReference: {fileID: 0}
+    - target: {fileID: 124088, guid: 4d74ebab2c4922f4b86d0662b41f9dda, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 439248, guid: 4d74ebab2c4922f4b86d0662b41f9dda, type: 3}
       propertyPath: m_RootOrder
       value: 19
@@ -984,6 +1044,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1924520121}
     m_Modifications:
+    - target: {fileID: 165204, guid: 7a167a044b06be94e8cf799be2cce3d2, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 499910, guid: 7a167a044b06be94e8cf799be2cce3d2, type: 3}
       propertyPath: m_RootOrder
       value: 1
@@ -1038,6 +1102,10 @@ PrefabInstance:
     - target: {fileID: 117188, guid: 2f502f470bc99cf40a5d520810ab13c3, type: 3}
       propertyPath: m_Name
       value: SM_Env_Wall_End_Coner_Inner_75
+      objectReference: {fileID: 0}
+    - target: {fileID: 117188, guid: 2f502f470bc99cf40a5d520810ab13c3, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 404728, guid: 2f502f470bc99cf40a5d520810ab13c3, type: 3}
       propertyPath: m_RootOrder
@@ -1098,6 +1166,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Env_Wall_Archway_13
       objectReference: {fileID: 0}
+    - target: {fileID: 196358, guid: 24ae687c2d5de7245ac5884e42b824e4, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 418860, guid: 24ae687c2d5de7245ac5884e42b824e4, type: 3}
       propertyPath: m_RootOrder
       value: 41
@@ -1156,6 +1228,10 @@ PrefabInstance:
     - target: {fileID: 196358, guid: 24ae687c2d5de7245ac5884e42b824e4, type: 3}
       propertyPath: m_Name
       value: SM_Env_Wall_Archway_12
+      objectReference: {fileID: 0}
+    - target: {fileID: 196358, guid: 24ae687c2d5de7245ac5884e42b824e4, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 418860, guid: 24ae687c2d5de7245ac5884e42b824e4, type: 3}
       propertyPath: m_RootOrder
@@ -1216,6 +1292,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Env_Wall_End_Coner_Inner_77
       objectReference: {fileID: 0}
+    - target: {fileID: 117188, guid: 2f502f470bc99cf40a5d520810ab13c3, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 404728, guid: 2f502f470bc99cf40a5d520810ab13c3, type: 3}
       propertyPath: m_RootOrder
       value: 40
@@ -1274,6 +1354,10 @@ PrefabInstance:
     - target: {fileID: 148044, guid: 8fef903d2d12d3c46b6a046f667b2a2a, type: 3}
       propertyPath: m_Name
       value: SM_Env_Ceiling_Arch_08
+      objectReference: {fileID: 0}
+    - target: {fileID: 148044, guid: 8fef903d2d12d3c46b6a046f667b2a2a, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 427280, guid: 8fef903d2d12d3c46b6a046f667b2a2a, type: 3}
       propertyPath: m_RootOrder
@@ -1334,6 +1418,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Env_Tiles_197
       objectReference: {fileID: 0}
+    - target: {fileID: 121644, guid: 67f6358a70929f943ae115f8b4bcf075, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 419854, guid: 67f6358a70929f943ae115f8b4bcf075, type: 3}
       propertyPath: m_RootOrder
       value: 15
@@ -1385,6 +1473,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1924520121}
     m_Modifications:
+    - target: {fileID: 155670, guid: 6d0d811f059a7bc4493f797177e42a41, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 411268, guid: 6d0d811f059a7bc4493f797177e42a41, type: 3}
       propertyPath: m_RootOrder
       value: 37
@@ -1440,6 +1532,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Env_Wall_272
       objectReference: {fileID: 0}
+    - target: {fileID: 176122, guid: 939f27c57ef13654eafcf37ff873a454, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 449052, guid: 939f27c57ef13654eafcf37ff873a454, type: 3}
       propertyPath: m_RootOrder
       value: 11
@@ -1494,6 +1590,10 @@ PrefabInstance:
     - target: {fileID: 129630, guid: 276be0eeb7d45eb4eada49334e36062d, type: 3}
       propertyPath: m_Name
       value: SM_Env_Pillar_Round_07
+      objectReference: {fileID: 0}
+    - target: {fileID: 129630, guid: 276be0eeb7d45eb4eada49334e36062d, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 489622, guid: 276be0eeb7d45eb4eada49334e36062d, type: 3}
       propertyPath: m_RootOrder
@@ -1554,6 +1654,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Env_Pillar_Square_56
       objectReference: {fileID: 0}
+    - target: {fileID: 124088, guid: 4d74ebab2c4922f4b86d0662b41f9dda, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 439248, guid: 4d74ebab2c4922f4b86d0662b41f9dda, type: 3}
       propertyPath: m_RootOrder
       value: 35
@@ -1609,6 +1713,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Env_Wall_DoorFrame_Round_11
       objectReference: {fileID: 0}
+    - target: {fileID: 116930, guid: ded14b4d6268d2643ae9d947489d4667, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 421208, guid: ded14b4d6268d2643ae9d947489d4667, type: 3}
       propertyPath: m_RootOrder
       value: 2
@@ -1641,6 +1749,36 @@ PrefabInstance:
       propertyPath: m_LocalRotation.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 64246276711738218, guid: ded14b4d6268d2643ae9d947489d4667,
+        type: 3}
+      propertyPath: m_Convex
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 64246276711738218, guid: ded14b4d6268d2643ae9d947489d4667,
+        type: 3}
+      propertyPath: m_IsTrigger
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 64688347930237622, guid: ded14b4d6268d2643ae9d947489d4667,
+        type: 3}
+      propertyPath: m_Convex
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 64688347930237622, guid: ded14b4d6268d2643ae9d947489d4667,
+        type: 3}
+      propertyPath: m_IsTrigger
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 64963801693618992, guid: ded14b4d6268d2643ae9d947489d4667,
+        type: 3}
+      propertyPath: m_Convex
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 64963801693618992, guid: ded14b4d6268d2643ae9d947489d4667,
+        type: 3}
+      propertyPath: m_IsTrigger
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1663,6 +1801,10 @@ PrefabInstance:
     - target: {fileID: 164546, guid: a8473397dfbf6bc47997d3c3382ac990, type: 3}
       propertyPath: m_Name
       value: SM_Env_GroundMound_28
+      objectReference: {fileID: 0}
+    - target: {fileID: 164546, guid: a8473397dfbf6bc47997d3c3382ac990, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 486430, guid: a8473397dfbf6bc47997d3c3382ac990, type: 3}
       propertyPath: m_RootOrder
@@ -1731,6 +1873,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Env_Wall_End_Coner_Inner_76
       objectReference: {fileID: 0}
+    - target: {fileID: 117188, guid: 2f502f470bc99cf40a5d520810ab13c3, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 404728, guid: 2f502f470bc99cf40a5d520810ab13c3, type: 3}
       propertyPath: m_RootOrder
       value: 39
@@ -1789,6 +1935,10 @@ PrefabInstance:
     - target: {fileID: 196358, guid: 24ae687c2d5de7245ac5884e42b824e4, type: 3}
       propertyPath: m_Name
       value: SM_Env_Wall_Archway_11
+      objectReference: {fileID: 0}
+    - target: {fileID: 196358, guid: 24ae687c2d5de7245ac5884e42b824e4, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 418860, guid: 24ae687c2d5de7245ac5884e42b824e4, type: 3}
       propertyPath: m_RootOrder
@@ -1849,6 +1999,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Env_Wall_271
       objectReference: {fileID: 0}
+    - target: {fileID: 176122, guid: 939f27c57ef13654eafcf37ff873a454, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 449052, guid: 939f27c57ef13654eafcf37ff873a454, type: 3}
       propertyPath: m_RootOrder
       value: 8
@@ -1904,6 +2058,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Env_Wall_267
       objectReference: {fileID: 0}
+    - target: {fileID: 176122, guid: 939f27c57ef13654eafcf37ff873a454, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 449052, guid: 939f27c57ef13654eafcf37ff873a454, type: 3}
       propertyPath: m_RootOrder
       value: 5
@@ -1955,6 +2113,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1924520121}
     m_Modifications:
+    - target: {fileID: 155118, guid: abf07ccdbcba5d747bb51ff4aa1b29cb, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 405960, guid: abf07ccdbcba5d747bb51ff4aa1b29cb, type: 3}
       propertyPath: m_RootOrder
       value: 31
@@ -2010,6 +2172,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Env_Tiles_198
       objectReference: {fileID: 0}
+    - target: {fileID: 121644, guid: 67f6358a70929f943ae115f8b4bcf075, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 419854, guid: 67f6358a70929f943ae115f8b4bcf075, type: 3}
       propertyPath: m_RootOrder
       value: 17
@@ -2061,6 +2227,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1924520121}
     m_Modifications:
+    - target: {fileID: 174664, guid: 90ca36de85806fa42a09ae234b3b3c11, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 471282, guid: 90ca36de85806fa42a09ae234b3b3c11, type: 3}
       propertyPath: m_RootOrder
       value: 44
@@ -2116,6 +2286,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Env_Wall_268
       objectReference: {fileID: 0}
+    - target: {fileID: 189982, guid: a475e72db2f78ba41b557ca01e7ed990, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 446176, guid: a475e72db2f78ba41b557ca01e7ed990, type: 3}
       propertyPath: m_RootOrder
       value: 6
@@ -2170,6 +2344,10 @@ PrefabInstance:
     - target: {fileID: 176122, guid: 939f27c57ef13654eafcf37ff873a454, type: 3}
       propertyPath: m_Name
       value: SM_Env_Wall_275
+      objectReference: {fileID: 0}
+    - target: {fileID: 176122, guid: 939f27c57ef13654eafcf37ff873a454, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 449052, guid: 939f27c57ef13654eafcf37ff873a454, type: 3}
       propertyPath: m_RootOrder
@@ -2353,6 +2531,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Env_Tiles_200
       objectReference: {fileID: 0}
+    - target: {fileID: 192550, guid: 3bf01e09059dad54b985779213d8dca8, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 462572, guid: 3bf01e09059dad54b985779213d8dca8, type: 3}
       propertyPath: m_RootOrder
       value: 18
@@ -2407,6 +2589,10 @@ PrefabInstance:
     - target: {fileID: 117188, guid: 2f502f470bc99cf40a5d520810ab13c3, type: 3}
       propertyPath: m_Name
       value: SM_Env_Wall_End_Coner_Inner_74
+      objectReference: {fileID: 0}
+    - target: {fileID: 117188, guid: 2f502f470bc99cf40a5d520810ab13c3, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 404728, guid: 2f502f470bc99cf40a5d520810ab13c3, type: 3}
       propertyPath: m_RootOrder
@@ -2463,6 +2649,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1924520121}
     m_Modifications:
+    - target: {fileID: 120432, guid: cd3a725b40747804c8c30fa41713b197, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 454652, guid: cd3a725b40747804c8c30fa41713b197, type: 3}
       propertyPath: m_RootOrder
       value: 36
@@ -2517,6 +2707,10 @@ PrefabInstance:
     - target: {fileID: 148044, guid: 8fef903d2d12d3c46b6a046f667b2a2a, type: 3}
       propertyPath: m_Name
       value: SM_Env_Ceiling_Arch_11
+      objectReference: {fileID: 0}
+    - target: {fileID: 148044, guid: 8fef903d2d12d3c46b6a046f667b2a2a, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 427280, guid: 8fef903d2d12d3c46b6a046f667b2a2a, type: 3}
       propertyPath: m_RootOrder
@@ -2573,6 +2767,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1924520121}
     m_Modifications:
+    - target: {fileID: 115968, guid: 0fc6f41f71adbc1498e2af3180fd9e27, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 451134, guid: 0fc6f41f71adbc1498e2af3180fd9e27, type: 3}
       propertyPath: m_RootOrder
       value: 30
@@ -2624,6 +2822,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1924520121}
     m_Modifications:
+    - target: {fileID: 197352, guid: 0271006512272ed44b365b828f21e35f, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 458742, guid: 0271006512272ed44b365b828f21e35f, type: 3}
       propertyPath: m_RootOrder
       value: 28
@@ -2679,6 +2881,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Env_Tiles_196
       objectReference: {fileID: 0}
+    - target: {fileID: 184820, guid: 9e2131326fc97464987f58ebcb08832a, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 491958, guid: 9e2131326fc97464987f58ebcb08832a, type: 3}
       propertyPath: m_RootOrder
       value: 12
@@ -2731,7 +2937,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1924520121}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Furnace
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2811,6 +3017,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1924520121}
     m_Modifications:
+    - target: {fileID: 141092, guid: bb5451e0ed4ccd14f946993edded0944, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 445952, guid: bb5451e0ed4ccd14f946993edded0944, type: 3}
       propertyPath: m_RootOrder
       value: 48
@@ -2862,6 +3072,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1924520121}
     m_Modifications:
+    - target: {fileID: 183470, guid: d537c186f3833064e9d8c3525655f44d, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 449278, guid: d537c186f3833064e9d8c3525655f44d, type: 3}
       propertyPath: m_RootOrder
       value: 46
@@ -2916,6 +3130,10 @@ PrefabInstance:
     - target: {fileID: 148044, guid: 8fef903d2d12d3c46b6a046f667b2a2a, type: 3}
       propertyPath: m_Name
       value: SM_Env_Ceiling_Arch_10
+      objectReference: {fileID: 0}
+    - target: {fileID: 148044, guid: 8fef903d2d12d3c46b6a046f667b2a2a, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 427280, guid: 8fef903d2d12d3c46b6a046f667b2a2a, type: 3}
       propertyPath: m_RootOrder
@@ -2976,6 +3194,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Env_Pillar_Square_60
       objectReference: {fileID: 0}
+    - target: {fileID: 124088, guid: 4d74ebab2c4922f4b86d0662b41f9dda, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 439248, guid: 4d74ebab2c4922f4b86d0662b41f9dda, type: 3}
       propertyPath: m_RootOrder
       value: 42
@@ -3027,6 +3249,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1924520121}
     m_Modifications:
+    - target: {fileID: 126206, guid: edd815d6828cbde439a3373e1f684ff4, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 407522, guid: edd815d6828cbde439a3373e1f684ff4, type: 3}
       propertyPath: m_RootOrder
       value: 34
@@ -3081,6 +3307,10 @@ PrefabInstance:
     - target: {fileID: 196358, guid: 24ae687c2d5de7245ac5884e42b824e4, type: 3}
       propertyPath: m_Name
       value: SM_Env_Wall_Archway_10
+      objectReference: {fileID: 0}
+    - target: {fileID: 196358, guid: 24ae687c2d5de7245ac5884e42b824e4, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 418860, guid: 24ae687c2d5de7245ac5884e42b824e4, type: 3}
       propertyPath: m_RootOrder

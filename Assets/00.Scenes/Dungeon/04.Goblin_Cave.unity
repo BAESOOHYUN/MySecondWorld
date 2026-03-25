@@ -132,6 +132,10 @@ PrefabInstance:
       value: SM_Env_Rock_Flat_Platform_40
       objectReference: {fileID: 0}
     - target: {fileID: 116208, guid: 8713a6f6372889249b444dfb1adb9f4b, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 116208, guid: 8713a6f6372889249b444dfb1adb9f4b, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -203,6 +207,10 @@ PrefabInstance:
       value: SM_Env_Gem_Large_10
       objectReference: {fileID: 0}
     - target: {fileID: 190188, guid: 87874848711c372419e6cf6ca05d9ea1, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 190188, guid: 87874848711c372419e6cf6ca05d9ea1, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -262,6 +270,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
     - target: {fileID: 113894, guid: 8c7f3a282739c344da560a2326497f5b, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 113894, guid: 8c7f3a282739c344da560a2326497f5b, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -319,6 +331,10 @@ PrefabInstance:
     - target: {fileID: 191400, guid: 988860f9d4d3e594c9d6807d2a51e007, type: 3}
       propertyPath: m_Name
       value: SM_Env_Bone_Skull_03
+      objectReference: {fileID: 0}
+    - target: {fileID: 191400, guid: 988860f9d4d3e594c9d6807d2a51e007, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 191400, guid: 988860f9d4d3e594c9d6807d2a51e007, type: 3}
       propertyPath: m_IsActive
@@ -390,6 +406,10 @@ PrefabInstance:
     - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Round_28
+      objectReference: {fileID: 0}
+    - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
       propertyPath: m_IsActive
@@ -466,6 +486,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Env_Vine_Spikes_09
       objectReference: {fileID: 0}
+    - target: {fileID: 169216, guid: 9bda40f4cc3980c42830cb01d8347291, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 477796, guid: 9bda40f4cc3980c42830cb01d8347291, type: 3}
       propertyPath: m_RootOrder
       value: 321
@@ -520,6 +544,10 @@ PrefabInstance:
     - target: {fileID: 164350, guid: f7dc92b7dff7d2c419e6070d90115e42, type: 3}
       propertyPath: m_Name
       value: SM_Env_Minetrack_Straight_06
+      objectReference: {fileID: 0}
+    - target: {fileID: 164350, guid: f7dc92b7dff7d2c419e6070d90115e42, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 164350, guid: f7dc92b7dff7d2c419e6070d90115e42, type: 3}
       propertyPath: m_IsActive
@@ -581,6 +609,10 @@ PrefabInstance:
       value: SM_Prop_Goblin_Spikes_08
       objectReference: {fileID: 0}
     - target: {fileID: 152268, guid: 6ce2b1182f7171b479d3366b79766686, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 152268, guid: 6ce2b1182f7171b479d3366b79766686, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -638,6 +670,10 @@ PrefabInstance:
     - target: {fileID: 188278, guid: 2be6c8f228f8eb14aab539bc761d3818, type: 3}
       propertyPath: m_Name
       value: SM_Prop_Candles_19
+      objectReference: {fileID: 0}
+    - target: {fileID: 188278, guid: 2be6c8f228f8eb14aab539bc761d3818, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 188278, guid: 2be6c8f228f8eb14aab539bc761d3818, type: 3}
       propertyPath: m_IsActive
@@ -701,6 +737,10 @@ PrefabInstance:
     - target: {fileID: 143556, guid: 03b90a12ad8bb4347a59cfa647b8e055, type: 3}
       propertyPath: m_Name
       value: SM_Env_Brick_Rubble_10
+      objectReference: {fileID: 0}
+    - target: {fileID: 143556, guid: 03b90a12ad8bb4347a59cfa647b8e055, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 143556, guid: 03b90a12ad8bb4347a59cfa647b8e055, type: 3}
       propertyPath: m_IsActive
@@ -768,6 +808,10 @@ PrefabInstance:
     - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Round_26
+      objectReference: {fileID: 0}
+    - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
       propertyPath: m_IsActive
@@ -845,6 +889,10 @@ PrefabInstance:
       value: SM_Env_Mushroom_Small_14
       objectReference: {fileID: 0}
     - target: {fileID: 158038, guid: b9cff604e7a459c4581b58993fc28f1d, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 158038, guid: b9cff604e7a459c4581b58993fc28f1d, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -902,6 +950,10 @@ PrefabInstance:
     - target: {fileID: 145742, guid: 52c6ffa15558342449409fa54ffb9000, type: 3}
       propertyPath: m_Name
       value: SM_Env_Bone_Ribs_04
+      objectReference: {fileID: 0}
+    - target: {fileID: 145742, guid: 52c6ffa15558342449409fa54ffb9000, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 145742, guid: 52c6ffa15558342449409fa54ffb9000, type: 3}
       propertyPath: m_IsActive
@@ -975,6 +1027,10 @@ PrefabInstance:
       value: SM_Env_Cave_Large_04
       objectReference: {fileID: 0}
     - target: {fileID: 193426, guid: dff4711b1f0828e4bb71141814629b50, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 193426, guid: dff4711b1f0828e4bb71141814629b50, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -1045,13 +1101,25 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
+    - target: {fileID: 132422, guid: 5c00c5f03c23f3b44af6d75077362432, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 137454, guid: 5c00c5f03c23f3b44af6d75077362432, type: 3}
       propertyPath: m_Name
       value: SM_Prop_Minecart_03
       objectReference: {fileID: 0}
     - target: {fileID: 137454, guid: 5c00c5f03c23f3b44af6d75077362432, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 137454, guid: 5c00c5f03c23f3b44af6d75077362432, type: 3}
       propertyPath: m_IsActive
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 137766, guid: 5c00c5f03c23f3b44af6d75077362432, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 498650, guid: 5c00c5f03c23f3b44af6d75077362432, type: 3}
       propertyPath: m_RootOrder
@@ -1104,6 +1172,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
+    - target: {fileID: 195216, guid: 9aebcee403d0c4745bea8c5fea3af6ef, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 475672, guid: 9aebcee403d0c4745bea8c5fea3af6ef, type: 3}
       propertyPath: m_RootOrder
       value: 350
@@ -1158,6 +1230,10 @@ PrefabInstance:
     - target: {fileID: 117630, guid: 3c7e3093f2f74ad499210774e0d01aea, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Flat_22
+      objectReference: {fileID: 0}
+    - target: {fileID: 117630, guid: 3c7e3093f2f74ad499210774e0d01aea, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 117630, guid: 3c7e3093f2f74ad499210774e0d01aea, type: 3}
       propertyPath: m_IsActive
@@ -1221,6 +1297,10 @@ PrefabInstance:
     - target: {fileID: 116208, guid: 8713a6f6372889249b444dfb1adb9f4b, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Flat_Platform_08
+      objectReference: {fileID: 0}
+    - target: {fileID: 116208, guid: 8713a6f6372889249b444dfb1adb9f4b, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 116208, guid: 8713a6f6372889249b444dfb1adb9f4b, type: 3}
       propertyPath: m_IsActive
@@ -1439,6 +1519,10 @@ PrefabInstance:
       value: SM_Env_Rock_Flat_Platform_Large_04
       objectReference: {fileID: 0}
     - target: {fileID: 196890, guid: d05f3cbdbd799cb49aaab82081a55a8b, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 196890, guid: d05f3cbdbd799cb49aaab82081a55a8b, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -1510,6 +1594,10 @@ PrefabInstance:
       value: SM_Env_Minetrack_Bridge_02
       objectReference: {fileID: 0}
     - target: {fileID: 187580, guid: b0fdd261cab4d884ea4d14190dfc171a, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 187580, guid: b0fdd261cab4d884ea4d14190dfc171a, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -1567,6 +1655,10 @@ PrefabInstance:
     - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Round_18
+      objectReference: {fileID: 0}
+    - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
       propertyPath: m_IsActive
@@ -1643,6 +1735,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Env_Vine_Spikes_07
       objectReference: {fileID: 0}
+    - target: {fileID: 121542, guid: 1e8a1f848e20325468b33aa9d904bce7, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 426146, guid: 1e8a1f848e20325468b33aa9d904bce7, type: 3}
       propertyPath: m_RootOrder
       value: 322
@@ -1694,6 +1790,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
+    - target: {fileID: 198314, guid: 88d488d0436b1f2419d0649eb60e0e1d, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 198314, guid: 88d488d0436b1f2419d0649eb60e0e1d, type: 3}
       propertyPath: m_IsActive
       value: 1
@@ -1753,6 +1853,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Prop_Brick_06
       objectReference: {fileID: 0}
+    - target: {fileID: 169518, guid: bcb12925987da314f8aaf71fb485f22f, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 442698, guid: bcb12925987da314f8aaf71fb485f22f, type: 3}
       propertyPath: m_RootOrder
       value: 357
@@ -1811,6 +1915,10 @@ PrefabInstance:
     - target: {fileID: 190188, guid: 87874848711c372419e6cf6ca05d9ea1, type: 3}
       propertyPath: m_Name
       value: SM_Env_Gem_Large_04
+      objectReference: {fileID: 0}
+    - target: {fileID: 190188, guid: 87874848711c372419e6cf6ca05d9ea1, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 190188, guid: 87874848711c372419e6cf6ca05d9ea1, type: 3}
       propertyPath: m_IsActive
@@ -1875,6 +1983,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Prop_Brick_04
       objectReference: {fileID: 0}
+    - target: {fileID: 164194, guid: c0ba893510e6e8a43aa7babaee5852d9, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 467054, guid: c0ba893510e6e8a43aa7babaee5852d9, type: 3}
       propertyPath: m_RootOrder
       value: 338
@@ -1929,6 +2041,10 @@ PrefabInstance:
     - target: {fileID: 110020, guid: a109fb5c9d5c1d14098439ed932dc771, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Flat_Platform_46
+      objectReference: {fileID: 0}
+    - target: {fileID: 110020, guid: a109fb5c9d5c1d14098439ed932dc771, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 110020, guid: a109fb5c9d5c1d14098439ed932dc771, type: 3}
       propertyPath: m_IsActive
@@ -1988,6 +2104,10 @@ PrefabInstance:
     - target: {fileID: 169216, guid: 9bda40f4cc3980c42830cb01d8347291, type: 3}
       propertyPath: m_Name
       value: SM_Env_Vine_Spikes_10
+      objectReference: {fileID: 0}
+    - target: {fileID: 169216, guid: 9bda40f4cc3980c42830cb01d8347291, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 169216, guid: 9bda40f4cc3980c42830cb01d8347291, type: 3}
       propertyPath: m_IsActive
@@ -2139,6 +2259,10 @@ PrefabInstance:
       value: SM_Env_Rubble_Pebbles_46
       objectReference: {fileID: 0}
     - target: {fileID: 179920, guid: 646901c7a83b3d74fa146a5470ddb0cb, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 179920, guid: 646901c7a83b3d74fa146a5470ddb0cb, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -2196,6 +2320,10 @@ PrefabInstance:
     - target: {fileID: 142584, guid: 28b56993a0977004882db8754d3904ee, type: 3}
       propertyPath: m_Name
       value: SM_Prop_Candle_10
+      objectReference: {fileID: 0}
+    - target: {fileID: 142584, guid: 28b56993a0977004882db8754d3904ee, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 142584, guid: 28b56993a0977004882db8754d3904ee, type: 3}
       propertyPath: m_IsActive
@@ -2259,6 +2387,10 @@ PrefabInstance:
     - target: {fileID: 191796, guid: 3e288e91154144d4a8449e8f03d24b20, type: 3}
       propertyPath: m_Name
       value: SM_Env_Brick_Rubble_07
+      objectReference: {fileID: 0}
+    - target: {fileID: 191796, guid: 3e288e91154144d4a8449e8f03d24b20, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 191796, guid: 3e288e91154144d4a8449e8f03d24b20, type: 3}
       propertyPath: m_IsActive
@@ -2332,6 +2464,10 @@ PrefabInstance:
       value: SM_Prop_Candles_22
       objectReference: {fileID: 0}
     - target: {fileID: 188278, guid: 2be6c8f228f8eb14aab539bc761d3818, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 188278, guid: 2be6c8f228f8eb14aab539bc761d3818, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -2395,6 +2531,10 @@ PrefabInstance:
       value: SM_Prop_Goblin_Tower_02
       objectReference: {fileID: 0}
     - target: {fileID: 113812, guid: fb45b4bb31f66c946ab6381c0b798f81, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 113812, guid: fb45b4bb31f66c946ab6381c0b798f81, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -2454,6 +2594,10 @@ PrefabInstance:
       value: SM_Env_Rubble_Pebbles_55
       objectReference: {fileID: 0}
     - target: {fileID: 179920, guid: 646901c7a83b3d74fa146a5470ddb0cb, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 179920, guid: 646901c7a83b3d74fa146a5470ddb0cb, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -2508,6 +2652,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
+    - target: {fileID: 121542, guid: 1e8a1f848e20325468b33aa9d904bce7, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 426146, guid: 1e8a1f848e20325468b33aa9d904bce7, type: 3}
       propertyPath: m_RootOrder
       value: 323
@@ -2564,6 +2712,10 @@ PrefabInstance:
       value: SM_Env_Mushroom_Small_05
       objectReference: {fileID: 0}
     - target: {fileID: 158038, guid: b9cff604e7a459c4581b58993fc28f1d, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 158038, guid: b9cff604e7a459c4581b58993fc28f1d, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -2618,6 +2770,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
+    - target: {fileID: 103198, guid: f65b497ff807d95439b38e7da2fab667, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 103198, guid: f65b497ff807d95439b38e7da2fab667, type: 3}
       propertyPath: m_IsActive
       value: 1
@@ -2678,6 +2834,10 @@ PrefabInstance:
       value: SM_Env_Mushroom_Small_07
       objectReference: {fileID: 0}
     - target: {fileID: 158038, guid: b9cff604e7a459c4581b58993fc28f1d, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 158038, guid: b9cff604e7a459c4581b58993fc28f1d, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -2735,6 +2895,10 @@ PrefabInstance:
     - target: {fileID: 155424, guid: cbbcdd5ff295f0746a106019e1246642, type: 3}
       propertyPath: m_Name
       value: SM_Env_Cave_Background_17
+      objectReference: {fileID: 0}
+    - target: {fileID: 155424, guid: cbbcdd5ff295f0746a106019e1246642, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 155424, guid: cbbcdd5ff295f0746a106019e1246642, type: 3}
       propertyPath: m_IsActive
@@ -2953,6 +3117,10 @@ PrefabInstance:
       value: SM_Prop_Candles_21
       objectReference: {fileID: 0}
     - target: {fileID: 130356, guid: 3bb587ec23f47d94f9fda50197c8fb66, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 130356, guid: 3bb587ec23f47d94f9fda50197c8fb66, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -3011,6 +3179,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
+    - target: {fileID: 104034, guid: 98721e9eb8d07ad4b8d521e08f41e5ae, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 198910, guid: 98721e9eb8d07ad4b8d521e08f41e5ae, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 198910, guid: 98721e9eb8d07ad4b8d521e08f41e5ae, type: 3}
       propertyPath: m_IsActive
       value: 1
@@ -3071,6 +3247,10 @@ PrefabInstance:
       value: SM_Env_Wood_Bridge_Start_03
       objectReference: {fileID: 0}
     - target: {fileID: 122446, guid: 685e675711b17224685ae3d7ed84139c, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 122446, guid: 685e675711b17224685ae3d7ed84139c, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -3128,6 +3308,10 @@ PrefabInstance:
     - target: {fileID: 113894, guid: 8c7f3a282739c344da560a2326497f5b, type: 3}
       propertyPath: m_Name
       value: SM_Env_Fence_Goblin_03
+      objectReference: {fileID: 0}
+    - target: {fileID: 113894, guid: 8c7f3a282739c344da560a2326497f5b, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 113894, guid: 8c7f3a282739c344da560a2326497f5b, type: 3}
       propertyPath: m_IsActive
@@ -3237,6 +3421,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
     - target: {fileID: 196890, guid: d05f3cbdbd799cb49aaab82081a55a8b, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 196890, guid: d05f3cbdbd799cb49aaab82081a55a8b, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -3312,6 +3500,10 @@ PrefabInstance:
       value: SM_Env_Brick_Rubble_11
       objectReference: {fileID: 0}
     - target: {fileID: 191796, guid: 3e288e91154144d4a8449e8f03d24b20, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 191796, guid: 3e288e91154144d4a8449e8f03d24b20, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -3377,6 +3569,10 @@ PrefabInstance:
     - target: {fileID: 197994, guid: 37b8bc688caaa5a44b7dec1fa9ef2d2a, type: 3}
       propertyPath: m_Name
       value: SM_Env_Cave_Background_12
+      objectReference: {fileID: 0}
+    - target: {fileID: 197994, guid: 37b8bc688caaa5a44b7dec1fa9ef2d2a, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 197994, guid: 37b8bc688caaa5a44b7dec1fa9ef2d2a, type: 3}
       propertyPath: m_IsActive
@@ -3450,6 +3646,10 @@ PrefabInstance:
       value: SM_Env_Mushroom_Small_02
       objectReference: {fileID: 0}
     - target: {fileID: 158038, guid: b9cff604e7a459c4581b58993fc28f1d, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 158038, guid: b9cff604e7a459c4581b58993fc28f1d, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -3509,6 +3709,10 @@ PrefabInstance:
       value: SM_Prop_Goblin_Spikes_11
       objectReference: {fileID: 0}
     - target: {fileID: 140672, guid: 2e441718886a75b41aa989c3f7829b75, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 140672, guid: 2e441718886a75b41aa989c3f7829b75, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -3566,6 +3770,10 @@ PrefabInstance:
     - target: {fileID: 178744, guid: 7952f7e6ac9b93b4682e63e68d9a2f74, type: 3}
       propertyPath: m_Name
       value: SM_Env_CrackedRock_11
+      objectReference: {fileID: 0}
+    - target: {fileID: 178744, guid: 7952f7e6ac9b93b4682e63e68d9a2f74, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 423422, guid: 7952f7e6ac9b93b4682e63e68d9a2f74, type: 3}
       propertyPath: m_RootOrder
@@ -3639,6 +3847,10 @@ PrefabInstance:
       value: SM_Env_Gem_Large_09
       objectReference: {fileID: 0}
     - target: {fileID: 190188, guid: 87874848711c372419e6cf6ca05d9ea1, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 190188, guid: 87874848711c372419e6cf6ca05d9ea1, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -3702,6 +3914,10 @@ PrefabInstance:
       value: SM_Env_Minetrack_Bridge_Broken_03
       objectReference: {fileID: 0}
     - target: {fileID: 112134, guid: 1e7cc353830e2d6409a9b84abc744fd8, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 112134, guid: 1e7cc353830e2d6409a9b84abc744fd8, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -3759,6 +3975,10 @@ PrefabInstance:
     - target: {fileID: 169518, guid: bcb12925987da314f8aaf71fb485f22f, type: 3}
       propertyPath: m_Name
       value: SM_Prop_Brick_11
+      objectReference: {fileID: 0}
+    - target: {fileID: 169518, guid: bcb12925987da314f8aaf71fb485f22f, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 442698, guid: bcb12925987da314f8aaf71fb485f22f, type: 3}
       propertyPath: m_RootOrder
@@ -3818,6 +4038,10 @@ PrefabInstance:
     - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Flat_Platform_37
+      objectReference: {fileID: 0}
+    - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
       propertyPath: m_IsActive
@@ -3887,6 +4111,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
     - target: {fileID: 103198, guid: f65b497ff807d95439b38e7da2fab667, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 103198, guid: f65b497ff807d95439b38e7da2fab667, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -3944,6 +4172,10 @@ PrefabInstance:
     - target: {fileID: 178744, guid: 7952f7e6ac9b93b4682e63e68d9a2f74, type: 3}
       propertyPath: m_Name
       value: SM_Env_CrackedRock_20
+      objectReference: {fileID: 0}
+    - target: {fileID: 178744, guid: 7952f7e6ac9b93b4682e63e68d9a2f74, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 178744, guid: 7952f7e6ac9b93b4682e63e68d9a2f74, type: 3}
       propertyPath: m_IsActive
@@ -4021,6 +4253,10 @@ PrefabInstance:
       value: SM_Env_Cave_Background_13
       objectReference: {fileID: 0}
     - target: {fileID: 197994, guid: 37b8bc688caaa5a44b7dec1fa9ef2d2a, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 197994, guid: 37b8bc688caaa5a44b7dec1fa9ef2d2a, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -4088,6 +4324,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
     - target: {fileID: 137880, guid: d74d4ec61fec68b42bdb97019a7926ad, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 137880, guid: d74d4ec61fec68b42bdb97019a7926ad, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -4145,6 +4385,10 @@ PrefabInstance:
     - target: {fileID: 116208, guid: 8713a6f6372889249b444dfb1adb9f4b, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Flat_Platform_34
+      objectReference: {fileID: 0}
+    - target: {fileID: 116208, guid: 8713a6f6372889249b444dfb1adb9f4b, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 116208, guid: 8713a6f6372889249b444dfb1adb9f4b, type: 3}
       propertyPath: m_IsActive
@@ -4218,6 +4462,10 @@ PrefabInstance:
       value: SM_Env_Rock_Flat_Platform_10
       objectReference: {fileID: 0}
     - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -4289,6 +4537,10 @@ PrefabInstance:
       value: SM_Prop_TorchStick_39
       objectReference: {fileID: 0}
     - target: {fileID: 194764, guid: 2bcc13328f8e4a44abdb601fda7419a4, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 194764, guid: 2bcc13328f8e4a44abdb601fda7419a4, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -4346,6 +4598,10 @@ PrefabInstance:
     - target: {fileID: 121434, guid: 52479909d06576f439663a8b246cb683, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Flat_Platform_45
+      objectReference: {fileID: 0}
+    - target: {fileID: 121434, guid: 52479909d06576f439663a8b246cb683, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 121434, guid: 52479909d06576f439663a8b246cb683, type: 3}
       propertyPath: m_IsActive
@@ -4407,6 +4663,10 @@ PrefabInstance:
       value: SM_Env_Rubble_Pebbles_62
       objectReference: {fileID: 0}
     - target: {fileID: 168602, guid: 3e0f6b0ee51e6eb42a731a26210989b9, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 168602, guid: 3e0f6b0ee51e6eb42a731a26210989b9, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -4464,6 +4724,10 @@ PrefabInstance:
     - target: {fileID: 156182, guid: 9422ab5dcc693294bbd5f0de0d119160, type: 3}
       propertyPath: m_Name
       value: SM_Env_MineTunnel_Straight_04
+      objectReference: {fileID: 0}
+    - target: {fileID: 156182, guid: 9422ab5dcc693294bbd5f0de0d119160, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 156182, guid: 9422ab5dcc693294bbd5f0de0d119160, type: 3}
       propertyPath: m_IsActive
@@ -4527,6 +4791,10 @@ PrefabInstance:
     - target: {fileID: 115854, guid: 8cf8ee3bd823e3d4e9d8a79486574684, type: 3}
       propertyPath: m_Name
       value: SM_Env_Cave_Background_Corner_02
+      objectReference: {fileID: 0}
+    - target: {fileID: 115854, guid: 8cf8ee3bd823e3d4e9d8a79486574684, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 446656, guid: 8cf8ee3bd823e3d4e9d8a79486574684, type: 3}
       propertyPath: m_RootOrder
@@ -4594,6 +4862,10 @@ PrefabInstance:
     - target: {fileID: 110684, guid: a04e9c8c8fee88848911601032604b55, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Flat_Platform_06
+      objectReference: {fileID: 0}
+    - target: {fileID: 110684, guid: a04e9c8c8fee88848911601032604b55, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 110684, guid: a04e9c8c8fee88848911601032604b55, type: 3}
       propertyPath: m_IsActive
@@ -4671,6 +4943,10 @@ PrefabInstance:
       value: SM_Env_Brick_Rubble_05
       objectReference: {fileID: 0}
     - target: {fileID: 191796, guid: 3e288e91154144d4a8449e8f03d24b20, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 191796, guid: 3e288e91154144d4a8449e8f03d24b20, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -4725,6 +5001,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
+    - target: {fileID: 164760, guid: 8ed44b12ca34ce34e9754ece5b325562, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 164760, guid: 8ed44b12ca34ce34e9754ece5b325562, type: 3}
       propertyPath: m_IsActive
       value: 1
@@ -4783,6 +5063,10 @@ PrefabInstance:
     - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Round_15
+      objectReference: {fileID: 0}
+    - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
       propertyPath: m_IsActive
@@ -4856,6 +5140,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
     - target: {fileID: 103198, guid: f65b497ff807d95439b38e7da2fab667, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 103198, guid: f65b497ff807d95439b38e7da2fab667, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -4910,6 +5198,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
+    - target: {fileID: 132666, guid: ba39ae34c46b0ac46a3e8c1de0fc4d49, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 132666, guid: ba39ae34c46b0ac46a3e8c1de0fc4d49, type: 3}
       propertyPath: m_IsActive
       value: 1
@@ -4982,6 +5274,10 @@ PrefabInstance:
       value: SM_Prop_Goblin_Branch_05
       objectReference: {fileID: 0}
     - target: {fileID: 103650, guid: 1a0a00f041c72ef4884561d8f41954e6, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 103650, guid: 1a0a00f041c72ef4884561d8f41954e6, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -5039,6 +5335,10 @@ PrefabInstance:
     - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Round_29
+      objectReference: {fileID: 0}
+    - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
       propertyPath: m_IsActive
@@ -5116,6 +5416,10 @@ PrefabInstance:
       value: SM_Env_Rock_Round_24
       objectReference: {fileID: 0}
     - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -5189,6 +5493,10 @@ PrefabInstance:
     - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Round_30
+      objectReference: {fileID: 0}
+    - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
       propertyPath: m_IsActive
@@ -5266,6 +5574,10 @@ PrefabInstance:
       value: SM_Env_Fence_Goblin_19
       objectReference: {fileID: 0}
     - target: {fileID: 166708, guid: 375bdbc0adc69904a97b62b6ab9758de, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 166708, guid: 375bdbc0adc69904a97b62b6ab9758de, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -5323,6 +5635,10 @@ PrefabInstance:
     - target: {fileID: 193426, guid: dff4711b1f0828e4bb71141814629b50, type: 3}
       propertyPath: m_Name
       value: SM_Env_Cave_Large_03
+      objectReference: {fileID: 0}
+    - target: {fileID: 193426, guid: dff4711b1f0828e4bb71141814629b50, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 193426, guid: dff4711b1f0828e4bb71141814629b50, type: 3}
       propertyPath: m_IsActive
@@ -5400,6 +5716,10 @@ PrefabInstance:
       value: SM_Env_Minetrack_Broken_07
       objectReference: {fileID: 0}
     - target: {fileID: 105362, guid: 3fec779d1ea47f143b709b707919a5f8, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 105362, guid: 3fec779d1ea47f143b709b707919a5f8, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -5457,6 +5777,10 @@ PrefabInstance:
     - target: {fileID: 188278, guid: 2be6c8f228f8eb14aab539bc761d3818, type: 3}
       propertyPath: m_Name
       value: SM_Prop_Candles_16
+      objectReference: {fileID: 0}
+    - target: {fileID: 188278, guid: 2be6c8f228f8eb14aab539bc761d3818, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 188278, guid: 2be6c8f228f8eb14aab539bc761d3818, type: 3}
       propertyPath: m_IsActive
@@ -5520,6 +5844,10 @@ PrefabInstance:
     - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Round_19
+      objectReference: {fileID: 0}
+    - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
       propertyPath: m_IsActive
@@ -5595,6 +5923,10 @@ PrefabInstance:
     - target: {fileID: 198180, guid: 7f3d4ff296dccb147aeb894ae74fb062, type: 3}
       propertyPath: m_Name
       value: SM_Env_Grass_12
+      objectReference: {fileID: 0}
+    - target: {fileID: 198180, guid: 7f3d4ff296dccb147aeb894ae74fb062, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 494816, guid: 7f3d4ff296dccb147aeb894ae74fb062, type: 3}
       propertyPath: m_RootOrder
@@ -5779,6 +6111,10 @@ PrefabInstance:
       value: SM_Env_Fence_Goblin_14
       objectReference: {fileID: 0}
     - target: {fileID: 166708, guid: 375bdbc0adc69904a97b62b6ab9758de, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 166708, guid: 375bdbc0adc69904a97b62b6ab9758de, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -5838,6 +6174,10 @@ PrefabInstance:
       value: SM_Env_Minetrack_Straight_07
       objectReference: {fileID: 0}
     - target: {fileID: 164350, guid: f7dc92b7dff7d2c419e6070d90115e42, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 164350, guid: f7dc92b7dff7d2c419e6070d90115e42, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -5895,6 +6235,10 @@ PrefabInstance:
     - target: {fileID: 166708, guid: 375bdbc0adc69904a97b62b6ab9758de, type: 3}
       propertyPath: m_Name
       value: SM_Env_Fence_Goblin_15
+      objectReference: {fileID: 0}
+    - target: {fileID: 166708, guid: 375bdbc0adc69904a97b62b6ab9758de, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 166708, guid: 375bdbc0adc69904a97b62b6ab9758de, type: 3}
       propertyPath: m_IsActive
@@ -6083,6 +6427,10 @@ PrefabInstance:
       value: SM_Env_Rock_Flat_Platform_20
       objectReference: {fileID: 0}
     - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -6158,6 +6506,10 @@ PrefabInstance:
       value: SM_Env_CrackedRock_16
       objectReference: {fileID: 0}
     - target: {fileID: 178744, guid: 7952f7e6ac9b93b4682e63e68d9a2f74, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 178744, guid: 7952f7e6ac9b93b4682e63e68d9a2f74, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -6229,6 +6581,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
     - target: {fileID: 103198, guid: f65b497ff807d95439b38e7da2fab667, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 103198, guid: f65b497ff807d95439b38e7da2fab667, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -6287,6 +6643,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Env_Vine_Spikes_08
       objectReference: {fileID: 0}
+    - target: {fileID: 195216, guid: 9aebcee403d0c4745bea8c5fea3af6ef, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 475672, guid: 9aebcee403d0c4745bea8c5fea3af6ef, type: 3}
       propertyPath: m_RootOrder
       value: 324
@@ -6341,6 +6701,10 @@ PrefabInstance:
     - target: {fileID: 179920, guid: 646901c7a83b3d74fa146a5470ddb0cb, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rubble_Pebbles_45
+      objectReference: {fileID: 0}
+    - target: {fileID: 179920, guid: 646901c7a83b3d74fa146a5470ddb0cb, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 179920, guid: 646901c7a83b3d74fa146a5470ddb0cb, type: 3}
       propertyPath: m_IsActive
@@ -6402,6 +6766,10 @@ PrefabInstance:
       value: SM_Env_Rubble_Pebbles_44
       objectReference: {fileID: 0}
     - target: {fileID: 179920, guid: 646901c7a83b3d74fa146a5470ddb0cb, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 179920, guid: 646901c7a83b3d74fa146a5470ddb0cb, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -6459,6 +6827,10 @@ PrefabInstance:
     - target: {fileID: 191796, guid: 3e288e91154144d4a8449e8f03d24b20, type: 3}
       propertyPath: m_Name
       value: SM_Env_Brick_Rubble_12
+      objectReference: {fileID: 0}
+    - target: {fileID: 191796, guid: 3e288e91154144d4a8449e8f03d24b20, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 191796, guid: 3e288e91154144d4a8449e8f03d24b20, type: 3}
       propertyPath: m_IsActive
@@ -6528,6 +6900,10 @@ PrefabInstance:
       value: SM_Env_Fence_Goblin_08
       objectReference: {fileID: 0}
     - target: {fileID: 113894, guid: 8c7f3a282739c344da560a2326497f5b, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 113894, guid: 8c7f3a282739c344da560a2326497f5b, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -6587,6 +6963,10 @@ PrefabInstance:
       value: SM_Env_Mushroom_Small_06
       objectReference: {fileID: 0}
     - target: {fileID: 158038, guid: b9cff604e7a459c4581b58993fc28f1d, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 158038, guid: b9cff604e7a459c4581b58993fc28f1d, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -6644,6 +7024,10 @@ PrefabInstance:
     - target: {fileID: 142584, guid: 28b56993a0977004882db8754d3904ee, type: 3}
       propertyPath: m_Name
       value: SM_Prop_Candle_11
+      objectReference: {fileID: 0}
+    - target: {fileID: 142584, guid: 28b56993a0977004882db8754d3904ee, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 142584, guid: 28b56993a0977004882db8754d3904ee, type: 3}
       propertyPath: m_IsActive
@@ -6707,6 +7091,10 @@ PrefabInstance:
     - target: {fileID: 177010, guid: 3bef878497e431146b5c4c64d4f738cd, type: 3}
       propertyPath: m_Name
       value: SM_Env_Cave_Background_Corner_03
+      objectReference: {fileID: 0}
+    - target: {fileID: 177010, guid: 3bef878497e431146b5c4c64d4f738cd, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 177010, guid: 3bef878497e431146b5c4c64d4f738cd, type: 3}
       propertyPath: m_IsActive
@@ -6780,6 +7168,10 @@ PrefabInstance:
       value: SM_Prop_Goblin_Spikes_07
       objectReference: {fileID: 0}
     - target: {fileID: 187504, guid: b776fa4e5a524dc49843fb902698db31, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 187504, guid: b776fa4e5a524dc49843fb902698db31, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -6837,6 +7229,10 @@ PrefabInstance:
     - target: {fileID: 110684, guid: a04e9c8c8fee88848911601032604b55, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Flat_Platform_32
+      objectReference: {fileID: 0}
+    - target: {fileID: 110684, guid: a04e9c8c8fee88848911601032604b55, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 110684, guid: a04e9c8c8fee88848911601032604b55, type: 3}
       propertyPath: m_IsActive
@@ -6906,6 +7302,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
     - target: {fileID: 191796, guid: 3e288e91154144d4a8449e8f03d24b20, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 191796, guid: 3e288e91154144d4a8449e8f03d24b20, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -6963,6 +7363,10 @@ PrefabInstance:
     - target: {fileID: 116208, guid: 8713a6f6372889249b444dfb1adb9f4b, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Flat_Platform_39
+      objectReference: {fileID: 0}
+    - target: {fileID: 116208, guid: 8713a6f6372889249b444dfb1adb9f4b, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 116208, guid: 8713a6f6372889249b444dfb1adb9f4b, type: 3}
       propertyPath: m_IsActive
@@ -7036,6 +7440,10 @@ PrefabInstance:
       value: SM_Env_Rock_Flat_Platform_33
       objectReference: {fileID: 0}
     - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -7105,6 +7513,10 @@ PrefabInstance:
     - target: {fileID: 197994, guid: 37b8bc688caaa5a44b7dec1fa9ef2d2a, type: 3}
       propertyPath: m_Name
       value: SM_Env_Cave_Background_08
+      objectReference: {fileID: 0}
+    - target: {fileID: 197994, guid: 37b8bc688caaa5a44b7dec1fa9ef2d2a, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 197994, guid: 37b8bc688caaa5a44b7dec1fa9ef2d2a, type: 3}
       propertyPath: m_IsActive
@@ -7323,6 +7735,10 @@ PrefabInstance:
       value: SM_Prop_TorchStick_29
       objectReference: {fileID: 0}
     - target: {fileID: 194764, guid: 2bcc13328f8e4a44abdb601fda7419a4, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 194764, guid: 2bcc13328f8e4a44abdb601fda7419a4, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -7380,6 +7796,10 @@ PrefabInstance:
     - target: {fileID: 121434, guid: 52479909d06576f439663a8b246cb683, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Flat_Platform_28
+      objectReference: {fileID: 0}
+    - target: {fileID: 121434, guid: 52479909d06576f439663a8b246cb683, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 121434, guid: 52479909d06576f439663a8b246cb683, type: 3}
       propertyPath: m_IsActive
@@ -7566,6 +7986,10 @@ PrefabInstance:
     - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Flat_Platform_02
+      objectReference: {fileID: 0}
+    - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
       propertyPath: m_IsActive
@@ -7766,6 +8190,10 @@ PrefabInstance:
       value: SM_Prop_TorchStick_27
       objectReference: {fileID: 0}
     - target: {fileID: 194764, guid: 2bcc13328f8e4a44abdb601fda7419a4, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 194764, guid: 2bcc13328f8e4a44abdb601fda7419a4, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -7825,6 +8253,10 @@ PrefabInstance:
       value: SM_Env_Rubble_Pebbles_47
       objectReference: {fileID: 0}
     - target: {fileID: 179920, guid: 646901c7a83b3d74fa146a5470ddb0cb, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 179920, guid: 646901c7a83b3d74fa146a5470ddb0cb, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -7882,6 +8314,10 @@ PrefabInstance:
     - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Flat_Platform_15
+      objectReference: {fileID: 0}
+    - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
       propertyPath: m_IsActive
@@ -7955,6 +8391,10 @@ PrefabInstance:
       value: SM_Env_Rock_Flat_23
       objectReference: {fileID: 0}
     - target: {fileID: 117630, guid: 3c7e3093f2f74ad499210774e0d01aea, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 117630, guid: 3c7e3093f2f74ad499210774e0d01aea, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -8016,6 +8456,10 @@ PrefabInstance:
     - target: {fileID: 178744, guid: 7952f7e6ac9b93b4682e63e68d9a2f74, type: 3}
       propertyPath: m_Name
       value: SM_Env_CrackedRock_13
+      objectReference: {fileID: 0}
+    - target: {fileID: 178744, guid: 7952f7e6ac9b93b4682e63e68d9a2f74, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 423422, guid: 7952f7e6ac9b93b4682e63e68d9a2f74, type: 3}
       propertyPath: m_RootOrder
@@ -8234,6 +8678,10 @@ PrefabInstance:
       value: SM_Env_MineTunnel_Straight_05
       objectReference: {fileID: 0}
     - target: {fileID: 156182, guid: 9422ab5dcc693294bbd5f0de0d119160, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 156182, guid: 9422ab5dcc693294bbd5f0de0d119160, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -8295,6 +8743,10 @@ PrefabInstance:
     - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Round_27
+      objectReference: {fileID: 0}
+    - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
       propertyPath: m_IsActive
@@ -8372,6 +8824,10 @@ PrefabInstance:
       value: SM_Env_Minetrack_Bridge_Broken_02
       objectReference: {fileID: 0}
     - target: {fileID: 112134, guid: 1e7cc353830e2d6409a9b84abc744fd8, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 112134, guid: 1e7cc353830e2d6409a9b84abc744fd8, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -8431,6 +8887,10 @@ PrefabInstance:
       value: SM_Env_Bone_Ribs_03
       objectReference: {fileID: 0}
     - target: {fileID: 145742, guid: 52c6ffa15558342449409fa54ffb9000, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 145742, guid: 52c6ffa15558342449409fa54ffb9000, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -8488,6 +8948,10 @@ PrefabInstance:
     - target: {fileID: 169758, guid: 60c6bc14bb0e58c4a99aa8e32d80f308, type: 3}
       propertyPath: m_Name
       value: SM_Prop_Candles_15
+      objectReference: {fileID: 0}
+    - target: {fileID: 169758, guid: 60c6bc14bb0e58c4a99aa8e32d80f308, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 169758, guid: 60c6bc14bb0e58c4a99aa8e32d80f308, type: 3}
       propertyPath: m_IsActive
@@ -8553,6 +9017,10 @@ PrefabInstance:
       value: SM_Env_Fence_Goblin_17
       objectReference: {fileID: 0}
     - target: {fileID: 113894, guid: 8c7f3a282739c344da560a2326497f5b, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 113894, guid: 8c7f3a282739c344da560a2326497f5b, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -8610,6 +9078,10 @@ PrefabInstance:
     - target: {fileID: 153826, guid: 8c3c19c34c678744485079676334c608, type: 3}
       propertyPath: m_Name
       value: SM_Env_Bone_Rigcage_03
+      objectReference: {fileID: 0}
+    - target: {fileID: 153826, guid: 8c3c19c34c678744485079676334c608, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 153826, guid: 8c3c19c34c678744485079676334c608, type: 3}
       propertyPath: m_IsActive
@@ -8760,6 +9232,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Env_Rock_Flat_03
       objectReference: {fileID: 0}
+    - target: {fileID: 145588, guid: d00442b5e6db1d946841cbe6ef7562d4, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 406854, guid: d00442b5e6db1d946841cbe6ef7562d4, type: 3}
       propertyPath: m_RootOrder
       value: 333
@@ -8818,6 +9294,10 @@ PrefabInstance:
     - target: {fileID: 178744, guid: 7952f7e6ac9b93b4682e63e68d9a2f74, type: 3}
       propertyPath: m_Name
       value: SM_Env_CrackedRock_18
+      objectReference: {fileID: 0}
+    - target: {fileID: 178744, guid: 7952f7e6ac9b93b4682e63e68d9a2f74, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 178744, guid: 7952f7e6ac9b93b4682e63e68d9a2f74, type: 3}
       propertyPath: m_IsActive
@@ -9040,6 +9520,10 @@ PrefabInstance:
       value: SM_Env_Rock_Flat_Platform_21
       objectReference: {fileID: 0}
     - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -9107,6 +9591,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
     - target: {fileID: 187580, guid: b0fdd261cab4d884ea4d14190dfc171a, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 187580, guid: b0fdd261cab4d884ea4d14190dfc171a, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -9164,6 +9652,10 @@ PrefabInstance:
     - target: {fileID: 191796, guid: 3e288e91154144d4a8449e8f03d24b20, type: 3}
       propertyPath: m_Name
       value: SM_Env_Brick_Rubble_09
+      objectReference: {fileID: 0}
+    - target: {fileID: 191796, guid: 3e288e91154144d4a8449e8f03d24b20, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 191796, guid: 3e288e91154144d4a8449e8f03d24b20, type: 3}
       propertyPath: m_IsActive
@@ -9233,6 +9725,10 @@ PrefabInstance:
       value: SM_Env_Bone_Rigcage_02
       objectReference: {fileID: 0}
     - target: {fileID: 153826, guid: 8c3c19c34c678744485079676334c608, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 153826, guid: 8c3c19c34c678744485079676334c608, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -9287,6 +9783,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
+    - target: {fileID: 122796, guid: 146879b9a407b4947a38bacaa6fc4dd8, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 122796, guid: 146879b9a407b4947a38bacaa6fc4dd8, type: 3}
       propertyPath: m_IsActive
       value: 1
@@ -9345,6 +9845,10 @@ PrefabInstance:
     - target: {fileID: 155424, guid: cbbcdd5ff295f0746a106019e1246642, type: 3}
       propertyPath: m_Name
       value: SM_Env_Cave_Background_18
+      objectReference: {fileID: 0}
+    - target: {fileID: 155424, guid: cbbcdd5ff295f0746a106019e1246642, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 155424, guid: cbbcdd5ff295f0746a106019e1246642, type: 3}
       propertyPath: m_IsActive
@@ -9418,6 +9922,10 @@ PrefabInstance:
       value: SM_Env_Tree_Twisted_03
       objectReference: {fileID: 0}
     - target: {fileID: 164760, guid: 8ed44b12ca34ce34e9754ece5b325562, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 164760, guid: 8ed44b12ca34ce34e9754ece5b325562, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -9475,6 +9983,10 @@ PrefabInstance:
     - target: {fileID: 155424, guid: cbbcdd5ff295f0746a106019e1246642, type: 3}
       propertyPath: m_Name
       value: SM_Env_Cave_Background_20
+      objectReference: {fileID: 0}
+    - target: {fileID: 155424, guid: cbbcdd5ff295f0746a106019e1246642, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 155424, guid: cbbcdd5ff295f0746a106019e1246642, type: 3}
       propertyPath: m_IsActive
@@ -9548,6 +10060,10 @@ PrefabInstance:
       value: SM_Env_Mushroom_Giant_11
       objectReference: {fileID: 0}
     - target: {fileID: 192026, guid: 16d7d3227049b944fb34c0d7bd878ee9, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 192026, guid: 16d7d3227049b944fb34c0d7bd878ee9, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -9606,6 +10122,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Prop_Brick_09
       objectReference: {fileID: 0}
+    - target: {fileID: 164194, guid: c0ba893510e6e8a43aa7babaee5852d9, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 467054, guid: c0ba893510e6e8a43aa7babaee5852d9, type: 3}
       propertyPath: m_RootOrder
       value: 358
@@ -9660,6 +10180,10 @@ PrefabInstance:
     - target: {fileID: 190188, guid: 87874848711c372419e6cf6ca05d9ea1, type: 3}
       propertyPath: m_Name
       value: SM_Env_Gem_Large_07
+      objectReference: {fileID: 0}
+    - target: {fileID: 190188, guid: 87874848711c372419e6cf6ca05d9ea1, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 190188, guid: 87874848711c372419e6cf6ca05d9ea1, type: 3}
       propertyPath: m_IsActive
@@ -9724,6 +10248,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Env_Grass_13
       objectReference: {fileID: 0}
+    - target: {fileID: 145484, guid: a3a688bad45e60446bf326f3e998e1da, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 470398, guid: a3a688bad45e60446bf326f3e998e1da, type: 3}
       propertyPath: m_RootOrder
       value: 345
@@ -9775,13 +10303,25 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
+    - target: {fileID: 132422, guid: 5c00c5f03c23f3b44af6d75077362432, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 137454, guid: 5c00c5f03c23f3b44af6d75077362432, type: 3}
       propertyPath: m_Name
       value: SM_Prop_Minecart_04
       objectReference: {fileID: 0}
     - target: {fileID: 137454, guid: 5c00c5f03c23f3b44af6d75077362432, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 137454, guid: 5c00c5f03c23f3b44af6d75077362432, type: 3}
       propertyPath: m_IsActive
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 137766, guid: 5c00c5f03c23f3b44af6d75077362432, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 498650, guid: 5c00c5f03c23f3b44af6d75077362432, type: 3}
       propertyPath: m_RootOrder
@@ -9834,6 +10374,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
+    - target: {fileID: 103198, guid: f65b497ff807d95439b38e7da2fab667, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 103198, guid: f65b497ff807d95439b38e7da2fab667, type: 3}
       propertyPath: m_IsActive
       value: 1
@@ -9893,6 +10437,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Prop_Brick_12
       objectReference: {fileID: 0}
+    - target: {fileID: 169518, guid: bcb12925987da314f8aaf71fb485f22f, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 442698, guid: bcb12925987da314f8aaf71fb485f22f, type: 3}
       propertyPath: m_RootOrder
       value: 340
@@ -9948,6 +10496,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
+    - target: {fileID: 155898, guid: 50aa90a81020d7f4d9882a4bede1b4f3, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 155898, guid: 50aa90a81020d7f4d9882a4bede1b4f3, type: 3}
       propertyPath: m_IsActive
       value: 1
@@ -10006,6 +10558,10 @@ PrefabInstance:
     - target: {fileID: 150720, guid: 07d8e21504c5ced46b0e0d81a1698023, type: 3}
       propertyPath: m_Name
       value: SM_Env_RockPile_Square_10
+      objectReference: {fileID: 0}
+    - target: {fileID: 150720, guid: 07d8e21504c5ced46b0e0d81a1698023, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 411664, guid: 07d8e21504c5ced46b0e0d81a1698023, type: 3}
       propertyPath: m_RootOrder
@@ -10075,6 +10631,10 @@ PrefabInstance:
       value: SM_Env_Rock_Flat_Platform_29
       objectReference: {fileID: 0}
     - target: {fileID: 110020, guid: a109fb5c9d5c1d14098439ed932dc771, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 110020, guid: a109fb5c9d5c1d14098439ed932dc771, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -10132,6 +10692,10 @@ PrefabInstance:
     - target: {fileID: 166708, guid: 375bdbc0adc69904a97b62b6ab9758de, type: 3}
       propertyPath: m_Name
       value: SM_Env_Fence_Goblin_04
+      objectReference: {fileID: 0}
+    - target: {fileID: 166708, guid: 375bdbc0adc69904a97b62b6ab9758de, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 166708, guid: 375bdbc0adc69904a97b62b6ab9758de, type: 3}
       propertyPath: m_IsActive
@@ -10193,6 +10757,10 @@ PrefabInstance:
       value: SM_Env_Fence_Goblin_11
       objectReference: {fileID: 0}
     - target: {fileID: 166708, guid: 375bdbc0adc69904a97b62b6ab9758de, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 166708, guid: 375bdbc0adc69904a97b62b6ab9758de, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -10250,6 +10818,10 @@ PrefabInstance:
     - target: {fileID: 194764, guid: 2bcc13328f8e4a44abdb601fda7419a4, type: 3}
       propertyPath: m_Name
       value: SM_Prop_TorchStick_26
+      objectReference: {fileID: 0}
+    - target: {fileID: 194764, guid: 2bcc13328f8e4a44abdb601fda7419a4, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 194764, guid: 2bcc13328f8e4a44abdb601fda7419a4, type: 3}
       propertyPath: m_IsActive
@@ -10456,6 +11028,10 @@ PrefabInstance:
       value: SM_Env_Gem_Large_08
       objectReference: {fileID: 0}
     - target: {fileID: 149278, guid: cfed6864439a806439810e6a55908101, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 149278, guid: cfed6864439a806439810e6a55908101, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -10519,6 +11095,10 @@ PrefabInstance:
       value: SM_Env_Fence_Goblin_22
       objectReference: {fileID: 0}
     - target: {fileID: 113894, guid: 8c7f3a282739c344da560a2326497f5b, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 113894, guid: 8c7f3a282739c344da560a2326497f5b, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -10576,6 +11156,10 @@ PrefabInstance:
     - target: {fileID: 117454, guid: bfee7f51af0b8d54aa0728f21d1147bb, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Flat_Platform_Large_08
+      objectReference: {fileID: 0}
+    - target: {fileID: 117454, guid: bfee7f51af0b8d54aa0728f21d1147bb, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 117454, guid: bfee7f51af0b8d54aa0728f21d1147bb, type: 3}
       propertyPath: m_IsActive
@@ -10647,6 +11231,10 @@ PrefabInstance:
     - target: {fileID: 179920, guid: 646901c7a83b3d74fa146a5470ddb0cb, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rubble_Pebbles_39
+      objectReference: {fileID: 0}
+    - target: {fileID: 179920, guid: 646901c7a83b3d74fa146a5470ddb0cb, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 462032, guid: 646901c7a83b3d74fa146a5470ddb0cb, type: 3}
       propertyPath: m_RootOrder
@@ -10720,6 +11308,10 @@ PrefabInstance:
       value: SM_Env_Fence_Goblin_10
       objectReference: {fileID: 0}
     - target: {fileID: 113894, guid: 8c7f3a282739c344da560a2326497f5b, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 113894, guid: 8c7f3a282739c344da560a2326497f5b, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -10777,6 +11369,10 @@ PrefabInstance:
     - target: {fileID: 129364, guid: 729795c66a7df17458f5d93979a67196, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Flat_Platform_18
+      objectReference: {fileID: 0}
+    - target: {fileID: 129364, guid: 729795c66a7df17458f5d93979a67196, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 129364, guid: 729795c66a7df17458f5d93979a67196, type: 3}
       propertyPath: m_IsActive
@@ -10848,6 +11444,10 @@ PrefabInstance:
     - target: {fileID: 178744, guid: 7952f7e6ac9b93b4682e63e68d9a2f74, type: 3}
       propertyPath: m_Name
       value: SM_Env_CrackedRock_17
+      objectReference: {fileID: 0}
+    - target: {fileID: 178744, guid: 7952f7e6ac9b93b4682e63e68d9a2f74, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 178744, guid: 7952f7e6ac9b93b4682e63e68d9a2f74, type: 3}
       propertyPath: m_IsActive
@@ -10925,6 +11525,10 @@ PrefabInstance:
       value: SM_Env_CrackedRock_14
       objectReference: {fileID: 0}
     - target: {fileID: 178744, guid: 7952f7e6ac9b93b4682e63e68d9a2f74, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 178744, guid: 7952f7e6ac9b93b4682e63e68d9a2f74, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -10996,6 +11600,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
     - target: {fileID: 143556, guid: 03b90a12ad8bb4347a59cfa647b8e055, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 143556, guid: 03b90a12ad8bb4347a59cfa647b8e055, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -11050,6 +11658,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
+    - target: {fileID: 166708, guid: 375bdbc0adc69904a97b62b6ab9758de, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 166708, guid: 375bdbc0adc69904a97b62b6ab9758de, type: 3}
       propertyPath: m_IsActive
       value: 1
@@ -11108,6 +11720,10 @@ PrefabInstance:
     - target: {fileID: 169758, guid: 60c6bc14bb0e58c4a99aa8e32d80f308, type: 3}
       propertyPath: m_Name
       value: SM_Prop_Candles_23
+      objectReference: {fileID: 0}
+    - target: {fileID: 169758, guid: 60c6bc14bb0e58c4a99aa8e32d80f308, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 169758, guid: 60c6bc14bb0e58c4a99aa8e32d80f308, type: 3}
       propertyPath: m_IsActive
@@ -11173,6 +11789,10 @@ PrefabInstance:
       value: SM_Prop_Goblin_Branch_06
       objectReference: {fileID: 0}
     - target: {fileID: 103650, guid: 1a0a00f041c72ef4884561d8f41954e6, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 103650, guid: 1a0a00f041c72ef4884561d8f41954e6, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -11230,6 +11850,10 @@ PrefabInstance:
     - target: {fileID: 158038, guid: b9cff604e7a459c4581b58993fc28f1d, type: 3}
       propertyPath: m_Name
       value: SM_Env_Mushroom_Small_04
+      objectReference: {fileID: 0}
+    - target: {fileID: 158038, guid: b9cff604e7a459c4581b58993fc28f1d, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 158038, guid: b9cff604e7a459c4581b58993fc28f1d, type: 3}
       propertyPath: m_IsActive
@@ -11291,6 +11915,10 @@ PrefabInstance:
       value: SM_Env_Mushroom_Small_15
       objectReference: {fileID: 0}
     - target: {fileID: 158038, guid: b9cff604e7a459c4581b58993fc28f1d, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 158038, guid: b9cff604e7a459c4581b58993fc28f1d, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -11348,6 +11976,10 @@ PrefabInstance:
     - target: {fileID: 142584, guid: 28b56993a0977004882db8754d3904ee, type: 3}
       propertyPath: m_Name
       value: SM_Prop_Candle_09
+      objectReference: {fileID: 0}
+    - target: {fileID: 142584, guid: 28b56993a0977004882db8754d3904ee, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 142584, guid: 28b56993a0977004882db8754d3904ee, type: 3}
       propertyPath: m_IsActive
@@ -11413,6 +12045,10 @@ PrefabInstance:
       value: SM_Prop_TorchStick_31
       objectReference: {fileID: 0}
     - target: {fileID: 194764, guid: 2bcc13328f8e4a44abdb601fda7419a4, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 194764, guid: 2bcc13328f8e4a44abdb601fda7419a4, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -11470,6 +12106,10 @@ PrefabInstance:
     - target: {fileID: 188028, guid: 42ab107e7e6626f4cbea7b3e557f8b12, type: 3}
       propertyPath: m_Name
       value: SM_Env_Wood_Construction_03
+      objectReference: {fileID: 0}
+    - target: {fileID: 188028, guid: 42ab107e7e6626f4cbea7b3e557f8b12, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 188028, guid: 42ab107e7e6626f4cbea7b3e557f8b12, type: 3}
       propertyPath: m_IsActive
@@ -11531,6 +12171,10 @@ PrefabInstance:
       value: SM_Env_Fence_Goblin_06
       objectReference: {fileID: 0}
     - target: {fileID: 113894, guid: 8c7f3a282739c344da560a2326497f5b, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 113894, guid: 8c7f3a282739c344da560a2326497f5b, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -11588,6 +12232,10 @@ PrefabInstance:
     - target: {fileID: 130514, guid: 3bb5571f612e6d14d82b7a56913e82af, type: 3}
       propertyPath: m_Name
       value: SM_Env_Mushroom_Small_12
+      objectReference: {fileID: 0}
+    - target: {fileID: 130514, guid: 3bb5571f612e6d14d82b7a56913e82af, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 130514, guid: 3bb5571f612e6d14d82b7a56913e82af, type: 3}
       propertyPath: m_IsActive
@@ -11648,6 +12296,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Env_Rock_Flat_14
       objectReference: {fileID: 0}
+    - target: {fileID: 134226, guid: 1d394c025fb78e347ba38449641c36e2, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 443018, guid: 1d394c025fb78e347ba38449641c36e2, type: 3}
       propertyPath: m_RootOrder
       value: 351
@@ -11706,6 +12358,10 @@ PrefabInstance:
     - target: {fileID: 115584, guid: faa8739308e4c154f9332d2624b6e47c, type: 3}
       propertyPath: m_Name
       value: SM_Env_RockPile_Rounded_06
+      objectReference: {fileID: 0}
+    - target: {fileID: 115584, guid: faa8739308e4c154f9332d2624b6e47c, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 115584, guid: faa8739308e4c154f9332d2624b6e47c, type: 3}
       propertyPath: m_IsActive
@@ -11775,6 +12431,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
     - target: {fileID: 103198, guid: f65b497ff807d95439b38e7da2fab667, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 103198, guid: f65b497ff807d95439b38e7da2fab667, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -11834,6 +12494,10 @@ PrefabInstance:
       value: SM_Env_Vine_Spikes_04
       objectReference: {fileID: 0}
     - target: {fileID: 169216, guid: 9bda40f4cc3980c42830cb01d8347291, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 169216, guid: 9bda40f4cc3980c42830cb01d8347291, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -11888,6 +12552,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
+    - target: {fileID: 103198, guid: f65b497ff807d95439b38e7da2fab667, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 103198, guid: f65b497ff807d95439b38e7da2fab667, type: 3}
       propertyPath: m_IsActive
       value: 1
@@ -11946,6 +12614,10 @@ PrefabInstance:
     - target: {fileID: 184338, guid: 0533ddc0f38f3c842bf18ac27f90260f, type: 3}
       propertyPath: m_Name
       value: SM_Prop_Candles_18
+      objectReference: {fileID: 0}
+    - target: {fileID: 184338, guid: 0533ddc0f38f3c842bf18ac27f90260f, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 184338, guid: 0533ddc0f38f3c842bf18ac27f90260f, type: 3}
       propertyPath: m_IsActive
@@ -12009,6 +12681,10 @@ PrefabInstance:
     - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Round_32
+      objectReference: {fileID: 0}
+    - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
       propertyPath: m_IsActive
@@ -12082,6 +12758,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
     - target: {fileID: 131856, guid: f58bdefe414a9a744ab284e383341fea, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 131856, guid: f58bdefe414a9a744ab284e383341fea, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -12139,6 +12819,10 @@ PrefabInstance:
     - target: {fileID: 168602, guid: 3e0f6b0ee51e6eb42a731a26210989b9, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rubble_Pebbles_59
+      objectReference: {fileID: 0}
+    - target: {fileID: 168602, guid: 3e0f6b0ee51e6eb42a731a26210989b9, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 168602, guid: 3e0f6b0ee51e6eb42a731a26210989b9, type: 3}
       propertyPath: m_IsActive
@@ -12199,6 +12883,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Env_Vine_Spikes_06
       objectReference: {fileID: 0}
+    - target: {fileID: 169216, guid: 9bda40f4cc3980c42830cb01d8347291, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 477796, guid: 9bda40f4cc3980c42830cb01d8347291, type: 3}
       propertyPath: m_RootOrder
       value: 325
@@ -12250,6 +12938,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
+    - target: {fileID: 169216, guid: 9bda40f4cc3980c42830cb01d8347291, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 477796, guid: 9bda40f4cc3980c42830cb01d8347291, type: 3}
       propertyPath: m_RootOrder
       value: 331
@@ -12304,6 +12996,10 @@ PrefabInstance:
     - target: {fileID: 179920, guid: 646901c7a83b3d74fa146a5470ddb0cb, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rubble_Pebbles_49
+      objectReference: {fileID: 0}
+    - target: {fileID: 179920, guid: 646901c7a83b3d74fa146a5470ddb0cb, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 179920, guid: 646901c7a83b3d74fa146a5470ddb0cb, type: 3}
       propertyPath: m_IsActive
@@ -12365,6 +13061,10 @@ PrefabInstance:
       value: SM_Env_Vine_Spikes_20
       objectReference: {fileID: 0}
     - target: {fileID: 121542, guid: 1e8a1f848e20325468b33aa9d904bce7, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 121542, guid: 1e8a1f848e20325468b33aa9d904bce7, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -12420,6 +13120,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
     - target: {fileID: 103198, guid: f65b497ff807d95439b38e7da2fab667, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 103198, guid: f65b497ff807d95439b38e7da2fab667, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -12474,6 +13178,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
+    - target: {fileID: 103198, guid: f65b497ff807d95439b38e7da2fab667, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 103198, guid: f65b497ff807d95439b38e7da2fab667, type: 3}
       propertyPath: m_IsActive
       value: 1
@@ -12533,6 +13241,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Prop_Brick_03
       objectReference: {fileID: 0}
+    - target: {fileID: 169518, guid: bcb12925987da314f8aaf71fb485f22f, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 442698, guid: bcb12925987da314f8aaf71fb485f22f, type: 3}
       propertyPath: m_RootOrder
       value: 341
@@ -12591,6 +13303,10 @@ PrefabInstance:
     - target: {fileID: 155424, guid: cbbcdd5ff295f0746a106019e1246642, type: 3}
       propertyPath: m_Name
       value: SM_Env_Cave_Background_16
+      objectReference: {fileID: 0}
+    - target: {fileID: 155424, guid: cbbcdd5ff295f0746a106019e1246642, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 155424, guid: cbbcdd5ff295f0746a106019e1246642, type: 3}
       propertyPath: m_IsActive
@@ -12659,6 +13375,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
+    - target: {fileID: 140248, guid: cab6dd341d4015f4d87a0ddc4f388f3e, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 140248, guid: cab6dd341d4015f4d87a0ddc4f388f3e, type: 3}
       propertyPath: m_IsActive
       value: 1
@@ -12729,6 +13449,10 @@ PrefabInstance:
     - target: {fileID: 115584, guid: faa8739308e4c154f9332d2624b6e47c, type: 3}
       propertyPath: m_Name
       value: SM_Env_RockPile_Rounded_05
+      objectReference: {fileID: 0}
+    - target: {fileID: 115584, guid: faa8739308e4c154f9332d2624b6e47c, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 115584, guid: faa8739308e4c154f9332d2624b6e47c, type: 3}
       propertyPath: m_IsActive
@@ -12802,6 +13526,10 @@ PrefabInstance:
       value: SM_Env_Mushroom_Small_10
       objectReference: {fileID: 0}
     - target: {fileID: 158038, guid: b9cff604e7a459c4581b58993fc28f1d, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 158038, guid: b9cff604e7a459c4581b58993fc28f1d, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -12860,6 +13588,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Env_Wall_01_Alt 27
       objectReference: {fileID: 0}
+    - target: {fileID: 173052, guid: f18318a9de51f9b4f993559b01c40e15, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 412966, guid: f18318a9de51f9b4f993559b01c40e15, type: 3}
       propertyPath: m_RootOrder
       value: 363
@@ -12914,6 +13646,10 @@ PrefabInstance:
     - target: {fileID: 191796, guid: 3e288e91154144d4a8449e8f03d24b20, type: 3}
       propertyPath: m_Name
       value: SM_Env_Brick_Rubble_06
+      objectReference: {fileID: 0}
+    - target: {fileID: 191796, guid: 3e288e91154144d4a8449e8f03d24b20, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 191796, guid: 3e288e91154144d4a8449e8f03d24b20, type: 3}
       propertyPath: m_IsActive
@@ -12983,6 +13719,10 @@ PrefabInstance:
       value: SM_Prop_Goblin_Tent_04
       objectReference: {fileID: 0}
     - target: {fileID: 100192, guid: 326145ec5ccacbe4f85d94bdb09760d2, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 100192, guid: 326145ec5ccacbe4f85d94bdb09760d2, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -13040,6 +13780,10 @@ PrefabInstance:
     - target: {fileID: 115584, guid: faa8739308e4c154f9332d2624b6e47c, type: 3}
       propertyPath: m_Name
       value: SM_Env_RockPile_Rounded_04
+      objectReference: {fileID: 0}
+    - target: {fileID: 115584, guid: faa8739308e4c154f9332d2624b6e47c, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 115584, guid: faa8739308e4c154f9332d2624b6e47c, type: 3}
       propertyPath: m_IsActive
@@ -13113,6 +13857,10 @@ PrefabInstance:
       value: SM_Env_Gem_Large_05
       objectReference: {fileID: 0}
     - target: {fileID: 149278, guid: cfed6864439a806439810e6a55908101, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 149278, guid: cfed6864439a806439810e6a55908101, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -13176,6 +13924,10 @@ PrefabInstance:
       value: SM_Env_Fence_Goblin_20
       objectReference: {fileID: 0}
     - target: {fileID: 166708, guid: 375bdbc0adc69904a97b62b6ab9758de, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 166708, guid: 375bdbc0adc69904a97b62b6ab9758de, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -13233,6 +13985,10 @@ PrefabInstance:
     - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Flat_Platform_24
+      objectReference: {fileID: 0}
+    - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
       propertyPath: m_IsActive
@@ -13310,6 +14066,10 @@ PrefabInstance:
       value: SM_Prop_TorchStick_30
       objectReference: {fileID: 0}
     - target: {fileID: 194764, guid: 2bcc13328f8e4a44abdb601fda7419a4, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 194764, guid: 2bcc13328f8e4a44abdb601fda7419a4, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -13367,6 +14127,10 @@ PrefabInstance:
     - target: {fileID: 179926, guid: 529a660767f73934992b9bff2e36a0e6, type: 3}
       propertyPath: m_Name
       value: SM_Env_MineTunnel_Entrance_03
+      objectReference: {fileID: 0}
+    - target: {fileID: 179926, guid: 529a660767f73934992b9bff2e36a0e6, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 179926, guid: 529a660767f73934992b9bff2e36a0e6, type: 3}
       propertyPath: m_IsActive
@@ -13428,6 +14192,10 @@ PrefabInstance:
       value: SM_Env_Rock_Flat_Platform_27
       objectReference: {fileID: 0}
     - target: {fileID: 110020, guid: a109fb5c9d5c1d14098439ed932dc771, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 110020, guid: a109fb5c9d5c1d14098439ed932dc771, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -13482,6 +14250,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
+    - target: {fileID: 112134, guid: 1e7cc353830e2d6409a9b84abc744fd8, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 112134, guid: 1e7cc353830e2d6409a9b84abc744fd8, type: 3}
       propertyPath: m_IsActive
       value: 1
@@ -13540,6 +14312,10 @@ PrefabInstance:
     - target: {fileID: 194764, guid: 2bcc13328f8e4a44abdb601fda7419a4, type: 3}
       propertyPath: m_Name
       value: SM_Prop_TorchStick_37
+      objectReference: {fileID: 0}
+    - target: {fileID: 194764, guid: 2bcc13328f8e4a44abdb601fda7419a4, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 412208, guid: 2bcc13328f8e4a44abdb601fda7419a4, type: 3}
       propertyPath: m_RootOrder
@@ -13601,6 +14377,10 @@ PrefabInstance:
       value: SM_Env_Rubble_Pebbles_42
       objectReference: {fileID: 0}
     - target: {fileID: 179920, guid: 646901c7a83b3d74fa146a5470ddb0cb, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 179920, guid: 646901c7a83b3d74fa146a5470ddb0cb, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -13658,6 +14438,10 @@ PrefabInstance:
     - target: {fileID: 178744, guid: 7952f7e6ac9b93b4682e63e68d9a2f74, type: 3}
       propertyPath: m_Name
       value: SM_Env_CrackedRock_19
+      objectReference: {fileID: 0}
+    - target: {fileID: 178744, guid: 7952f7e6ac9b93b4682e63e68d9a2f74, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 178744, guid: 7952f7e6ac9b93b4682e63e68d9a2f74, type: 3}
       propertyPath: m_IsActive
@@ -13735,6 +14519,10 @@ PrefabInstance:
       value: SM_Env_Fence_Goblin_07
       objectReference: {fileID: 0}
     - target: {fileID: 166708, guid: 375bdbc0adc69904a97b62b6ab9758de, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 166708, guid: 375bdbc0adc69904a97b62b6ab9758de, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -13794,6 +14582,10 @@ PrefabInstance:
       value: SM_Prop_Goblin_Spikes_06
       objectReference: {fileID: 0}
     - target: {fileID: 186904, guid: c1dbbda8409b97d458737624e0f515c9, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 186904, guid: c1dbbda8409b97d458737624e0f515c9, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -13851,6 +14643,10 @@ PrefabInstance:
     - target: {fileID: 199214, guid: 0095dae213368f248a257f702a3c5636, type: 3}
       propertyPath: m_Name
       value: SM_Env_Wall_Rock_Blocked_03
+      objectReference: {fileID: 0}
+    - target: {fileID: 199214, guid: 0095dae213368f248a257f702a3c5636, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 199214, guid: 0095dae213368f248a257f702a3c5636, type: 3}
       propertyPath: m_IsActive
@@ -13923,6 +14719,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Env_Wall_01_Alt 31
       objectReference: {fileID: 0}
+    - target: {fileID: 173052, guid: f18318a9de51f9b4f993559b01c40e15, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 412966, guid: f18318a9de51f9b4f993559b01c40e15, type: 3}
       propertyPath: m_RootOrder
       value: 364
@@ -13977,6 +14777,10 @@ PrefabInstance:
     - target: {fileID: 184338, guid: 0533ddc0f38f3c842bf18ac27f90260f, type: 3}
       propertyPath: m_Name
       value: SM_Prop_Candles_20
+      objectReference: {fileID: 0}
+    - target: {fileID: 184338, guid: 0533ddc0f38f3c842bf18ac27f90260f, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 184338, guid: 0533ddc0f38f3c842bf18ac27f90260f, type: 3}
       propertyPath: m_IsActive
@@ -14042,6 +14846,10 @@ PrefabInstance:
       value: SM_Env_Fence_Goblin_09
       objectReference: {fileID: 0}
     - target: {fileID: 166708, guid: 375bdbc0adc69904a97b62b6ab9758de, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 166708, guid: 375bdbc0adc69904a97b62b6ab9758de, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -14099,6 +14907,10 @@ PrefabInstance:
     - target: {fileID: 163456, guid: 34cd41ec62c0b594b9a6f4e292a1920d, type: 3}
       propertyPath: m_Name
       value: SM_Env_Bone_Spine_03
+      objectReference: {fileID: 0}
+    - target: {fileID: 163456, guid: 34cd41ec62c0b594b9a6f4e292a1920d, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 163456, guid: 34cd41ec62c0b594b9a6f4e292a1920d, type: 3}
       propertyPath: m_IsActive
@@ -14160,6 +14972,10 @@ PrefabInstance:
       value: SM_Prop_Goblin_Rotisserie_Meat_02
       objectReference: {fileID: 0}
     - target: {fileID: 117296, guid: 76b8525a8cb16ee498d6e89428f08fb2, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 117296, guid: 76b8525a8cb16ee498d6e89428f08fb2, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -14217,6 +15033,10 @@ PrefabInstance:
     - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Round_22
+      objectReference: {fileID: 0}
+    - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
       propertyPath: m_IsActive
@@ -14294,6 +15114,10 @@ PrefabInstance:
       value: SM_Env_CrackedRock_21
       objectReference: {fileID: 0}
     - target: {fileID: 178744, guid: 7952f7e6ac9b93b4682e63e68d9a2f74, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 178744, guid: 7952f7e6ac9b93b4682e63e68d9a2f74, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -14369,6 +15193,10 @@ PrefabInstance:
       value: SM_Env_Minetrack_Bridge_Broken_05
       objectReference: {fileID: 0}
     - target: {fileID: 112134, guid: 1e7cc353830e2d6409a9b84abc744fd8, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 112134, guid: 1e7cc353830e2d6409a9b84abc744fd8, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -14430,6 +15258,10 @@ PrefabInstance:
     - target: {fileID: 142584, guid: 28b56993a0977004882db8754d3904ee, type: 3}
       propertyPath: m_Name
       value: SM_Prop_Candle_08
+      objectReference: {fileID: 0}
+    - target: {fileID: 142584, guid: 28b56993a0977004882db8754d3904ee, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 142584, guid: 28b56993a0977004882db8754d3904ee, type: 3}
       propertyPath: m_IsActive
@@ -14495,6 +15327,10 @@ PrefabInstance:
       value: SM_Env_Gem_Large_11
       objectReference: {fileID: 0}
     - target: {fileID: 149278, guid: cfed6864439a806439810e6a55908101, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 149278, guid: cfed6864439a806439810e6a55908101, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -14554,6 +15390,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
     - target: {fileID: 177010, guid: eb999b0b67a4958469eed87f4b9d8d4b, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 177010, guid: eb999b0b67a4958469eed87f4b9d8d4b, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -14611,6 +15451,10 @@ PrefabInstance:
     - target: {fileID: 116208, guid: 8713a6f6372889249b444dfb1adb9f4b, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Flat_Platform_12
+      objectReference: {fileID: 0}
+    - target: {fileID: 116208, guid: 8713a6f6372889249b444dfb1adb9f4b, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 116208, guid: 8713a6f6372889249b444dfb1adb9f4b, type: 3}
       propertyPath: m_IsActive
@@ -14684,6 +15528,10 @@ PrefabInstance:
       value: SM_Env_Rubble_Pebbles_56
       objectReference: {fileID: 0}
     - target: {fileID: 179920, guid: 646901c7a83b3d74fa146a5470ddb0cb, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 179920, guid: 646901c7a83b3d74fa146a5470ddb0cb, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -14741,6 +15589,10 @@ PrefabInstance:
     - target: {fileID: 110684, guid: a04e9c8c8fee88848911601032604b55, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Flat_Platform_17
+      objectReference: {fileID: 0}
+    - target: {fileID: 110684, guid: a04e9c8c8fee88848911601032604b55, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 110684, guid: a04e9c8c8fee88848911601032604b55, type: 3}
       propertyPath: m_IsActive
@@ -14809,6 +15661,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
+    - target: {fileID: 164194, guid: c0ba893510e6e8a43aa7babaee5852d9, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 467054, guid: c0ba893510e6e8a43aa7babaee5852d9, type: 3}
       propertyPath: m_RootOrder
       value: 355
@@ -14860,6 +15716,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
+    - target: {fileID: 192026, guid: 16d7d3227049b944fb34c0d7bd878ee9, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 192026, guid: 16d7d3227049b944fb34c0d7bd878ee9, type: 3}
       propertyPath: m_IsActive
       value: 1
@@ -14918,6 +15778,10 @@ PrefabInstance:
     - target: {fileID: 129364, guid: 729795c66a7df17458f5d93979a67196, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Flat_Platform_43
+      objectReference: {fileID: 0}
+    - target: {fileID: 129364, guid: 729795c66a7df17458f5d93979a67196, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 129364, guid: 729795c66a7df17458f5d93979a67196, type: 3}
       propertyPath: m_IsActive
@@ -14989,6 +15853,10 @@ PrefabInstance:
     - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Round_20
+      objectReference: {fileID: 0}
+    - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
       propertyPath: m_IsActive
@@ -15066,6 +15934,10 @@ PrefabInstance:
       value: SM_Env_Cave_Background_11
       objectReference: {fileID: 0}
     - target: {fileID: 197994, guid: 37b8bc688caaa5a44b7dec1fa9ef2d2a, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 197994, guid: 37b8bc688caaa5a44b7dec1fa9ef2d2a, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -15137,6 +16009,10 @@ PrefabInstance:
       value: SM_Env_Rubble_Pebbles_58
       objectReference: {fileID: 0}
     - target: {fileID: 168602, guid: 3e0f6b0ee51e6eb42a731a26210989b9, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 168602, guid: 3e0f6b0ee51e6eb42a731a26210989b9, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -15196,6 +16072,10 @@ PrefabInstance:
       value: SM_Prop_TorchStick_28
       objectReference: {fileID: 0}
     - target: {fileID: 194764, guid: 2bcc13328f8e4a44abdb601fda7419a4, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 194764, guid: 2bcc13328f8e4a44abdb601fda7419a4, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -15253,6 +16133,10 @@ PrefabInstance:
     - target: {fileID: 117454, guid: bfee7f51af0b8d54aa0728f21d1147bb, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Flat_Platform_Large_09
+      objectReference: {fileID: 0}
+    - target: {fileID: 117454, guid: bfee7f51af0b8d54aa0728f21d1147bb, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 117454, guid: bfee7f51af0b8d54aa0728f21d1147bb, type: 3}
       propertyPath: m_IsActive
@@ -15326,6 +16210,10 @@ PrefabInstance:
       value: SM_Env_BonePile_Small_03
       objectReference: {fileID: 0}
     - target: {fileID: 129420, guid: ff5c549bd91cb7c43ba46386303671e8, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 129420, guid: ff5c549bd91cb7c43ba46386303671e8, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -15397,6 +16285,10 @@ PrefabInstance:
       value: SM_Env_Rubble_Pebbles_61
       objectReference: {fileID: 0}
     - target: {fileID: 168602, guid: 3e0f6b0ee51e6eb42a731a26210989b9, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 168602, guid: 3e0f6b0ee51e6eb42a731a26210989b9, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -15451,6 +16343,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1710280883}
     m_Modifications:
+    - target: {fileID: 103198, guid: f65b497ff807d95439b38e7da2fab667, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 456254, guid: f65b497ff807d95439b38e7da2fab667, type: 3}
       propertyPath: m_RootOrder
       value: 0
@@ -15505,6 +16401,10 @@ PrefabInstance:
     - target: {fileID: 145484, guid: a3a688bad45e60446bf326f3e998e1da, type: 3}
       propertyPath: m_Name
       value: SM_Env_Grass_14
+      objectReference: {fileID: 0}
+    - target: {fileID: 145484, guid: a3a688bad45e60446bf326f3e998e1da, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 145484, guid: a3a688bad45e60446bf326f3e998e1da, type: 3}
       propertyPath: m_IsActive
@@ -15566,6 +16466,10 @@ PrefabInstance:
       value: SM_Env_Mushroom_Small_16
       objectReference: {fileID: 0}
     - target: {fileID: 158038, guid: b9cff604e7a459c4581b58993fc28f1d, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 158038, guid: b9cff604e7a459c4581b58993fc28f1d, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -15623,6 +16527,10 @@ PrefabInstance:
     - target: {fileID: 178744, guid: 7952f7e6ac9b93b4682e63e68d9a2f74, type: 3}
       propertyPath: m_Name
       value: SM_Env_CrackedRock_15
+      objectReference: {fileID: 0}
+    - target: {fileID: 178744, guid: 7952f7e6ac9b93b4682e63e68d9a2f74, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 178744, guid: 7952f7e6ac9b93b4682e63e68d9a2f74, type: 3}
       propertyPath: m_IsActive
@@ -15700,6 +16608,10 @@ PrefabInstance:
       value: SM_Env_Mushroom_Giant_07
       objectReference: {fileID: 0}
     - target: {fileID: 192026, guid: 16d7d3227049b944fb34c0d7bd878ee9, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 192026, guid: 16d7d3227049b944fb34c0d7bd878ee9, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -15757,6 +16669,10 @@ PrefabInstance:
     - target: {fileID: 179920, guid: 646901c7a83b3d74fa146a5470ddb0cb, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rubble_Pebbles_48
+      objectReference: {fileID: 0}
+    - target: {fileID: 179920, guid: 646901c7a83b3d74fa146a5470ddb0cb, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 179920, guid: 646901c7a83b3d74fa146a5470ddb0cb, type: 3}
       propertyPath: m_IsActive
@@ -15818,6 +16734,10 @@ PrefabInstance:
       value: SM_Prop_Goblin_Tent_06
       objectReference: {fileID: 0}
     - target: {fileID: 121376, guid: 19fe5cc2a44e36940b2b60a288b72525, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 121376, guid: 19fe5cc2a44e36940b2b60a288b72525, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -15876,6 +16796,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Env_Rubble_Pebbles_41
       objectReference: {fileID: 0}
+    - target: {fileID: 168602, guid: 3e0f6b0ee51e6eb42a731a26210989b9, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 452598, guid: 3e0f6b0ee51e6eb42a731a26210989b9, type: 3}
       propertyPath: m_RootOrder
       value: 353
@@ -15931,6 +16855,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
+    - target: {fileID: 184658, guid: 1ccd68248af915f4c89e7e23667d1c36, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 184658, guid: 1ccd68248af915f4c89e7e23667d1c36, type: 3}
       propertyPath: m_IsActive
       value: 1
@@ -16114,6 +17042,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
     - target: {fileID: 155898, guid: 50aa90a81020d7f4d9882a4bede1b4f3, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 155898, guid: 50aa90a81020d7f4d9882a4bede1b4f3, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -16173,6 +17105,10 @@ PrefabInstance:
       value: SM_Env_Rubble_Pebbles_43
       objectReference: {fileID: 0}
     - target: {fileID: 179920, guid: 646901c7a83b3d74fa146a5470ddb0cb, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 179920, guid: 646901c7a83b3d74fa146a5470ddb0cb, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -16227,6 +17163,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
+    - target: {fileID: 171592, guid: 8508f4035fc8e834c9fd1d3204d99fb3, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 171592, guid: 8508f4035fc8e834c9fd1d3204d99fb3, type: 3}
       propertyPath: m_IsActive
       value: 1
@@ -16285,6 +17225,10 @@ PrefabInstance:
     - target: {fileID: 179926, guid: 529a660767f73934992b9bff2e36a0e6, type: 3}
       propertyPath: m_Name
       value: SM_Env_MineTunnel_Entrance_04
+      objectReference: {fileID: 0}
+    - target: {fileID: 179926, guid: 529a660767f73934992b9bff2e36a0e6, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 179926, guid: 529a660767f73934992b9bff2e36a0e6, type: 3}
       propertyPath: m_IsActive
@@ -16346,6 +17290,10 @@ PrefabInstance:
       value: SM_Env_Mushroom_Giant_06
       objectReference: {fileID: 0}
     - target: {fileID: 192026, guid: 16d7d3227049b944fb34c0d7bd878ee9, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 192026, guid: 16d7d3227049b944fb34c0d7bd878ee9, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -16403,6 +17351,10 @@ PrefabInstance:
     - target: {fileID: 143556, guid: 03b90a12ad8bb4347a59cfa647b8e055, type: 3}
       propertyPath: m_Name
       value: SM_Env_Brick_Rubble_04
+      objectReference: {fileID: 0}
+    - target: {fileID: 143556, guid: 03b90a12ad8bb4347a59cfa647b8e055, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 143556, guid: 03b90a12ad8bb4347a59cfa647b8e055, type: 3}
       propertyPath: m_IsActive
@@ -16464,6 +17416,10 @@ PrefabInstance:
       value: SM_Env_Minetrack_Straight_10
       objectReference: {fileID: 0}
     - target: {fileID: 164350, guid: f7dc92b7dff7d2c419e6070d90115e42, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 164350, guid: f7dc92b7dff7d2c419e6070d90115e42, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -16521,6 +17477,10 @@ PrefabInstance:
     - target: {fileID: 115584, guid: faa8739308e4c154f9332d2624b6e47c, type: 3}
       propertyPath: m_Name
       value: SM_Env_RockPile_Rounded_03
+      objectReference: {fileID: 0}
+    - target: {fileID: 115584, guid: faa8739308e4c154f9332d2624b6e47c, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 115584, guid: faa8739308e4c154f9332d2624b6e47c, type: 3}
       propertyPath: m_IsActive
@@ -16594,6 +17554,10 @@ PrefabInstance:
       value: SM_Env_Minetrack_Bridge_03
       objectReference: {fileID: 0}
     - target: {fileID: 187580, guid: b0fdd261cab4d884ea4d14190dfc171a, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 187580, guid: b0fdd261cab4d884ea4d14190dfc171a, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -16651,6 +17615,10 @@ PrefabInstance:
     - target: {fileID: 168602, guid: 3e0f6b0ee51e6eb42a731a26210989b9, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rubble_Pebbles_63
+      objectReference: {fileID: 0}
+    - target: {fileID: 168602, guid: 3e0f6b0ee51e6eb42a731a26210989b9, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 168602, guid: 3e0f6b0ee51e6eb42a731a26210989b9, type: 3}
       propertyPath: m_IsActive
@@ -16857,6 +17825,10 @@ PrefabInstance:
       value: SM_Env_Rock_Flat_Platform_36
       objectReference: {fileID: 0}
     - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -16924,6 +17896,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
     - target: {fileID: 106062, guid: 66bddf0235ba64b4f9b3a82b4731470e, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 106062, guid: 66bddf0235ba64b4f9b3a82b4731470e, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -16981,6 +17957,10 @@ PrefabInstance:
     - target: {fileID: 196890, guid: d05f3cbdbd799cb49aaab82081a55a8b, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Flat_Platform_Large_05
+      objectReference: {fileID: 0}
+    - target: {fileID: 196890, guid: d05f3cbdbd799cb49aaab82081a55a8b, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 196890, guid: d05f3cbdbd799cb49aaab82081a55a8b, type: 3}
       propertyPath: m_IsActive
@@ -17058,6 +18038,10 @@ PrefabInstance:
       value: SM_Env_Minetrack_Broken_05
       objectReference: {fileID: 0}
     - target: {fileID: 169798, guid: 970513e78dc7f37459fb1c296855f4b2, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 169798, guid: 970513e78dc7f37459fb1c296855f4b2, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -17115,6 +18099,10 @@ PrefabInstance:
     - target: {fileID: 164350, guid: f7dc92b7dff7d2c419e6070d90115e42, type: 3}
       propertyPath: m_Name
       value: SM_Env_Minetrack_Straight_08
+      objectReference: {fileID: 0}
+    - target: {fileID: 164350, guid: f7dc92b7dff7d2c419e6070d90115e42, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 164350, guid: f7dc92b7dff7d2c419e6070d90115e42, type: 3}
       propertyPath: m_IsActive
@@ -17176,6 +18164,10 @@ PrefabInstance:
       value: SM_Prop_Goblin_Spikes_10
       objectReference: {fileID: 0}
     - target: {fileID: 140672, guid: 2e441718886a75b41aa989c3f7829b75, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 140672, guid: 2e441718886a75b41aa989c3f7829b75, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -17235,6 +18227,10 @@ PrefabInstance:
       value: SM_Env_Fence_Goblin_12
       objectReference: {fileID: 0}
     - target: {fileID: 113894, guid: 8c7f3a282739c344da560a2326497f5b, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 113894, guid: 8c7f3a282739c344da560a2326497f5b, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -17292,6 +18288,10 @@ PrefabInstance:
     - target: {fileID: 121542, guid: 1e8a1f848e20325468b33aa9d904bce7, type: 3}
       propertyPath: m_Name
       value: SM_Env_Vine_Spikes_15
+      objectReference: {fileID: 0}
+    - target: {fileID: 121542, guid: 1e8a1f848e20325468b33aa9d904bce7, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 121542, guid: 1e8a1f848e20325468b33aa9d904bce7, type: 3}
       propertyPath: m_IsActive
@@ -17638,6 +18638,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
+    - target: {fileID: 115854, guid: 8cf8ee3bd823e3d4e9d8a79486574684, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 446656, guid: 8cf8ee3bd823e3d4e9d8a79486574684, type: 3}
       propertyPath: m_RootOrder
       value: 332
@@ -17847,6 +18851,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
     - target: {fileID: 119146, guid: 39f0ed697681ef1478f347abd260639a, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 119146, guid: 39f0ed697681ef1478f347abd260639a, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -17918,6 +18926,10 @@ PrefabInstance:
       value: SM_Env_Rock_Flat_Platform_26
       objectReference: {fileID: 0}
     - target: {fileID: 121434, guid: 52479909d06576f439663a8b246cb683, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 121434, guid: 52479909d06576f439663a8b246cb683, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -17977,6 +18989,10 @@ PrefabInstance:
       value: SM_Env_Rock_Flat_Platform_44
       objectReference: {fileID: 0}
     - target: {fileID: 110020, guid: a109fb5c9d5c1d14098439ed932dc771, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 110020, guid: a109fb5c9d5c1d14098439ed932dc771, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -18031,6 +19047,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
+    - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
       propertyPath: m_IsActive
       value: 1
@@ -18099,6 +19119,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
     - target: {fileID: 125592, guid: 1c757b8a6a985284aa7fd4a80e427dd9, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 125592, guid: 1c757b8a6a985284aa7fd4a80e427dd9, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -18156,6 +19180,10 @@ PrefabInstance:
     - target: {fileID: 145484, guid: a3a688bad45e60446bf326f3e998e1da, type: 3}
       propertyPath: m_Name
       value: SM_Env_Grass_15
+      objectReference: {fileID: 0}
+    - target: {fileID: 145484, guid: a3a688bad45e60446bf326f3e998e1da, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 145484, guid: a3a688bad45e60446bf326f3e998e1da, type: 3}
       propertyPath: m_IsActive
@@ -18217,6 +19245,10 @@ PrefabInstance:
       value: SM_Prop_Goblin_Spikes_09
       objectReference: {fileID: 0}
     - target: {fileID: 152268, guid: 6ce2b1182f7171b479d3366b79766686, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 152268, guid: 6ce2b1182f7171b479d3366b79766686, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -18274,6 +19306,10 @@ PrefabInstance:
     - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Flat_Platform_11
+      objectReference: {fileID: 0}
+    - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
       propertyPath: m_IsActive
@@ -18346,6 +19382,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Prop_Brick_08
       objectReference: {fileID: 0}
+    - target: {fileID: 164194, guid: c0ba893510e6e8a43aa7babaee5852d9, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 467054, guid: c0ba893510e6e8a43aa7babaee5852d9, type: 3}
       propertyPath: m_RootOrder
       value: 359
@@ -18400,6 +19440,10 @@ PrefabInstance:
     - target: {fileID: 169216, guid: 9bda40f4cc3980c42830cb01d8347291, type: 3}
       propertyPath: m_Name
       value: SM_Env_Vine_Spikes_21
+      objectReference: {fileID: 0}
+    - target: {fileID: 169216, guid: 9bda40f4cc3980c42830cb01d8347291, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 477796, guid: 9bda40f4cc3980c42830cb01d8347291, type: 3}
       propertyPath: m_RootOrder
@@ -18469,6 +19513,10 @@ PrefabInstance:
       value: SM_Prop_Goblin_Spikes_05
       objectReference: {fileID: 0}
     - target: {fileID: 140672, guid: 2e441718886a75b41aa989c3f7829b75, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 140672, guid: 2e441718886a75b41aa989c3f7829b75, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -18528,6 +19576,10 @@ PrefabInstance:
       value: SM_Prop_TorchStick_32
       objectReference: {fileID: 0}
     - target: {fileID: 194764, guid: 2bcc13328f8e4a44abdb601fda7419a4, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 194764, guid: 2bcc13328f8e4a44abdb601fda7419a4, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -18585,6 +19637,10 @@ PrefabInstance:
     - target: {fileID: 177010, guid: 3bef878497e431146b5c4c64d4f738cd, type: 3}
       propertyPath: m_Name
       value: SM_Env_Cave_Background_Corner_04
+      objectReference: {fileID: 0}
+    - target: {fileID: 177010, guid: 3bef878497e431146b5c4c64d4f738cd, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 177010, guid: 3bef878497e431146b5c4c64d4f738cd, type: 3}
       propertyPath: m_IsActive
@@ -18658,6 +19714,10 @@ PrefabInstance:
       value: SM_Env_Mushroom_Small_13
       objectReference: {fileID: 0}
     - target: {fileID: 158038, guid: b9cff604e7a459c4581b58993fc28f1d, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 158038, guid: b9cff604e7a459c4581b58993fc28f1d, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -18717,6 +19777,10 @@ PrefabInstance:
       value: SM_Env_Mushroom_Small_11
       objectReference: {fileID: 0}
     - target: {fileID: 138052, guid: 7060ec5f9f6d83b4ebcd4956b3abdf63, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 138052, guid: 7060ec5f9f6d83b4ebcd4956b3abdf63, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -18771,6 +19835,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
+    - target: {fileID: 131778, guid: 74231780cc79e3a45a60bfadd89b76d5, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 131778, guid: 74231780cc79e3a45a60bfadd89b76d5, type: 3}
       propertyPath: m_IsActive
       value: 1
@@ -18958,6 +20026,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
     - target: {fileID: 197086, guid: 8a68af0bd68405547a95cab80ee8bba8, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 197086, guid: 8a68af0bd68405547a95cab80ee8bba8, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -19017,6 +20089,10 @@ PrefabInstance:
       value: SM_Env_Rubble_Pebbles_57
       objectReference: {fileID: 0}
     - target: {fileID: 168602, guid: 3e0f6b0ee51e6eb42a731a26210989b9, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 168602, guid: 3e0f6b0ee51e6eb42a731a26210989b9, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -19074,6 +20150,10 @@ PrefabInstance:
     - target: {fileID: 178744, guid: 7952f7e6ac9b93b4682e63e68d9a2f74, type: 3}
       propertyPath: m_Name
       value: SM_Env_CrackedRock_12
+      objectReference: {fileID: 0}
+    - target: {fileID: 178744, guid: 7952f7e6ac9b93b4682e63e68d9a2f74, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 423422, guid: 7952f7e6ac9b93b4682e63e68d9a2f74, type: 3}
       propertyPath: m_RootOrder
@@ -19142,13 +20222,25 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
+    - target: {fileID: 132422, guid: 5c00c5f03c23f3b44af6d75077362432, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 137454, guid: 5c00c5f03c23f3b44af6d75077362432, type: 3}
       propertyPath: m_Name
       value: SM_Prop_Minecart_02
       objectReference: {fileID: 0}
     - target: {fileID: 137454, guid: 5c00c5f03c23f3b44af6d75077362432, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 137454, guid: 5c00c5f03c23f3b44af6d75077362432, type: 3}
       propertyPath: m_IsActive
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 137766, guid: 5c00c5f03c23f3b44af6d75077362432, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 498650, guid: 5c00c5f03c23f3b44af6d75077362432, type: 3}
       propertyPath: m_RootOrder
@@ -19201,6 +20293,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
+    - target: {fileID: 169518, guid: bcb12925987da314f8aaf71fb485f22f, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 442698, guid: bcb12925987da314f8aaf71fb485f22f, type: 3}
       propertyPath: m_RootOrder
       value: 343
@@ -19261,6 +20357,10 @@ PrefabInstance:
       value: SM_Prop_TorchStick_40
       objectReference: {fileID: 0}
     - target: {fileID: 194764, guid: 2bcc13328f8e4a44abdb601fda7419a4, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 194764, guid: 2bcc13328f8e4a44abdb601fda7419a4, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -19312,6 +20412,10 @@ PrefabInstance:
     - target: {fileID: 117454, guid: bfee7f51af0b8d54aa0728f21d1147bb, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Flat_Platform_Large_07
+      objectReference: {fileID: 0}
+    - target: {fileID: 117454, guid: bfee7f51af0b8d54aa0728f21d1147bb, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 117454, guid: bfee7f51af0b8d54aa0728f21d1147bb, type: 3}
       propertyPath: m_IsActive
@@ -19385,6 +20489,10 @@ PrefabInstance:
       value: SM_Env_Vine_Spikes_16
       objectReference: {fileID: 0}
     - target: {fileID: 169216, guid: 9bda40f4cc3980c42830cb01d8347291, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 169216, guid: 9bda40f4cc3980c42830cb01d8347291, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -19442,6 +20550,10 @@ PrefabInstance:
     - target: {fileID: 116208, guid: 8713a6f6372889249b444dfb1adb9f4b, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Flat_Platform_05
+      objectReference: {fileID: 0}
+    - target: {fileID: 116208, guid: 8713a6f6372889249b444dfb1adb9f4b, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 116208, guid: 8713a6f6372889249b444dfb1adb9f4b, type: 3}
       propertyPath: m_IsActive
@@ -19515,6 +20627,10 @@ PrefabInstance:
       value: SM_Env_Fence_Goblin_16
       objectReference: {fileID: 0}
     - target: {fileID: 113894, guid: 8c7f3a282739c344da560a2326497f5b, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 113894, guid: 8c7f3a282739c344da560a2326497f5b, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -19572,6 +20688,10 @@ PrefabInstance:
     - target: {fileID: 155424, guid: cbbcdd5ff295f0746a106019e1246642, type: 3}
       propertyPath: m_Name
       value: SM_Env_Cave_Background_15
+      objectReference: {fileID: 0}
+    - target: {fileID: 155424, guid: cbbcdd5ff295f0746a106019e1246642, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 155424, guid: cbbcdd5ff295f0746a106019e1246642, type: 3}
       propertyPath: m_IsActive
@@ -19645,6 +20765,10 @@ PrefabInstance:
       value: SM_Env_Gem_Large_06
       objectReference: {fileID: 0}
     - target: {fileID: 149278, guid: cfed6864439a806439810e6a55908101, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 149278, guid: cfed6864439a806439810e6a55908101, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -19706,6 +20830,10 @@ PrefabInstance:
     - target: {fileID: 119146, guid: 39f0ed697681ef1478f347abd260639a, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Rectangle_05
+      objectReference: {fileID: 0}
+    - target: {fileID: 119146, guid: 39f0ed697681ef1478f347abd260639a, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 119146, guid: 39f0ed697681ef1478f347abd260639a, type: 3}
       propertyPath: m_IsActive
@@ -19779,6 +20907,10 @@ PrefabInstance:
       value: SM_Env_Rock_Flat_Platform_13
       objectReference: {fileID: 0}
     - target: {fileID: 116208, guid: 8713a6f6372889249b444dfb1adb9f4b, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 116208, guid: 8713a6f6372889249b444dfb1adb9f4b, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -19849,6 +20981,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Env_Wall_01_Alt 30
       objectReference: {fileID: 0}
+    - target: {fileID: 173052, guid: f18318a9de51f9b4f993559b01c40e15, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 412966, guid: f18318a9de51f9b4f993559b01c40e15, type: 3}
       propertyPath: m_RootOrder
       value: 365
@@ -19904,6 +21040,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Env_Grass_11
       objectReference: {fileID: 0}
+    - target: {fileID: 168894, guid: 3b03db48e79bbb4458dc957b685dadcd, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 455634, guid: 3b03db48e79bbb4458dc957b685dadcd, type: 3}
       propertyPath: m_RootOrder
       value: 348
@@ -19958,6 +21098,10 @@ PrefabInstance:
     - target: {fileID: 158038, guid: b9cff604e7a459c4581b58993fc28f1d, type: 3}
       propertyPath: m_Name
       value: SM_Env_Mushroom_Small_08
+      objectReference: {fileID: 0}
+    - target: {fileID: 158038, guid: b9cff604e7a459c4581b58993fc28f1d, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 158038, guid: b9cff604e7a459c4581b58993fc28f1d, type: 3}
       propertyPath: m_IsActive
@@ -20017,6 +21161,10 @@ PrefabInstance:
     - target: {fileID: 140248, guid: cab6dd341d4015f4d87a0ddc4f388f3e, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Flat_Platform_Large_06
+      objectReference: {fileID: 0}
+    - target: {fileID: 140248, guid: cab6dd341d4015f4d87a0ddc4f388f3e, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 140248, guid: cab6dd341d4015f4d87a0ddc4f388f3e, type: 3}
       propertyPath: m_IsActive
@@ -20094,6 +21242,10 @@ PrefabInstance:
       value: SM_Env_Brick_Rubble_08
       objectReference: {fileID: 0}
     - target: {fileID: 143556, guid: 03b90a12ad8bb4347a59cfa647b8e055, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 143556, guid: 03b90a12ad8bb4347a59cfa647b8e055, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -20159,6 +21311,10 @@ PrefabInstance:
     - target: {fileID: 117630, guid: 3c7e3093f2f74ad499210774e0d01aea, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Flat_21
+      objectReference: {fileID: 0}
+    - target: {fileID: 117630, guid: 3c7e3093f2f74ad499210774e0d01aea, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 117630, guid: 3c7e3093f2f74ad499210774e0d01aea, type: 3}
       propertyPath: m_IsActive
@@ -20231,6 +21387,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Env_RockPile_Square_09
       objectReference: {fileID: 0}
+    - target: {fileID: 150720, guid: 07d8e21504c5ced46b0e0d81a1698023, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 411664, guid: 07d8e21504c5ced46b0e0d81a1698023, type: 3}
       propertyPath: m_RootOrder
       value: 335
@@ -20297,6 +21457,10 @@ PrefabInstance:
     - target: {fileID: 129364, guid: 729795c66a7df17458f5d93979a67196, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Flat_Platform_42
+      objectReference: {fileID: 0}
+    - target: {fileID: 129364, guid: 729795c66a7df17458f5d93979a67196, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 129364, guid: 729795c66a7df17458f5d93979a67196, type: 3}
       propertyPath: m_IsActive
@@ -20366,6 +21530,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
     - target: {fileID: 181792, guid: 7a216d45184954f4f8fdad696d7ab71b, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 181792, guid: 7a216d45184954f4f8fdad696d7ab71b, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -20423,6 +21591,10 @@ PrefabInstance:
     - target: {fileID: 137458, guid: b534593b95b26b7469b05168750fb6bc, type: 3}
       propertyPath: m_Name
       value: SM_Env_Cave_Roof_06
+      objectReference: {fileID: 0}
+    - target: {fileID: 137458, guid: b534593b95b26b7469b05168750fb6bc, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 485658, guid: b534593b95b26b7469b05168750fb6bc, type: 3}
       propertyPath: m_RootOrder
@@ -20488,6 +21660,10 @@ PrefabInstance:
       value: SM_Prop_TorchStick_34
       objectReference: {fileID: 0}
     - target: {fileID: 194764, guid: 2bcc13328f8e4a44abdb601fda7419a4, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 194764, guid: 2bcc13328f8e4a44abdb601fda7419a4, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -20542,6 +21718,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
+    - target: {fileID: 103198, guid: f65b497ff807d95439b38e7da2fab667, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 103198, guid: f65b497ff807d95439b38e7da2fab667, type: 3}
       propertyPath: m_IsActive
       value: 1
@@ -20600,6 +21780,10 @@ PrefabInstance:
     - target: {fileID: 188028, guid: 42ab107e7e6626f4cbea7b3e557f8b12, type: 3}
       propertyPath: m_Name
       value: SM_Env_Wood_Construction_04
+      objectReference: {fileID: 0}
+    - target: {fileID: 188028, guid: 42ab107e7e6626f4cbea7b3e557f8b12, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 188028, guid: 42ab107e7e6626f4cbea7b3e557f8b12, type: 3}
       propertyPath: m_IsActive
@@ -20661,6 +21845,10 @@ PrefabInstance:
       value: SM_Prop_TorchStick_38
       objectReference: {fileID: 0}
     - target: {fileID: 194764, guid: 2bcc13328f8e4a44abdb601fda7419a4, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 194764, guid: 2bcc13328f8e4a44abdb601fda7419a4, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -20720,6 +21908,10 @@ PrefabInstance:
       value: SM_Env_Vine_Spikes_13
       objectReference: {fileID: 0}
     - target: {fileID: 121542, guid: 1e8a1f848e20325468b33aa9d904bce7, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 121542, guid: 1e8a1f848e20325468b33aa9d904bce7, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -20777,6 +21969,10 @@ PrefabInstance:
     - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Round_25
+      objectReference: {fileID: 0}
+    - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
       propertyPath: m_IsActive
@@ -20981,6 +22177,10 @@ PrefabInstance:
       value: SM_Env_Minetrack_Broken_03
       objectReference: {fileID: 0}
     - target: {fileID: 105362, guid: 3fec779d1ea47f143b709b707919a5f8, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 105362, guid: 3fec779d1ea47f143b709b707919a5f8, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -21038,6 +22238,10 @@ PrefabInstance:
     - target: {fileID: 191796, guid: 3e288e91154144d4a8449e8f03d24b20, type: 3}
       propertyPath: m_Name
       value: SM_Env_Brick_Rubble_03
+      objectReference: {fileID: 0}
+    - target: {fileID: 191796, guid: 3e288e91154144d4a8449e8f03d24b20, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 191796, guid: 3e288e91154144d4a8449e8f03d24b20, type: 3}
       propertyPath: m_IsActive
@@ -21110,6 +22314,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Prop_Bricks_19
       objectReference: {fileID: 0}
+    - target: {fileID: 162626, guid: c78cd7eb80565634c9127229d650a564, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 404526, guid: c78cd7eb80565634c9127229d650a564, type: 3}
       propertyPath: m_RootOrder
       value: 344
@@ -21176,6 +22384,10 @@ PrefabInstance:
     - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Flat_Platform_03
+      objectReference: {fileID: 0}
+    - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
       propertyPath: m_IsActive
@@ -21249,6 +22461,10 @@ PrefabInstance:
       value: SM_Env_Rock_Flat_Platform_09
       objectReference: {fileID: 0}
     - target: {fileID: 129364, guid: 729795c66a7df17458f5d93979a67196, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 129364, guid: 729795c66a7df17458f5d93979a67196, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -21319,6 +22535,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Prop_TorchStick_35
       objectReference: {fileID: 0}
+    - target: {fileID: 194764, guid: 2bcc13328f8e4a44abdb601fda7419a4, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 412208, guid: 2bcc13328f8e4a44abdb601fda7419a4, type: 3}
       propertyPath: m_RootOrder
       value: 318
@@ -21377,6 +22597,10 @@ PrefabInstance:
     - target: {fileID: 162626, guid: c78cd7eb80565634c9127229d650a564, type: 3}
       propertyPath: m_Name
       value: SM_Prop_Bricks_16
+      objectReference: {fileID: 0}
+    - target: {fileID: 162626, guid: c78cd7eb80565634c9127229d650a564, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 404526, guid: c78cd7eb80565634c9127229d650a564, type: 3}
       propertyPath: m_RootOrder
@@ -21446,6 +22670,10 @@ PrefabInstance:
       value: SM_Env_Fence_Goblin_18
       objectReference: {fileID: 0}
     - target: {fileID: 166708, guid: 375bdbc0adc69904a97b62b6ab9758de, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 166708, guid: 375bdbc0adc69904a97b62b6ab9758de, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -21503,6 +22731,10 @@ PrefabInstance:
     - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Flat_Platform_16
+      objectReference: {fileID: 0}
+    - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
       propertyPath: m_IsActive
@@ -21576,6 +22808,10 @@ PrefabInstance:
       value: SM_Env_Cave_Background_19
       objectReference: {fileID: 0}
     - target: {fileID: 155424, guid: cbbcdd5ff295f0746a106019e1246642, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 155424, guid: cbbcdd5ff295f0746a106019e1246642, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -21646,6 +22882,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Env_Vine_Spikes_05
       objectReference: {fileID: 0}
+    - target: {fileID: 121542, guid: 1e8a1f848e20325468b33aa9d904bce7, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 426146, guid: 1e8a1f848e20325468b33aa9d904bce7, type: 3}
       propertyPath: m_RootOrder
       value: 326
@@ -21700,6 +22940,10 @@ PrefabInstance:
     - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Flat_Platform_04
+      objectReference: {fileID: 0}
+    - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
       propertyPath: m_IsActive
@@ -21773,6 +23017,10 @@ PrefabInstance:
       value: SM_Env_Rock_Flat_Platform_19
       objectReference: {fileID: 0}
     - target: {fileID: 116208, guid: 8713a6f6372889249b444dfb1adb9f4b, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 116208, guid: 8713a6f6372889249b444dfb1adb9f4b, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -21842,6 +23090,10 @@ PrefabInstance:
     - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Round_17
+      objectReference: {fileID: 0}
+    - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
       propertyPath: m_IsActive
@@ -21919,6 +23171,10 @@ PrefabInstance:
       value: SM_Env_Mushroom_Giant_09
       objectReference: {fileID: 0}
     - target: {fileID: 192026, guid: 16d7d3227049b944fb34c0d7bd878ee9, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 192026, guid: 16d7d3227049b944fb34c0d7bd878ee9, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -21978,6 +23234,10 @@ PrefabInstance:
       value: SM_Env_Mushroom_Small_03
       objectReference: {fileID: 0}
     - target: {fileID: 158038, guid: b9cff604e7a459c4581b58993fc28f1d, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 158038, guid: b9cff604e7a459c4581b58993fc28f1d, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -22035,6 +23295,10 @@ PrefabInstance:
     - target: {fileID: 137458, guid: b534593b95b26b7469b05168750fb6bc, type: 3}
       propertyPath: m_Name
       value: SM_Env_Cave_Roof_07
+      objectReference: {fileID: 0}
+    - target: {fileID: 137458, guid: b534593b95b26b7469b05168750fb6bc, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 137458, guid: b534593b95b26b7469b05168750fb6bc, type: 3}
       propertyPath: m_IsActive
@@ -22104,6 +23368,10 @@ PrefabInstance:
       value: SM_Env_Wood_Bridge_Start_02
       objectReference: {fileID: 0}
     - target: {fileID: 122446, guid: 685e675711b17224685ae3d7ed84139c, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 122446, guid: 685e675711b17224685ae3d7ed84139c, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -22158,6 +23426,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
+    - target: {fileID: 165882, guid: fa135787d5e018a4d854fa0c95ae06cb, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 431270, guid: fa135787d5e018a4d854fa0c95ae06cb, type: 3}
       propertyPath: m_RootOrder
       value: 334
@@ -22212,6 +23484,10 @@ PrefabInstance:
     - target: {fileID: 130356, guid: 3bb587ec23f47d94f9fda50197c8fb66, type: 3}
       propertyPath: m_Name
       value: SM_Prop_Candles_17
+      objectReference: {fileID: 0}
+    - target: {fileID: 130356, guid: 3bb587ec23f47d94f9fda50197c8fb66, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 130356, guid: 3bb587ec23f47d94f9fda50197c8fb66, type: 3}
       propertyPath: m_IsActive
@@ -22277,6 +23553,10 @@ PrefabInstance:
       value: SM_Env_Mushroom_Small_09
       objectReference: {fileID: 0}
     - target: {fileID: 158038, guid: b9cff604e7a459c4581b58993fc28f1d, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 158038, guid: b9cff604e7a459c4581b58993fc28f1d, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -22334,6 +23614,10 @@ PrefabInstance:
     - target: {fileID: 110020, guid: a109fb5c9d5c1d14098439ed932dc771, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Flat_Platform_41
+      objectReference: {fileID: 0}
+    - target: {fileID: 110020, guid: a109fb5c9d5c1d14098439ed932dc771, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 110020, guid: a109fb5c9d5c1d14098439ed932dc771, type: 3}
       propertyPath: m_IsActive
@@ -22395,6 +23679,10 @@ PrefabInstance:
       value: SM_Env_Vine_Spikes_12
       objectReference: {fileID: 0}
     - target: {fileID: 121542, guid: 1e8a1f848e20325468b33aa9d904bce7, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 121542, guid: 1e8a1f848e20325468b33aa9d904bce7, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -22452,6 +23740,10 @@ PrefabInstance:
     - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Round_23
+      objectReference: {fileID: 0}
+    - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
       propertyPath: m_IsActive
@@ -22529,6 +23821,10 @@ PrefabInstance:
       value: SM_Env_Rock_Flat_Platform_30
       objectReference: {fileID: 0}
     - target: {fileID: 110020, guid: a109fb5c9d5c1d14098439ed932dc771, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 110020, guid: a109fb5c9d5c1d14098439ed932dc771, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -22583,6 +23879,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
+    - target: {fileID: 140002, guid: 3bd3785667c2b874db60f9f3c8b89cac, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 140002, guid: 3bd3785667c2b874db60f9f3c8b89cac, type: 3}
       propertyPath: m_IsActive
       value: 1
@@ -22643,6 +23943,10 @@ PrefabInstance:
       value: SM_Prop_Goblin_Tent_08
       objectReference: {fileID: 0}
     - target: {fileID: 100192, guid: 326145ec5ccacbe4f85d94bdb09760d2, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 100192, guid: 326145ec5ccacbe4f85d94bdb09760d2, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -22700,6 +24004,10 @@ PrefabInstance:
     - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Flat_Platform_22
+      objectReference: {fileID: 0}
+    - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
       propertyPath: m_IsActive
@@ -22773,6 +24081,10 @@ PrefabInstance:
       value: SM_Env_Fence_Goblin_21
       objectReference: {fileID: 0}
     - target: {fileID: 166708, guid: 375bdbc0adc69904a97b62b6ab9758de, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 166708, guid: 375bdbc0adc69904a97b62b6ab9758de, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -22830,6 +24142,10 @@ PrefabInstance:
     - target: {fileID: 105362, guid: 3fec779d1ea47f143b709b707919a5f8, type: 3}
       propertyPath: m_Name
       value: SM_Env_Minetrack_Broken_04
+      objectReference: {fileID: 0}
+    - target: {fileID: 105362, guid: 3fec779d1ea47f143b709b707919a5f8, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 105362, guid: 3fec779d1ea47f143b709b707919a5f8, type: 3}
       propertyPath: m_IsActive
@@ -23181,6 +24497,10 @@ PrefabInstance:
       value: SM_Env_Minetrack_Straight_09
       objectReference: {fileID: 0}
     - target: {fileID: 164350, guid: f7dc92b7dff7d2c419e6070d90115e42, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 164350, guid: f7dc92b7dff7d2c419e6070d90115e42, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -23238,6 +24558,10 @@ PrefabInstance:
     - target: {fileID: 199214, guid: 0095dae213368f248a257f702a3c5636, type: 3}
       propertyPath: m_Name
       value: SM_Env_Wall_Rock_Blocked_02
+      objectReference: {fileID: 0}
+    - target: {fileID: 199214, guid: 0095dae213368f248a257f702a3c5636, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 199214, guid: 0095dae213368f248a257f702a3c5636, type: 3}
       propertyPath: m_IsActive
@@ -23311,6 +24635,10 @@ PrefabInstance:
       value: SM_Env_Mushroom_Giant_08
       objectReference: {fileID: 0}
     - target: {fileID: 192026, guid: 16d7d3227049b944fb34c0d7bd878ee9, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 192026, guid: 16d7d3227049b944fb34c0d7bd878ee9, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -23365,6 +24693,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
+    - target: {fileID: 145504, guid: 371c6e69303486e42a3a5555de0a5397, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 145504, guid: 371c6e69303486e42a3a5555de0a5397, type: 3}
       propertyPath: m_IsActive
       value: 1
@@ -23424,6 +24756,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Env_Rock_Flat_15
       objectReference: {fileID: 0}
+    - target: {fileID: 145638, guid: 9543382690c0b4a45bab4ad4b37def98, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 471790, guid: 9543382690c0b4a45bab4ad4b37def98, type: 3}
       propertyPath: m_RootOrder
       value: 354
@@ -23482,6 +24818,10 @@ PrefabInstance:
     - target: {fileID: 162626, guid: c78cd7eb80565634c9127229d650a564, type: 3}
       propertyPath: m_Name
       value: SM_Prop_Bricks_20
+      objectReference: {fileID: 0}
+    - target: {fileID: 162626, guid: c78cd7eb80565634c9127229d650a564, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 404526, guid: c78cd7eb80565634c9127229d650a564, type: 3}
       propertyPath: m_RootOrder
@@ -23550,6 +24890,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Env_Vine_Spikes_22
       objectReference: {fileID: 0}
+    - target: {fileID: 195216, guid: 9aebcee403d0c4745bea8c5fea3af6ef, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 475672, guid: 9aebcee403d0c4745bea8c5fea3af6ef, type: 3}
       propertyPath: m_RootOrder
       value: 347
@@ -23608,6 +24952,10 @@ PrefabInstance:
     - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Flat_Platform_38
+      objectReference: {fileID: 0}
+    - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
       propertyPath: m_IsActive
@@ -23681,6 +25029,10 @@ PrefabInstance:
       value: SM_Env_Fence_Goblin_05
       objectReference: {fileID: 0}
     - target: {fileID: 166708, guid: 375bdbc0adc69904a97b62b6ab9758de, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 166708, guid: 375bdbc0adc69904a97b62b6ab9758de, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -23735,6 +25087,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
+    - target: {fileID: 115584, guid: faa8739308e4c154f9332d2624b6e47c, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 115584, guid: faa8739308e4c154f9332d2624b6e47c, type: 3}
       propertyPath: m_IsActive
       value: 1
@@ -23803,6 +25159,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
     - target: {fileID: 103198, guid: f65b497ff807d95439b38e7da2fab667, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 103198, guid: f65b497ff807d95439b38e7da2fab667, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -23861,6 +25221,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Prop_Brick_10
       objectReference: {fileID: 0}
+    - target: {fileID: 164194, guid: c0ba893510e6e8a43aa7babaee5852d9, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 467054, guid: c0ba893510e6e8a43aa7babaee5852d9, type: 3}
       propertyPath: m_RootOrder
       value: 360
@@ -23912,6 +25276,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
+    - target: {fileID: 105986, guid: ff70520d25e17ed4b9c168c849d0ed29, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 105986, guid: ff70520d25e17ed4b9c168c849d0ed29, type: 3}
       propertyPath: m_IsActive
       value: 1
@@ -23970,6 +25338,10 @@ PrefabInstance:
     - target: {fileID: 197994, guid: 37b8bc688caaa5a44b7dec1fa9ef2d2a, type: 3}
       propertyPath: m_Name
       value: SM_Env_Cave_Background_14
+      objectReference: {fileID: 0}
+    - target: {fileID: 197994, guid: 37b8bc688caaa5a44b7dec1fa9ef2d2a, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 197994, guid: 37b8bc688caaa5a44b7dec1fa9ef2d2a, type: 3}
       propertyPath: m_IsActive
@@ -24043,6 +25415,10 @@ PrefabInstance:
       value: SM_Env_Vine_Spikes_17
       objectReference: {fileID: 0}
     - target: {fileID: 169216, guid: 9bda40f4cc3980c42830cb01d8347291, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 169216, guid: 9bda40f4cc3980c42830cb01d8347291, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -24100,6 +25476,10 @@ PrefabInstance:
     - target: {fileID: 129420, guid: ff5c549bd91cb7c43ba46386303671e8, type: 3}
       propertyPath: m_Name
       value: SM_Env_BonePile_Small_04
+      objectReference: {fileID: 0}
+    - target: {fileID: 129420, guid: ff5c549bd91cb7c43ba46386303671e8, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 129420, guid: ff5c549bd91cb7c43ba46386303671e8, type: 3}
       propertyPath: m_IsActive
@@ -24168,6 +25548,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1119205792}
     m_Modifications:
+    - target: {fileID: 103198, guid: f65b497ff807d95439b38e7da2fab667, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 456254, guid: f65b497ff807d95439b38e7da2fab667, type: 3}
       propertyPath: m_RootOrder
       value: 0
@@ -24222,6 +25606,10 @@ PrefabInstance:
     - target: {fileID: 194764, guid: 2bcc13328f8e4a44abdb601fda7419a4, type: 3}
       propertyPath: m_Name
       value: SM_Prop_TorchStick_33
+      objectReference: {fileID: 0}
+    - target: {fileID: 194764, guid: 2bcc13328f8e4a44abdb601fda7419a4, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 194764, guid: 2bcc13328f8e4a44abdb601fda7419a4, type: 3}
       propertyPath: m_IsActive
@@ -24281,6 +25669,10 @@ PrefabInstance:
     - target: {fileID: 178744, guid: 7952f7e6ac9b93b4682e63e68d9a2f74, type: 3}
       propertyPath: m_Name
       value: SM_Env_CrackedRock_22
+      objectReference: {fileID: 0}
+    - target: {fileID: 178744, guid: 7952f7e6ac9b93b4682e63e68d9a2f74, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 178744, guid: 7952f7e6ac9b93b4682e63e68d9a2f74, type: 3}
       propertyPath: m_IsActive
@@ -24358,6 +25750,10 @@ PrefabInstance:
       value: SM_Env_Rock_Round_31
       objectReference: {fileID: 0}
     - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -24433,6 +25829,10 @@ PrefabInstance:
       value: SM_Prop_Goblin_Tent_05
       objectReference: {fileID: 0}
     - target: {fileID: 165448, guid: 0cbe9bd2141ef7442a83a849dabf9a87, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 165448, guid: 0cbe9bd2141ef7442a83a849dabf9a87, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -24487,6 +25887,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
+    - target: {fileID: 129512, guid: 7841a56d83ea28445b6e0939bae8c07a, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 129512, guid: 7841a56d83ea28445b6e0939bae8c07a, type: 3}
       propertyPath: m_IsActive
       value: 1
@@ -24549,6 +25953,10 @@ PrefabInstance:
     - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Round_21
+      objectReference: {fileID: 0}
+    - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 176214, guid: 2ec5801d5a2a5f1498f62ce2d0c5fec9, type: 3}
       propertyPath: m_IsActive
@@ -24626,6 +26034,10 @@ PrefabInstance:
       value: SM_Env_Mushroom_Giant_10
       objectReference: {fileID: 0}
     - target: {fileID: 192026, guid: 16d7d3227049b944fb34c0d7bd878ee9, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 192026, guid: 16d7d3227049b944fb34c0d7bd878ee9, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -24696,6 +26108,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Prop_Brick_07
       objectReference: {fileID: 0}
+    - target: {fileID: 169518, guid: bcb12925987da314f8aaf71fb485f22f, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 442698, guid: bcb12925987da314f8aaf71fb485f22f, type: 3}
       propertyPath: m_RootOrder
       value: 361
@@ -24756,6 +26172,10 @@ PrefabInstance:
       value: SM_Env_Wood_Construction_Wheel_02
       objectReference: {fileID: 0}
     - target: {fileID: 184658, guid: 1ccd68248af915f4c89e7e23667d1c36, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 184658, guid: 1ccd68248af915f4c89e7e23667d1c36, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -24813,6 +26233,10 @@ PrefabInstance:
     - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Flat_Platform_23
+      objectReference: {fileID: 0}
+    - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
       propertyPath: m_IsActive
@@ -24886,6 +26310,10 @@ PrefabInstance:
       value: SM_Env_Rock_Flat_Platform_14
       objectReference: {fileID: 0}
     - target: {fileID: 110684, guid: a04e9c8c8fee88848911601032604b55, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 110684, guid: a04e9c8c8fee88848911601032604b55, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -24957,6 +26385,10 @@ PrefabInstance:
       value: SM_Env_Fence_Goblin_13
       objectReference: {fileID: 0}
     - target: {fileID: 113894, guid: 8c7f3a282739c344da560a2326497f5b, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 113894, guid: 8c7f3a282739c344da560a2326497f5b, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -25014,6 +26446,10 @@ PrefabInstance:
     - target: {fileID: 116208, guid: 8713a6f6372889249b444dfb1adb9f4b, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Flat_Platform_35
+      objectReference: {fileID: 0}
+    - target: {fileID: 116208, guid: 8713a6f6372889249b444dfb1adb9f4b, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 116208, guid: 8713a6f6372889249b444dfb1adb9f4b, type: 3}
       propertyPath: m_IsActive
@@ -25083,6 +26519,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
     - target: {fileID: 103198, guid: f65b497ff807d95439b38e7da2fab667, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 103198, guid: f65b497ff807d95439b38e7da2fab667, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -25137,6 +26577,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
+    - target: {fileID: 113812, guid: fb45b4bb31f66c946ab6381c0b798f81, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 113812, guid: fb45b4bb31f66c946ab6381c0b798f81, type: 3}
       propertyPath: m_IsActive
       value: 1
@@ -25199,6 +26643,10 @@ PrefabInstance:
     - target: {fileID: 116208, guid: 8713a6f6372889249b444dfb1adb9f4b, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Flat_Platform_25
+      objectReference: {fileID: 0}
+    - target: {fileID: 116208, guid: 8713a6f6372889249b444dfb1adb9f4b, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 116208, guid: 8713a6f6372889249b444dfb1adb9f4b, type: 3}
       propertyPath: m_IsActive
@@ -25427,6 +26875,10 @@ PrefabInstance:
       value: SM_Prop_Goblin_Tower_03
       objectReference: {fileID: 0}
     - target: {fileID: 113812, guid: fb45b4bb31f66c946ab6381c0b798f81, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 113812, guid: fb45b4bb31f66c946ab6381c0b798f81, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -25484,6 +26936,10 @@ PrefabInstance:
     - target: {fileID: 110020, guid: a109fb5c9d5c1d14098439ed932dc771, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Flat_Platform_31
+      objectReference: {fileID: 0}
+    - target: {fileID: 110020, guid: a109fb5c9d5c1d14098439ed932dc771, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 110020, guid: a109fb5c9d5c1d14098439ed932dc771, type: 3}
       propertyPath: m_IsActive
@@ -25545,6 +27001,10 @@ PrefabInstance:
       value: SM_Env_Vine_Spikes_11
       objectReference: {fileID: 0}
     - target: {fileID: 121542, guid: 1e8a1f848e20325468b33aa9d904bce7, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 121542, guid: 1e8a1f848e20325468b33aa9d904bce7, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -25602,6 +27062,10 @@ PrefabInstance:
     - target: {fileID: 168602, guid: 3e0f6b0ee51e6eb42a731a26210989b9, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rubble_Pebbles_60
+      objectReference: {fileID: 0}
+    - target: {fileID: 168602, guid: 3e0f6b0ee51e6eb42a731a26210989b9, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 168602, guid: 3e0f6b0ee51e6eb42a731a26210989b9, type: 3}
       propertyPath: m_IsActive
@@ -25663,6 +27127,10 @@ PrefabInstance:
       value: SM_Env_Vine_Spikes_14
       objectReference: {fileID: 0}
     - target: {fileID: 169216, guid: 9bda40f4cc3980c42830cb01d8347291, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 169216, guid: 9bda40f4cc3980c42830cb01d8347291, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -25720,6 +27188,10 @@ PrefabInstance:
     - target: {fileID: 169758, guid: 60c6bc14bb0e58c4a99aa8e32d80f308, type: 3}
       propertyPath: m_Name
       value: SM_Prop_Candles_24
+      objectReference: {fileID: 0}
+    - target: {fileID: 169758, guid: 60c6bc14bb0e58c4a99aa8e32d80f308, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 169758, guid: 60c6bc14bb0e58c4a99aa8e32d80f308, type: 3}
       propertyPath: m_IsActive
@@ -25912,6 +27384,10 @@ PrefabInstance:
       value: SM_Env_Vine_Spikes_18
       objectReference: {fileID: 0}
     - target: {fileID: 121542, guid: 1e8a1f848e20325468b33aa9d904bce7, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 121542, guid: 1e8a1f848e20325468b33aa9d904bce7, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -25967,7 +27443,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2109831466}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Goblin_Cave
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -26368,6 +27844,10 @@ PrefabInstance:
       value: SM_Env_Vine_Spikes_19
       objectReference: {fileID: 0}
     - target: {fileID: 169216, guid: 9bda40f4cc3980c42830cb01d8347291, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 169216, guid: 9bda40f4cc3980c42830cb01d8347291, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -26426,6 +27906,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Env_Wall_Half_02
       objectReference: {fileID: 0}
+    - target: {fileID: 105306, guid: ae09c1c5f9a271341ad23e187de16e39, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 462996, guid: ae09c1c5f9a271341ad23e187de16e39, type: 3}
       propertyPath: m_RootOrder
       value: 362
@@ -26480,6 +27964,10 @@ PrefabInstance:
     - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
       propertyPath: m_Name
       value: SM_Env_Rock_Flat_Platform_07
+      objectReference: {fileID: 0}
+    - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 189862, guid: 08707ef86bfa7e64ebf1b35646a6fbbb, type: 3}
       propertyPath: m_IsActive
@@ -26552,6 +28040,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Env_Bone_Skull_02
       objectReference: {fileID: 0}
+    - target: {fileID: 151284, guid: ddc413674fbd6094fb373197897aadbf, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 495616, guid: ddc413674fbd6094fb373197897aadbf, type: 3}
       propertyPath: m_RootOrder
       value: 336
@@ -26603,6 +28095,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2109831466}
     m_Modifications:
+    - target: {fileID: 158038, guid: b9cff604e7a459c4581b58993fc28f1d, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 158038, guid: b9cff604e7a459c4581b58993fc28f1d, type: 3}
       propertyPath: m_IsActive
       value: 1
@@ -26661,6 +28157,10 @@ PrefabInstance:
     - target: {fileID: 115584, guid: faa8739308e4c154f9332d2624b6e47c, type: 3}
       propertyPath: m_Name
       value: SM_Env_RockPile_Rounded_02
+      objectReference: {fileID: 0}
+    - target: {fileID: 115584, guid: faa8739308e4c154f9332d2624b6e47c, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 115584, guid: faa8739308e4c154f9332d2624b6e47c, type: 3}
       propertyPath: m_IsActive

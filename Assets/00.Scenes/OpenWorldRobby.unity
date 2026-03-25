@@ -442,8 +442,9 @@ GameObject:
   - component: {fileID: 1228252967}
   - component: {fileID: 1228252970}
   - component: {fileID: 1228252969}
+  - component: {fileID: 1228252971}
   m_Layer: 0
-  m_Name: OpenWorldNetworkManager
+  m_Name: NetworkManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -554,6 +555,18 @@ MonoBehaviour:
   debugLog: 0
   statisticsGUI: 0
   statisticsLog: 0
+--- !u!114 &1228252971
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1228252966}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e629addf37640dd4eb3d0f1eb2a6a360, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MySecondWorld.Save.SaveManager
 --- !u!1 &1507210981
 GameObject:
   m_ObjectHideFlags: 0
