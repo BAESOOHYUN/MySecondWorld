@@ -1,63 +1,132 @@
 using UnityEngine;
 using Mirror;
+using MySecondWorld.Utils;
 
 namespace MySecondWorld.Network.OpenWorld
 {
+    /// <summary>
+    /// 씬 경계 위에 배치하는 양방향 Zone 컴포넌트.
+    /// 이 GameObject에 Collider를 직접 붙인다.
+    ///
+    /// 동작 원리:
+    ///   진입 → 반대편 씬 미리 로드 (양쪽 씬 동시 유지)
+    ///   퇴장 → 방금 떠나온 씬 언로드
+    ///   → 와리가리해도 Zone 안에 있는 동안 양쪽 씬 모두 유지
+    ///
+    /// 방향 판정: ZoneHandler의 local Z축 기준.
+    ///   local z &lt; 0 → sceneA 영역 (뒤쪽)
+    ///   local z &gt; 0 → sceneB 영역 (앞쪽)
+    ///
+    /// 사용 패턴:
+    ///   일반 양방향 전환 : 이 컴포넌트만, sceneA/sceneB 설정
+    ///   던전 출구        : 이 컴포넌트 + 자식에 UnloadTrigger, exitAllDungeons = true
+    /// </summary>
+    [RequireComponent(typeof(Collider))]
     public class ZoneHandler : MonoBehaviour
     {
         [Scene]
-        public string subScene;
+        [Tooltip("local z < 0 쪽 씬 (ZoneHandler 뒤쪽)")]
+        public string sceneA;
+
+        [Scene]
+        [Tooltip("local z > 0 쪽 씬 (ZoneHandler 앞쪽), Z축 파란 화살표 방향")]
+        public string sceneB;
+
+        [Tooltip("true면 UnloadTrigger 진입 시 Dungeon/ 씬 전체 언로드. 던전 출구 전용.")]
+        public bool exitAllDungeons = false;
+
+        private void Awake()
+        {
+            GetComponent<Collider>().isTrigger = true;
+
+            // 던전 출구용 UnloadTrigger 자식도 isTrigger 보장
+            foreach (var col in GetComponentsInChildren<Collider>())
+                col.isTrigger = true;
+        }
+
+        // ── 트리거 ────────────────────────────────────────────────────
 
         [ServerCallback]
-        private void OnTriggerEnter(Collider other)
+        public void OnTriggerEnter(Collider other)
         {
-            // 플레이어가 아닌 다른 콜라이더의 접근 무시
-            Debug.Log($"[Zone] 진입: {other.name}, 태그: {other.tag}");
-            if (!other.CompareTag("Player")) return;
-            Debug.Log("[Zone] Player 확인됨");
-            if (other.TryGetComponent<NetworkIdentity>(out NetworkIdentity networkIdentity))
-            {
-                Debug.Log("[Zone] NetworkIdentity 찾음 → SceneMessage 전송");
-                SceneMessage sceneMessage = new SceneMessage
-                {
-                    sceneName = subScene,
-                    sceneOperation = SceneOperation.LoadAdditive,
-                    customHandling = false
-                };
-                /*false (기본값): Mirror가 자동으로 씬 로드/언로드 실행
-                클라이언트 측에서 직접 핸들링
-                NetworkClient.RegisterHandler<SceneMessage>(OnSceneMessage);
-                void OnSceneMessage(SceneMessage msg)
-                {
-                    // 로딩 화면 띄우기
-                    // 페이드 인/아웃 연출
-                    // 그 다음에 SceneManager.LoadSceneAsync(...)
-                }*/
+            if (!TryGetPlayerConn(other, out var conn, out var mgr)) return;
+            /*
+                어떤 객체 A가 World 좌표계에서 위치 (10, 10, 10)에 있고,
+                객체 B는 A의 자식(child) 객체로서 A의 Local 좌표계에서 위치 (1, 1, 1)에 있다고 가정해보자.
+                이 경우 객체 B의 월드 좌표는 (11, 11, 11)이 될 것이다.
+                객체 A의 `InverseTransformPoint` 메소드를 사용하여 객체 B의 월드 좌표 (11, 11, 11)을 입력하면,
+                결과로 (1, 1, 1)이라는 로컬 좌표가 반환된다.
+                만약 부모 객체가 회전하거나 이동하면 그 아래의 자식 객체들의 월드 좌표도 변경된다.
+                로컬 좌표계를 사용한다면 부모 객체 내에서의 상대적인 위치나 방향을 일관성 있게 알 수 있다.
+            */
+            float localZ = transform.InverseTransformPoint(other.transform.position).z;
+            // [  →진입     sceneA      콜라이더 박스(0)z→      sceneB (로드)       ]
+            // [     (로드) sceneA      콜라이더 박스(0)z→      sceneB       ←진입  ]
+            string sceneToLoad = localZ < 0f ? sceneB : sceneA;
+            if (string.IsNullOrEmpty(sceneToLoad)) return;
 
-                networkIdentity.connectionToClient.Send(sceneMessage);
-            }
-            else
-            {
-                Debug.Log("[Zone] NetworkIdentity 못 찾음!");
-            }
+            mgr.SendSceneLoad(conn, sceneToLoad);
+            Debug.Log($"[Zone] PreLoad: {sceneToLoad} (localZ={localZ:F1})");
         }
 
         [ServerCallback]
-        private void OnTriggerExit(Collider other)
+        public void OnTriggerExit(Collider other)
         {
-            if (!other.CompareTag("Player")) return;
+            if (!TryGetPlayerConn(other, out var conn, out var mgr)) return;
 
-            if (other.TryGetComponent(out NetworkIdentity networkIdentity))
-            {
-                SceneMessage sceneMessage = new SceneMessage
-                {
-                    sceneName = subScene,
-                    sceneOperation = SceneOperation.UnloadAdditive,
-                    customHandling = false
-                };
+            float localZ = transform.InverseTransformPoint(other.transform.position).z;
 
-                networkIdentity.connectionToClient.Send(sceneMessage);
-            }
+            // [   (언로드) sceneA      콜라이더 박스(0)z→      sceneB       진출→  ]
+            // [  ←진출     sceneA      콜라이더 박스(0)z→      sceneB (언로드)     ]
+            string sceneToUnload = localZ >= 0f ? sceneA : sceneB;
+            if (string.IsNullOrEmpty(sceneToUnload)) return;
+
+            mgr.SendSceneUnload(conn, sceneToUnload);
+            Debug.Log($"[Zone] Unload(Exit): {sceneToUnload} (localZ={localZ:F1})");
         }
-    } 
+
+        // UnloadTrigger 자식에서 호출 (던전 출구 전용)
+        [ServerCallback]
+        public void OnUnloadEnter(Collider other)
+        {
+            if (!exitAllDungeons) return;
+            if (!TryGetPlayerConn(other, out var conn, out var mgr)) return;
+
+            mgr.UnloadAllDungeonsFor(conn);
+        }
+
+        // ── Gizmo (에디터 모드 전용, 하늘색) ─────────────────────────
+
+        private void OnDrawGizmos()         => DrawGizmo(0.15f);
+        private void OnDrawGizmosSelected() => DrawGizmo(0.35f);
+
+        private void DrawGizmo(float alpha)
+        {
+            GizmoUtils.DrawCollider(GetComponent<Collider>(), transform, new Color(0f, 0.8f, 1f), alpha);
+        }
+
+        // ── 내부 헬퍼 ─────────────────────────────────────────────────
+
+        private bool TryGetPlayerConn(Collider other,
+            out NetworkConnectionToClient conn,
+            out OpenWorldNetworkManager mgr)
+        {
+            conn = null;
+            mgr = null;
+
+            if (!other.CompareTag("Player")) return false;
+
+            if (!other.TryGetComponent<NetworkIdentity>(out var identity))
+            {
+                Debug.LogWarning("[Zone] NetworkIdentity 못 찾음!");
+                return false;
+            }
+
+            mgr = NetworkManager.singleton as OpenWorldNetworkManager;
+            if (mgr == null) return false;
+
+            conn = identity.connectionToClient;
+            return true;
+        }
+    }
 }
