@@ -35,6 +35,10 @@ namespace MySecondWorld.Network.OpenWorld
         [Tooltip("true면 UnloadTrigger 진입 시 Dungeon/ 씬 전체 언로드. 던전 출구 전용.")]
         public bool exitAllDungeons = false;
 
+        [Tooltip("던전 출구 전용. 던전이 localZ < 0(sceneA 방향)이면 true, localZ > 0(sceneB 방향)이면 false.\n" +
+                 "언로드 트리거를 던전 안쪽에서 밟을 때만 언로드. 바깥(필드)에서 닿으면 무시.")]
+        public bool dungeonIsNegativeZ = true;
+
         private void Awake()
         {
             GetComponent<Collider>().isTrigger = true;
@@ -91,6 +95,16 @@ namespace MySecondWorld.Network.OpenWorld
         {
             if (!exitAllDungeons) return;
             if (!TryGetPlayerConn(other, out var conn, out var mgr)) return;
+
+            // 방향 체크: 던전 안쪽에서 진입할 때만 언로드
+            // 필드 방향에서 실수로 닿아도 던전이 사라지지 않도록
+            // ZoneHandler의 파란 화살표(+Z) 기준으로:
+            // 던전이 뒤쪽(sceneA, localZ < 0)에 있으면 → true  ✓
+            // 던전이 앞쪽(sceneB, localZ > 0)에 있으면 → false
+            // 던전이 sceneA면 true, sceneB면 false
+            float localZ = transform.InverseTransformPoint(other.transform.position).z;
+            bool fromDungeon = dungeonIsNegativeZ ? (localZ < 0f) : (localZ > 0f);
+            if (!fromDungeon) return;
 
             mgr.UnloadAllDungeonsFor(conn);
         }
