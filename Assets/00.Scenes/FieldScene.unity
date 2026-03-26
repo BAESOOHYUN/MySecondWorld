@@ -3287,7 +3287,7 @@ PrefabInstance:
     - target: {fileID: 3107838839504518615, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: -4.88
+      value: -2.37
       objectReference: {fileID: 0}
     - target: {fileID: 3107838839504518615, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
@@ -3327,7 +3327,7 @@ PrefabInstance:
     - target: {fileID: 7099903337088445964, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
       propertyPath: m_Name
-      value: Zone_01
+      value: Zone_Dungeon
       objectReference: {fileID: 0}
     - target: {fileID: 7849425212213068239, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
@@ -3370,7 +3370,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 5, y: 5, z: 5}
+  m_Size: {x: 20, y: 5, z: 20}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &1467762334
 PrefabInstance:
