@@ -142,12 +142,12 @@ PrefabInstance:
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
       propertyPath: sceneA
-      value: Assets/00.Scenes/Dungeon/03.Outside.unity
+      value: Assets/00.Scenes/Dungeon/04.Crystal_Caves.unity
       objectReference: {fileID: 0}
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
       propertyPath: sceneB
-      value: Assets/00.Scenes/Dungeon/04.Crystal_Caves.unity
+      value: Assets/00.Scenes/Dungeon/03.Outside.unity
       objectReference: {fileID: 0}
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
@@ -282,12 +282,12 @@ PrefabInstance:
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
       propertyPath: sceneA
-      value: Assets/00.Scenes/Dungeon/03.Cells.unity
+      value: Assets/00.Scenes/Dungeon/04.Barracks.unity
       objectReference: {fileID: 0}
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
       propertyPath: sceneB
-      value: Assets/00.Scenes/Dungeon/04.Barracks.unity
+      value: Assets/00.Scenes/Dungeon/03.Cells.unity
       objectReference: {fileID: 0}
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
@@ -417,12 +417,12 @@ PrefabInstance:
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
       propertyPath: sceneA
-      value: Assets/00.Scenes/Dungeon/02.Center_Hall.unity
+      value: Assets/00.Scenes/Dungeon/03.Cells.unity
       objectReference: {fileID: 0}
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
       propertyPath: sceneB
-      value: Assets/00.Scenes/Dungeon/03.Cells.unity
+      value: Assets/00.Scenes/Dungeon/02.Center_Hall.unity
       objectReference: {fileID: 0}
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
@@ -597,12 +597,12 @@ PrefabInstance:
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
       propertyPath: sceneA
-      value: Assets/00.Scenes/Dungeon/02.Center_Hall.unity
+      value: Assets/00.Scenes/Dungeon/03.Long_Hall.unity
       objectReference: {fileID: 0}
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
       propertyPath: sceneB
-      value: Assets/00.Scenes/Dungeon/03.Long_Hall.unity
+      value: Assets/00.Scenes/Dungeon/02.Center_Hall.unity
       objectReference: {fileID: 0}
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
@@ -731,72 +731,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 50, y: 10, z: 80}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!1 &499745962
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 499745963}
-  - component: {fileID: 499745965}
-  - component: {fileID: 499745964}
-  m_Layer: 0
-  m_Name: UnloadZone_01
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &499745963
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 499745962}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 506306022}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &499745964
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 499745962}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 5, y: 5, z: 0.2}
-  m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &499745965
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 499745962}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c01af2ea887a0284393402941cfd5cf2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MySecondWorld.Network.OpenWorld.UnloadTrigger
 --- !u!1001 &506306020
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -808,12 +742,12 @@ PrefabInstance:
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
       propertyPath: sceneA
-      value: Assets/00.Scenes/FieldScene.unity
+      value: Assets/00.Scenes/Dungeon/01.Entrance_Stairs.unity
       objectReference: {fileID: 0}
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
       propertyPath: sceneB
-      value: Assets/00.Scenes/Dungeon/01.Entrance_Stairs.unity
+      value: Assets/00.Scenes/FieldScene.unity
       objectReference: {fileID: 0}
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
@@ -823,7 +757,7 @@ PrefabInstance:
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
       propertyPath: dungeonIsNegativeZ
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3107838839504518615, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
@@ -833,12 +767,12 @@ PrefabInstance:
     - target: {fileID: 3107838839504518615, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 23.28
+      value: 24.33
       objectReference: {fileID: 0}
     - target: {fileID: 3107838839504518615, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: -11.84
+      value: -11.4
       objectReference: {fileID: 0}
     - target: {fileID: 3107838839504518615, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
@@ -853,17 +787,17 @@ PrefabInstance:
     - target: {fileID: 3107838839504518615, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
       propertyPath: m_LocalRotation.y
-      value: 1
+      value: 0.97236997
       objectReference: {fileID: 0}
     - target: {fileID: 3107838839504518615, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0.23344536
       objectReference: {fileID: 0}
     - target: {fileID: 3107838839504518615, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
+      value: 27
       objectReference: {fileID: 0}
     - target: {fileID: 3107838839504518615, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
@@ -893,11 +827,7 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects:
     - {fileID: 2452889637166885176, guid: 6b33d2ac320acc742a918d5bac5f917e, type: 3}
-    m_AddedGameObjects:
-    - targetCorrespondingSourceObject: {fileID: 3107838839504518615, guid: 6b33d2ac320acc742a918d5bac5f917e,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 499745963}
+    m_AddedGameObjects: []
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 7099903337088445964, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
@@ -907,12 +837,6 @@ PrefabInstance:
 --- !u!1 &506306021 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 7099903337088445964, guid: 6b33d2ac320acc742a918d5bac5f917e,
-    type: 3}
-  m_PrefabInstance: {fileID: 506306020}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &506306022 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 3107838839504518615, guid: 6b33d2ac320acc742a918d5bac5f917e,
     type: 3}
   m_PrefabInstance: {fileID: 506306020}
   m_PrefabAsset: {fileID: 0}
@@ -935,7 +859,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 20, y: 20, z: 20}
+  m_Size: {x: 5, y: 5, z: 10}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &528168558
 PrefabInstance:
@@ -953,12 +877,12 @@ PrefabInstance:
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
       propertyPath: sceneA
-      value: Assets/00.Scenes/Dungeon/03.Sewer.unity
+      value: Assets/00.Scenes/Dungeon/03.Outside.unity
       objectReference: {fileID: 0}
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
       propertyPath: sceneB
-      value: Assets/00.Scenes/Dungeon/03.Outside.unity
+      value: Assets/00.Scenes/Dungeon/03.Sewer.unity
       objectReference: {fileID: 0}
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
@@ -1088,12 +1012,12 @@ PrefabInstance:
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
       propertyPath: sceneA
-      value: Assets/00.Scenes/Dungeon/02.Center_Hall.unity
+      value: Assets/00.Scenes/Dungeon/03.Laboratory.unity
       objectReference: {fileID: 0}
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
       propertyPath: sceneB
-      value: Assets/00.Scenes/Dungeon/03.Laboratory.unity
+      value: Assets/00.Scenes/Dungeon/02.Center_Hall.unity
       objectReference: {fileID: 0}
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
@@ -1218,12 +1142,12 @@ PrefabInstance:
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
       propertyPath: sceneA
-      value: Assets/00.Scenes/Dungeon/03.Cells.unity
+      value: Assets/00.Scenes/Dungeon/03.Outside.unity
       objectReference: {fileID: 0}
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
       propertyPath: sceneB
-      value: Assets/00.Scenes/Dungeon/03.Outside.unity
+      value: Assets/00.Scenes/Dungeon/03.Cells.unity
       objectReference: {fileID: 0}
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
@@ -1353,12 +1277,12 @@ PrefabInstance:
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
       propertyPath: sceneA
-      value: Assets/00.Scenes/Dungeon/03.Long_Hall.unity
+      value: Assets/00.Scenes/Dungeon/04.Cellar.unity
       objectReference: {fileID: 0}
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
       propertyPath: sceneB
-      value: Assets/00.Scenes/Dungeon/04.Cellar.unity
+      value: Assets/00.Scenes/Dungeon/03.Long_Hall.unity
       objectReference: {fileID: 0}
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
@@ -1472,6 +1396,74 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 10, y: 5, z: 20}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!1001 &1189902336
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 2360320678295097605, guid: 5017d52af1dd52f4ea8fdcc8da30edbb,
+        type: 3}
+      propertyPath: m_Name
+      value: NetworkStartPosition
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984513115458201818, guid: 5017d52af1dd52f4ea8fdcc8da30edbb,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 24.56
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984513115458201818, guid: 5017d52af1dd52f4ea8fdcc8da30edbb,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 24.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984513115458201818, guid: 5017d52af1dd52f4ea8fdcc8da30edbb,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 4.88
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984513115458201818, guid: 5017d52af1dd52f4ea8fdcc8da30edbb,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984513115458201818, guid: 5017d52af1dd52f4ea8fdcc8da30edbb,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984513115458201818, guid: 5017d52af1dd52f4ea8fdcc8da30edbb,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984513115458201818, guid: 5017d52af1dd52f4ea8fdcc8da30edbb,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984513115458201818, guid: 5017d52af1dd52f4ea8fdcc8da30edbb,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984513115458201818, guid: 5017d52af1dd52f4ea8fdcc8da30edbb,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984513115458201818, guid: 5017d52af1dd52f4ea8fdcc8da30edbb,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 5017d52af1dd52f4ea8fdcc8da30edbb, type: 3}
 --- !u!1001 &1245626294
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1488,12 +1480,12 @@ PrefabInstance:
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
       propertyPath: sceneA
-      value: Assets/00.Scenes/Dungeon/03.Cells.unity
+      value: Assets/00.Scenes/Dungeon/04.Furnace.unity
       objectReference: {fileID: 0}
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
       propertyPath: sceneB
-      value: Assets/00.Scenes/Dungeon/04.Furnace.unity
+      value: Assets/00.Scenes/Dungeon/03.Cells.unity
       objectReference: {fileID: 0}
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
@@ -1658,12 +1650,12 @@ PrefabInstance:
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
       propertyPath: sceneA
-      value: Assets/00.Scenes/Dungeon/02.Center_Hall.unity
+      value: Assets/00.Scenes/Dungeon/03.Outside.unity
       objectReference: {fileID: 0}
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
       propertyPath: sceneB
-      value: Assets/00.Scenes/Dungeon/03.Outside.unity
+      value: Assets/00.Scenes/Dungeon/02.Center_Hall.unity
       objectReference: {fileID: 0}
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
@@ -1833,12 +1825,12 @@ PrefabInstance:
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
       propertyPath: sceneA
-      value: Assets/00.Scenes/Dungeon/02.Center_Hall.unity
+      value: Assets/00.Scenes/Dungeon/03.Sewer.unity
       objectReference: {fileID: 0}
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
       propertyPath: sceneB
-      value: Assets/00.Scenes/Dungeon/03.Sewer.unity
+      value: Assets/00.Scenes/Dungeon/02.Center_Hall.unity
       objectReference: {fileID: 0}
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
@@ -1990,12 +1982,12 @@ PrefabInstance:
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
       propertyPath: sceneA
-      value: Assets/00.Scenes/Dungeon/01.Entrance_Stairs.unity
+      value: Assets/00.Scenes/Dungeon/02.Center_Hall.unity
       objectReference: {fileID: 0}
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
       propertyPath: sceneB
-      value: Assets/00.Scenes/Dungeon/02.Center_Hall.unity
+      value: Assets/00.Scenes/Dungeon/01.Entrance_Stairs.unity
       objectReference: {fileID: 0}
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
@@ -2150,12 +2142,12 @@ PrefabInstance:
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
       propertyPath: sceneA
-      value: Assets/00.Scenes/Dungeon/03.Outside.unity
+      value: Assets/00.Scenes/Dungeon/04.Torture_Room.unity
       objectReference: {fileID: 0}
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
       propertyPath: sceneB
-      value: Assets/00.Scenes/Dungeon/04.Torture_Room.unity
+      value: Assets/00.Scenes/Dungeon/03.Outside.unity
       objectReference: {fileID: 0}
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
@@ -2285,12 +2277,12 @@ PrefabInstance:
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
       propertyPath: sceneA
-      value: Assets/00.Scenes/Dungeon/03.Long_Hall.unity
+      value: Assets/00.Scenes/Dungeon/04.Goblin_Cave.unity
       objectReference: {fileID: 0}
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
       propertyPath: sceneB
-      value: Assets/00.Scenes/Dungeon/04.Goblin_Cave.unity
+      value: Assets/00.Scenes/Dungeon/03.Long_Hall.unity
       objectReference: {fileID: 0}
     - target: {fileID: 1140189352799366825, guid: 6b33d2ac320acc742a918d5bac5f917e,
         type: 3}
@@ -2591,3 +2583,4 @@ SceneRoots:
   - {fileID: 949068473}
   - {fileID: 69791000}
   - {fileID: 1882455157}
+  - {fileID: 1189902336}

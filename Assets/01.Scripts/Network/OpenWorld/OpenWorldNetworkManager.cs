@@ -250,10 +250,11 @@ namespace MySecondWorld.Network.OpenWorld
                 _clientScenes.TryGetValue(conn.connectionId, out var scenes);
 
                 // 낙하 중 접속 끊김 방지: 마지막으로 땅에 서 있던 위치 사용.
-                // 안전 위치 기록이 없으면(아직 한 번도 착지 못한 경우) 현재 위치 그대로.
+                // 안전 위치 기록이 없으면 Vector3.zero 저장 → 다음 스폰 시 기본 스폰 위치 사용.
+                // (현재 위치를 쓰면 낙하 좌표가 저장되는 버그 발생)
                 var posToSave = _lastSafePositions.TryGetValue(conn.connectionId, out var safePos)
                     ? safePos
-                    : conn.identity.transform.position;
+                    : Vector3.zero;
 
                 SaveManager.Instance.Save((uint)conn.connectionId, new SaveData
                 {
@@ -271,14 +272,11 @@ namespace MySecondWorld.Network.OpenWorld
         // ── 씬 추적 퍼블릭 API (ZoneHandler에서 호출) ──────────────────
 
         /// <summary>특정 클라이언트에게 씬 로드 메시지를 보내고 추적에 등록.
-        /// 이미 로드된 씬이면 무시.</summary>
+        /// 이미 로드된 씬이면 무시. (OnTriggerStay 빈번 호출 대응 — 중복 전송 없음)</summary>
         public void SendSceneLoad(NetworkConnectionToClient conn, string sceneName)
         {
             if (_clientScenes.TryGetValue(conn.connectionId, out var scenes) && scenes.Contains(sceneName))
-            {
-                Debug.LogWarning($"[SceneTrack] {sceneName} 이미 로드됨 → 스킵 (connId={conn.connectionId})");
                 return;
-            }
 
             conn.Send(new SceneMessage
             {
@@ -301,33 +299,6 @@ namespace MySecondWorld.Network.OpenWorld
             TrackUnload(conn, sceneName);
         }
 
-        /// <summary>
-        /// 해당 클라이언트에 로드된 Dungeon/ 씬을 모두 언로드.
-        /// 던전 출구 ZoneHandler에서 호출.
-        /// </summary>
-        public void UnloadAllDungeonsFor(NetworkConnectionToClient conn)
-        {
-            if (!_clientScenes.TryGetValue(conn.connectionId, out var scenes)) return;
-
-            var toUnload = new List<string>();
-            foreach (var scene in scenes)
-            {
-                if (scene.Contains("Dungeon/"))
-                    toUnload.Add(scene);
-            }
-
-            foreach (var scene in toUnload)
-            {
-                conn.Send(new SceneMessage
-                {
-                    sceneName = scene,
-                    sceneOperation = SceneOperation.UnloadAdditive,
-                    customHandling = true
-                });
-                scenes.Remove(scene);
-            }
-        }
-
         // ── 내부 추적 헬퍼 ─────────────────────────────────────────────
 
         private void TrackLoad(NetworkConnectionToClient conn, string sceneName)
@@ -348,20 +319,40 @@ namespace MySecondWorld.Network.OpenWorld
 
         // ── 안전 스폰 위치 ──────────────────────────────────────────────
 
-        // 저장된 위치 아래에 지형이 없으면 낙하 상태 → NetworkStartPosition으로 복구.
+        // 저장된 위치 아래에 지형이 없거나 값이 비정상이면 → NetworkStartPosition으로 복구.
         // EnsureSceneOnServer 완료 후 호출해야 Collider가 존재한다.
         private Vector3 GetSafeSpawnPosition(Vector3 savedPosition)
         {
-            bool hasGround = Physics.Raycast(
-                savedPosition + Vector3.up * 5f,
+            if (!IsValidPosition(savedPosition))
+            {
+                Debug.LogWarning($"[Spawn] 저장 위치 비정상({savedPosition}) → 기본 스폰 위치로 복구");
+                return GetFallbackPosition();
+            }
+
+            // 저장 위치 바로 아래 2f 이내에 지형이 있어야 유효한 착지 위치.
+            // 100f처럼 너무 멀리까지 검사하면 공중 좌표도 "유효"로 통과해서 낙하 반복 발생.
+            bool hasNearGround = Physics.Raycast(
+                savedPosition + Vector3.up * 0.5f,
                 Vector3.down,
-                100f,
+                2.5f,
                 Physics.DefaultRaycastLayers,
                 QueryTriggerInteraction.Ignore);
 
-            if (hasGround) return savedPosition;
+            if (hasNearGround) return savedPosition;
 
-            Debug.LogWarning($"[Spawn] 저장 위치({savedPosition}) 아래 지형 없음 → 기본 스폰 위치로 복구");
+            Debug.LogWarning($"[Spawn] 저장 위치({savedPosition}) 발밑 지형 없음 → 기본 스폰 위치로 복구");
+            return GetFallbackPosition();
+        }
+
+        private static bool IsValidPosition(Vector3 pos)
+        {
+            return !float.IsNaN(pos.x) && !float.IsNaN(pos.y) && !float.IsNaN(pos.z)
+                && !float.IsInfinity(pos.x) && !float.IsInfinity(pos.y) && !float.IsInfinity(pos.z)
+                && pos.magnitude < 100000f;
+        }
+
+        private Vector3 GetFallbackPosition()
+        {
             Transform startPos = GetStartPosition();
             if (startPos == null)
                 Debug.LogError("[Spawn] NetworkStartPosition 없음 — 씬에 배치 필요");
@@ -381,7 +372,9 @@ namespace MySecondWorld.Network.OpenWorld
                 {
                     if (conn?.identity == null) continue;
                     var pos = conn.identity.transform.position;
-                    if (Physics.Raycast(pos + Vector3.up, Vector3.down, 2f,
+                    // 발 바로 아래 0.5f 이내에 지형이 있을 때만 안전 위치로 기록.
+                    // 낙하 중에는 바닥과 거리가 생기므로 레이가 닿지 않아 기록되지 않음.
+                    if (Physics.Raycast(pos + Vector3.up * 0.3f, Vector3.down, 0.8f,
                             Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
                         _lastSafePositions[conn.connectionId] = pos;
                 }
