@@ -97,13 +97,8 @@ namespace MySecondWorld.Network.OpenWorld
 
         // ── Gizmo (에디터 모드 전용, 하늘색) ─────────────────────────
 
-        private void OnDrawGizmos()         => DrawGizmo(0.15f);
-        private void OnDrawGizmosSelected() => DrawGizmo(0.35f);
-
-        private void DrawGizmo(float alpha)
-        {
-            GizmoUtils.DrawCollider(GetComponent<Collider>(), transform, new Color(0f, 0.8f, 1f), alpha);
-        }
+        private void OnDrawGizmos() => GizmoUtils.DrawCollider(GetComponent<Collider>(), transform, new Color(0f, 0.8f, 1f), 0.15f);
+        private void OnDrawGizmosSelected() => GizmoUtils.DrawCollider(GetComponent<Collider>(), transform, new Color(0f, 0.8f, 1f), 0.35f);
 
         // ── 내부 헬퍼 ─────────────────────────────────────────────────
 
