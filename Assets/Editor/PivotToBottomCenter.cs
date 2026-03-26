@@ -3,9 +3,9 @@ using UnityEditor;
 using System.IO;
 
 // 부모(건물) 오브젝트를 선택하고 실행하면, 건물의 바닥 중앙을 기준으로 모든 피벗을 정렬
-public class HierarchyPivotFixer : EditorWindow
+public class PivotToBottomCenter : EditorWindow
 {
-    [MenuItem("Tools/Fix Building & Windows Pivot")]
+    [MenuItem("Tools/Align Pivot to Bottom Center (Mesh & Collider)")]
     public static void FixHierarchyPivot()
     {
         GameObject root = Selection.activeGameObject; // 건물(부모) 선택
