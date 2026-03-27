@@ -71,6 +71,7 @@ namespace MySecondWorld.Network.OpenWorld
         private void HandleZoneEnter(Collider other)
         {
             if (!TryGetPlayerConn(other, out var conn, out var mgr)) return;
+            if (mgr.IsSpawnProtected(conn.connectionId)) return;
 
             float localZ = transform.InverseTransformPoint(other.transform.position).z;
             // +Z(sceneA) 쪽에서 진입 → sceneB 로드 (앞으로 이동할 씬)

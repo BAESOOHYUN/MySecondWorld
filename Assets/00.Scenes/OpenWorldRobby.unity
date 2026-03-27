@@ -499,6 +499,7 @@ MonoBehaviour:
   timeInterpolationGui: 0
   defaultSubScene: Assets/00.Scenes/FieldScene.unity
   preloadScenes: []
+  fallThreshold: 3
 --- !u!4 &1228252968
 Transform:
   m_ObjectHideFlags: 0

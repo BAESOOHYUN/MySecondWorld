@@ -29,6 +29,15 @@ namespace MySecondWorld.Network.OpenWorld
         // 낙하 중에 접속을 끊어도 이 좌표를 저장 → 추락 위치가 세이브되지 않음
         private readonly Dictionary<int, Vector3> _lastSafePositions = new();
 
+        // 낙하 시간 추적 (connectionId → 누적 낙하 시간)
+        private readonly Dictionary<int, float> _fallTimers = new();
+
+        // 스폰 직후 ZoneHandler 트리거 억제 대상 (connectionId)
+        private readonly HashSet<int> _spawnProtected = new();
+
+        [Tooltip("이 시간(초) 이상 낙하 시 안전 위치로 텔레포트")]
+        [SerializeField] private float fallThreshold = 5f;
+
         // 서버가 onlineScene 전환 + preload를 완료했는지 나타내는 플래그
         private bool _defaultSubSceneLoaded = false;
 
@@ -76,6 +85,7 @@ namespace MySecondWorld.Network.OpenWorld
             _clientScenes.Clear();
             _pendingSpawnPositions.Clear();
             _lastSafePositions.Clear();
+            _fallTimers.Clear();
             StartCoroutine(UnloadScenes());
         }
 
@@ -207,6 +217,7 @@ namespace MySecondWorld.Network.OpenWorld
 
             // 씬 로드 완료 후 스폰 → 클라이언트에 이미 지형이 있는 상태
             base.OnServerAddPlayer(conn);
+            StartCoroutine(ClearSpawnProtection(conn.connectionId));
 
             if (savedPos != Vector3.zero && conn.identity != null)
             {
@@ -241,6 +252,15 @@ namespace MySecondWorld.Network.OpenWorld
             NetworkClient.Send(new SceneLoadedMessage());
         }
 
+        public bool IsSpawnProtected(int connId) => _spawnProtected.Contains(connId);
+
+        private IEnumerator ClearSpawnProtection(int connId)
+        {
+            _spawnProtected.Add(connId);
+            yield return new WaitForSeconds(0.5f);
+            _spawnProtected.Remove(connId);
+        }
+
         // ── 연결 해제 ────────────────────────────────────────────────────
 
         public override void OnServerDisconnect(NetworkConnectionToClient conn)
@@ -266,6 +286,7 @@ namespace MySecondWorld.Network.OpenWorld
             _clientScenes.Remove(conn.connectionId);
             _pendingSpawnPositions.Remove(conn.connectionId);
             _lastSafePositions.Remove(conn.connectionId);
+            _fallTimers.Remove(conn.connectionId);
             base.OnServerDisconnect(conn);
         }
 
@@ -287,9 +308,13 @@ namespace MySecondWorld.Network.OpenWorld
             TrackLoad(conn, sceneName);
         }
 
-        /// <summary>특정 클라이언트에게 씬 언로드 메시지를 보내고 추적에서 제거.</summary>
+        /// <summary>특정 클라이언트에게 씬 언로드 메시지를 보내고 추적에서 제거.
+        /// 클라이언트가 해당 씬을 로드한 상태가 아니면 무시.</summary>
         public void SendSceneUnload(NetworkConnectionToClient conn, string sceneName)
         {
+            if (!_clientScenes.TryGetValue(conn.connectionId, out var scenes) || !scenes.Contains(sceneName))
+                return;
+
             conn.Send(new SceneMessage
             {
                 sceneName = sceneName,
@@ -362,7 +387,8 @@ namespace MySecondWorld.Network.OpenWorld
         // ── 씬 로드/언로드 코루틴 ──────────────────────────────────────
 
         // 0.2초마다 모든 플레이어의 착지 여부를 체크해 안전 위치 갱신.
-        // 발 아래 2f 이내에 지형이 있으면 "안전"으로 판정.
+        // 발 아래 0.5f 이내에 지형이 있으면 "안전"으로 판정.
+        // fallThreshold 초 이상 지면 없이 추락 시 마지막 안전 위치로 텔레포트.
         private IEnumerator TrackSafePositions()
         {
             var wait = new WaitForSeconds(0.2f);
@@ -372,11 +398,30 @@ namespace MySecondWorld.Network.OpenWorld
                 {
                     if (conn?.identity == null) continue;
                     var pos = conn.identity.transform.position;
-                    // 발 바로 아래 0.5f 이내에 지형이 있을 때만 안전 위치로 기록.
-                    // 낙하 중에는 바닥과 거리가 생기므로 레이가 닿지 않아 기록되지 않음.
+                    int connId = conn.connectionId;
+
                     if (Physics.Raycast(pos + Vector3.up * 0.3f, Vector3.down, 0.8f,
                             Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
-                        _lastSafePositions[conn.connectionId] = pos;
+                    {
+                        _lastSafePositions[connId] = pos;
+                        _fallTimers[connId] = 0f;
+                    }
+                    else
+                    {
+                        _fallTimers.TryAdd(connId, 0f);
+                        _fallTimers[connId] += 0.2f;
+
+                        if (_fallTimers[connId] >= fallThreshold)
+                        {
+                            var safePos = _lastSafePositions.TryGetValue(connId, out var sp)
+                                ? sp
+                                : GetFallbackPosition();
+                            conn.identity.transform.position = safePos;
+                            Physics.SyncTransforms();
+                            _fallTimers[connId] = 0f;
+                            Debug.Log($"[FallSafety] connId={connId} 낙하 {fallThreshold}초 초과 → 안전 위치({safePos})로 텔레포트");
+                        }
+                    }
                 }
                 yield return wait;
             }
