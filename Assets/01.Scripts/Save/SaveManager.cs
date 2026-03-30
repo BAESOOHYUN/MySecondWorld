@@ -28,41 +28,38 @@ namespace MySecondWorld.Save
         }
 
         /// <param name="playerId">플레이어 식별자 (netId 등). 키 충돌 방지용.</param>
-        public void Save(uint playerId, SaveData data)
+        public void Save(string playerId, SaveData data)
         {
-            string id = playerId.ToString();
-            PlayerPrefs.SetString(KeyScenes + id, string.Join(SceneSep, data.lastSceneNames ?? System.Array.Empty<string>()));
-            PlayerPrefs.SetFloat(KeyPosX + id, data.lastPosition.x);
-            PlayerPrefs.SetFloat(KeyPosY + id, data.lastPosition.y);
-            PlayerPrefs.SetFloat(KeyPosZ + id, data.lastPosition.z);
+            PlayerPrefs.SetString(KeyScenes + playerId, string.Join(SceneSep, data.lastSceneNames ?? System.Array.Empty<string>()));
+            PlayerPrefs.SetFloat(KeyPosX + playerId, data.lastPosition.x);
+            PlayerPrefs.SetFloat(KeyPosY + playerId, data.lastPosition.y);
+            PlayerPrefs.SetFloat(KeyPosZ + playerId, data.lastPosition.z);
             PlayerPrefs.Save();
         }
 
         /// <returns>저장된 데이터가 없으면 null.</returns>
-        public SaveData? Load(uint playerId)
+        public SaveData? Load(string playerId)
         {
-            string id = playerId.ToString();
-            if (!PlayerPrefs.HasKey(KeyScenes + id))
+            if (!PlayerPrefs.HasKey(KeyScenes + playerId))
                 return null;
 
             return new SaveData
             {
-                lastSceneNames = PlayerPrefs.GetString(KeyScenes + id)
+                lastSceneNames = PlayerPrefs.GetString(KeyScenes + playerId)
                     .Split(SceneSep, System.StringSplitOptions.RemoveEmptyEntries),
                 lastPosition = new Vector3(
-                    PlayerPrefs.GetFloat(KeyPosX + id),
-                    PlayerPrefs.GetFloat(KeyPosY + id),
-                    PlayerPrefs.GetFloat(KeyPosZ + id))
+                    PlayerPrefs.GetFloat(KeyPosX + playerId),
+                    PlayerPrefs.GetFloat(KeyPosY + playerId),
+                    PlayerPrefs.GetFloat(KeyPosZ + playerId))
             };
         }
 
-        public void Delete(uint playerId)
+        public void Delete(string playerId)
         {
-            string id = playerId.ToString();
-            PlayerPrefs.DeleteKey(KeyScenes + id);
-            PlayerPrefs.DeleteKey(KeyPosX + id);
-            PlayerPrefs.DeleteKey(KeyPosY + id);
-            PlayerPrefs.DeleteKey(KeyPosZ + id);
+            PlayerPrefs.DeleteKey(KeyScenes + playerId);
+            PlayerPrefs.DeleteKey(KeyPosX + playerId);
+            PlayerPrefs.DeleteKey(KeyPosY + playerId);
+            PlayerPrefs.DeleteKey(KeyPosZ + playerId);
             PlayerPrefs.Save();
         }
     }

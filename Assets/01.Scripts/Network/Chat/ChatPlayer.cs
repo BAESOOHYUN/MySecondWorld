@@ -7,13 +7,13 @@ namespace MySecondWorld.Network.Chat
     {
         public override void OnStartLocalPlayer()
         {
-            ChatUI.instance.OnSubmitListener += OnSubmit;
-            ChatUI.instance.OnLocalPlayerReady();
+            ChatUI.Instance.OnSubmitListener += OnSubmit;
+            ChatUI.Instance.OnLocalPlayerReady();
         }
         public override void OnStopLocalPlayer()
         {
-            ChatUI.instance.OnLocalPlayerStopped();
-            ChatUI.instance.OnSubmitListener -= OnSubmit;
+            ChatUI.Instance.OnLocalPlayerStopped();
+            ChatUI.Instance.OnSubmitListener -= OnSubmit;
         }
 
         private void OnSubmit(string msg) => CmdSendMessage(msg); // 브릿지
@@ -39,7 +39,7 @@ namespace MySecondWorld.Network.Chat
         {
             Debug.Log($"[Client] RpcReceiveMessage: {message}");
             // 모든 클라이언트에서 실행
-            ChatUI.instance.CreateMessagePrefab(playerName, message);
+            ChatUI.Instance.CreateMessagePrefab(playerName, message);
         }
 
     }

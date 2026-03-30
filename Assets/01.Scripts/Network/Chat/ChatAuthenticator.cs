@@ -160,15 +160,15 @@ namespace MySecondWorld.Network.Chat
         // 서버 연결되자마자 호출됨. Mirror 자동호출
         public override void OnClientAuthenticate()
         {
-            Debug.Log($"[Auth] OnClientAuthenticate localPlayerName='{ChatUI.instance.localPlayerName}'");
+            Debug.Log($"[Auth] OnClientAuthenticate localPlayerName='{ChatUI.Instance.LocalPlayerName}'");
             // 이름 없이 연결 시도하면 null이 서버 playerNames에 등록될 수 있으므로 사전 차단
-            if (string.IsNullOrWhiteSpace(ChatUI.instance.localPlayerName))
+            if (string.IsNullOrWhiteSpace(ChatUI.Instance.LocalPlayerName))
             {
                 Debug.LogWarning("[Auth] localPlayerName 비어있음 → 인증 메시지 미전송");
                 return;
             }
 
-            NetworkClient.Send(new AuthRequestMessage { authUsername = ChatUI.instance.localPlayerName });
+            NetworkClient.Send(new AuthRequestMessage { authUsername = ChatUI.Instance.LocalPlayerName });
         }
 
         public void OnAuthResponseMessage(AuthResponseMessage msg)

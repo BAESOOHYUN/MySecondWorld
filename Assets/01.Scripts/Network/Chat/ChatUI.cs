@@ -8,29 +8,58 @@ namespace MySecondWorld.Network.Chat
 {
     public class ChatUI : MonoBehaviour
     {
-        public static ChatUI instance;
-        private void Awake() { instance = this; }
+        public static ChatUI Instance { get; private set; }
 
         [Header("UI")]
+        [SerializeField] private GameObject _scrollView;  // ScrollView
         [SerializeField] private Transform _messageContainer;  // ScrollView > Viewport > Content
         [SerializeField] private TMP_InputField _messageInput;
         [SerializeField] private TMP_InputField _localPlayerNameInput;
         [SerializeField] private TMP_Text _messageTextPrefab;
         [SerializeField] private Toggle _hostToggle;
         [SerializeField] private Toggle _clientToggle;
+        [SerializeField] private Button _exitButton;
 
-        public string localPlayerName { get; private set; }
+        public string LocalPlayerName { get; private set; }
 
         public event Action<string> OnSubmitListener;
+
+        private void Awake()
+        {
+            if (Instance != null && Instance != this)
+            {
+                Destroy(gameObject);  // ChatCanvas만 파괴, UIManager는 무사
+                return;
+            }
+            Instance = this;
+        }
 
         private void Start()
         {
             _messageInput.interactable = false;
             _hostToggle.interactable = false;
             _clientToggle.interactable = false;
-            _localPlayerNameInput.onSubmit.AddListener(SetPlayerName);
-            _hostToggle.onValueChanged.AddListener(OnToggleHost);
-            _clientToggle.onValueChanged.AddListener(OnToggleClient);
+            _scrollView.SetActive(false);
+
+            // PlayerPrefs 임시
+            string savedName = PlayerPrefs.GetString("playerName", "");
+            if (!string.IsNullOrEmpty(savedName))
+            {
+                LocalPlayerName = savedName;
+                _localPlayerNameInput.text = savedName;
+                _localPlayerNameInput.onSubmit.AddListener(SetPlayerName);
+                _hostToggle.onValueChanged.AddListener(OnToggleHost);
+                _clientToggle.onValueChanged.AddListener(OnToggleClient);
+            }
+            _exitButton.onClick.AddListener(CloseChatScrollView); 
+            _messageInput.onSelect.AddListener(_ => _scrollView.SetActive(true));
+
+          
+            if (PlayerPrefs.GetString("playerName", "") != null)
+            {
+                LocalPlayerName = PlayerPrefs.GetString("playerName", "");
+                _localPlayerNameInput.text = LocalPlayerName;
+            }
         }
 
         private void OnDestroy()
@@ -39,6 +68,7 @@ namespace MySecondWorld.Network.Chat
             _messageInput.onSubmit.RemoveListener(OnSubmit);
             _hostToggle.onValueChanged.RemoveListener(OnToggleHost);
             _clientToggle.onValueChanged.RemoveListener(OnToggleClient);
+            _exitButton.onClick.RemoveListener(CloseChatScrollView);
         }
 
         public void OnLocalPlayerReady()
@@ -60,12 +90,12 @@ namespace MySecondWorld.Network.Chat
 
         private void OnToggleHost(bool isOn)
         {
-            ((ChatNetworkManager)NetworkManager.singleton).ToggleHost(isOn);
+            ((GameNetworkManager)NetworkManager.singleton).ToggleHost(isOn);
         }
 
         private void OnToggleClient(bool isOn)
         {
-            ((ChatNetworkManager)NetworkManager.singleton).ToggleClient(isOn);
+            ((GameNetworkManager)NetworkManager.singleton).ToggleClient(isOn);
         }
 
 
@@ -73,11 +103,14 @@ namespace MySecondWorld.Network.Chat
         // TODO : username을 관리할 로그인단, 서버 구상
         public void SetPlayerName(string username)
         {
-            localPlayerName = username;
+            // PlayerPrefs 임시
+            PlayerPrefs.SetString("playerName", username);
+
+            LocalPlayerName = username;
             _localPlayerNameInput.interactable = false;
             _hostToggle.interactable = true;
             _clientToggle.interactable = true;
-            Debug.Log($"[Chat] SetPlayerName: '{localPlayerName}'");
+            Debug.Log($"[Chat] SetPlayerName: '{LocalPlayerName}'");
         }
 
         private void OnSubmit(string msg)
@@ -101,11 +134,11 @@ namespace MySecondWorld.Network.Chat
 
             TMP_Text entry = Instantiate(_messageTextPrefab, _messageContainer);
 
-            if (playerName == localPlayerName && NetworkServer.active == true) // "HOST"일때
+            if (playerName == LocalPlayerName && NetworkServer.active == true) // "HOST"일때
             {
                 entry.text = $"<color=red>{playerName}:</color> {message}";
             }
-            else if (playerName == localPlayerName) // "나"일때
+            else if (playerName == LocalPlayerName) // "나"일때
             {
                 entry.text = $"<color=blue>{playerName}:</color> {message}";
             }
@@ -114,6 +147,11 @@ namespace MySecondWorld.Network.Chat
                 entry.text = $"<color=green>{playerName}:</color> {message}";
             }
             Debug.Log($"entry   {entry != null}");
+        }
+
+        public void CloseChatScrollView()
+        {
+            _messageContainer.gameObject.SetActive(!_scrollView.activeSelf);
         }
     }
 }

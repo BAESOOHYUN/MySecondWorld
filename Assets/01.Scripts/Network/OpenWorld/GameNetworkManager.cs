@@ -3,6 +3,9 @@ using Mirror;
 using System.Collections.Generic;
 using System.Collections;
 using UnityEngine.SceneManagement;
+using MySecondWorld.Save;
+using MySecondWorld.Network.Chat;
+using System.Linq;
 
 namespace MySecondWorld.Network
 {
@@ -20,7 +23,18 @@ namespace MySecondWorld.Network
         private int _expectedSceneLoads;                 // 클라이언트: 로드해야 할 씬 수
         private int _completedSceneLoads;                // 클라이언트: 로드 완료된 씬 수
 
+        //─────────────────────────── UI단 ──────────────────────────
+        public void ToggleHost(bool isOn)
+        {
+            if (isOn) StartHost();
+            else StopHost();
+        }
 
+        public void ToggleClient(bool isOn)
+        {
+            if (isOn) StartClient();
+            else StopClient();
+        }
 
         //─────────────────────────── 서버 측 ──────────────────────────
 
@@ -67,7 +81,8 @@ namespace MySecondWorld.Network
         {
             PlayerSession session = new PlayerSession
             {
-                LoadedScenes = new HashSet<string>(),
+                loadedScenes = new HashSet<string>(),
+                playerId = conn.authenticationData as string
             };
             _sessions.Add(conn.connectionId, session);
             StartCoroutine(PrepareAndSpawn(conn));
@@ -79,16 +94,27 @@ namespace MySecondWorld.Network
         {
             yield return new WaitUntil(() => _serverReady);
 
-            conn.Send(new AdditiveSceneMessage { sceneName = defaultSubScene, load = true });
-            conn.Send(new SpawnReadyMessage { sceneCount = 1 });
-
-            Transform startPos = GetStartPosition();
-            Vector3 spawnPosition = startPos != null ? startPos.position : Vector3.zero;
-
             var session = _sessions[conn.connectionId];
-            session.PendingSpawnPosition = spawnPosition;
-            session.PendingSpawnScene = defaultSubScene;
-            Debug.Log($"[S4] PrepareAndSpawn: conn={conn.connectionId} 씬={defaultSubScene} 위치={spawnPosition}");
+            var saveData = SaveManager.Instance?.Load(session.playerId);
+            var hasSpawnData = saveData.HasValue;
+
+            string spawnScene = defaultSubScene;
+            Vector3 spawnPosition = GetStartPosition()?.position ?? Vector3.zero;
+
+            if (!string.IsNullOrEmpty(session.playerId) && saveData != null)
+            {
+                if (hasSpawnData) // 데이터가 있으면 → 저장된 씬 + 위치 사용
+                {
+                    spawnScene = saveData.Value.lastSceneNames[0];
+                    spawnPosition = saveData.Value.lastPosition;
+                    
+                }
+            }
+            session.pendingSpawnPosition = spawnPosition;
+            session.pendingSpawnScene = spawnScene;
+            conn.Send(new AdditiveSceneMessage { sceneName = spawnScene, load = true });
+            conn.Send(new SpawnReadyMessage { sceneCount = 1 });
+            Debug.Log($"[S4] PrepareAndSpawn({(hasSpawnData ? "복귀" : "신규")}): conn={conn.connectionId} 씬={spawnScene} 위치={spawnPosition}");
         }
 
         /// <summary>
@@ -103,20 +129,41 @@ namespace MySecondWorld.Network
             Debug.Log($"[S5] OnSceneLoadedAck: conn={conn.connectionId} ACK 수신!");
             base.OnServerAddPlayer(conn); // 드디어 playerPrefab 생성
             var session = _sessions[conn.connectionId];
-            conn.identity.transform.position = session.PendingSpawnPosition;
-            session.CurrentScene = session.PendingSpawnScene;
-            Debug.Log($"[S5] 스폰 위치={session.PendingSpawnPosition} 씬={session.CurrentScene}");
-            SceneManager.MoveGameObjectToScene(conn.identity.gameObject, SceneManager.GetSceneByPath(session.CurrentScene));
-            session.IsSpawned = true;
+            conn.identity.transform.position = session.pendingSpawnPosition;
+            session.currentScene = session.pendingSpawnScene;
+            Debug.Log($"[S5] 스폰 위치={session.pendingSpawnPosition} 씬={session.currentScene}");
+            SceneManager.MoveGameObjectToScene(conn.identity.gameObject, SceneManager.GetSceneByPath(session.currentScene));
+            session.isSpawned = true;
             Debug.Log($"[S5] MoveGameObjectToScene 완료. IsSpawned=true");
         }
 
 
-        // [S-End] 세션 정리
+        // [S-End] 세이브 + 세션 정리
         public override void OnServerDisconnect(NetworkConnectionToClient conn)
         {
             Debug.Log($"[S-End] OnServerDisconnect: conn={conn.connectionId}");
-            _sessions.Remove(conn.connectionId);
+            if (_sessions.TryGetValue(conn.connectionId, out var session))
+            {
+                Debug.Log($"[S-End] 체크: isSpawned={session.isSpawned} playerId={session.playerId}");
+                // 1. 세이브
+                if (session.isSpawned && !string.IsNullOrEmpty(session.playerId))
+                {
+                    SaveData saveData = new SaveData
+                    {
+                        lastSceneNames = new string[] { session.currentScene },
+                        lastPosition = conn.identity?.transform.position ?? session.lastSafePosition
+                    };
+                    SaveManager.Instance?.Save(session.playerId, saveData);
+                    Debug.Log($"[S-End] 세이브: player={session.playerId} scene={session.currentScene} pos={saveData.lastPosition}");
+                }
+
+                // 2. playerNames 정리 (재접속 시 이름 중복 거부 방지)
+                if (conn.authenticationData is string username)
+                    ChatAuthenticator.playerNames.Remove(username);
+
+                // 3. 세션 제거
+                _sessions.Remove(conn.connectionId);
+            }
             base.OnServerDisconnect(conn);
         }
 
@@ -135,7 +182,7 @@ namespace MySecondWorld.Network
                 foreach (var session in _sessions)
                 {
                     // 아직 스폰 안 된 플레이어 스킵
-                    if (!session.Value.IsSpawned) continue;
+                    if (!session.Value.isSpawned) continue;
                     if (!NetworkServer.connections.ContainsKey(session.Key))
                     {
                         Debug.LogWarning($"[S-Loop] connections에 conn={session.Key} 없음!");
@@ -155,6 +202,7 @@ namespace MySecondWorld.Network
 
                         if (zone.bounds.Contains(playerPos))
                         {
+                            session.Value.lastSafePosition = playerPos;
                             PlayerChangedScene(conn, zone.sceneName);
                             break;  // 한 플레이어는 하나의 존에만 소속
                         }
@@ -174,7 +222,7 @@ namespace MySecondWorld.Network
                     // 새로 필요한 씬 로드
                     foreach (var scene in needScenes)
                     {
-                        if (!session.Value.LoadedScenes.Contains(scene))
+                        if (!session.Value.loadedScenes.Contains(scene))
                             PlayerEnteredZone(conn, scene);
                     }
 
@@ -183,7 +231,7 @@ namespace MySecondWorld.Network
 
                     // 제거 대상 모으기
                     var scenesToUnload = new List<string>();
-                    foreach (var scene in session.Value.LoadedScenes)
+                    foreach (var scene in session.Value.loadedScenes)
                     {
                         if (!needScenes.Contains(scene))
                             scenesToUnload.Add(scene);
@@ -204,9 +252,9 @@ namespace MySecondWorld.Network
         public void PlayerEnteredZone(NetworkConnectionToClient conn, string sceneName)
         {
             var session = _sessions[conn.connectionId];
-            if (session.LoadedScenes.Contains(sceneName)) return;
+            if (session.loadedScenes.Contains(sceneName)) return;
             conn.Send(new AdditiveSceneMessage { sceneName = sceneName, load = true });
-            session.LoadedScenes.Add(sceneName);
+            session.loadedScenes.Add(sceneName);
             Debug.Log($"[S-Loop-a] PlayerEnteredZone: conn={conn.connectionId} 씬 로드 지시={sceneName}");
         }
 
@@ -217,13 +265,13 @@ namespace MySecondWorld.Network
         {
             var session = _sessions[conn.connectionId]; 
             
-            Debug.Log($"[S-Loop-b] 진입: conn={conn.connectionId} current={session.CurrentScene} new={sceneName}");
+            Debug.Log($"[S-Loop-b] 진입: conn={conn.connectionId} current={session.currentScene} new={sceneName}");
 
-            if (session.CurrentScene == sceneName) return;
+            if (session.currentScene == sceneName) return;
             SceneManager.MoveGameObjectToScene(
                 conn.identity.gameObject,
                 SceneManager.GetSceneByPath(sceneName));
-            session.CurrentScene = sceneName;
+            session.currentScene = sceneName;
             Debug.Log($"[S-Loop-b] PlayerChangedScene: conn={conn.connectionId} → {sceneName}");
         }
 
@@ -233,9 +281,9 @@ namespace MySecondWorld.Network
         public void PlayerLeftZone(NetworkConnectionToClient conn, string sceneName)
         {
             var session = _sessions[conn.connectionId];
-            if (!session.LoadedScenes.Contains(sceneName)) return;
+            if (!session.loadedScenes.Contains(sceneName)) return;
             conn.Send(new AdditiveSceneMessage { sceneName = sceneName, load = false });
-            session.LoadedScenes.Remove(sceneName);
+            session.loadedScenes.Remove(sceneName);
             Debug.Log($"[S-Loop-c] PlayerLeftZone: conn={conn.connectionId} 씬 언로드 지시={sceneName}");
         }
 
