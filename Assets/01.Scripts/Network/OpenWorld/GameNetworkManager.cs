@@ -79,6 +79,18 @@ namespace MySecondWorld.Network
         // [S3] 세션 생성 + PrepareAndSpawn 시작 (서버가 클라이언트에게 씬 준비하라고 시킴)
         public override void OnServerAddPlayer(NetworkConnectionToClient conn)
         {
+            // 같은 playerId로 이미 세션 존재 시 → 기존 세션 정리
+            string playerId = conn.authenticationData as string;
+            if (!string.IsNullOrEmpty(playerId))
+            {
+                var stale = _sessions.FirstOrDefault(s => s.Value.playerId == playerId);
+                if (stale.Value != null)
+                {
+                    Debug.Log($"[S3] 중복 세션 정리: playerId={playerId} oldConn={stale.Key}");
+                    _sessions.Remove(stale.Key);
+                }
+            }
+
             PlayerSession session = new PlayerSession
             {
                 loadedScenes = new HashSet<string>(),
@@ -146,12 +158,14 @@ namespace MySecondWorld.Network
             {
                 Debug.Log($"[S-End] 체크: isSpawned={session.isSpawned} playerId={session.playerId}");
                 // 1. 세이브
-                if (session.isSpawned && !string.IsNullOrEmpty(session.playerId))
+                if (session.isSpawned 
+                    && !string.IsNullOrEmpty(session.playerId) 
+                    && session.lastSafePosition != Vector3.zero)
                 {
                     SaveData saveData = new SaveData
                     {
                         lastSceneNames = new string[] { session.currentScene },
-                        lastPosition = conn.identity?.transform.position ?? session.lastSafePosition
+                        lastPosition = session.lastSafePosition
                     };
                     SaveManager.Instance?.Save(session.playerId, saveData);
                     Debug.Log($"[S-End] 세이브: player={session.playerId} scene={session.currentScene} pos={saveData.lastPosition}");
@@ -194,18 +208,57 @@ namespace MySecondWorld.Network
                     var conn = NetworkServer.connections[session.Key];
                     var playerPos = conn.identity.transform.position;
 
+                    bool inAnyZone = false;
                     // === 1. 소속 씬 판정 (정확한 bounds) ===
                     foreach (var zone in zones)
                     {
                         if (session.Key != 0)
                             Debug.Log($"[S-Loop] conn={session.Key} zone={zone.sceneName} contains={zone.bounds.Contains(playerPos)} pos={playerPos} center={zone.bounds.center} extents={zone.bounds.extents}");
-
+                        
                         if (zone.bounds.Contains(playerPos))
                         {
+                            inAnyZone = true;
+                            session.Value.fallTimer = 0;
                             session.Value.lastSafePosition = playerPos;
                             PlayerChangedScene(conn, zone.sceneName);
                             break;  // 한 플레이어는 하나의 존에만 소속
                         }
+                    }
+
+                    if (!inAnyZone)
+                        session.Value.fallTimer += zoneCheckInterval;
+
+                    if (session.Value.fallTimer >= 3f)
+                    {
+                        // 안전 위치 결정
+                        Vector3 safePos;
+                        string safeScene;
+
+                        if (session.Value.lastSafePosition != Vector3.zero)
+                        {
+                            safePos = session.Value.lastSafePosition;
+                            safeScene = session.Value.currentScene;
+                        }
+                        else // 한 번도 zone 안에 있지 않았음 → 초기 위치로
+                        {
+                            safePos = GetStartPosition()?.position ?? Vector3.zero;
+                            safeScene = defaultSubScene;
+                        }
+                        Debug.Log($"[S-Loop] 낙하 복귀: conn={session.Key} safePos={safePos} safeScene={safeScene}");
+
+                        // 텔레포트
+                        conn.identity.transform.position = safePos;
+
+                        // 씬이 다르면 이동
+                        if (session.Value.currentScene != safeScene)
+                        {
+                            SceneManager.MoveGameObjectToScene(
+                                conn.identity.gameObject,
+                                SceneManager.GetSceneByPath(safeScene));
+                            session.Value.currentScene = safeScene;
+                        }
+
+                        session.Value.fallTimer = 0;
                     }
 
                     // === 2. 씬 로드/언로드 판정 (bounds + preloadMargin) ===

@@ -16,10 +16,10 @@ namespace MySecondWorld.Network
         public bool isSpawned;                     // 스폰 완료 여부 (CheckZones에서 아직 스폰 안 된 플레이어 스킵용)
 
         // --- 2차 (세이브/로드 추가 시) ---
-        public string playerId;                       // SaveManager 키
+        public string playerId;                    // SaveManager 키
         public Vector3 lastSafePosition;           // 마지막 안전 위치
 
         // --- 3차 (낙하 안전 추가 시) ---
-        // public float fallTimer;                 // 낙하 경과 시간
+        public float fallTimer;                    // 낙하 경과 시간
     }
 }
