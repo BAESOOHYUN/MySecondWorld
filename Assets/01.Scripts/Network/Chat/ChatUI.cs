@@ -37,9 +37,18 @@ namespace MySecondWorld.Network.Chat
         private void Start()
         {
             _messageInput.interactable = false;
-            _hostToggle.interactable = false;
-            _clientToggle.interactable = false;
             _scrollView.SetActive(false);
+
+            _hostToggle.onValueChanged.AddListener(OnToggleHost);
+            _clientToggle.onValueChanged.AddListener(OnToggleClient);
+            _exitButton.onClick.AddListener(CloseChatScrollView);
+            _messageInput.onSelect.AddListener(_ => _scrollView.SetActive(true));
+            _localPlayerNameInput.onValueChanged.AddListener(name =>
+            {
+                bool hasName = !string.IsNullOrEmpty(name);
+                _hostToggle.interactable = hasName;
+                _clientToggle.interactable = hasName;
+            });
 
             // PlayerPrefs 임시
             string savedName = PlayerPrefs.GetString("playerName", "");
@@ -47,35 +56,27 @@ namespace MySecondWorld.Network.Chat
             {
                 LocalPlayerName = savedName;
                 _localPlayerNameInput.text = savedName;
-                _localPlayerNameInput.onSubmit.AddListener(SetPlayerName);
-                _hostToggle.onValueChanged.AddListener(OnToggleHost);
-                _clientToggle.onValueChanged.AddListener(OnToggleClient);
-            }
-            _exitButton.onClick.AddListener(CloseChatScrollView); 
-            _messageInput.onSelect.AddListener(_ => _scrollView.SetActive(true));
-
-          
-            if (PlayerPrefs.GetString("playerName", "") != null)
-            {
-                LocalPlayerName = PlayerPrefs.GetString("playerName", "");
-                _localPlayerNameInput.text = LocalPlayerName;
             }
         }
 
         private void OnDestroy()
         {
-            _localPlayerNameInput.onSubmit.RemoveListener(SetPlayerName);
             _messageInput.onSubmit.RemoveListener(OnSubmit);
             _hostToggle.onValueChanged.RemoveListener(OnToggleHost);
             _clientToggle.onValueChanged.RemoveListener(OnToggleClient);
             _exitButton.onClick.RemoveListener(CloseChatScrollView);
+            _localPlayerNameInput.onValueChanged.RemoveListener(name =>
+            {
+                bool hasName = !string.IsNullOrEmpty(name);
+                _hostToggle.interactable = hasName;
+                _clientToggle.interactable = hasName;
+            });
         }
 
         public void OnLocalPlayerReady()
         {
+            _localPlayerNameInput.interactable = false;
             _messageInput.interactable = true;
-            _hostToggle.interactable = false;
-            _clientToggle.interactable = false;
             _messageInput.onSubmit.AddListener(OnSubmit);
         }
 
@@ -83,18 +84,18 @@ namespace MySecondWorld.Network.Chat
         {
             _localPlayerNameInput.interactable = true;
             _messageInput.interactable = false;
-            _hostToggle.interactable = false;
-            _clientToggle.interactable = false;
             _messageInput.onSubmit.RemoveListener(OnSubmit);
         }
 
         private void OnToggleHost(bool isOn)
         {
+            if (isOn) SetPlayerName(_localPlayerNameInput.text);
             ((GameNetworkManager)NetworkManager.singleton).ToggleHost(isOn);
         }
 
         private void OnToggleClient(bool isOn)
         {
+            if (isOn) SetPlayerName(_localPlayerNameInput.text);
             ((GameNetworkManager)NetworkManager.singleton).ToggleClient(isOn);
         }
 
@@ -105,11 +106,8 @@ namespace MySecondWorld.Network.Chat
         {
             // PlayerPrefs 임시
             PlayerPrefs.SetString("playerName", username);
-
             LocalPlayerName = username;
             _localPlayerNameInput.interactable = false;
-            _hostToggle.interactable = true;
-            _clientToggle.interactable = true;
             Debug.Log($"[Chat] SetPlayerName: '{LocalPlayerName}'");
         }
 
@@ -151,7 +149,7 @@ namespace MySecondWorld.Network.Chat
 
         public void CloseChatScrollView()
         {
-            _messageContainer.gameObject.SetActive(!_scrollView.activeSelf);
+            _scrollView.SetActive(!_scrollView.activeSelf);
         }
     }
 }
