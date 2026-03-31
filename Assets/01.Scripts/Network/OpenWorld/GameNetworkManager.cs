@@ -45,7 +45,7 @@ namespace MySecondWorld.Network
             // 클라이언트가 보내는 메시지 → NetworkServer.RegisterHandler (서버가 받으니까)
             NetworkServer.RegisterHandler<SceneLoadedAckMessage>(OnSceneLoadedAck);
             StartCoroutine(CheckZones());
-            Debug.Log("[S1] OnStartServer: 핸들러 등록 + CheckZones 코루틴 시작");
+           // Debug.Log("[S1] OnStartServer: 핸들러 등록 + CheckZones 코루틴 시작");
         }
 
         // [S2] 모든 존 씬을 서버에만 additive로 프리로드 한다.
@@ -54,7 +54,7 @@ namespace MySecondWorld.Network
         {
             base.OnServerSceneChanged(sceneName);
             StartCoroutine(LoadAllZoneScenes());
-            Debug.Log($"[S2] OnServerSceneChanged: 코루틴 시작");
+           // Debug.Log($"[S2] OnServerSceneChanged: 코루틴 시작");
         }
 
         private IEnumerator LoadAllZoneScenes()
@@ -66,7 +66,7 @@ namespace MySecondWorld.Network
                     yield return SceneManager.LoadSceneAsync(zone.sceneName, LoadSceneMode.Additive);
             }
             _serverReady = true;
-            Debug.Log($"[S2] OnServerSceneChanged: 모든 존 씬 프리로드 완료. _serverReady={_serverReady}");
+           // Debug.Log($"[S2] OnServerSceneChanged: 모든 존 씬 프리로드 완료. _serverReady={_serverReady}");
         }
         /// <summary>
         /// ACK 대기 시작
@@ -86,7 +86,7 @@ namespace MySecondWorld.Network
                 var stale = _sessions.FirstOrDefault(s => s.Value.playerId == playerId);
                 if (stale.Value != null)
                 {
-                    Debug.Log($"[S3] 중복 세션 정리: playerId={playerId} oldConn={stale.Key}");
+                   // Debug.Log($"[S3] 중복 세션 정리: playerId={playerId} oldConn={stale.Key}");
                     if (NetworkServer.connections.TryGetValue(stale.Key, out var oldConn))
                         oldConn.Disconnect();// 기존 연결 끊기 추가
 
@@ -100,11 +100,11 @@ namespace MySecondWorld.Network
                 playerId = conn.authenticationData as string
             };
             //생성 직후에:
-            Debug.Log($"[S3] playerId='{session.playerId}' authData='{conn.authenticationData}'");
+           // Debug.Log($"[S3] playerId='{session.playerId}' authData='{conn.authenticationData}'");
 
             _sessions.Add(conn.connectionId, session);
             StartCoroutine(PrepareAndSpawn(conn));
-            Debug.Log($"[S3] OnServerAddPlayer: conn={conn.connectionId} 세션 생성, PrepareAndSpawn 시작");
+           // Debug.Log($"[S3] OnServerAddPlayer: conn={conn.connectionId} 세션 생성, PrepareAndSpawn 시작");
         }
 
         // [S4] 클라이언트에게 씬 로드 지시 + 스폰 위치 저장
@@ -131,7 +131,7 @@ namespace MySecondWorld.Network
             session.pendingSpawnScene = spawnScene;
             conn.Send(new AdditiveSceneMessage { sceneName = spawnScene, load = true });
             conn.Send(new SpawnReadyMessage { sceneCount = 1 });
-            Debug.Log($"[S4] PrepareAndSpawn({(hasSpawnData ? "복귀" : "신규")}): conn={conn.connectionId} 씬={spawnScene} 위치={spawnPosition}");
+           // Debug.Log($"[S4] PrepareAndSpawn({(hasSpawnData ? "복귀" : "신규")}): conn={conn.connectionId} 씬={spawnScene} 위치={spawnPosition}");
         }
 
         /// <summary>
@@ -143,7 +143,7 @@ namespace MySecondWorld.Network
         // [S5] ACK 수신 → 캐릭터 생성 + 씬 이동 (S1에서 등록한 핸들러)
         public void OnSceneLoadedAck(NetworkConnectionToClient conn, SceneLoadedAckMessage msg)
         {
-            Debug.Log($"[S5] OnSceneLoadedAck: conn={conn.connectionId} ACK 수신!");
+           // Debug.Log($"[S5] OnSceneLoadedAck: conn={conn.connectionId} ACK 수신!");
             var session = _sessions[conn.connectionId];
 
             // 스폰 위치 결정 (Instantiate 시점부터 올바른 위치에 생성)
@@ -157,7 +157,7 @@ namespace MySecondWorld.Network
             NetworkServer.AddPlayerForConnection(conn, player);
 
             session.currentScene = session.pendingSpawnScene;
-            Debug.Log($"[S5] conn={conn.connectionId} 스폰 위치={session.pendingSpawnPosition} 씬={session.currentScene}");
+           // Debug.Log($"[S5] conn={conn.connectionId} 스폰 위치={session.pendingSpawnPosition} 씬={session.currentScene}");
             SceneManager.MoveGameObjectToScene(conn.identity.gameObject, SceneManager.GetSceneByPath(session.currentScene));
 
             //스폰 직후 lastSafePosition을 스폰 위치로 설정하여,
@@ -165,17 +165,17 @@ namespace MySecondWorld.Network
             session.lastSafePosition = session.pendingSpawnPosition;
             session.fallTimer = 0f;
             session.isSpawned = true;
-            Debug.Log($"[S5] conn={conn.connectionId} MoveGameObjectToScene 완료. IsSpawned=true");
+           // Debug.Log($"[S5] conn={conn.connectionId} MoveGameObjectToScene 완료. IsSpawned=true");
         }
 
 
         // [S-End] 세이브 + 세션 정리
         public override void OnServerDisconnect(NetworkConnectionToClient conn)
         {
-            Debug.Log($"[S-End] OnServerDisconnect: conn={conn.connectionId}");
+           // Debug.Log($"[S-End] OnServerDisconnect: conn={conn.connectionId}");
             if (_sessions.TryGetValue(conn.connectionId, out var session))
             {
-                Debug.Log($"[S-End] 체크: isSpawned={session.isSpawned} playerId={session.playerId}");
+               // Debug.Log($"[S-End] 체크: isSpawned={session.isSpawned} playerId={session.playerId}");
                 // 1. 세이브
                 //lastSafePosition != Vector3.zero 조건을 제거하고, 유효한 위치가 있으면 항상 저장
                 if (session.isSpawned && !string.IsNullOrEmpty(session.playerId))
@@ -192,7 +192,7 @@ namespace MySecondWorld.Network
                             lastPosition = posToSave
                         });
                     }
-                    Debug.Log($"[S-End] 세이브: player={session.playerId} scene={session.currentScene} pos={posToSave}");
+                   // Debug.Log($"[S-End] 세이브: player={session.playerId} scene={session.currentScene} pos={posToSave}");
                 }
 
                 // 2. playerNames 정리 (재접속 시 이름 중복 거부 방지)
@@ -227,7 +227,7 @@ namespace MySecondWorld.Network
                         continue;
                     }
 
-                    Debug.Log($"[S-Loop] 체크 중: conn={session.Key} pos={NetworkServer.connections[session.Key].identity.transform.position}");
+                   // Debug.Log($"[S-Loop] 체크 중: conn={session.Key} pos={NetworkServer.connections[session.Key].identity.transform.position}");
 
                     var conn = NetworkServer.connections[session.Key];
                     var playerPos = conn.identity.transform.position;
@@ -237,7 +237,7 @@ namespace MySecondWorld.Network
                     foreach (var zone in zones)
                     {
                         if (session.Key != 0)
-                            Debug.Log($"[S-Loop] conn={session.Key} zone={zone.sceneName} contains={zone.bounds.Contains(playerPos)} pos={playerPos} center={zone.bounds.center} extents={zone.bounds.extents}");
+                           // Debug.Log($"[S-Loop] conn={session.Key} zone={zone.sceneName} contains={zone.bounds.Contains(playerPos)} pos={playerPos} center={zone.bounds.center} extents={zone.bounds.extents}");
                         
                         if (zone.bounds.Contains(playerPos))
                         {
@@ -268,7 +268,7 @@ namespace MySecondWorld.Network
                             safePos = GetStartPosition()?.position ?? Vector3.zero;
                             safeScene = defaultSubScene;
                         }
-                        Debug.Log($"[S-Loop] 낙하 복귀: conn={session.Key} safePos={safePos} safeScene={safeScene}");
+                       // Debug.Log($"[S-Loop] 낙하 복귀: conn={session.Key} safePos={safePos} safeScene={safeScene}");
 
                         // 텔레포트
                         conn.identity.transform.position = safePos;
@@ -332,7 +332,7 @@ namespace MySecondWorld.Network
             if (session.loadedScenes.Contains(sceneName)) return;
             conn.Send(new AdditiveSceneMessage { sceneName = sceneName, load = true });
             session.loadedScenes.Add(sceneName);
-            Debug.Log($"[S-Loop-a] PlayerEnteredZone: conn={conn.connectionId} 씬 로드 지시={sceneName}");
+           // Debug.Log($"[S-Loop-a] PlayerEnteredZone: conn={conn.connectionId} 씬 로드 지시={sceneName}");
         }
 
         /// <summary>
@@ -342,14 +342,14 @@ namespace MySecondWorld.Network
         {
             var session = _sessions[conn.connectionId]; 
             
-            Debug.Log($"[S-Loop-b] 진입: conn={conn.connectionId} current={session.currentScene} new={sceneName}");
+           // Debug.Log($"[S-Loop-b] 진입: conn={conn.connectionId} current={session.currentScene} new={sceneName}");
 
             if (session.currentScene == sceneName) return;
             SceneManager.MoveGameObjectToScene(
                 conn.identity.gameObject,
                 SceneManager.GetSceneByPath(sceneName));
             session.currentScene = sceneName;
-            Debug.Log($"[S-Loop-b] PlayerChangedScene: conn={conn.connectionId} → {sceneName}");
+           // Debug.Log($"[S-Loop-b] PlayerChangedScene: conn={conn.connectionId} → {sceneName}");
         }
 
         /// <summary>
@@ -361,7 +361,7 @@ namespace MySecondWorld.Network
             if (!session.loadedScenes.Contains(sceneName)) return;
             conn.Send(new AdditiveSceneMessage { sceneName = sceneName, load = false });
             session.loadedScenes.Remove(sceneName);
-            Debug.Log($"[S-Loop-c] PlayerLeftZone: conn={conn.connectionId} 씬 언로드 지시={sceneName}");
+           // Debug.Log($"[S-Loop-c] PlayerLeftZone: conn={conn.connectionId} 씬 언로드 지시={sceneName}");
         }
 
         //──────────────────── 클라이언트 측 ────────────────────
@@ -373,13 +373,13 @@ namespace MySecondWorld.Network
             // 서버가 보내는 메시지 → NetworkClient.RegisterHandler (클라이언트가 받으니까)
             NetworkClient.RegisterHandler<AdditiveSceneMessage>(OnAdditiveSceneMessage);
             NetworkClient.RegisterHandler<SpawnReadyMessage>(OnSpawnReadyMessage);
-            Debug.Log("[C1] OnStartClient: 핸들러 등록 완료");
+           // Debug.Log("[C1] OnStartClient: 핸들러 등록 완료");
         }
 
         // [C2] 서버의 씬 로드/언로드 명령 수신 → 코루틴 분기
         public void OnAdditiveSceneMessage(AdditiveSceneMessage msg)
         {
-            Debug.Log($"[C2] OnAdditiveSceneMessage: 씬={msg.sceneName} load={msg.load}");
+           // Debug.Log($"[C2] OnAdditiveSceneMessage: 씬={msg.sceneName} load={msg.load}");
             if (msg.load) // "이 씬을 로드 해라"는 명령을 받았을 때
                 StartCoroutine(LoadAdditiveScene(msg.sceneName));
             else
@@ -395,14 +395,14 @@ namespace MySecondWorld.Network
             // 일반 클라이언트: 씬이 항상 없으므로 isLoaded = false → !isLoaded가 항상 true → 항상 로드 실행
             //           Host: 서버가 이미 로드했으므로 isLoaded = true → !isLoaded가 false → 로드 스킵
             bool alreadyLoaded = SceneManager.GetSceneByPath(sceneName).isLoaded;
-            Debug.Log($"[C2-a] LoadAdditiveScene: 씬={sceneName} 이미로드={alreadyLoaded}");
+           // Debug.Log($"[C2-a] LoadAdditiveScene: 씬={sceneName} 이미로드={alreadyLoaded}");
 
             if (!alreadyLoaded)
                 yield return SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
 
             // 최초 접속 시 스폰 타이밍 맞추는 용
             _completedSceneLoads++; //ACK 판정용. 씬이 몇 개나 로드되었나?
-            Debug.Log($"[C2-a] 씬 로드 완료: completed={_completedSceneLoads} expected={_expectedSceneLoads}");
+           // Debug.Log($"[C2-a] 씬 로드 완료: completed={_completedSceneLoads} expected={_expectedSceneLoads}");
             CheckAndSendSpawnAck();
         }
 
@@ -418,7 +418,7 @@ namespace MySecondWorld.Network
         public void OnSpawnReadyMessage(SpawnReadyMessage msg)
         {
             _expectedSceneLoads = msg.sceneCount;
-            Debug.Log($"[C3] OnSpawnReadyMessage: expected={_expectedSceneLoads}");
+           // Debug.Log($"[C3] OnSpawnReadyMessage: expected={_expectedSceneLoads}");
             CheckAndSendSpawnAck();
         }
 
@@ -428,10 +428,10 @@ namespace MySecondWorld.Network
         // [C4] 조건 충족 시 ACK 전송 → S5로 이어짐
         public void CheckAndSendSpawnAck()
         {
-            Debug.Log($"[C4] CheckAndSendSpawnAck: completed={_completedSceneLoads} expected={_expectedSceneLoads}");
+           // Debug.Log($"[C4] CheckAndSendSpawnAck: completed={_completedSceneLoads} expected={_expectedSceneLoads}");
             if (_expectedSceneLoads > 0 && _completedSceneLoads >= _expectedSceneLoads)
             {
-                Debug.Log("[C4] ★ ACK 전송! → S5로 이어짐");
+               // Debug.Log("[C4] ★ ACK 전송! → S5로 이어짐");
                 NetworkClient.Send(new SceneLoadedAckMessage());
                 _expectedSceneLoads = 0;
                 _completedSceneLoads = 0;
