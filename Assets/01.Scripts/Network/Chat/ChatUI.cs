@@ -19,6 +19,7 @@ namespace MySecondWorld.Network.Chat
         [SerializeField] private Toggle _hostToggle;
         [SerializeField] private Toggle _clientToggle;
         [SerializeField] private Button _exitButton;
+        [SerializeField] private Button _playerPrefsDeleteAll;
 
         public string LocalPlayerName { get; private set; }
 
@@ -50,13 +51,15 @@ namespace MySecondWorld.Network.Chat
                 _clientToggle.interactable = hasName;
             });
 
-            // PlayerPrefs 임시
-            string savedName = PlayerPrefs.GetString("playerName", "");
-            if (!string.IsNullOrEmpty(savedName))
-            {
-                LocalPlayerName = savedName;
-                _localPlayerNameInput.text = savedName;
-            }
+            //// PlayerPrefs 임시
+            //string savedName = PlayerPrefs.GetString("playerName", "");
+            //if (!string.IsNullOrEmpty(savedName))
+            //{
+            //    LocalPlayerName = savedName;
+            //    _localPlayerNameInput.text = savedName;
+            //}
+
+            _playerPrefsDeleteAll.onClick.AddListener(PlayerPrefsDeleteAll);
         }
 
         private void OnDestroy()
@@ -71,6 +74,8 @@ namespace MySecondWorld.Network.Chat
                 _hostToggle.interactable = hasName;
                 _clientToggle.interactable = hasName;
             });
+
+            _playerPrefsDeleteAll.onClick.RemoveListener(PlayerPrefsDeleteAll);
         }
 
         public void OnLocalPlayerReady()
@@ -150,6 +155,11 @@ namespace MySecondWorld.Network.Chat
         public void CloseChatScrollView()
         {
             _scrollView.SetActive(!_scrollView.activeSelf);
+        }
+
+        public void PlayerPrefsDeleteAll()
+        {
+            PlayerPrefs.DeleteAll();
         }
     }
 }

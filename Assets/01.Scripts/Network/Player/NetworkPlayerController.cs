@@ -8,16 +8,19 @@ namespace MySecondWorld.Network.Player
     {
         [SerializeField] private MovementController _movementController;
         [SerializeField] private ThirdPersonCameraController _cameraController;
+        [SerializeField] private CharacterController _characterController;
 
         private void Awake()
         {
             _movementController.enabled = false;
             _cameraController.ActiveCinemachine(false);
-            _cameraController.enabled = false;
+            _cameraController.enabled = false; 
+            _characterController.enabled = false;
         }
 
         public override void OnStartAuthority() // "이 오브젝트의 조종권을 얻었을 때"
         {
+            _characterController.enabled = true;
             _movementController.enabled = true;
             _cameraController.enabled = true;
             _cameraController.ActiveCinemachine(true);
@@ -30,6 +33,7 @@ namespace MySecondWorld.Network.Player
             _movementController.enabled = false;
             _cameraController.ActiveCinemachine(false);
             _cameraController.enabled = false;
+            _characterController.enabled = false;
         }
 
         public override void OnStartLocalPlayer() // "이 오브젝트가 내 플레이어 캐릭터"일 때 딱 한 번

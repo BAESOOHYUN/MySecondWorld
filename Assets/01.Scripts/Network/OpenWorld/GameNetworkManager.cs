@@ -87,6 +87,9 @@ namespace MySecondWorld.Network
                 if (stale.Value != null)
                 {
                     Debug.Log($"[S3] 중복 세션 정리: playerId={playerId} oldConn={stale.Key}");
+                    if (NetworkServer.connections.TryGetValue(stale.Key, out var oldConn))
+                        oldConn.Disconnect();// 기존 연결 끊기 추가
+
                     _sessions.Remove(stale.Key);
                 }
             }
@@ -96,6 +99,9 @@ namespace MySecondWorld.Network
                 loadedScenes = new HashSet<string>(),
                 playerId = conn.authenticationData as string
             };
+            //생성 직후에:
+            Debug.Log($"[S3] playerId='{session.playerId}' authData='{conn.authenticationData}'");
+
             _sessions.Add(conn.connectionId, session);
             StartCoroutine(PrepareAndSpawn(conn));
             Debug.Log($"[S3] OnServerAddPlayer: conn={conn.connectionId} 세션 생성, PrepareAndSpawn 시작");
@@ -119,7 +125,6 @@ namespace MySecondWorld.Network
                 {
                     spawnScene = saveData.Value.lastSceneNames[0];
                     spawnPosition = saveData.Value.lastPosition;
-                    
                 }
             }
             session.pendingSpawnPosition = spawnPosition;
@@ -139,14 +144,28 @@ namespace MySecondWorld.Network
         public void OnSceneLoadedAck(NetworkConnectionToClient conn, SceneLoadedAckMessage msg)
         {
             Debug.Log($"[S5] OnSceneLoadedAck: conn={conn.connectionId} ACK 수신!");
-            base.OnServerAddPlayer(conn); // 드디어 playerPrefab 생성
             var session = _sessions[conn.connectionId];
-            conn.identity.transform.position = session.pendingSpawnPosition;
+
+            // 스폰 위치 결정 (Instantiate 시점부터 올바른 위치에 생성)
+            Vector3 spawnPos = (session.pendingSpawnPosition != Vector3.zero)
+                ? session.pendingSpawnPosition
+                : (GetStartPosition()?.position ?? Vector3.zero);
+
+            // base.OnServerAddPlayer(conn) 대신 직접 인스턴스화 . playerPrefab 생성
+            // → Spawn 메시지에 정확한 위치가 포함되어 클라이언트에도 올바른 위치 전달
+            GameObject player = Instantiate(playerPrefab, spawnPos, Quaternion.identity);
+            NetworkServer.AddPlayerForConnection(conn, player);
+
             session.currentScene = session.pendingSpawnScene;
-            Debug.Log($"[S5] 스폰 위치={session.pendingSpawnPosition} 씬={session.currentScene}");
+            Debug.Log($"[S5] conn={conn.connectionId} 스폰 위치={session.pendingSpawnPosition} 씬={session.currentScene}");
             SceneManager.MoveGameObjectToScene(conn.identity.gameObject, SceneManager.GetSceneByPath(session.currentScene));
+
+            //스폰 직후 lastSafePosition을 스폰 위치로 설정하여,
+            //zone bounds 체크 실패해도 즉시 텔레포트/세이브 불가 상태가 되지 않도록 lastSafePosition 초기화
+            session.lastSafePosition = session.pendingSpawnPosition;
+            session.fallTimer = 0f;
             session.isSpawned = true;
-            Debug.Log($"[S5] MoveGameObjectToScene 완료. IsSpawned=true");
+            Debug.Log($"[S5] conn={conn.connectionId} MoveGameObjectToScene 완료. IsSpawned=true");
         }
 
 
@@ -158,17 +177,22 @@ namespace MySecondWorld.Network
             {
                 Debug.Log($"[S-End] 체크: isSpawned={session.isSpawned} playerId={session.playerId}");
                 // 1. 세이브
-                if (session.isSpawned 
-                    && !string.IsNullOrEmpty(session.playerId) 
-                    && session.lastSafePosition != Vector3.zero)
+                //lastSafePosition != Vector3.zero 조건을 제거하고, 유효한 위치가 있으면 항상 저장
+                if (session.isSpawned && !string.IsNullOrEmpty(session.playerId))
                 {
-                    SaveData saveData = new SaveData
+                    var posToSave = session.lastSafePosition != Vector3.zero
+                        ? session.lastSafePosition
+                        : conn.identity?.transform.position ?? Vector3.zero;
+
+                    if (posToSave != Vector3.zero)
                     {
-                        lastSceneNames = new string[] { session.currentScene },
-                        lastPosition = session.lastSafePosition
-                    };
-                    SaveManager.Instance?.Save(session.playerId, saveData);
-                    Debug.Log($"[S-End] 세이브: player={session.playerId} scene={session.currentScene} pos={saveData.lastPosition}");
+                        SaveManager.Instance?.Save(session.playerId, new SaveData
+                        {
+                            lastSceneNames = new string[] { session.currentScene },
+                            lastPosition = posToSave
+                        });
+                    }
+                    Debug.Log($"[S-End] 세이브: player={session.playerId} scene={session.currentScene} pos={posToSave}");
                 }
 
                 // 2. playerNames 정리 (재접속 시 이름 중복 거부 방지)
