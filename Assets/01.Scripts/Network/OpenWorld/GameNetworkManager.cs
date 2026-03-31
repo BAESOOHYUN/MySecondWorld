@@ -22,6 +22,24 @@ namespace MySecondWorld.Network
         private bool _serverReady;                       // 서버 씬 프리로드 완료 여부
         private int _expectedSceneLoads;                 // 클라이언트: 로드해야 할 씬 수
         private int _completedSceneLoads;                // 클라이언트: 로드 완료된 씬 수
+                                                         // 디버그용 (빌드 확인 후 제거)
+        private List<string> _debugLogs = new List<string>();
+        private void OnGUI()
+        {
+            float y = 10;
+            // 최근 20개만 표시
+            int start = Mathf.Max(0, _debugLogs.Count - 20);
+            for (int i = start; i < _debugLogs.Count; i++)
+            {
+                GUI.Label(new Rect(10, y, 800, 20), _debugLogs[i]);
+                y += 20;
+            }
+        }
+        private void DebugLog(string msg)
+        {
+            _debugLogs.Add(msg);
+            Debug.Log(msg);
+        }
 
         //─────────────────────────── UI단 ──────────────────────────
         public void ToggleHost(bool isOn)
@@ -217,9 +235,14 @@ namespace MySecondWorld.Network
         {
             while (true)
             {
-                foreach (var session in _sessions)
+                // CheckZones 코루틴이 딕셔너리를 순회하는 도중에 플레이어 접속/퇴장으로 _sessions가 수정되면
+                // InvalidOperationException이 터지면서 코루틴이 죽는다.
+                // 이후 모든 플레이어에게 씬 로드/언로드 메시지가 안 감.
+                // ToList()로 스냅샷을 만들면 원본이 바뀌어도 안전하다.
+                foreach (var session in _sessions.ToList())
                 {
                     // 아직 스폰 안 된 플레이어 스킵
+                    if (!_sessions.ContainsKey(session.Key)) continue;
                     if (!session.Value.isSpawned) continue;
                     if (!NetworkServer.connections.ContainsKey(session.Key))
                     {
@@ -236,7 +259,7 @@ namespace MySecondWorld.Network
                     // === 1. 소속 씬 판정 (정확한 bounds) ===
                     foreach (var zone in zones)
                     {
-                        if (session.Key != 0)
+                        //if (session.Key != 0)
                            // Debug.Log($"[S-Loop] conn={session.Key} zone={zone.sceneName} contains={zone.bounds.Contains(playerPos)} pos={playerPos} center={zone.bounds.center} extents={zone.bounds.extents}");
                         
                         if (zone.bounds.Contains(playerPos))
@@ -295,6 +318,10 @@ namespace MySecondWorld.Network
                         if (expandedBounds.Contains(playerPos))
                             needScenes.Add(zone.sceneName);
                     }
+
+                    if (session.Key == 0)
+                        DebugLog($"[S-Loop] conn={session.Key} need={string.Join(",", needScenes.Select(s => System.IO.Path.GetFileNameWithoutExtension(s)))}");
+
 
                     // 새로 필요한 씬 로드
                     foreach (var scene in needScenes)
@@ -379,7 +406,8 @@ namespace MySecondWorld.Network
         // [C2] 서버의 씬 로드/언로드 명령 수신 → 코루틴 분기
         public void OnAdditiveSceneMessage(AdditiveSceneMessage msg)
         {
-           // Debug.Log($"[C2] OnAdditiveSceneMessage: 씬={msg.sceneName} load={msg.load}");
+            DebugLog($"[C2] 수신: scene={msg.sceneName} load={msg.load}");
+            // Debug.Log($"[C2] OnAdditiveSceneMessage: 씬={msg.sceneName} load={msg.load}");
             if (msg.load) // "이 씬을 로드 해라"는 명령을 받았을 때
                 StartCoroutine(LoadAdditiveScene(msg.sceneName));
             else
@@ -395,20 +423,28 @@ namespace MySecondWorld.Network
             // 일반 클라이언트: 씬이 항상 없으므로 isLoaded = false → !isLoaded가 항상 true → 항상 로드 실행
             //           Host: 서버가 이미 로드했으므로 isLoaded = true → !isLoaded가 false → 로드 스킵
             bool alreadyLoaded = SceneManager.GetSceneByPath(sceneName).isLoaded;
-           // Debug.Log($"[C2-a] LoadAdditiveScene: 씬={sceneName} 이미로드={alreadyLoaded}");
+            // Debug.Log($"[C2-a] LoadAdditiveScene: 씬={sceneName} 이미로드={alreadyLoaded}");
+            DebugLog($"[C2-a] scene={sceneName} alreadyLoaded={alreadyLoaded} byPath={SceneManager.GetSceneByPath(sceneName).IsValid()} byName={SceneManager.GetSceneByName(System.IO.Path.GetFileNameWithoutExtension(sceneName)).IsValid()}");
 
             if (!alreadyLoaded)
                 yield return SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
 
             // 최초 접속 시 스폰 타이밍 맞추는 용
             _completedSceneLoads++; //ACK 판정용. 씬이 몇 개나 로드되었나?
-           // Debug.Log($"[C2-a] 씬 로드 완료: completed={_completedSceneLoads} expected={_expectedSceneLoads}");
+            // Debug.Log($"[C2-a] 씬 로드 완료: completed={_completedSceneLoads} expected={_expectedSceneLoads}");
+            DebugLog($"[C2-a] 로드완료: scene={sceneName} nowLoaded={SceneManager.GetSceneByPath(sceneName).isLoaded}");
+
             CheckAndSendSpawnAck();
         }
 
         // [C2-b] 씬 언로드
         private IEnumerator UnloadAdditiveScene(string sceneName)
         {
+            // Host 모드에서는 서버가 프리로드한 씬이므로 언로드하면 안 됨
+            // (같은 프로세스라서 서버 씬까지 날아감)
+            if (NetworkServer.active)
+                yield break;
+
             // (현재) 로드 된 씬에 한해서만
             if (SceneManager.GetSceneByPath(sceneName).isLoaded)
                 yield return SceneManager.UnloadSceneAsync(sceneName);
