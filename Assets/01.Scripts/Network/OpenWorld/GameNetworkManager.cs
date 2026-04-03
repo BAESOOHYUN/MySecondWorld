@@ -188,11 +188,17 @@ namespace MySecondWorld.Network
             session.isSpawned = true;
             // Debug.Log($"[S5] conn={conn.connectionId} MoveGameObjectToScene 완료. IsSpawned=true");
 
-            if (_roomRegistry.IsDungeonScene(session.currentScene))
+            // 첫 접속시 던전에 있는지 아닌지를 판별하고 roomId 매치
+            if (_roomRegistry.IsDungeonScene(session.currentScene)) //던전 안에서 시작
             {
                 var roomId = _roomRegistry.AssignRoom(session.currentScene, conn.connectionId);
                 conn.identity.GetComponent<NetworkMatch>().matchId = roomId;
                 session.roomId = roomId;
+            }
+            else
+            {
+                conn.identity.GetComponent<NetworkMatch>().matchId = DungeonRoomRegistry.GetMatchIdFromScene(session.currentScene);
+                // session.roomId는 Guid.Empty 그대로 — 던전 방이 아니니까
             }
         }
 
@@ -459,10 +465,10 @@ namespace MySecondWorld.Network
                 if (session.roomId != Guid.Empty)
                 {
                     _roomRegistry.LeaveRoom(prevScene, conn.connectionId);
-                    networkMatch.matchId = Guid.Empty; //TODO 오류있음
                     session.roomId = Guid.Empty;
                     DebugLog($"[S-Loop-b] 필드 복귀: conn={conn.connectionId} matchId 초기화 {networkMatch.matchId}");
                 }
+                networkMatch.matchId = DungeonRoomRegistry.GetMatchIdFromScene(sceneName); // 필드→필드, 던전→필드 항상 갱신
             }
         }
 
