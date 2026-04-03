@@ -7,6 +7,8 @@ namespace MySecondWorld.Move
     {
         [SerializeField] private MovementController _movementController;
         [SerializeField] private Animator _animator;
+        [SerializeField] private AnimationClip _jumpStartClip; // JumpStart 클립 길이를 MovementController에 주입
+        [SerializeField] private AnimationClip _landClip;      // Land 클립 길이를 MovementController에 주입
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void InitStatics()
@@ -37,6 +39,14 @@ namespace MySecondWorld.Move
                 if (_movementController == null)
                     Debug.LogError($"MovementController not found in parent hierarchy of {gameObject.name}", this);
             }
+        }
+
+        private void Start()
+        {
+            if (_movementController != null && _jumpStartClip != null)
+                _movementController.JumpStartDuration = _jumpStartClip.length;
+            if (_movementController != null && _landClip != null)
+                _movementController.LandDuration = _landClip.length;
         }
 
         private void OnEnable()
@@ -72,6 +82,9 @@ namespace MySecondWorld.Move
         {
             if (_animator == null)
                 return;
+            
+            _animator.ResetTrigger(FallTrigger);
+            _animator.ResetTrigger(LandTrigger);
             _animator.SetTrigger(JumpTrigger);
         }
 
@@ -79,6 +92,9 @@ namespace MySecondWorld.Move
         {
             if (_animator == null)
                 return;
+
+            _animator.ResetTrigger(LandTrigger);
+            _animator.ResetTrigger(JumpTrigger);
             _animator.SetTrigger(FallTrigger);
         }
 
@@ -86,6 +102,9 @@ namespace MySecondWorld.Move
         {
             if (_animator == null)
                 return;
+            Debug.Log("HandleLand 호출");
+            _animator.ResetTrigger(FallTrigger);
+            _animator.ResetTrigger(JumpTrigger);
             _animator.SetTrigger(LandTrigger);
         }
     }

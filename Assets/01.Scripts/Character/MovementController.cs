@@ -15,6 +15,8 @@ namespace MySecondWorld.Move
         [SerializeField] private float _jumpSpeed = 3f;
         [SerializeField] private float _jumpHeight = 1f;
         [SerializeField] private float _airControlMultiplier = 0.5f; // 공중 이동 감도
+        [SerializeField] private float _groundCheckDistance = 0.1f; // 지면 감지 추가 거리
+        [SerializeField] private LayerMask _groundLayer;             // 지면 레이어
 
         public Func<float> GetCameraYAngle;  // 외부에서 주입 (NetworkPlayerController)
         public event Action OnJump;
@@ -40,11 +42,15 @@ namespace MySecondWorld.Move
         private const float FallMultiplier = 2.5f; // 낙하 시 추가 가속도
         private const float DeadZone = 0.01f;
         private const float GroundedVelocity = -2f;
+        private float _jumpStartTimer; // JumpStart 클립 길이만큼 OnFall 발화 지연
+        private float _landingTimer;   // Land 클립 길이만큼 이동 차단
         private bool _isFalling;
         private bool _wasFalling;
         private float _airTime;
         private int _groundedFrames = 1;
-        private bool IsJustLanded => _groundedFrames == 2 && _airTime >= 0.1f;
+        private bool IsJustLanded => _groundedFrames >= 1 && _airTime >= 0.1f;
+        public float JumpStartDuration { get; set; } // PlayerAnimationController에서 클립 길이 주입
+        public float LandDuration { get; set; }       // PlayerAnimationController에서 클립 길이 주입
 
         private void Awake()
         {
@@ -56,8 +62,10 @@ namespace MySecondWorld.Move
 
         private void Update()
         {
-            JoyStickMove();
+            //지면 상태(IsGrounded)를 먼저 확정한 뒤
+            //이동 속도(_moveSpeed vs _moveSpeed * _airControlMultiplier)를 결정
             Jumping();
+            JoyStickMove();
         }
 
         private void OnDrawGizmos() => GizmoUtils.DrawCollider(GetComponent<Collider>(), transform, new Color(1f, 0f, 0f), 0.15f);
@@ -78,7 +86,7 @@ namespace MySecondWorld.Move
 
             Vector3 rawInput = new Vector3(MoveX.Value, 0f, MoveY.Value);
 
-            if (rawInput.sqrMagnitude < DeadZone)
+            if (rawInput.sqrMagnitude < DeadZone || _landingTimer > 0)
             {
                 _moveDirection = Vector3.zero;
                 _inputDirection = Vector3.zero;
@@ -90,7 +98,6 @@ namespace MySecondWorld.Move
             _inputDirection = rawInput.normalized;
 
             // 카메라 Y축 회전만 추출해서 이동 방향 계산 (pitch 영향 없음)
-            //float cameraAngle = _cinemachineCamera.transform.eulerAngles.y;
             float cameraAngle = GetCameraYAngle();
             float targetAngle = Mathf.Atan2(_inputDirection.x, _inputDirection.z) * Mathf.Rad2Deg + cameraAngle;
             Vector3 moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
@@ -104,12 +111,21 @@ namespace MySecondWorld.Move
             transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, Time.deltaTime * _rotationSpeed);
         }
 
+        //CharacterController의 isgrounded로 지면 탐지가 불안정. SphereCast로 지면 탐지.
+        private bool CheckGrounded()
+        {
+            Vector3 origin = transform.position + _controller.center;
+            float radius = _controller.radius - _controller.skinWidth;
+            float distance = (_controller.height / 2f) - radius + _groundCheckDistance;
+            return Physics.SphereCast(origin, radius, Vector3.down, out _, distance, _groundLayer);
+        }
+
         private void Jumping()
         {
             _wasFalling = _isFalling;
 
             // 현재 프레임 지면 상태 갱신
-            IsGrounded = _controller.isGrounded;
+            IsGrounded = CheckGrounded();
             if (IsGrounded)
             {
                 if (_groundedFrames < 2)
@@ -120,7 +136,6 @@ namespace MySecondWorld.Move
                 _groundedFrames = 0;
                 _airTime += Time.deltaTime;
             }
-
             // 매 프레임 살짝 아래로 눌러서 지면 감지
             // 지면에 붙어있을 때 중력이 계속 누적되는 걸 막음
             if (IsGrounded && _velocity.y < 0)
@@ -130,20 +145,30 @@ namespace MySecondWorld.Move
             if (Jump.Value > 0 && IsGrounded)
             {
                 _velocity.y = Mathf.Sqrt(_jumpHeight * _jumpSpeed * -Gravity);
+                _jumpStartTimer = JumpStartDuration;
                 OnJump?.Invoke();
             }
 
+            // JumpStart 클립이 끝난 후에만 FallTrigger 발화 (조기 발화 방지)
+            if (_jumpStartTimer > 0)
+                _jumpStartTimer -= Time.deltaTime;
+
             // 낙하 상태 갱신 및 이벤트 (진입 순간 1회)
-            _isFalling = _velocity.y < 0 && !IsGrounded;
+            _isFalling = _velocity.y < 0 && !IsGrounded && _jumpStartTimer <= 0;
             if (_isFalling && !_wasFalling)
                 OnFall?.Invoke();
 
             // 착지 순간
             if (IsJustLanded)
             {
+                Debug.Log("OnLand 발화");
+                _landingTimer = LandDuration;
                 OnLand?.Invoke();
                 _airTime = 0f;
             }
+
+            if (_landingTimer > 0)
+                _landingTimer -= Time.deltaTime;
 
             // 중력 적용 (낙하 시 추가 가속)
             float currentGravity = _velocity.y < 0 ? Gravity * FallMultiplier : Gravity;
