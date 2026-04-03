@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using Mirror;
 using System.Collections.Generic;
@@ -19,6 +20,7 @@ namespace MySecondWorld.Network
         public float zoneCheckInterval = 0.5f;           // 존 체크 주기 (초)
 
         Dictionary<int, PlayerSession> _sessions = new Dictionary<int, PlayerSession>(); // 플레이어별 세션
+        private DungeonRoomRegistry _roomRegistry;       // 던전 룸 관리
         private bool _serverReady;                       // 서버 씬 프리로드 완료 여부
         private int _expectedSceneLoads;                 // 클라이언트: 로드해야 할 씬 수
         private int _completedSceneLoads;                // 클라이언트: 로드 완료된 씬 수
@@ -60,6 +62,7 @@ namespace MySecondWorld.Network
         public override void OnStartServer()
         {
             base.OnStartServer(); // Mirror가 onlineScene(MainScene)을 로드. 로드 완료후 → OnServerSceneChanged
+            _roomRegistry = new DungeonRoomRegistry();
             // 클라이언트가 보내는 메시지 → NetworkServer.RegisterHandler (서버가 받으니까)
             NetworkServer.RegisterHandler<SceneLoadedAckMessage>(OnSceneLoadedAck);
             StartCoroutine(CheckZones());
@@ -183,7 +186,14 @@ namespace MySecondWorld.Network
             session.lastSafePosition = session.pendingSpawnPosition;
             session.fallTimer = 0f;
             session.isSpawned = true;
-           // Debug.Log($"[S5] conn={conn.connectionId} MoveGameObjectToScene 완료. IsSpawned=true");
+            // Debug.Log($"[S5] conn={conn.connectionId} MoveGameObjectToScene 완료. IsSpawned=true");
+
+            if (_roomRegistry.IsDungeonScene(session.currentScene))
+            {
+                var roomId = _roomRegistry.AssignRoom(session.currentScene, conn.connectionId);
+                conn.identity.GetComponent<NetworkMatch>().matchId = roomId;
+                session.roomId = roomId;
+            }
         }
 
 
@@ -213,11 +223,16 @@ namespace MySecondWorld.Network
                    // Debug.Log($"[S-End] 세이브: player={session.playerId} scene={session.currentScene} pos={posToSave}");
                 }
 
-                // 2. playerNames 정리 (재접속 시 이름 중복 거부 방지)
+                // 2. 던전 룸 퇴장
+                // 플레이어가 던전에서 접속을 끊으면, 방에서 제거해야 다른 플레이어가 들어올 자리가 생김
+                if (session.roomId != Guid.Empty)
+                    _roomRegistry.LeaveRoom(session.currentScene, conn.connectionId);
+
+                // 3. playerNames 정리 (재접속 시 이름 중복 거부 방지)
                 if (conn.authenticationData is string username)
                     ChatAuthenticator.playerNames.Remove(username);
 
-                // 3. 세션 제거
+                // 4. 세션 제거
                 _sessions.Remove(conn.connectionId);
             }
             base.OnServerDisconnect(conn);
@@ -319,8 +334,8 @@ namespace MySecondWorld.Network
                             needScenes.Add(zone.sceneName);
                     }
 
-                    if (session.Key == 0)
-                        DebugLog($"[S-Loop] conn={session.Key} need={string.Join(",", needScenes.Select(s => System.IO.Path.GetFileNameWithoutExtension(s)))}");
+                    //if (session.Key == 0)
+                    //    DebugLog($"[S-Loop] conn={session.Key} need={string.Join(",", needScenes.Select(s => System.IO.Path.GetFileNameWithoutExtension(s)))}");
 
 
                     // 새로 필요한 씬 로드
@@ -367,16 +382,54 @@ namespace MySecondWorld.Network
         /// </summary>
         public void PlayerChangedScene(NetworkConnectionToClient conn, string sceneName)
         {
-            var session = _sessions[conn.connectionId]; 
-            
+            var session = _sessions[conn.connectionId];
+
            // Debug.Log($"[S-Loop-b] 진입: conn={conn.connectionId} current={session.currentScene} new={sceneName}");
 
-            if (session.currentScene == sceneName) return;
+            if (session.currentScene == sceneName)
+                return;
+
+            //DebugLog($"[DEBUG] conn={conn.connectionId} sceneName={sceneName} isDungeon={_roomRegistry.IsDungeonScene(sceneName)}");
+
+
+            // 씬 업데이트 전에 이전 씬을 저장 (던전 분기를 위한 LeaveRoom에서 사용)
+            string prevScene = session.currentScene;
+
             SceneManager.MoveGameObjectToScene(
                 conn.identity.gameObject,
                 SceneManager.GetSceneByPath(sceneName));
             session.currentScene = sceneName;
            // Debug.Log($"[S-Loop-b] PlayerChangedScene: conn={conn.connectionId} → {sceneName}");
+
+            var networkMatch = conn.identity.GetComponent<NetworkMatch>();
+            //DebugLog($"[DEBUG] conn={conn.connectionId} networkMatch={networkMatch != null} identity={conn.identity != null}");
+            if (networkMatch == null)
+                if (networkMatch == null)
+                return;
+
+            // 던전 씬 진입 분기
+            if (_roomRegistry.IsDungeonScene(sceneName))
+            {
+                // 던전 씬 진입 — 기존에 다른 던전 방에 있었다면, 이전 방 먼저 퇴장
+                if (session.roomId != Guid.Empty) //Guid.Empty는 "방 없음", "필드 공통 구간"
+                    _roomRegistry.LeaveRoom(prevScene, conn.connectionId);
+
+                var roomId = _roomRegistry.AssignRoom(sceneName, conn.connectionId);
+                networkMatch.matchId = roomId; // matchId = MatchInterestManagement가 읽어서 가시성 판단
+                session.roomId = roomId;       // roomId = 서버 내부에서 이 플레이어가 어떤 방인지 기억
+                DebugLog($"[S-Loop-b] 던전 룸 배정: conn={conn.connectionId} roomId={roomId} scene={sceneName}");
+            }
+            else
+            {
+                // 필드 씬 복귀 — 이전에 던전에 있었다면 방 퇴장
+                if (session.roomId != Guid.Empty)
+                {
+                    _roomRegistry.LeaveRoom(prevScene, conn.connectionId);
+                    networkMatch.matchId = Guid.Empty;
+                    session.roomId = Guid.Empty;
+                    DebugLog($"[S-Loop-b] 필드 복귀: conn={conn.connectionId} matchId 초기화 {networkMatch.matchId}");
+                }
+            }
         }
 
         /// <summary>
@@ -406,7 +459,7 @@ namespace MySecondWorld.Network
         // [C2] 서버의 씬 로드/언로드 명령 수신 → 코루틴 분기
         public void OnAdditiveSceneMessage(AdditiveSceneMessage msg)
         {
-            DebugLog($"[C2] 수신: scene={msg.sceneName} load={msg.load}");
+            // DebugLog($"[C2] 수신: scene={msg.sceneName} load={msg.load}");
             // Debug.Log($"[C2] OnAdditiveSceneMessage: 씬={msg.sceneName} load={msg.load}");
             if (msg.load) // "이 씬을 로드 해라"는 명령을 받았을 때
                 StartCoroutine(LoadAdditiveScene(msg.sceneName));
@@ -424,7 +477,7 @@ namespace MySecondWorld.Network
             //           Host: 서버가 이미 로드했으므로 isLoaded = true → !isLoaded가 false → 로드 스킵
             bool alreadyLoaded = SceneManager.GetSceneByPath(sceneName).isLoaded;
             // Debug.Log($"[C2-a] LoadAdditiveScene: 씬={sceneName} 이미로드={alreadyLoaded}");
-            DebugLog($"[C2-a] scene={sceneName} alreadyLoaded={alreadyLoaded} byPath={SceneManager.GetSceneByPath(sceneName).IsValid()} byName={SceneManager.GetSceneByName(System.IO.Path.GetFileNameWithoutExtension(sceneName)).IsValid()}");
+            // DebugLog($"[C2-a] scene={sceneName} alreadyLoaded={alreadyLoaded} byPath={SceneManager.GetSceneByPath(sceneName).IsValid()} byName={SceneManager.GetSceneByName(System.IO.Path.GetFileNameWithoutExtension(sceneName)).IsValid()}");
 
             if (!alreadyLoaded)
                 yield return SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
@@ -432,7 +485,7 @@ namespace MySecondWorld.Network
             // 최초 접속 시 스폰 타이밍 맞추는 용
             _completedSceneLoads++; //ACK 판정용. 씬이 몇 개나 로드되었나?
             // Debug.Log($"[C2-a] 씬 로드 완료: completed={_completedSceneLoads} expected={_expectedSceneLoads}");
-            DebugLog($"[C2-a] 로드완료: scene={sceneName} nowLoaded={SceneManager.GetSceneByPath(sceneName).isLoaded}");
+            // DebugLog($"[C2-a] 로드완료: scene={sceneName} nowLoaded={SceneManager.GetSceneByPath(sceneName).isLoaded}");
 
             CheckAndSendSpawnAck();
         }

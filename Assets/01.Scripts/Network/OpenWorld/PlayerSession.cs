@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -21,5 +22,8 @@ namespace MySecondWorld.Network
 
         // --- 3차 (낙하 안전 추가 시) ---
         public float fallTimer;                    // 낙하 경과 시간
+
+        // --- 4차 (던전 룸 매치) ---
+        public Guid roomId = Guid.Empty;
     }
 }

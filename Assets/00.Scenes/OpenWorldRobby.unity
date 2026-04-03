@@ -426,7 +426,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 2082698732}
   m_HandleRect: {fileID: 2082698731}
   m_Direction: 2
-  m_Value: 1
+  m_Value: 0
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -1736,8 +1736,8 @@ GameObject:
   - component: {fileID: 1228252968}
   - component: {fileID: 1228252967}
   - component: {fileID: 1228252970}
-  - component: {fileID: 1228252971}
   - component: {fileID: 1228252973}
+  - component: {fileID: 1228252974}
   m_Layer: 0
   m_Name: NetworkManager
   m_TagString: Untagged
@@ -1853,18 +1853,6 @@ MonoBehaviour:
   debugLog: 0
   statisticsGUI: 0
   statisticsLog: 0
---- !u!114 &1228252971
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1228252966}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b979f26c95d34324ba005bfacfa9c4fc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Mirror.Components::Mirror.SceneInterestManagement
 --- !u!114 &1228252973
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1883,6 +1871,19 @@ MonoBehaviour:
   OnClientAuthenticated:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &1228252974
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1228252966}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d09f5c8bf2f4747b7a9284ef5d9ce2a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Mirror.Components::Mirror.MatchInterestManagement
+  matchCount: 0
 --- !u!1 &1252872529
 GameObject:
   m_ObjectHideFlags: 0
@@ -3653,7 +3654,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 2125432105}
   m_Direction: 0
   m_Value: 0
-  m_Size: 0.99999994
+  m_Size: 0.9999999
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
