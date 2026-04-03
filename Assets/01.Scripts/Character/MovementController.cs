@@ -111,7 +111,7 @@ namespace MySecondWorld.Move
             transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, Time.deltaTime * _rotationSpeed);
         }
 
-        //CharacterController의 isgrounded로 지면 탐지가 불안정. SphereCast로 지면 탐지.
+        //CharacterController.isgrounded로 지면 탐지가 불안정. SphereCast, _groundLayer로 지면 탐지.
         private bool CheckGrounded()
         {
             Vector3 origin = transform.position + _controller.center;
@@ -161,7 +161,6 @@ namespace MySecondWorld.Move
             // 착지 순간
             if (IsJustLanded)
             {
-                Debug.Log("OnLand 발화");
                 _landingTimer = LandDuration;
                 OnLand?.Invoke();
                 _airTime = 0f;
