@@ -51,14 +51,6 @@ namespace MySecondWorld.Network.Chat
                 _clientToggle.interactable = hasName;
             });
 
-            //// PlayerPrefs 임시
-            //string savedName = PlayerPrefs.GetString("playerName", "");
-            //if (!string.IsNullOrEmpty(savedName))
-            //{
-            //    LocalPlayerName = savedName;
-            //    _localPlayerNameInput.text = savedName;
-            //}
-
             _playerPrefsDeleteAll.onClick.AddListener(PlayerPrefsDeleteAll);
         }
 

@@ -81,8 +81,8 @@ namespace MySecondWorld.Move
 
         private void JoyStickMove()
         {
-            if (GetCameraYAngle == null)
-                return;
+            if (OnUIChecker.IsInputFieldFocused()) return;
+            if (GetCameraYAngle == null) return;
 
             Vector3 rawInput = new Vector3(MoveX.Value, 0f, MoveY.Value);
 

@@ -14,6 +14,11 @@ public class OnUIChecker
         _pointerEventData = null;
     }
 
+    public static List<RaycastResult> GetLastResults()
+    {
+        return _raycastResults;
+    }
+
     public static bool IsPointerOverUIObject(Vector2 touchPos)
     {
         // EventSystem이 없는 씬이나 초기화 타이밍 보호
@@ -34,8 +39,12 @@ public class OnUIChecker
         return _raycastResults.Count > 0;
     }
 
-    public static List<RaycastResult> GetLastResults()
+    public static bool IsInputFieldFocused()
     {
-        return _raycastResults;
+        var currObj = EventSystem.current.currentSelectedGameObject;
+        return EventSystem.current != null 
+            && currObj != null 
+            && currObj.TryGetComponent(out TMPro.TMP_InputField _); //밑줄(_)은 "결과값을 쓰지 않겠다"는 의미, true/false만 판단
     }
+
 }
