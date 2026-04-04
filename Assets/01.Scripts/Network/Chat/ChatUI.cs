@@ -1,8 +1,8 @@
-using UnityEngine;
-using Mirror;
-using TMPro;
-using UnityEngine.UI;
 using System;
+using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
+using Mirror;
 
 namespace MySecondWorld.Network.Chat
 {
