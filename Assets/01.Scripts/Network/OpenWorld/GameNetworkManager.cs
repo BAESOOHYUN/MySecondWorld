@@ -64,9 +64,27 @@ namespace MySecondWorld.Network
             {
                 if (!SceneManager.GetSceneByPath(zone.sceneName).isLoaded)
                     yield return SceneManager.LoadSceneAsync(zone.sceneName, LoadSceneMode.Additive);
+
+                // ★ additive 씬의 NetworkIdentity를 수동 Spawn
+                Scene loadedScene = SceneManager.GetSceneByPath(zone.sceneName);
+                foreach (GameObject rootObj in loadedScene.GetRootGameObjects())
+                {
+                    foreach (var netId in rootObj.GetComponentsInChildren<NetworkIdentity>())
+                    {
+                        // netId == 0 → 아직 Spawn 안 된 오브젝트 → Spawn 해줘야 함
+                        // netId != 0 → 이미 Spawn 된 오브젝트 → 건드릴 필요 없음
+                        if (netId.gameObject.activeInHierarchy && netId.netId == 0)
+                            NetworkServer.Spawn(netId.gameObject);
+
+                        // ★ 씬 오브젝트에 NetworkMatch가 있으면 해당 씬의 matchId 세팅
+                        if (netId.TryGetComponent(out NetworkMatch match))
+                            match.matchId = DungeonRoomRegistry.GetMatchIdFromScene(zone.sceneName);
+                    }
+                }
             }
             _serverReady = true;
         }
+
         /// <summary>
         /// [S3] 세션 생성 + PrepareAndSpawn 시작 (서버가 클라이언트에게 씬 준비하라고 시킴)
         /// Mirror 기본: base.OnServerAddPlayer(conn)에서 바로 캐릭터를 만들지만,

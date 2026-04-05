@@ -15,14 +15,35 @@ namespace MySecondWorld.Network
 
         private void OnTriggerEnter(Collider other)
         {
-            if (other.TryGetComponent(out NetworkPlayerController component))
+            if (other.TryGetComponent(out NetworkPlayerController player))
+            {
                 _isPlayerNear = true;
-        }
 
+                if (_screenUI == null)
+                {
+                    var ui = FindObjectOfType<SharedScreenUI>(true);
+                    if (ui != null)
+                        _screenUI = ui.gameObject;
+                }
+
+                var controller = GetComponentInChildren<SharedScreenController>();
+                _screenUI.GetComponent<SharedScreenUI>().Init(controller);
+                _screenUI.SetActive(true);
+            }
+        }
         private void OnTriggerExit(Collider other)
         {
-            if (other.TryGetComponent(out NetworkPlayerController component))
-            _isPlayerNear = false;
+            if (other.TryGetComponent(out NetworkPlayerController player))
+            {
+                _isPlayerNear = false;
+
+                // 발표자가 나가면 자동 해제
+                var controller = GetComponentInChildren<SharedScreenController>();
+                controller.CmdReleasePresenter();
+
+                if (_screenUI != null)
+                    _screenUI.SetActive(false);
+            }
         }
 
         private void Update()

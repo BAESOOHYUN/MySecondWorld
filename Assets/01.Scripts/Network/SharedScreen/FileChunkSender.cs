@@ -18,7 +18,6 @@ namespace MySecondWorld.Network
             int totalSize = fileByte.Length;
             int totalChunkCount = Mathf.CeilToInt((float)totalSize / chunkSize);
             controller.CmdSendFileStart(fileName, fileType, totalSize, totalChunkCount);
-
             // 청크 자르기
             for (int i = 0; i < totalChunkCount; i++)
             {
