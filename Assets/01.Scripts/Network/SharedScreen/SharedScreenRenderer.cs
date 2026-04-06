@@ -31,17 +31,75 @@ namespace MySecondWorld.Network
         }
 
         private static Texture2D RenderPDF(byte[] pdfBytes, int pageIndex)
-        { 
-            PDFDocument doc = new PDFDocument(pdfBytes); // byte[]로 PDF 문서 열기
-            PDFPage page = doc.GetPage(pageIndex); // 해당 페이지 가져오기
-            PDFRenderer renderer = new PDFRenderer(); 
-            Texture2D tex = renderer.RenderPageToTexture(page, 1024, 1024); // 페이지를 Texture2D로 렌더
+        {
+            using (PDFDocument doc = new PDFDocument(pdfBytes)) // byte[]로 PDF 문서 열기
+            {
+                PDFPage page = doc.GetPage(pageIndex); // 해당 페이지 가져오기
+                using (PDFRenderer renderer = new PDFRenderer()) // IDisposable이면 통과, 아니면 컴파일 에러
+                {
+                    Texture2D tex = renderer.RenderPageToTexture(page, 1024, 1024); // 페이지를 Texture2D로 렌더
 
-            // 리소스 정리. 네이티브 리소스라서 Dispose() 필수
-            page.Dispose();
-            doc.Dispose();
+                    // 리소스 정리. 네이티브 리소스라서 Dispose() 필수
+                    page.Dispose();
+                    doc.Dispose();
 
-            return tex;
+                    return tex;
+                }
+            }
+        }
+
+        // 전체 페이지 수 조회
+        public static int GetPageCount(byte[] fileByte, FileType fileType)
+        {
+            switch(fileType) 
+            {
+                case FileType.Image:
+                    return 1;
+                case FileType.PDF:
+                    {
+                        PDFDocument doc = new PDFDocument(fileByte);
+                        int count = doc.GetPageCount();
+                        doc.Dispose();
+                        return count;
+                    }
+                default:
+                    return 0;
+
+            }
+        }
+
+        // Quad 비율 조절용 페이지 사이즈
+        public static Vector2 GetPageSize(byte[] fileByte, FileType fileType, int pageIndex)
+        {
+            switch (fileType)
+            {
+                case FileType.Image:
+                    {
+                        Texture2D tex = new Texture2D(2, 2);
+                        tex.LoadImage(fileByte);
+                        Vector2 imageSize = new Vector2(tex.width, tex.height);
+
+                        #if UNITY_EDITOR
+                            Object.DestroyImmediate(tex);
+                        #else
+                            Object.Destroy(tex); 
+                        #endif
+                            tex = null;
+                        
+                        return imageSize;
+                    }
+                case FileType.PDF:
+                    {
+                        PDFDocument doc = new PDFDocument(fileByte);
+                        PDFPage page = doc.GetPage(pageIndex);
+                        Vector2 pageSize = page.GetPageSize(1f);
+                        page.Dispose();
+                        doc.Dispose();
+                        return pageSize;
+                    }
+                default:
+                    return Vector2.zero;
+            }
         }
     }
 }

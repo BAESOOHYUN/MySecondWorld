@@ -13,19 +13,28 @@ namespace MySecondWorld.Network
         private SharedScreenUI _screenUIComponent;
         private SharedScreenController _controller;
 
+
+        private void Awake()
+        {
+            _controller = GetComponent<SharedScreenController>();
+        }
+
         private void OnTriggerEnter(Collider other)
         {
             if (other.TryGetComponent(out NetworkPlayerController player))
             {
+                if (_controller == null)
+                {
+                    Debug.LogError("SharedScreenController 컴포넌트가 없습니다.");
+                    return;
+                }
+
                 if (_screenUI == null)
                     _screenUI = UIManager.Instance.GetOrCreateDynamicCanvas<SharedScreenUI>();
 
                 if (_screenUIComponent == null)
                     _screenUIComponent = _screenUI.GetComponent<SharedScreenUI>();
 
-                if (_controller == null)
-                    _controller = GetComponentInChildren<SharedScreenController>();
-                
                 if (_screenUIComponent != null)
                     _screenUIComponent.Init(_controller);
 

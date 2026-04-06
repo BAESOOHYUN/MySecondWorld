@@ -1,6 +1,8 @@
 using System;
 using System.IO;
+using System.Collections;
 using UnityEngine;
+using UnityEngine.Networking;
 
 namespace MySecondWorld.Network
 {
@@ -10,14 +12,14 @@ namespace MySecondWorld.Network
     /// </summary>
     public static class FileChunkSender
     {
-        public static void SendFile(SharedScreenController controller, string filePath, FileType fileType)
+        public static void SendFileFromLocalstore(SharedScreenController controller, string filePath, FileType fileType, bool allowDownload = false)
         {
             string fileName = Path.GetFileName(filePath);
             byte[] fileByte = File.ReadAllBytes(filePath);
             int chunkSize = SharedScreenConstants.ChunkSize;
             int totalSize = fileByte.Length;
             int totalChunkCount = Mathf.CeilToInt((float)totalSize / chunkSize);
-            controller.CmdSendFileStart(fileName, fileType, totalSize, totalChunkCount);
+            controller.CmdSendFileStart(fileName, fileType, totalSize, totalChunkCount, allowDownload);
             // 청크 자르기
             for (int i = 0; i < totalChunkCount; i++)
             {
@@ -34,6 +36,38 @@ namespace MySecondWorld.Network
                 controller.CmdSendFileChunk(i, currChunk);
             }
             controller.CmdSendFileEnd(totalSize);
+        }
+
+        public static IEnumerator SendFileFromUrl(SharedScreenController controller, string url, FileType fileType, bool allowDownload = false)
+        {
+            using (UnityWebRequest request = UnityWebRequest.Get(url))
+            {
+                yield return request.SendWebRequest();
+
+                if (request.result != UnityWebRequest.Result.Success)
+                {
+                    Debug.LogError($"[FileChunkSender] URL 다운로드 실패: {request.error}");
+                    yield break;
+                }
+
+                string fileName = Path.GetFileName(url);
+                byte[] fileByte = request.downloadHandler.data;
+                int chunkSize = SharedScreenConstants.ChunkSize;
+                int totalSize = fileByte.Length;
+                int totalChunkCount = Mathf.CeilToInt((float)totalSize / chunkSize);
+                controller.CmdSendFileStart(fileName, fileType, totalSize, totalChunkCount, allowDownload);
+
+                for (int i = 0; i < totalChunkCount; i++)
+                {
+                    var offset = i * chunkSize;
+                    int remaining = totalSize - offset;
+                    int currChunkSize = Mathf.Min(remaining, chunkSize);
+                    byte[] currChunk = new byte[currChunkSize];
+                    Buffer.BlockCopy(fileByte, offset, currChunk, 0, currChunkSize);
+                    controller.CmdSendFileChunk(i, currChunk);
+                }
+                controller.CmdSendFileEnd(totalSize);
+            }
         }
     }
 }

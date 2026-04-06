@@ -11,14 +11,21 @@ namespace MySecondWorld.Network
     public class SharedScreenController : NetworkBehaviour
     {
         public event Action<uint> onPresenterChanged;
+        public event Action<bool> onAllowDownloadChanged;
+        public event Action onFileReceived; 
+        public event Action<int> onPageChanged;
+
         private Renderer _screenRenderer;
 
         [SyncVar(hook = nameof(OnPresenterChanged))]
-        private uint _presenterId;     // 현재 발표자의 netId. 0이면 자유 모드
-        [SyncVar] private int _currentPage;      // 현재 페이지 번호
-        [SyncVar] private float _zoomLevel;      // 줌 배율
+        private uint _presenterId;     // 현재 발표자의 netId. 0이면 발표자 없음
+        [SyncVar(hook = nameof(OnAllowDownloadChanged))]
+        private bool _allowDownload;             // 다운로드 허용 여부 (발표자가 설정)
         [SyncVar] private FileType _fileType;    // 현재 파일 타입
         [SyncVar] private string _fileName;      // 현재 파일 이름
+        [SyncVar] private int _currentPage;      // 현재 페이지 번호
+        /*[SyncVar]*/ private int _totalPageCount;   // 파일 전체 페이지 수
+        [SyncVar] private float _zoomLevel;      // 줌 배율
 
         // 청크 데이터
         private byte[] _receiveBuffer;           // 조립 중인 전체 데이터
@@ -26,14 +33,16 @@ namespace MySecondWorld.Network
         private int _expectedChunkCount;         // 총 몇 개 받아야 하는지
         private bool _isReceiving;               // 수신 중인지 여부
 
+        // 프로퍼티
         public uint PresenterId => _presenterId;
         public bool HasPresenter => _presenterId != 0;
         public bool IsPresenter(uint netId) => _presenterId == netId;
-
-        //TODO 읽기 전용 프로퍼티
-        //hook 있으면 — 값이 바뀔 때 자동으로 메서드 호출
-        // [SyncVar(hook = nameof(OnPageChanged))]
-
+        public int CurrentPage => _currentPage;
+        public int TotalPageCount => _totalPageCount;
+        public bool AllowDownload => _allowDownload;
+        public FileType CurrentFileType => _fileType;
+        public byte[] FileBuffer => _receiveBuffer;
+        public bool IsReceiving => _isReceiving;
         /*
             서버를 거치는 3단계 흐름 
             발표자가 호출:  CmdSendFileStart("slides.pdf", FileType.PDF, 524288, 8)
@@ -55,6 +64,11 @@ namespace MySecondWorld.Network
             onPresenterChanged?.Invoke(newValue);
         }
 
+        private void OnAllowDownloadChanged(bool oldValue, bool newValue)
+        {
+            onAllowDownloadChanged?.Invoke(newValue);
+        }
+
 
         // ──────────────────서버에 발표자(_presenterId) 설정/해제 알림 ────────────────────────
 
@@ -72,6 +86,7 @@ namespace MySecondWorld.Network
             if (_presenterId == sender.identity.netId)
             {
                 _presenterId = 0;
+                _currentPage = 0;    // ← 서버에서 SyncVar 세팅
                 RpcClearScreen();
             }
         }
@@ -79,7 +94,7 @@ namespace MySecondWorld.Network
         // ──────────────────── 서버에 파일 다운로드 요청 ───────────────────────────────
 
         [Command(requiresAuthority = false)]
-        public void CmdSendFileStart(string fileName, FileType fileType, int totalSize, int totalChunkCount, NetworkConnectionToClient sender = null)
+        public void CmdSendFileStart(string fileName, FileType fileType, int totalSize, int totalChunkCount, bool allowDownload, NetworkConnectionToClient sender = null)
         {
             //파일을 열 때 자동으로 발표자가 되고, 발표자가 있으면 다른 사람은 파일 열기/페이지 조작 불가
 
@@ -89,6 +104,10 @@ namespace MySecondWorld.Network
             // 파일 여는 사람이 자동으로 발표자
             if (sender?.identity != null)
                 _presenterId = sender.identity.netId;
+
+            _allowDownload = allowDownload;
+            _fileName = fileName;        // ← 서버에서 SyncVar 세팅
+            _fileType = fileType;        // ← 서버에서 SyncVar 세팅
 
             RpcReceiveFileStart(fileName, fileType, totalSize, totalChunkCount);
         }
@@ -102,6 +121,7 @@ namespace MySecondWorld.Network
         [Command(requiresAuthority = false)]
         public void CmdSendFileEnd(int totalSize)
         {
+            _currentPage = 0;  // 서버에서 SyncVar 세팅
             RpcReceiveFileEnd(totalSize);
         }
 
@@ -109,9 +129,9 @@ namespace MySecondWorld.Network
         [Command(requiresAuthority = false)]
         public void CmdChangePage(int newPage, NetworkConnectionToClient sender = null)
         {
-            if (newPage < 0)
+            // 페이지 오류일때 무시
+            if (newPage < 0 || (_totalPageCount > 0 && newPage >= _totalPageCount))
                 return;
-            // TODO: 최대 페이지 체크 (totalPageCount 필드 필요)
 
             // 발표자 모드일 때, 발표자만 조작 가능
             if (_presenterId != 0 && sender?.identity?.netId != _presenterId)
@@ -134,8 +154,8 @@ namespace MySecondWorld.Network
             _receivedChunkCount = 0;
             _expectedChunkCount = totalChunkCount;
             _isReceiving = true;
-            _fileName = fileName;
-            _fileType = fileType;
+            _fileName = fileName;      // Rpc 파라미터로 즉시 세팅
+            _fileType = fileType;      // Rpc 파라미터로 즉시 세팅
         }
 
         [ClientRpc]
@@ -161,27 +181,28 @@ namespace MySecondWorld.Network
                 return;
             }
             // 수신 상태 종료
-            _isReceiving = false; 
-            _currentPage = 0;  // 첫 페이지부터
+            _isReceiving = false;
+            _totalPageCount = SharedScreenRenderer.GetPageCount(_receiveBuffer, _fileType);
             RenderToScreen();
+            onFileReceived?.Invoke();
         }
 
         // ──────────────────── 모든 클라이언트가 새 페이지 렌더 ─────────────────────────
         [ClientRpc]
         private void RpcPageChanged(int page)
         {
-            _currentPage = page;
-            RenderToScreen();
+            // _currentPage는 SyncVar 자동 동기화로 받음
+            RenderToScreen(page); 
+            onPageChanged?.Invoke(page);
         }
 
         [ClientRpc]
         private void RpcClearScreen()
         {
-            _receiveBuffer = null;
+            // _receiveBuffer는 유지 (관객 로컬 열람용)
             _receivedChunkCount = 0;
             _expectedChunkCount = 0;
             _isReceiving = false;
-            _currentPage = 0;
 
             if (_screenRenderer != null)
                 _screenRenderer.material.mainTexture = null;
@@ -200,13 +221,24 @@ namespace MySecondWorld.Network
         // 공통: 현재 상태로 Quad에 렌더링
         private void RenderToScreen()
         {
+            RenderToScreen(_currentPage);
+        }
+
+        private void RenderToScreen(int page)
+        {
             if (_receiveBuffer == null)
                 return;
 
             // 렌더링 호출 — 완성된 _receiveBuffer를 화면에 표시
-            Texture2D tex = SharedScreenRenderer.Render(_receiveBuffer, _fileType, _currentPage);
+            Texture2D tex = SharedScreenRenderer.Render(_receiveBuffer, _fileType, page);
             if (tex != null)
             {
+                // 이전 텍스처 해제
+                if (_screenRenderer.material.mainTexture != null)
+                {
+                    Destroy(_screenRenderer.material.mainTexture);
+                    _screenRenderer.material.mainTexture = null;
+                }
                 _screenRenderer.enabled = true;  // 텍스처 넣기 전에 렌더러 켜기
                 _screenRenderer.material.mainTexture = tex;
             }
