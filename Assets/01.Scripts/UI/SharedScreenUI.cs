@@ -125,7 +125,7 @@ namespace MySecondWorld.Network
             }
         }
 
-        // 패널 전환 메서드 
+        // ──────────────────── 패널 전환 메서드 ────────────────────
         private void ShowFileLoadPanel()
         {
             _fileLoadPanel.SetActive(true);
@@ -156,7 +156,7 @@ namespace MySecondWorld.Network
         }
 
 
-        // 이벤트 핸들러 — 파일 로드
+        // ──────────────────── 이벤트 핸들러 — 파일 로드 ────────────────────
         private void OnLocalFileSelect()
         {
             // TODO: OpenFileDialog로 교체
@@ -206,7 +206,7 @@ namespace MySecondWorld.Network
             }
         }
 
-        // 이벤트 핸들러 — 페이지 조작
+        // ──────────────────── 이벤트 핸들러 — 페이지 조작 ────────────────────
         private void OnOpenView()
         {
             Debug.Log($"[SharedScreenUI] OpenView - TotalPageCount: {_controller.TotalPageCount}, CurrentPage: {_controller.CurrentPage}, FileBuffer null: {_controller.FileBuffer == null}");
@@ -283,7 +283,7 @@ namespace MySecondWorld.Network
             }
         }
 
-        // 이벤트 핸들러 — 닫기/종료/저장
+        // ──────────────────── 이벤트 핸들러 — 닫기/종료/저장 ────────────────────
         private void OnCloseFileLoad()
         {
             _fileLoadPanel.SetActive(false);
@@ -308,7 +308,7 @@ namespace MySecondWorld.Network
             Debug.Log("[SharedScreenUI] 저장 기능은 2차 구현 예정");
         }
 
-        // Controller 이벤트 콜백
+        // ──────────────────── Controller 이벤트 콜백 ────────────────────
         private void OnPresenterChanged(uint newPresenterId)
         {
             uint myNetId = Mirror.NetworkClient.localPlayer?.netId ?? 0;
@@ -344,7 +344,7 @@ namespace MySecondWorld.Network
         }
 
 
-        // 로컬 렌더 + 페이지 UI 갱신
+        // ──────────────────── 로컬 렌더 + 페이지 UI 갱신 ────────────────────
         private void RenderLocal()
         {
             byte[] buffer = _controller.FileBuffer;
