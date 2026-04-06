@@ -8,15 +8,23 @@ namespace MySecondWorld.Network
 {
     public class LoginUI : MonoBehaviour
     {
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics()
+        {
+            Instance = null;
+        }
+        public static LoginUI Instance { get; private set; }
+
         [SerializeField] private TMP_InputField _localPlayerNameInput;
         [SerializeField] private Toggle _hostToggle;
         [SerializeField] private Toggle _clientToggle;
         [SerializeField] private Button _playerPrefsDeleteAll; 
         private UnityAction<string> _onNameChanged;
-
-        public static LoginUI Instance { get; private set; }
+        
         private void Awake()
         {
+            if (Instance != null && Instance != this)
+                return;
             Instance = this;
         }
 
@@ -36,10 +44,14 @@ namespace MySecondWorld.Network
         }
         private void OnDestroy()
         {
-            _localPlayerNameInput.onValueChanged.RemoveListener(_onNameChanged);
-            _hostToggle.onValueChanged.RemoveListener(OnToggleHost);
-            _clientToggle.onValueChanged.RemoveListener(OnToggleClient);
-            _playerPrefsDeleteAll.onClick.RemoveListener(PlayerPrefsDeleteAll);
+            if (_localPlayerNameInput != null && _onNameChanged != null)
+                _localPlayerNameInput.onValueChanged.RemoveListener(_onNameChanged);
+            if (_hostToggle != null)
+                _hostToggle.onValueChanged.RemoveListener(OnToggleHost);
+            if (_clientToggle != null)
+                _clientToggle.onValueChanged.RemoveListener(OnToggleClient);
+            if (_playerPrefsDeleteAll != null)
+                _playerPrefsDeleteAll.onClick.RemoveListener(PlayerPrefsDeleteAll);
         }
 
         private void OnToggleHost(bool isOn)

@@ -4,10 +4,20 @@ using MySecondWorld.Network;
 
 public class MenuUI : MonoBehaviour
 {
-    [SerializeField] private Toggle _robbyToggle;
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics()
+    {
+        Instance = null;
+    }
     public static MenuUI Instance { get; private set; }
+
+
+    [SerializeField] private Toggle _robbyToggle;
+
     private void Awake()
     {
+        if (Instance != null && Instance != this)
+            return;
         Instance = this;
     }
 
@@ -19,13 +29,14 @@ public class MenuUI : MonoBehaviour
 
     private void Start()
     {
-        _robbyToggle.onValueChanged.AddListener(OnToggleRobby);
+        if (_robbyToggle != null)
+            _robbyToggle.onValueChanged.AddListener(OnToggleRobby);
     }
 
     private void OnDestroy()
     {
-
-        _robbyToggle.onValueChanged.RemoveListener(OnToggleRobby);
+        if (_robbyToggle != null)
+            _robbyToggle.onValueChanged.RemoveListener(OnToggleRobby);
     }
 
     private void OnToggleRobby(bool isOn)
