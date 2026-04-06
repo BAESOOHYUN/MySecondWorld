@@ -345,8 +345,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 55c34626d2fea0548b01b81cf4aa7680, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UIManager
-  uiRoots: []
-  alphaThreshold: 0.5
   _menuCanvas: {fileID: 1027772066}
   _loginCanvas: {fileID: 1612214059}
   _chatCanvas: {fileID: 365230914}
