@@ -8,7 +8,7 @@ namespace MySecondWorld.Network
 
         private void Awake()
         {
-            _controller = GetComponent<SharedScreenController>();
+            _controller = GetComponentInParent<SharedScreenController>();
         }
 
         private void OnTriggerEnter(Collider other)
@@ -17,7 +17,7 @@ namespace MySecondWorld.Network
             {
                 if (_controller == null)
                 {
-                    Debug.LogError("SharedScreenController 컴포넌트가 없습니다.");
+                    Debug.LogError("_controller( SharedScreenController) 컴포넌트가 없습니다.");
                     return;
                 }
 

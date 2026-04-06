@@ -3,6 +3,7 @@ using Mirror;
 using System;
 using System.Collections.Generic;
 using System.Collections;
+using Paroxe.PdfRenderer;
 
 namespace MySecondWorld.Network
 {
@@ -26,14 +27,16 @@ namespace MySecondWorld.Network
         [SyncVar] private FileType _fileType;    // 현재 파일 타입
         [SyncVar] private string _fileName;      // 현재 파일 이름
         [SyncVar] private int _currentPage;      // 현재 페이지 번호
-        private int _totalPageCount;             // 클라이언트용 (UI에서 참조)
         [SyncVar] private float _zoomLevel;      // 줌 배율
+        private int _totalPageCount;             // 클라이언트용 (UI에서 참조)
+
 
         // 청크 데이터
         private byte[] _receiveBuffer;           // 조립 중인 전체 데이터
         private int _receivedChunkCount;         // 지금까지 받은 청크 수
         private int _expectedChunkCount;         // 총 몇 개 받아야 하는지
         private bool _isReceiving;               // 수신 중인지 여부
+        private PDFDocument _cachedPdfDocument;
 
         // 서버 전용 캐시
         private string _cachedFileName;
@@ -73,6 +76,11 @@ namespace MySecondWorld.Network
                 Debug.LogError($"Renderer missing on {gameObject.name}", this);
         }
 
+        private void OnDestroy()
+        {
+            _cachedPdfDocument?.Dispose();
+            _cachedPdfDocument = null;
+        }
 
         public override void OnStartServer()
         {
@@ -236,6 +244,9 @@ namespace MySecondWorld.Network
         [TargetRpc]
         private void TargetRpcReceiveFileStart(NetworkConnection target, string fileName, FileType fileType, int totalSize, int totalChunkCount)
         {
+            _cachedPdfDocument?.Dispose();
+            _cachedPdfDocument = null;
+
             // 버퍼 초기화
             _receiveBuffer = new byte[totalSize];
             _receivedChunkCount = 0;
@@ -269,9 +280,14 @@ namespace MySecondWorld.Network
             }
             // 수신 상태 종료
             _isReceiving = false;
+
+            if (_fileType == FileType.PDF)
+                _cachedPdfDocument = new PDFDocument(_receiveBuffer);
+
             _totalPageCount = totalPageCount;
             RenderToScreen();
             onFileReceived?.Invoke();
+
         }
 
         // ──────────────────── 모든 클라이언트가 새 페이지 렌더 ─────────────────────────
@@ -290,9 +306,12 @@ namespace MySecondWorld.Network
             _receivedChunkCount = 0;
             _expectedChunkCount = 0;
             _isReceiving = false;
+            _cachedPdfDocument?.Dispose();
+            _cachedPdfDocument = null;
 
             if (_screenRenderer != null)
                 _screenRenderer.material.mainTexture = null;
+
         }
 
         // ──────────────────── 페이지 렌더 ─────────────────────────
@@ -318,7 +337,12 @@ namespace MySecondWorld.Network
                 return;
 
             // 렌더링 호출 — 완성된 _receiveBuffer를 화면에 표시
-            Texture2D tex = SharedScreenRenderer.Render(_receiveBuffer, _fileType, page);
+            Texture2D tex;
+            if (_fileType == FileType.PDF && _cachedPdfDocument != null)
+                tex = SharedScreenRenderer.Render(_cachedPdfDocument, page);
+            else
+                tex = SharedScreenRenderer.Render(_receiveBuffer, _fileType, page);
+
             if (tex != null)
             {
                 // 이전 텍스처 해제

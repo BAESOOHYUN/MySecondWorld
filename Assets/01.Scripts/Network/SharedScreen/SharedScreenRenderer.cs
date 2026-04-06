@@ -22,6 +22,12 @@ namespace MySecondWorld.Network
             }   
         }
 
+        public static Texture2D Render(PDFDocument cachedDoc, int pageIndex)
+        {
+            Debug.Log("cachedDoc 버퍼 이용");
+            return RenderPDF(cachedDoc, pageIndex);
+        }
+
         // 내부 헬퍼
         private static Texture2D RenderImage(byte[] imageBytes)
         {
@@ -38,13 +44,22 @@ namespace MySecondWorld.Network
                 using (PDFRenderer renderer = new PDFRenderer()) // IDisposable이면 통과, 아니면 컴파일 에러
                 {
                     Texture2D tex = renderer.RenderPageToTexture(page, 1024, 1024); // 페이지를 Texture2D로 렌더
-
-                    // 리소스 정리. 네이티브 리소스라서 Dispose() 필수
-                    page.Dispose();
-                    doc.Dispose();
-
+                    page.Dispose(); // 리소스 정리. 네이티브 리소스라서 Dispose() 필수.
+                                    // doc.Dispose()는 using으로 감싸져서 지워도 됨.
                     return tex;
                 }
+            }
+        }
+
+        private static Texture2D RenderPDF(PDFDocument doc, int pageIndex)
+        {
+            PDFPage page = doc.GetPage(pageIndex);
+            using (PDFRenderer renderer = new PDFRenderer())
+            {
+                Texture2D tex = renderer.RenderPageToTexture(page, 1024, 1024);
+                page.Dispose();
+                // doc.Dispose() 호출하지 않음 — 소유권은 Controller
+                return tex;
             }
         }
 
@@ -66,6 +81,11 @@ namespace MySecondWorld.Network
                     return 0;
 
             }
+        }
+
+        public static int GetPageCount(PDFDocument doc)
+        {
+            return doc.GetPageCount();
         }
 
         // Quad 비율 조절용 페이지 사이즈
@@ -100,6 +120,14 @@ namespace MySecondWorld.Network
                 default:
                     return Vector2.zero;
             }
+        }
+
+        public static Vector2 GetPageSize(PDFDocument doc, int pageIndex)
+        {
+            PDFPage page = doc.GetPage(pageIndex);
+            Vector2 pageSize = page.GetPageSize(1f);
+            page.Dispose();
+            return pageSize;  // doc.Dispose() 호출하지 않음
         }
     }
 }
