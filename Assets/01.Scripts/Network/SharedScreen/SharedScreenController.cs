@@ -207,8 +207,6 @@ namespace MySecondWorld.Network
         [Command(requiresAuthority = false)]
         public void CmdExitOuterZone(NetworkConnectionToClient sender = null)
         {
-            _outerObservers.Remove(sender);
-
             // 발표자가 외곽을 벗어나면 자동 해제
             if (sender?.identity != null && _presenterId == sender.identity.netId)
             {
@@ -218,8 +216,9 @@ namespace MySecondWorld.Network
                 _isCacheReady = false;
                 _cachedFileBuffer = null;
             }
+            _outerObservers.Remove(sender);
         }
-         
+
         // ──────────────────── 서버에 페이지 변경 요청 ───────────────────────────────
         [Command(requiresAuthority = false)]
         public void CmdChangePage(int newPage, NetworkConnectionToClient sender = null)
@@ -308,7 +307,6 @@ namespace MySecondWorld.Network
             _isReceiving = false;
             _cachedPdfDocument?.Dispose();
             _cachedPdfDocument = null;
-
             if (_screenRenderer != null)
                 _screenRenderer.material.mainTexture = null;
 

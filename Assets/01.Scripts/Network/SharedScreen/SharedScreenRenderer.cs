@@ -24,7 +24,6 @@ namespace MySecondWorld.Network
 
         public static Texture2D Render(PDFDocument cachedDoc, int pageIndex)
         {
-            Debug.Log("cachedDoc 버퍼 이용");
             return RenderPDF(cachedDoc, pageIndex);
         }
 
