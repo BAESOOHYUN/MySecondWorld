@@ -9,6 +9,12 @@ namespace MySecondWorld.Network
     /// </summary>
     public class PlayerSession
     {
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        static void ResetLocalPlayerName()
+        {
+            LocalPlayerName = null; // Domain Reload OFF 환경에서도 매번 초기화
+        }
+        public static string LocalPlayerName { get; set; }
         // --- 1차 ---
         public HashSet<string> loadedScenes;       // 클라이언트에 로드된 씬 목록
         public string currentScene;                // 플레이어 GameObject가 속한 씬 (MoveGameObjectToScene 대상)

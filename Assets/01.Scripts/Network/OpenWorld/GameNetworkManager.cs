@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Collections;
 using UnityEngine.SceneManagement;
 using MySecondWorld.Save;
-using MySecondWorld.Network.Chat;
 using System.Linq;
 
 namespace MySecondWorld.Network
@@ -209,7 +208,7 @@ namespace MySecondWorld.Network
 
                 // 3. playerNames 정리 — 재접속 시 이름 중복 거부 방지
                 if (conn.authenticationData is string username)
-                    ChatAuthenticator.playerNames.Remove(username);
+                    PlayerAuthenticator.playerNames.Remove(username);
 
                 // 4. 세션 제거
                 _sessions.Remove(conn.connectionId);

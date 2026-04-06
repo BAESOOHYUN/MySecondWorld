@@ -10,46 +10,40 @@ namespace MySecondWorld.Network
     public class SharedScreenInteraction : MonoBehaviour
     {
         [SerializeField] private GameObject _screenUI;     // Canvas UI 패널
-        [SerializeField] private KeyCode _interactKey = KeyCode.A; // TODO : 인풋시스템에서 액션키 연결
-        private bool _isPlayerNear;
+        private SharedScreenUI _screenUIComponent;
+        private SharedScreenController _controller;
 
         private void OnTriggerEnter(Collider other)
         {
             if (other.TryGetComponent(out NetworkPlayerController player))
             {
-                _isPlayerNear = true;
-
                 if (_screenUI == null)
-                {
-                    var ui = FindObjectOfType<SharedScreenUI>(true);
-                    if (ui != null)
-                        _screenUI = ui.gameObject;
-                }
+                    _screenUI = UIManager.Instance.GetOrCreateDynamicCanvas<SharedScreenUI>();
 
-                var controller = GetComponentInChildren<SharedScreenController>();
-                _screenUI.GetComponent<SharedScreenUI>().Init(controller);
+                if (_screenUIComponent == null)
+                    _screenUIComponent = _screenUI.GetComponent<SharedScreenUI>();
+
+                if (_controller == null)
+                    _controller = GetComponentInChildren<SharedScreenController>();
+                
+                if (_screenUIComponent != null)
+                    _screenUIComponent.Init(_controller);
+
                 _screenUI.SetActive(true);
             }
         }
+
         private void OnTriggerExit(Collider other)
         {
             if (other.TryGetComponent(out NetworkPlayerController player))
             {
-                _isPlayerNear = false;
-
                 // 발표자가 나가면 자동 해제
-                var controller = GetComponentInChildren<SharedScreenController>();
-                controller.CmdReleasePresenter();
+                if (_controller != null)
+                    _controller.CmdReleasePresenter();
 
                 if (_screenUI != null)
                     _screenUI.SetActive(false);
             }
-        }
-
-        private void Update()
-        {
-            if (_isPlayerNear && Input.GetKeyDown(_interactKey))
-                    _screenUI.SetActive(!_screenUI.activeSelf);
         }
     }
 }

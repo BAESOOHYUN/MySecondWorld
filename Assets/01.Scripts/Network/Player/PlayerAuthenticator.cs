@@ -1,7 +1,8 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using Mirror;
-using System.Collections.Generic;
-using System.Collections;
 
 /*
   전체 흐름
@@ -23,10 +24,20 @@ using System.Collections;
   내가 ClientAccept() 호출                  ← 클라이언트가 "완료"라고 Mirror에 알림
 */
 
-namespace MySecondWorld.Network.Chat
+namespace MySecondWorld.Network
 {
-    public class ChatAuthenticator : NetworkAuthenticator
+    public class PlayerAuthenticator : NetworkAuthenticator
     {
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStaticEvents()
+        {
+            OnAuthenticated = null;
+            OnDisconnected = null;
+        }
+
+        public static event Action OnAuthenticated;
+        public static event Action OnDisconnected;
+
         // 이름 중복 검사에 사용할 컬렉션
         public static readonly HashSet<string> playerNames = new HashSet<string>();
         // 이름이 중복되어 요청이 거절된 사람 명단
@@ -155,20 +166,21 @@ namespace MySecondWorld.Network.Chat
         public override void OnStopClient()
         {
             NetworkClient.UnregisterHandler<AuthResponseMessage>();
+            OnDisconnected?.Invoke();
         }
 
         // 서버 연결되자마자 호출됨. Mirror 자동호출
         public override void OnClientAuthenticate()
         {
-            Debug.Log($"[Auth] OnClientAuthenticate localPlayerName='{ChatUI.Instance.LocalPlayerName}'");
+            Debug.Log($"[Auth] OnClientAuthenticate localPlayerName='{PlayerSession.LocalPlayerName}'");
             // 이름 없이 연결 시도하면 null이 서버 playerNames에 등록될 수 있으므로 사전 차단
-            if (string.IsNullOrWhiteSpace(ChatUI.Instance.LocalPlayerName))
+            if (string.IsNullOrWhiteSpace(PlayerSession.LocalPlayerName))
             {
                 Debug.LogWarning("[Auth] localPlayerName 비어있음 → 인증 메시지 미전송");
                 return;
             }
 
-            NetworkClient.Send(new AuthRequestMessage { authUsername = ChatUI.Instance.LocalPlayerName });
+            NetworkClient.Send(new AuthRequestMessage { authUsername = PlayerSession.LocalPlayerName });
         }
 
         public void OnAuthResponseMessage(AuthResponseMessage msg)
@@ -177,7 +189,8 @@ namespace MySecondWorld.Network.Chat
             if (msg.code == AuthResponseMessage.Success)
             {
                 // Mirror에 "클라이언트 인증 완료" 알림
-                ClientAccept();
+                ClientAccept(); 
+                OnAuthenticated?.Invoke();
             }
             else
             {

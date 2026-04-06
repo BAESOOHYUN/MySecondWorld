@@ -17,7 +17,7 @@ namespace MySecondWorld.Network.Chat
         {
             if (conn.authenticationData != null)
             {
-                ChatAuthenticator.playerNames.Remove((string)conn.authenticationData);
+                PlayerAuthenticator.playerNames.Remove((string)conn.authenticationData);
             }
             // base를 마지막에 부르는 이유: Mirror의 base 구현이 conn 객체를 정리해버려서,
             // base 호출 전에 authenticationData를 먼저 읽어야 한다.
