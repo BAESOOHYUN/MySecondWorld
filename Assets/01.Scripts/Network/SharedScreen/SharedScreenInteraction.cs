@@ -46,10 +46,6 @@ namespace MySecondWorld.Network
         {
             if (other.TryGetComponent(out NetworkPlayerController player))
             {
-                // 발표자가 나가면 자동 해제
-                if (_controller != null)
-                    _controller.CmdReleasePresenter();
-
                 if (_screenUI != null)
                     _screenUI.SetActive(false);
             }
