@@ -17,6 +17,8 @@ namespace MySecondWorld.Network
         public event Action<bool> onAllowDownloadChanged;
         public event Action onFileReceived;
         public event Action<int> onPageChanged;
+        public event Action<float> onZoomChanged;
+        public event Action<Vector4> onViewportRectChanged;
 
         private Renderer _screenRenderer;
 
@@ -27,7 +29,10 @@ namespace MySecondWorld.Network
         [SyncVar] private FileType _fileType;    // 현재 파일 타입
         [SyncVar] private string _fileName;      // 현재 파일 이름
         [SyncVar] private int _currentPage;      // 현재 페이지 번호
-        [SyncVar] private float _zoomLevel;      // 줌 배율
+        [SyncVar(hook = nameof(OnZoomLevelChanged))]
+        private float _zoomLevel = 1f;           // 줌 배율
+        [SyncVar(hook = nameof(OnViewportRectChanged))]
+        private Vector4 _viewportRect = new Vector4(0, 0, 1, 1); // (x, y, w, h) 페이지 기준 0~1
         private int _totalPageCount;             // 클라이언트용 (UI에서 참조)
 
 
@@ -58,6 +63,9 @@ namespace MySecondWorld.Network
         public int TotalPageCount => _totalPageCount;
         public bool AllowDownload => _allowDownload;
         public FileType CurrentFileType => _fileType;
+        public string CurrentFileName => _fileName;
+        public float ZoomLevel => _zoomLevel;
+        public Vector4 ViewportRect => _viewportRect;
         public byte[] FileBuffer => _receiveBuffer;
         public bool IsReceiving => _isReceiving;
         /*
@@ -109,6 +117,16 @@ namespace MySecondWorld.Network
             onAllowDownloadChanged?.Invoke(newValue);
         }
 
+        private void OnZoomLevelChanged(float oldValue, float newValue)
+        {
+            onZoomChanged?.Invoke(newValue);
+        }
+
+        private void OnViewportRectChanged(Vector4 oldValue, Vector4 newValue)
+        {
+            onViewportRectChanged?.Invoke(newValue);
+        }
+
 
         // ────────────────── 서버에 발표자(_presenterId) 설정/해제 알림 ────────────────────────
 
@@ -127,6 +145,8 @@ namespace MySecondWorld.Network
             {
                 _presenterId = 0;    // 서버에서 SyncVar 세팅
                 _currentPage = 0;    // 늦게 온 사람도 "발표자 없음, 0페이지" 상태를 자동으로 받아야 함
+                _zoomLevel = 1f;
+                _viewportRect = new Vector4(0, 0, 1, 1);
 
                 SendClearToObservers();
                 _isCacheReady = false;
@@ -212,6 +232,8 @@ namespace MySecondWorld.Network
             {
                 _presenterId = 0;
                 _currentPage = 0;
+                _zoomLevel = 1f;
+                _viewportRect = new Vector4(0, 0, 1, 1);
                 SendClearToObservers();
                 _isCacheReady = false;
                 _cachedFileBuffer = null;
@@ -237,6 +259,29 @@ namespace MySecondWorld.Network
             SendPageChangeToObservers(newPage); // 외곽 존 관찰자들에게 페이지 번호 전달
         }
 
+
+        // ──────────────────── 서버에 줌 변경 요청 ───────────────────────────────
+        [Command(requiresAuthority = false)]
+        public void CmdChangeZoom(float newZoom, NetworkConnectionToClient sender = null)
+        {
+            // 발표자 모드일 때, 발표자만 조작 가능
+            if (_presenterId != 0 && sender?.identity?.netId != _presenterId)
+                return;
+
+            _zoomLevel = newZoom;
+            SendZoomChangeToObservers(newZoom);
+        }
+
+        // ──────────────────── 서버에 뷰포트 영역 변경 요청 ────────────────────
+        [Command(requiresAuthority = false)]
+        public void CmdChangeViewportRect(Vector4 newRect, NetworkConnectionToClient sender = null)
+        {
+            if (_presenterId != 0 && sender?.identity?.netId != _presenterId)
+                return;
+
+            _viewportRect = newRect;
+            SendViewportRectChangeToObservers(newRect);
+        }
 
         // ──────────────────── 모드 클라이언트가 파일 다운로드 ─────────────────────────
 
@@ -299,6 +344,20 @@ namespace MySecondWorld.Network
         }
 
         [TargetRpc]
+        private void TargetRpcZoomChanged(NetworkConnection target, float zoom)
+        {
+            ApplyQuadZoom();
+            onZoomChanged?.Invoke(zoom);
+        }
+
+        [TargetRpc]
+        private void TargetRpcViewportRectChanged(NetworkConnection target, Vector4 rect)
+        {
+            ApplyQuadZoom();
+            onViewportRectChanged?.Invoke(rect);
+        }
+
+        [TargetRpc]
         private void TargetRpcClearScreen(NetworkConnection target)
         {
             // _receiveBuffer는 유지 (관객 로컬 열람용)
@@ -308,7 +367,11 @@ namespace MySecondWorld.Network
             _cachedPdfDocument?.Dispose();
             _cachedPdfDocument = null;
             if (_screenRenderer != null)
+            {
                 _screenRenderer.material.mainTexture = null;
+                _screenRenderer.material.mainTextureScale = Vector2.one;
+                _screenRenderer.material.mainTextureOffset = Vector2.zero;
+            }
 
         }
 
@@ -334,24 +397,64 @@ namespace MySecondWorld.Network
             if (_receiveBuffer == null)
                 return;
 
-            // 렌더링 호출 — 완성된 _receiveBuffer를 화면에 표시
+            // 전체 페이지를 고정 해상도로 렌더 (줌은 UV로 처리)
             Texture2D tex;
             if (_fileType == FileType.PDF && _cachedPdfDocument != null)
-                tex = SharedScreenRenderer.Render(_cachedPdfDocument, page);
+                tex = SharedScreenRenderer.Render(_cachedPdfDocument, page, 1024);
             else
                 tex = SharedScreenRenderer.Render(_receiveBuffer, _fileType, page);
 
             if (tex != null)
             {
-                // 이전 텍스처 해제
                 if (_screenRenderer.material.mainTexture != null)
                 {
                     Destroy(_screenRenderer.material.mainTexture);
                     _screenRenderer.material.mainTexture = null;
                 }
-                _screenRenderer.enabled = true;  // 텍스처 넣기 전에 렌더러 켜기
+                _screenRenderer.enabled = true;
                 _screenRenderer.material.mainTexture = tex;
+
+                // 텍스처 비율에 맞게 쿼드 스케일 조정
+                Vector2 pageSize;
+                if (_fileType == FileType.PDF && _cachedPdfDocument != null)
+                    pageSize = SharedScreenRenderer.GetPageSize(_cachedPdfDocument, page);
+                else
+                    pageSize = SharedScreenRenderer.GetPageSize(_receiveBuffer, _fileType, page);
+
+                if (pageSize.x > 0 && pageSize.y > 0)
+                {
+                    float aspect = pageSize.x / pageSize.y;
+                    Vector3 scale = transform.localScale;
+                    scale.x = scale.y * aspect;
+                    transform.localScale = scale;
+                }
+
+                ApplyQuadZoom();
             }
+        }
+
+        /// <summary>
+        /// Material의 tiling/offset으로 발표자 Viewport 영역만 Quad에 표시.
+        /// _viewportRect = (x, y, w, h) 페이지 기준 0~1, UI 좌표계 (좌상단=0,0).
+        /// UV 좌표계는 좌하단=0,0이므로 Y 반전 필요.
+        /// </summary>
+        private void ApplyQuadZoom()
+        {
+            if (_screenRenderer == null) return;
+            Material mat = _screenRenderer.material;
+
+            float vx = _viewportRect.x; // 페이지 내 좌측 (0~1)
+            float vy = _viewportRect.y; // 페이지 내 상단 (0~1, UI 좌표: 위→아래)
+            float vw = _viewportRect.z; // viewport 가로 비율
+            float vh = _viewportRect.w; // viewport 세로 비율
+
+            // UV Y 반전: UI (0=상단) → UV (0=하단)
+            // UI에서 vy가 상단, vy+vh가 하단
+            // UV에서는 (1-vy-vh)가 하단 시작점
+            float uvOffsetY = 1f - vy - vh;
+
+            mat.mainTextureScale = new Vector2(vw, vh);
+            mat.mainTextureOffset = new Vector2(vx, uvOffsetY);
         }
 
         // ──────────────────── 내부 헬퍼 ──────────────────── 
@@ -374,6 +477,14 @@ namespace MySecondWorld.Network
                     TargetRpcReceiveFileChunk(conn, i, currChunk);
                 }
                 TargetRpcReceiveFileEnd(conn, _cachedTotalSize, _cachedTotalPageCount);
+
+                // 현재 페이지/줌/스크롤 상태도 전송
+                if (_currentPage != 0)
+                    TargetRpcPageChanged(conn, _currentPage);
+                if (_zoomLevel != 1f)
+                    TargetRpcZoomChanged(conn, _zoomLevel);
+                if (_viewportRect != new Vector4(0, 0, 1, 1))
+                    TargetRpcViewportRectChanged(conn, _viewportRect);
             }
         }
 
@@ -383,6 +494,22 @@ namespace MySecondWorld.Network
             foreach (var conn in new List<NetworkConnectionToClient>(_outerObservers))
             {
                 TargetRpcPageChanged(conn, page);
+            }
+        }
+
+        private void SendZoomChangeToObservers(float zoom)
+        {
+            foreach (var conn in new List<NetworkConnectionToClient>(_outerObservers))
+            {
+                TargetRpcZoomChanged(conn, zoom);
+            }
+        }
+
+        private void SendViewportRectChangeToObservers(Vector4 rect)
+        {
+            foreach (var conn in new List<NetworkConnectionToClient>(_outerObservers))
+            {
+                TargetRpcViewportRectChanged(conn, rect);
             }
         }
 

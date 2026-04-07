@@ -1,4 +1,6 @@
 using System.Collections;
+using System.IO;
+using Paroxe.PdfRenderer;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -6,7 +8,8 @@ using UnityEngine.UI;
 namespace MySecondWorld.Network
 {
     /// <summary>
-    /// Canvas UI 패널의 컨트롤러. 버튼 눌렀을 때 동작을 연결하는 역할.
+    /// Canvas UI 패널의 컨트롤러.
+    /// PDF → PDFViewer 프리팹, 이미지 → RawImage 폴백.
     /// </summary>
     public class SharedScreenUI : MonoBehaviour
     {
@@ -15,11 +18,11 @@ namespace MySecondWorld.Network
 
         [Header("FileLoad Panel")]
         [SerializeField] private GameObject _fileLoadPanel;
-        [SerializeField] private TMP_InputField _urlInputField;    // URL 입력
-        [SerializeField] private TMP_Text _localFilePathText;      // 로컬 경로 표시용
-        [SerializeField] private Button _localFileSearchButton;    // 파일 탐색기 열기
-        [SerializeField] private Button _clearLocalFileButton;     // 선택한 로컬파일 경로를 초기화 함
-        [SerializeField] private Button _fileLoadButton;           // URL & 로컬 공용 다운로드 시작
+        [SerializeField] private TMP_InputField _urlInputField;
+        [SerializeField] private TMP_Text _localFilePathText;
+        [SerializeField] private Button _localFileSearchButton;
+        [SerializeField] private Button _clearLocalFileButton;
+        [SerializeField] private Button _fileLoadButton;
         [SerializeField] private Toggle _allowDownloadToggle;
         [SerializeField] private Button _closeFileLoadPannelButton;
 
@@ -28,35 +31,49 @@ namespace MySecondWorld.Network
 
         [Header("View Panel")]
         [SerializeField] private GameObject _viewPanel;
-        [SerializeField] private RawImage _pageImage;
-        [SerializeField] private Button _prevButton;
-        [SerializeField] private Button _nextButton;
-        [SerializeField] private Slider _pageSlider;
-        [SerializeField] private TMP_InputField _pageInputField;  // 인풋필드에서 Content Type을 Integer Number로 설정
-        [SerializeField] private TMP_Text _totalPageText;       // 총 페이지 수 표시
-        [SerializeField] private Button _closeViewPannelButton;
-        [SerializeField] private Button _endPresentButton;    // 발표자만 보임
-        [SerializeField] private Button _saveButton;          // 관객 + allowDownload일 때만 보임
+
+        [Header("PDFViewer")]
+        [SerializeField] private PDFViewer _pdfViewer;
+        [SerializeField] private GameObject _pdfViewerObject;
+
+        [Header("Image Fallback")]
+        [SerializeField] private GameObject _imageViewPanel;
+        [SerializeField] private RawImage _imageView;
+        [SerializeField] private AspectRatioFitter _imageAspectFitter;
+
+        [Header("Overlay Buttons")]
+        [SerializeField] private Button _endPresentButton;
+        [SerializeField] private Button _saveButton;
+        [SerializeField] private Button _closeViewButton;       // PDF/이미지 공통 닫기
+        [SerializeField] private Toggle _followPresenterToggle; // 관객용: 발표자 따라가기
 
         private bool _isPresenter;
-        private int _localPage;          // 관객의 독립 페이지
-        private string _localFilePath;   // 선택된 로컬 경로 저장
+        private string _localFilePath;
+        private bool _isSyncingFromNetwork; // 무한루프 방지 플래그
+        private ScrollRect _pdfScrollRect;  // PDFViewer 내부 ScrollRect 캐시
 
         private void Awake()
         {
+            // FileLoad 패널
             _urlInputField.onValueChanged.AddListener(OnUrlInputChanged);
             _localFileSearchButton.onClick.AddListener(OnLocalFileSelect);
             _clearLocalFileButton.onClick.AddListener(OnClearLocalFile);
             _fileLoadButton.onClick.AddListener(OnLoad);
             _closeFileLoadPannelButton.onClick.AddListener(OnCloseFileLoad);
             _openViewButton.onClick.AddListener(OnOpenView);
-            _prevButton.onClick.AddListener(OnPrevPage);
-            _nextButton.onClick.AddListener(OnNextPage);
-            _pageSlider.onValueChanged.AddListener(OnSliderChanged);
-            _pageInputField.onEndEdit.AddListener(OnPageInputChanged);
-            _closeViewPannelButton.onClick.AddListener(OnCloseView);
+
+            // 오버레이 버튼
             _endPresentButton.onClick.AddListener(OnEndPresent);
             _saveButton.onClick.AddListener(OnSave);
+            _closeViewButton.onClick.AddListener(OnCloseView);
+
+            // PDFViewer 이벤트
+            if (_pdfViewer != null)
+            {
+                _pdfViewer.OnCurrentPageChanged += OnPdfViewerPageChanged;
+                _pdfViewer.OnZoomChanged += OnPdfViewerZoomChanged;
+                _pdfViewer.OnDocumentLoaded += OnPdfDocumentLoaded;
+            }
         }
 
         private void OnDisable()
@@ -66,26 +83,39 @@ namespace MySecondWorld.Network
 
         private void OnDestroy()
         {
+            // FileLoad 패널
             _urlInputField.onValueChanged.RemoveListener(OnUrlInputChanged);
             _localFileSearchButton.onClick.RemoveListener(OnLocalFileSelect);
             _clearLocalFileButton.onClick.RemoveListener(OnClearLocalFile);
             _fileLoadButton.onClick.RemoveListener(OnLoad);
             _closeFileLoadPannelButton.onClick.RemoveListener(OnCloseFileLoad);
             _openViewButton.onClick.RemoveListener(OnOpenView);
-            _prevButton.onClick.RemoveListener(OnPrevPage);
-            _nextButton.onClick.RemoveListener(OnNextPage);
-            _pageSlider.onValueChanged.RemoveListener(OnSliderChanged);
-            _pageInputField.onEndEdit.RemoveListener(OnPageInputChanged);
-            _closeViewPannelButton.onClick.RemoveListener(OnCloseView);
+
+            // 오버레이 버튼
             _endPresentButton.onClick.RemoveListener(OnEndPresent);
             _saveButton.onClick.RemoveListener(OnSave);
+            _closeViewButton.onClick.RemoveListener(OnCloseView);
 
+            // PDFViewer 이벤트
+            if (_pdfViewer != null)
+            {
+                _pdfViewer.OnCurrentPageChanged -= OnPdfViewerPageChanged;
+                _pdfViewer.OnZoomChanged -= OnPdfViewerZoomChanged;
+                _pdfViewer.OnDocumentLoaded -= OnPdfDocumentLoaded;
+            }
+
+            // ScrollRect 이벤트
+            if (_pdfScrollRect != null)
+                _pdfScrollRect.onValueChanged.RemoveListener(OnPdfScrollChanged);
+
+            // Controller 이벤트
             if (_controller != null)
             {
                 _controller.onPresenterChanged -= OnPresenterChanged;
                 _controller.onAllowDownloadChanged -= OnAllowDownloadChanged;
                 _controller.onFileReceived -= OnFileReceived;
                 _controller.onPageChanged -= OnPageChanged;
+                _controller.onZoomChanged -= OnZoomChanged;
             }
         }
 
@@ -98,34 +128,30 @@ namespace MySecondWorld.Network
                 _controller.onAllowDownloadChanged -= OnAllowDownloadChanged;
                 _controller.onFileReceived -= OnFileReceived;
                 _controller.onPageChanged -= OnPageChanged;
+                _controller.onZoomChanged -= OnZoomChanged;
             }
 
             _controller = controller;
             _controller.onPresenterChanged += OnPresenterChanged;
             _controller.onAllowDownloadChanged += OnAllowDownloadChanged;
-            _controller.onFileReceived += OnFileReceived; 
+            _controller.onFileReceived += OnFileReceived;
             _controller.onPageChanged += OnPageChanged;
+            _controller.onZoomChanged += OnZoomChanged;
 
             uint myNetId = Mirror.NetworkClient.localPlayer?.netId ?? 0;
             _isPresenter = _controller.IsPresenter(myNetId);
 
-            // 진입 시 UI 분기
             if (!_controller.HasPresenter)
             {
-                // 발표자 없음 → FileLoadPanel
                 ShowFileLoadPanel();
             }
             else
             {
-                // 발표자 있음 → OpenViewButton만
                 ShowOpenViewButton();
-                // 이미 파일이 있으면 로컬 페이지 초기화
-                if (_controller.FileBuffer != null)
-                    _localPage = _controller.CurrentPage;
             }
         }
 
-        // ──────────────────── 패널 전환 메서드 ────────────────────
+        // ──────────────────── 패널 전환 ────────────────────
         private void ShowFileLoadPanel()
         {
             _fileLoadPanel.SetActive(true);
@@ -140,21 +166,129 @@ namespace MySecondWorld.Network
             _viewPanel.SetActive(false);
         }
 
-        // 관객이 ViewPanel을 열 때 저장 버튼 표시 여부 결정
-        private void ShowViewPanel() 
+        private void ShowViewPanel()
         {
             _fileLoadPanel.SetActive(false);
             _openViewButton.gameObject.SetActive(false);
             _viewPanel.SetActive(true);
 
-            // 발표자/관객에 따라 버튼 표시
             _endPresentButton.gameObject.SetActive(_isPresenter);
             _saveButton.gameObject.SetActive(!_isPresenter && _controller.AllowDownload);
-
-            // 페이지 UI 갱신
-            UpdatePageUI();
+            if (_followPresenterToggle != null)
+                _followPresenterToggle.gameObject.SetActive(!_isPresenter);
         }
 
+        // ──────────────────── PDFViewer 이벤트 — 발표자 동기화 ────────────────────
+        private void OnPdfViewerPageChanged(PDFViewer sender, int oldIdx, int newIdx)
+        {
+            if (_isSyncingFromNetwork) return;
+            if (_isPresenter)
+                _controller.CmdChangePage(newIdx);
+        }
+
+        private void OnPdfViewerZoomChanged(PDFViewer sender, float oldZoom, float newZoom)
+        {
+            if (_isSyncingFromNetwork) return;
+            if (_isPresenter)
+            {
+                _controller.CmdChangeZoom(newZoom);
+                // 줌 변경 시 viewport rect도 갱신 (ScrollRect onValueChanged가 발화 안 될 수 있음)
+                StartCoroutine(SendViewportRectNextFrame());
+            }
+        }
+
+        private IEnumerator SendViewportRectNextFrame()
+        {
+            yield return null; // 줌 후 레이아웃 리빌드 대기
+            if (_isPresenter && _controller != null)
+            {
+                Vector4 viewRect = ComputePageViewportRect();
+                _controller.CmdChangeViewportRect(viewRect);
+            }
+        }
+
+        private void OnPdfDocumentLoaded(PDFViewer sender, PDFDocument document)
+        {
+            if (_controller == null) return;
+
+            // PDFViewer 내부 ScrollRect 캐시 + 발표자면 스크롤 변경 감지 등록
+            if (_pdfScrollRect == null && _pdfViewer.m_Internal != null)
+            {
+                _pdfScrollRect = _pdfViewer.m_Internal.ScrollRect;
+                if (_pdfScrollRect != null)
+                    _pdfScrollRect.onValueChanged.AddListener(OnPdfScrollChanged);
+            }
+
+            // 비동기 로드 완료 후 현재 발표자 상태로 동기화
+            _isSyncingFromNetwork = true;
+            if (_controller.CurrentPage != 0)
+                _pdfViewer.GoToPage(_controller.CurrentPage);
+            if (_controller.ZoomLevel != 1f)
+                _pdfViewer.ZoomFactor = _controller.ZoomLevel;
+            _isSyncingFromNetwork = false;
+        }
+
+        private void OnPdfScrollChanged(Vector2 normalizedPosition)
+        {
+            if (_isSyncingFromNetwork) return;
+            if (!_isPresenter || _controller == null) return;
+
+            Vector4 viewRect = ComputePageViewportRect();
+            _controller.CmdChangeViewportRect(viewRect);
+        }
+
+        /// <summary>
+        /// PDFViewer의 Viewport가 현재 페이지의 어느 영역을 보고 있는지 계산.
+        /// 반환: Vector4(x, y, width, height) — 모두 페이지 기준 0~1 normalized.
+        /// (0,0)=페이지 좌상단 (UI 좌표계, UV 변환은 Controller에서)
+        /// </summary>
+        private Vector4 ComputePageViewportRect()
+        {
+            if (_pdfViewer == null || _pdfViewer.m_Internal == null)
+                return new Vector4(0, 0, 1, 1);
+
+            int pageIndex = _pdfViewer.CurrentPageIndex;
+            RectTransform pageContainer = _pdfViewer.m_Internal.PageContainer;
+            RectTransform viewport = _pdfViewer.m_Internal.Viewport;
+
+            if (pageContainer == null || viewport == null || pageIndex < 0
+                || pageIndex >= pageContainer.childCount)
+                return new Vector4(0, 0, 1, 1);
+
+            RectTransform pageRT = (RectTransform)pageContainer.GetChild(pageIndex);
+
+            // viewport edge = anchoredPosition 기준점에서 pivot 오프셋 적용
+            float viewLeftX = -pageContainer.anchoredPosition.x - viewport.rect.width * 0.5f;
+            float viewTopY = pageContainer.anchoredPosition.y;
+
+            // 페이지의 좌상단 — PageContainer 로컬 좌표
+            float pageTopY = -pageRT.anchoredPosition.y - pageRT.sizeDelta.y * 0.5f;
+            float pageLeftX = pageRT.anchoredPosition.x - pageRT.sizeDelta.x * 0.5f;
+
+            // Viewport 좌상단의 페이지 내 상대 위치
+            float nx = (viewLeftX - pageLeftX) / pageRT.sizeDelta.x;
+            float ny = (viewTopY - pageTopY) / pageRT.sizeDelta.y;
+
+            // Viewport가 보는 페이지 비율
+            float nw = viewport.rect.width / pageRT.sizeDelta.x;
+            float nh = viewport.rect.height / pageRT.sizeDelta.y;
+
+            // clamp — 페이지 밖은 잘라냄
+            nx = Mathf.Clamp(nx, 0f, Mathf.Max(0f, 1f - nw));
+            ny = Mathf.Clamp(ny, 0f, Mathf.Max(0f, 1f - nh));
+            nw = Mathf.Clamp01(nw);
+            nh = Mathf.Clamp01(nh);
+
+           /* Debug.Log($"[ViewRect] nx={nx:F3} ny={ny:F3} nw={nw:F3} nh={nh:F3} " +
+                $"anchoredPos=({pageContainer.anchoredPosition.x:F1},{pageContainer.anchoredPosition.y:F1}) " +
+                $"containerPivot=({pageContainer.pivot.x:F2},{pageContainer.pivot.y:F2}) " +
+                $"viewLT=({viewLeftX:F1},{viewTopY:F1}) " +
+                $"pageLT=({pageLeftX:F1},{pageTopY:F1}) " +
+                $"pageAnchor=({pageRT.anchoredPosition.x:F1},{pageRT.anchoredPosition.y:F1}) " +
+                $"pagePivot=({pageRT.pivot.x:F2},{pageRT.pivot.y:F2})");*/
+
+            return new Vector4(nx, ny, nw, nh);
+        }
 
         // ──────────────────── 이벤트 핸들러 — 파일 로드 ────────────────────
         private void OnLocalFileSelect()
@@ -164,6 +298,7 @@ namespace MySecondWorld.Network
             _localFilePathText.text = _localFilePath;
             _urlInputField.text = "";
         }
+
         private void OnClearLocalFile()
         {
             _localFilePath = null;
@@ -181,106 +316,53 @@ namespace MySecondWorld.Network
 
         private void OnLoad()
         {
-            if (_controller.IsReceiving) return;  // 수신 중이면 무시
+            if (_controller.IsReceiving) return;
 
             bool allowDownload = _allowDownloadToggle.isOn;
 
-            // 로컬 경로가 있으면 로컬 우선
             if (!string.IsNullOrEmpty(_localFilePath))
             {
-                FileType type = FileType.PDF; // TODO: 확장자로 판별
-                // 로컬 파일 로드(`SendFileFromLocalstore`)도 "SendFileFromUrl"와 동일한 타이밍 문제가 있으나,
-                // 동기 호출이라 실제로는 완료 시점이 같아 문제가 없다.
+                FileType type = DetectFileType(_localFilePath);
                 FileChunkSender.SendFileFromLocalstore(_controller, _localFilePath, type, allowDownload);
                 _isPresenter = true;
                 return;
             }
 
-            // 아니면 URL
             string url = _urlInputField.text;
             if (!string.IsNullOrEmpty(url))
             {
-                FileType type = FileType.PDF; // TODO: 확장자로 판별
+                FileType type = DetectFileType(url);
                 StartCoroutine(FileChunkSender.SendFileFromUrl(_controller, url, type, allowDownload));
-                return;
             }
         }
 
-        // ──────────────────── 이벤트 핸들러 — 페이지 조작 ────────────────────
+        // ──────────────────── 이벤트 핸들러 — 뷰어 열기 ────────────────────
         private void OnOpenView()
         {
-            Debug.Log($"[SharedScreenUI] OpenView - TotalPageCount: {_controller.TotalPageCount}, CurrentPage: {_controller.CurrentPage}, FileBuffer null: {_controller.FileBuffer == null}");
+            byte[] buffer = _controller.FileBuffer;
+            if (buffer == null) return;
 
-            // 발표자 현재 페이지에서 시작
-            _localPage = _controller.CurrentPage;
+            if (_controller.CurrentFileType == FileType.PDF)
+            {
+                _pdfViewerObject.SetActive(true);
+                _imageViewPanel?.SetActive(false);
+
+                if (_pdfViewer != null && !_pdfViewer.IsLoaded)
+                {
+                    //_pdfViewer.ShowBookmarksViewer = false;
+                    //_pdfViewer.ShowThumbnailsViewer = false;
+                    _pdfViewer.LoadDocumentFromBuffer(buffer);
+                }
+                // GoToPage는 OnPdfDocumentLoaded 콜백에서 처리
+            }
+            else
+            {
+                _pdfViewerObject?.SetActive(false);
+                _imageViewPanel?.SetActive(true);
+                RenderImageLocal();
+            }
+
             ShowViewPanel();
-            RenderLocal(); // ViewPanel 열 때 현재 페이지 렌더
-        }
-
-        private void OnPrevPage()
-        {
-            if (_isPresenter)
-            {
-                if (_controller.IsReceiving) return;
-                _controller.RequestPrevPage();
-            }
-            else
-            {
-                // 관객: 로컬 독립 조작
-                if (_localPage > 0)
-                {
-                    _localPage--;
-                    RenderLocal();
-                }
-            }
-        }
-
-        private void OnNextPage()
-        {
-            if (_isPresenter)
-            {
-                if (_controller.IsReceiving) return;
-                _controller.RequestNextPage();
-            }
-            else
-            {
-                if (_localPage < _controller.TotalPageCount - 1)
-                {
-                    _localPage++;
-                    RenderLocal();
-                }
-            }
-        }
-
-        private void OnSliderChanged(float value)
-        {
-            int page = Mathf.RoundToInt(value);
-            if (_isPresenter)
-            {
-                _controller.CmdChangePage(page);
-            }
-            else
-            {
-                _localPage = page;
-                RenderLocal();
-            }
-        }
-
-        private void OnPageInputChanged(string text)
-        {
-            // 빈 문자열 크래시 방지
-            if (!int.TryParse(text, out int displayPage)) return;
-            int page = Mathf.Clamp(displayPage - 1, 0, _controller.TotalPageCount - 1); // 표시값 → 내부값
-
-            if (_isPresenter)
-            {
-                _controller.CmdChangePage(page);
-            }
-            else
-            {
-                _localPage = page;
-                RenderLocal();
-            }
         }
 
         // ──────────────────── 이벤트 핸들러 — 닫기/종료/저장 ────────────────────
@@ -291,7 +373,6 @@ namespace MySecondWorld.Network
 
         private void OnCloseView()
         {
-            // ViewPanel만 숨김 (발표/열람 상태 유지)
             ShowOpenViewButton();
         }
 
@@ -299,13 +380,25 @@ namespace MySecondWorld.Network
         {
             _controller.CmdReleasePresenter();
             _isPresenter = false;
+
+            if (_pdfViewer != null && _pdfViewer.IsLoaded)
+                _pdfViewer.CloseDocument();
+
             ShowFileLoadPanel();
         }
 
         private void OnSave()
         {
-            // TODO: 2차 — 파일 저장 다이얼로그
-            Debug.Log("[SharedScreenUI] 저장 기능은 2차 구현 예정");
+            byte[] buffer = _controller.FileBuffer;
+            if (buffer == null) return;
+
+            string fileName = _controller.CurrentFileName;
+            if (string.IsNullOrEmpty(fileName))
+                fileName = "download_" + System.DateTime.Now.ToString("yyyyMMdd_HHmmss");
+
+            string savePath = Path.Combine(Application.persistentDataPath, fileName);
+            File.WriteAllBytes(savePath, buffer);
+            Debug.Log($"[SharedScreenUI] 파일 저장 완료: {savePath}");
         }
 
         // ──────────────────── Controller 이벤트 콜백 ────────────────────
@@ -314,15 +407,16 @@ namespace MySecondWorld.Network
             uint myNetId = Mirror.NetworkClient.localPlayer?.netId ?? 0;
             _isPresenter = (newPresenterId == myNetId);
 
-            // 발표자가 해제되면 관객도 FileLoadPanel으로
             if (newPresenterId == 0)
+            {
+                if (_pdfViewer != null && _pdfViewer.IsLoaded)
+                    _pdfViewer.CloseDocument();
                 ShowFileLoadPanel();
+            }
         }
 
-        // 관객이 ViewPanel을 이미 보고 있는 중에 발표자가 다운로드 허용을 변경했을 때 실시간 갱신
-        private void OnAllowDownloadChanged(bool allowDownload) 
+        private void OnAllowDownloadChanged(bool allowDownload)
         {
-            // 관객의 저장 버튼 갱신
             if (!_isPresenter)
                 _saveButton.gameObject.SetActive(allowDownload);
         }
@@ -331,50 +425,105 @@ namespace MySecondWorld.Network
         {
             uint myNetId = Mirror.NetworkClient.localPlayer?.netId ?? 0;
             _isPresenter = _controller.IsPresenter(myNetId);
-            _localPage = 0;
-            RenderLocal();  // ← 첫 페이지를 _pageImage에 렌더
-            ShowViewPanel();
+
+            // 발표자: 즉시 ViewPanel + PDFViewer 열기
+            // 관객: OpenViewButton만 활성화 (관객이 원할 때 직접 열도록)
+            if (_isPresenter)
+            {
+                if (_controller.CurrentFileType == FileType.PDF)
+                {
+                    if (_controller.FileBuffer == null || _controller.FileBuffer.Length == 0)
+                    {
+                        Debug.LogError($"SharedScreenUI OnFileReceived  FileBuffer가 비어있습니다.");
+                        return;
+                    }
+
+                    _pdfViewerObject.SetActive(true);
+                    _imageViewPanel?.SetActive(false);
+                    StartCoroutine(LoadPdfNextFrame());
+                }
+                else
+                {
+                    _pdfViewerObject?.SetActive(false);
+                    _imageViewPanel?.SetActive(true);
+                    RenderImageLocal();
+                }
+
+                ShowViewPanel();
+            }
+            else
+            {
+                // 관객: 파일 수신 완료 알림 → OpenViewButton만 표시
+                ShowOpenViewButton();
+            }
+        }
+
+        private IEnumerator LoadPdfNextFrame()
+        {
+            yield return null; // PDFViewer 내부 초기화 대기 (Awake/OnEnable/Start)
+            if (_pdfViewer != null && _controller.FileBuffer != null)
+            {
+                //_pdfViewer.ShowBookmarksViewer = false;
+                //_pdfViewer.ShowThumbnailsViewer = false;
+                _pdfViewer.LoadDocumentFromBuffer(_controller.FileBuffer);
+            }
         }
 
         private void OnPageChanged(int page)
         {
-            if (!_isPresenter) return;  // 관객은 독립 조작이니까 무시
-            _localPage = page;
-            RenderLocal();
+            // Quad 동기화는 Controller.RenderToScreen()에서 항상 처리됨
+            // PDFViewer UI 동기화는 "발표자 따라가기" 토글 ON인 관객만
+            if (_isPresenter) return;
+            if (_followPresenterToggle != null && _followPresenterToggle.isOn
+                && _controller.CurrentFileType == FileType.PDF
+                && _pdfViewer != null && _pdfViewer.IsLoaded)
+            {
+                _isSyncingFromNetwork = true;
+                _pdfViewer.GoToPage(page);
+                _isSyncingFromNetwork = false;
+            }
         }
 
+        private void OnZoomChanged(float zoom)
+        {
+            if (_isPresenter) return;
+            if (_followPresenterToggle != null && _followPresenterToggle.isOn
+                && _controller.CurrentFileType == FileType.PDF
+                && _pdfViewer != null && _pdfViewer.IsLoaded)
+            {
+                _isSyncingFromNetwork = true;
+                _pdfViewer.ZoomFactor = zoom;
+                _isSyncingFromNetwork = false;
+            }
+        }
 
-        // ──────────────────── 로컬 렌더 + 페이지 UI 갱신 ────────────────────
-        private void RenderLocal()
+        // ──────────────────── 이미지 렌더 + 유틸 ────────────────────
+        private void RenderImageLocal()
         {
             byte[] buffer = _controller.FileBuffer;
-            if (buffer == null) return;
+            if (buffer == null || _imageView == null) return;
 
-            Texture2D tex = SharedScreenRenderer.Render(buffer, _controller.CurrentFileType, _localPage);
+            Texture2D tex = SharedScreenRenderer.Render(buffer, FileType.Image, 0);
             if (tex != null)
             {
-                // 이전 텍스처 해제
-                if (_pageImage.texture != null)
-                {
-                    Destroy(_pageImage.texture);
-                    _pageImage.texture = null;
-                }
-
-                _pageImage.texture = tex;
+                if (_imageView.texture != null)
+                    Destroy(_imageView.texture);
+                _imageView.texture = tex;
+                if (_imageAspectFitter != null)
+                    _imageAspectFitter.aspectRatio = (float)tex.width / tex.height;
             }
-
-            UpdatePageUI();
         }
 
-        private void UpdatePageUI()
+        private static FileType DetectFileType(string path)
         {
-            int page = _isPresenter ? _controller.CurrentPage : _localPage;
-            int total = _controller.TotalPageCount;
-
-            _pageSlider.maxValue = Mathf.Max(0, total - 1);
-            _pageSlider.SetValueWithoutNotify(page);
-            _pageInputField.SetTextWithoutNotify((page + 1).ToString()); // 표시는 1부터
-            _totalPageText.text = $"/ {total}";
+            string ext = Path.GetExtension(path).ToLowerInvariant();
+            switch (ext)
+            {
+                case ".jpg": case ".jpeg": case ".png": case ".gif": case ".bmp": case ".webp":
+                    return FileType.Image;
+                default:
+                    return FileType.PDF;
+            }
         }
     }
 }

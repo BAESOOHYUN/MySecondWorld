@@ -22,9 +22,9 @@ namespace MySecondWorld.Network
             }   
         }
 
-        public static Texture2D Render(PDFDocument cachedDoc, int pageIndex)
+        public static Texture2D Render(PDFDocument cachedDoc, int pageIndex, int resolution = 1024)
         {
-            return RenderPDF(cachedDoc, pageIndex);
+            return RenderPDF(cachedDoc, pageIndex, resolution);
         }
 
         // 내부 헬퍼
@@ -37,27 +37,54 @@ namespace MySecondWorld.Network
 
         private static Texture2D RenderPDF(byte[] pdfBytes, int pageIndex)
         {
-            using (PDFDocument doc = new PDFDocument(pdfBytes)) // byte[]로 PDF 문서 열기
+            using (PDFDocument doc = new PDFDocument(pdfBytes))
             {
-                PDFPage page = doc.GetPage(pageIndex); // 해당 페이지 가져오기
-                using (PDFRenderer renderer = new PDFRenderer()) // IDisposable이면 통과, 아니면 컴파일 에러
+                PDFPage page = doc.GetPage(pageIndex);
+                Vector2 pageSize = page.GetPageSize(1f);
+
+                int texW, texH;
+                if (pageSize.x >= pageSize.y)
                 {
-                    Texture2D tex = renderer.RenderPageToTexture(page, 1024, 1024); // 페이지를 Texture2D로 렌더
-                    page.Dispose(); // 리소스 정리. 네이티브 리소스라서 Dispose() 필수.
-                                    // doc.Dispose()는 using으로 감싸져서 지워도 됨.
+                    texW = 1024;
+                    texH = Mathf.RoundToInt(1024 * (pageSize.y / pageSize.x));
+                }
+                else
+                {
+                    texH = 1024;
+                    texW = Mathf.RoundToInt(1024 * (pageSize.x / pageSize.y));
+                }
+
+                using (PDFRenderer renderer = new PDFRenderer())
+                {
+                    Texture2D tex = renderer.RenderPageToTexture(page, texW, texH);
+                    page.Dispose();
                     return tex;
                 }
             }
         }
 
-        private static Texture2D RenderPDF(PDFDocument doc, int pageIndex)
+        private static Texture2D RenderPDF(PDFDocument doc, int pageIndex, int resolution = 1024)
         {
             PDFPage page = doc.GetPage(pageIndex);
+            Vector2 pageSize = page.GetPageSize(1f);
+
+            // 페이지 비율에 맞춘 텍스처 해상도 계산
+            int texW, texH;
+            if (pageSize.x >= pageSize.y)
+            {
+                texW = resolution;
+                texH = Mathf.RoundToInt(resolution * (pageSize.y / pageSize.x));
+            }
+            else
+            {
+                texH = resolution;
+                texW = Mathf.RoundToInt(resolution * (pageSize.x / pageSize.y));
+            }
+
             using (PDFRenderer renderer = new PDFRenderer())
             {
-                Texture2D tex = renderer.RenderPageToTexture(page, 1024, 1024);
+                Texture2D tex = renderer.RenderPageToTexture(page, texW, texH);
                 page.Dispose();
-                // doc.Dispose() 호출하지 않음 — 소유권은 Controller
                 return tex;
             }
         }
