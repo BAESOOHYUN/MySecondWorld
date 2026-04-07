@@ -33,6 +33,7 @@ namespace MySecondWorld.Network
         {
             OnAuthenticated = null;
             OnDisconnected = null;
+            playerNames.Clear();
         }
 
         public static event Action OnAuthenticated;
