@@ -346,6 +346,7 @@ namespace MySecondWorld.Network
         [TargetRpc]
         private void TargetRpcZoomChanged(NetworkConnection target, float zoom)
         {
+            RenderToScreen(_currentPage);
             ApplyQuadZoom();
             onZoomChanged?.Invoke(zoom);
         }
@@ -397,8 +398,16 @@ namespace MySecondWorld.Network
             if (_receiveBuffer == null)
                 return;
 
-            // 전체 페이지를 고정 해상도로 렌더 (줌은 UV로 처리)
             Texture2D tex;
+            //줌 반영 방식 → 고해상도 품질, 발표자 줌 동기화에 적합하지만 성능 부담 있음
+            //int resolution = Mathf.RoundToInt(1024 * Mathf.Clamp(_zoomLevel, 1f, 4f));
+            //if (_fileType == FileType.PDF && _cachedPdfDocument != null)
+            //    tex = SharedScreenRenderer.Render(_cachedPdfDocument, page, resolution);
+            //else
+            //    tex = SharedScreenRenderer.Render(_receiveBuffer, _fileType, page);
+
+            // 고정 해상도 방식 → 성능 안정적, 단순히 화면 확대/축소만 하지만 화질 저하가 생김.
+            // 전체 페이지를 고정 해상도로 렌더 (줌은 UV로 처리)
             if (_fileType == FileType.PDF && _cachedPdfDocument != null)
                 tex = SharedScreenRenderer.Render(_cachedPdfDocument, page, 1024);
             else
@@ -443,14 +452,13 @@ namespace MySecondWorld.Network
             if (_screenRenderer == null) return;
             Material mat = _screenRenderer.material;
 
-            float vx = _viewportRect.x; // 페이지 내 좌측 (0~1)
-            float vy = _viewportRect.y; // 페이지 내 상단 (0~1, UI 좌표: 위→아래)
-            float vw = _viewportRect.z; // viewport 가로 비율
-            float vh = _viewportRect.w; // viewport 세로 비율
+            // Quad UV는 0~1 범위만 유효 — 페이지 경계 스크롤 시 ny가 범위 밖일 수 있으므로 클램프
+            float vx = Mathf.Clamp01(_viewportRect.x);
+            float vy = Mathf.Clamp(_viewportRect.y, 0f, Mathf.Max(0f, 1f - _viewportRect.w));
+            float vw = Mathf.Clamp01(_viewportRect.z);
+            float vh = Mathf.Clamp01(_viewportRect.w);
 
             // UV Y 반전: UI (0=상단) → UV (0=하단)
-            // UI에서 vy가 상단, vy+vh가 하단
-            // UV에서는 (1-vy-vh)가 하단 시작점
             float uvOffsetY = 1f - vy - vh;
 
             mat.mainTextureScale = new Vector2(vw, vh);

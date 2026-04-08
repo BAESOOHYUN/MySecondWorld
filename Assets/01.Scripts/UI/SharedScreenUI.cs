@@ -51,6 +51,8 @@ namespace MySecondWorld.Network
         private string _localFilePath;
         private bool _isSyncingFromNetwork; // 무한루프 방지 플래그
         private ScrollRect _pdfScrollRect;  // PDFViewer 내부 ScrollRect 캐시
+        private Coroutine _pageZoomCoroutine;  // 페이지/줌 동기화 코루틴
+        private Coroutine _scrollCoroutine;    // 스크롤 위치 동기화 코루틴 (페이지 코루틴과 독립)
 
         private void Awake()
         {
@@ -66,6 +68,8 @@ namespace MySecondWorld.Network
             _endPresentButton.onClick.AddListener(OnEndPresent);
             _saveButton.onClick.AddListener(OnSave);
             _closeViewButton.onClick.AddListener(OnCloseView);
+            _followPresenterToggle.onValueChanged.AddListener(OnFollowPresenterToggleChanged);
+            _followPresenterToggle.isOn = true;
 
             // PDFViewer 이벤트
             if (_pdfViewer != null)
@@ -74,6 +78,7 @@ namespace MySecondWorld.Network
                 _pdfViewer.OnZoomChanged += OnPdfViewerZoomChanged;
                 _pdfViewer.OnDocumentLoaded += OnPdfDocumentLoaded;
             }
+
         }
 
         private void OnDisable()
@@ -116,6 +121,8 @@ namespace MySecondWorld.Network
                 _controller.onFileReceived -= OnFileReceived;
                 _controller.onPageChanged -= OnPageChanged;
                 _controller.onZoomChanged -= OnZoomChanged;
+                _controller.onViewportRectChanged -= OnViewportRectChanged;
+
             }
         }
 
@@ -129,6 +136,7 @@ namespace MySecondWorld.Network
                 _controller.onFileReceived -= OnFileReceived;
                 _controller.onPageChanged -= OnPageChanged;
                 _controller.onZoomChanged -= OnZoomChanged;
+                _controller.onViewportRectChanged -= OnViewportRectChanged;
             }
 
             _controller = controller;
@@ -137,6 +145,7 @@ namespace MySecondWorld.Network
             _controller.onFileReceived += OnFileReceived;
             _controller.onPageChanged += OnPageChanged;
             _controller.onZoomChanged += OnZoomChanged;
+            _controller.onViewportRectChanged += OnViewportRectChanged;
 
             uint myNetId = Mirror.NetworkClient.localPlayer?.netId ?? 0;
             _isPresenter = _controller.IsPresenter(myNetId);
@@ -175,7 +184,9 @@ namespace MySecondWorld.Network
             _endPresentButton.gameObject.SetActive(_isPresenter);
             _saveButton.gameObject.SetActive(!_isPresenter && _controller.AllowDownload);
             if (_followPresenterToggle != null)
+            {
                 _followPresenterToggle.gameObject.SetActive(!_isPresenter);
+            }
         }
 
         // ──────────────────── PDFViewer 이벤트 — 발표자 동기화 ────────────────────
@@ -211,7 +222,7 @@ namespace MySecondWorld.Network
         {
             if (_controller == null) return;
 
-            // PDFViewer 내부 ScrollRect 캐시 + 발표자면 스크롤 변경 감지 등록
+            // PDFViewer 내부 ScrollRect 캐시 + 스크롤 변경 감지 등록
             if (_pdfScrollRect == null && _pdfViewer.m_Internal != null)
             {
                 _pdfScrollRect = _pdfViewer.m_Internal.ScrollRect;
@@ -219,14 +230,14 @@ namespace MySecondWorld.Network
                     _pdfScrollRect.onValueChanged.AddListener(OnPdfScrollChanged);
             }
 
-            // 비동기 로드 완료 후 현재 발표자 상태로 동기화
-            _isSyncingFromNetwork = true;
-            if (_controller.CurrentPage != 0)
-                _pdfViewer.GoToPage(_controller.CurrentPage);
-            if (_controller.ZoomLevel != 1f)
-                _pdfViewer.ZoomFactor = _controller.ZoomLevel;
-            _isSyncingFromNetwork = false;
+            // 비동기 로드 완료 후 발표자 상태로 동기화 (코루틴으로 순서 보장)
+            StartPageZoomCoroutine(SyncFromPresenterCoroutine(
+                _controller.CurrentPage,
+                _controller.ZoomLevel,
+                _controller.ViewportRect
+            ));
         }
+
 
         private void OnPdfScrollChanged(Vector2 normalizedPosition)
         {
@@ -273,19 +284,20 @@ namespace MySecondWorld.Network
             float nw = viewport.rect.width / pageRT.sizeDelta.x;
             float nh = viewport.rect.height / pageRT.sizeDelta.y;
 
-            // clamp — 페이지 밖은 잘라냄
+            // X축만 클램프 (페이지 좌우 밖은 의미 없음)
+            // Y축은 클램프하지 않음 — 페이지 경계 스크롤 시 ny > 1 또는 ny < 0 가능
+            // 관객 측에서 anchoredPosition으로 역산하므로 경계면도 정확히 재현됨
             nx = Mathf.Clamp(nx, 0f, Mathf.Max(0f, 1f - nw));
-            ny = Mathf.Clamp(ny, 0f, Mathf.Max(0f, 1f - nh));
             nw = Mathf.Clamp01(nw);
             nh = Mathf.Clamp01(nh);
 
-           /* Debug.Log($"[ViewRect] nx={nx:F3} ny={ny:F3} nw={nw:F3} nh={nh:F3} " +
-                $"anchoredPos=({pageContainer.anchoredPosition.x:F1},{pageContainer.anchoredPosition.y:F1}) " +
-                $"containerPivot=({pageContainer.pivot.x:F2},{pageContainer.pivot.y:F2}) " +
-                $"viewLT=({viewLeftX:F1},{viewTopY:F1}) " +
-                $"pageLT=({pageLeftX:F1},{pageTopY:F1}) " +
-                $"pageAnchor=({pageRT.anchoredPosition.x:F1},{pageRT.anchoredPosition.y:F1}) " +
-                $"pagePivot=({pageRT.pivot.x:F2},{pageRT.pivot.y:F2})");*/
+            /* Debug.Log($"[ViewRect] nx={nx:F3} ny={ny:F3} nw={nw:F3} nh={nh:F3} " +
+                 $"anchoredPos=({pageContainer.anchoredPosition.x:F1},{pageContainer.anchoredPosition.y:F1}) " +
+                 $"containerPivot=({pageContainer.pivot.x:F2},{pageContainer.pivot.y:F2}) " +
+                 $"viewLT=({viewLeftX:F1},{viewTopY:F1}) " +
+                 $"pageLT=({pageLeftX:F1},{pageTopY:F1}) " +
+                 $"pageAnchor=({pageRT.anchoredPosition.x:F1},{pageRT.anchoredPosition.y:F1}) " +
+                 $"pagePivot=({pageRT.pivot.x:F2},{pageRT.pivot.y:F2})");*/
 
             return new Vector4(nx, ny, nw, nh);
         }
@@ -349,10 +361,10 @@ namespace MySecondWorld.Network
 
                 if (_pdfViewer != null && !_pdfViewer.IsLoaded)
                 {
-                    //_pdfViewer.ShowBookmarksViewer = false;
-                    //_pdfViewer.ShowThumbnailsViewer = false;
-                    _pdfViewer.LoadDocumentFromBuffer(buffer);
+                    // 최초 로드만 — 1프레임 대기 후 로드 (BookMark/Thumbnail 초기화 대기)
+                    StartCoroutine(LoadPdfNextFrame());
                 }
+                // 이미 로드된 상태면 활성화만으로 충분 (Document 유지)
                 // GoToPage는 OnPdfDocumentLoaded 콜백에서 처리
             }
             else
@@ -374,6 +386,7 @@ namespace MySecondWorld.Network
         private void OnCloseView()
         {
             ShowOpenViewButton();
+            // CloseDocument 하지 않음 — Document 유지, 다시 열 때 재로드 불필요
         }
 
         private void OnEndPresent()
@@ -463,6 +476,7 @@ namespace MySecondWorld.Network
             yield return null; // PDFViewer 내부 초기화 대기 (Awake/OnEnable/Start)
             if (_pdfViewer != null && _controller.FileBuffer != null)
             {
+                // 시작시 LeftPanel 닫는 용도. 나중의 기획 변경을 위해 남겨둠.
                 //_pdfViewer.ShowBookmarksViewer = false;
                 //_pdfViewer.ShowThumbnailsViewer = false;
                 _pdfViewer.LoadDocumentFromBuffer(_controller.FileBuffer);
@@ -472,30 +486,181 @@ namespace MySecondWorld.Network
         private void OnPageChanged(int page)
         {
             // Quad 동기화는 Controller.RenderToScreen()에서 항상 처리됨
-            // PDFViewer UI 동기화는 "발표자 따라가기" 토글 ON인 관객만
+            // 스크롤 경계 넘기에 의한 페이지 변경은 OnViewportRectChanged에서 통합 처리
+            // 여기서는 prev/next 버튼에 의한 페이지 이동 시 줌만 동기화
             if (_isPresenter) return;
-            if (_followPresenterToggle != null && _followPresenterToggle.isOn
-                && _controller.CurrentFileType == FileType.PDF
-                && _pdfViewer != null && _pdfViewer.IsLoaded)
+            if (!IsFollowingPresenter()) return;
+
+            // 진행 중인 스크롤 코루틴 정리 (경계면 충돌 방지)
+            if (_scrollCoroutine != null)
             {
-                _isSyncingFromNetwork = true;
-                _pdfViewer.GoToPage(page);
-                _isSyncingFromNetwork = false;
+                StopCoroutine(_scrollCoroutine);
+                _scrollCoroutine = null;
+                if (_pdfScrollRect != null) _pdfScrollRect.enabled = true;
             }
+
+            StartPageZoomCoroutine(SyncPageZoomCoroutine(page, _controller.ZoomLevel));
         }
 
         private void OnZoomChanged(float zoom)
         {
             if (_isPresenter) return;
-            if (_followPresenterToggle != null && _followPresenterToggle.isOn
-                && _controller.CurrentFileType == FileType.PDF
-                && _pdfViewer != null && _pdfViewer.IsLoaded)
-            {
-                _isSyncingFromNetwork = true;
-                _pdfViewer.ZoomFactor = zoom;
-                _isSyncingFromNetwork = false;
-            }
+            if (!IsFollowingPresenter()) return;
+
+            StartPageZoomCoroutine(SyncPageZoomCoroutine(_controller.CurrentPage, zoom));
         }
+
+        private void OnViewportRectChanged(Vector4 rect)
+        {
+            if (_isPresenter) return;
+            if (!IsFollowingPresenter()) return;
+
+            // 스크롤만 적용 — _pageZoomCoroutine과 독립 슬롯 사용
+            StartScrollCoroutine(SyncScrollCoroutine(_controller.CurrentPage, rect));
+        }
+
+        // 토글 on 시 발표자의 현재 상태를 가져와서 즉시 동기화
+        private void OnFollowPresenterToggleChanged(bool isOn)
+        {
+            if (_isPresenter || !isOn) return;
+            if (!IsFollowingPresenter()) return;
+
+            // 토글 ON: 전체 상태를 순서대로 맞춤 (페이지→줌→스크롤)
+            StartPageZoomCoroutine(SyncFromPresenterCoroutine(
+                _controller.CurrentPage,
+                _controller.ZoomLevel,
+                _controller.ViewportRect
+            ));
+        }
+
+        private bool IsFollowingPresenter()
+        {
+            return _followPresenterToggle != null && _followPresenterToggle.isOn
+                && _controller != null
+                && _controller.CurrentFileType == FileType.PDF
+                && _pdfViewer != null && _pdfViewer.IsLoaded;
+        }
+
+        // 페이지/줌 코루틴 슬롯 — 스크롤 코루틴을 취소하지 않음
+        private void StartPageZoomCoroutine(IEnumerator routine)
+        {
+            if (_pageZoomCoroutine != null)
+                StopCoroutine(_pageZoomCoroutine);
+            _pageZoomCoroutine = StartCoroutine(routine);
+        }
+
+        // 스크롤 코루틴 슬롯 — 페이지/줌 코루틴을 취소하지 않음
+        private void StartScrollCoroutine(IEnumerator routine)
+        {
+            if (_scrollCoroutine != null)
+                StopCoroutine(_scrollCoroutine);
+            _scrollCoroutine = StartCoroutine(routine);
+        }
+
+        // 페이지 + 줌만 동기화
+        private IEnumerator SyncPageZoomCoroutine(int page, float zoom)
+        {
+            _isSyncingFromNetwork = true;
+
+            if (_pdfViewer.CurrentPageIndex != page)
+            {
+                _pdfViewer.GoToPage(page);
+                yield return null;
+            }
+
+            if (!Mathf.Approximately(_pdfViewer.ZoomFactor, zoom))
+            {
+                _pdfViewer.ZoomFactor = zoom;
+                yield return null;
+            }
+
+            _isSyncingFromNetwork = false;
+            _pageZoomCoroutine = null;
+        }
+
+        // 스크롤 위치 동기화 — GoToPage 없이 anchoredPosition만 직접 조작
+        // GoToPage는 내부 레이아웃 리셋 + 페이지 상단 점프를 유발하므로 사용하지 않음.
+        // pageContainer는 모든 페이지를 세로로 나열하므로 anchoredPosition만으로 경계면 포함 어디든 이동 가능.
+        private IEnumerator SyncScrollCoroutine(int page, Vector4 viewportRect)
+        {
+            _isSyncingFromNetwork = true;
+
+            // ScrollRect 비활성화 → anchoredPosition 직접 조작 → 1프레임 대기 → 재활성화
+            if (_pdfScrollRect != null) _pdfScrollRect.enabled = false;
+            ApplyScrollFromViewportRect(page, viewportRect);
+            yield return null;
+            if (_pdfScrollRect != null) _pdfScrollRect.enabled = true;
+
+            _isSyncingFromNetwork = false;
+            _scrollCoroutine = null;
+        }
+
+        /// <summary>
+        /// 페이지 → 줌 → 스크롤 순서로 전체 동기화. 토글 ON 시 또는 문서 로드 완료 시 사용.
+        /// </summary>
+        private IEnumerator SyncFromPresenterCoroutine(int page, float zoom, Vector4 viewportRect)
+        {
+            _isSyncingFromNetwork = true;
+
+            if (_pdfViewer.CurrentPageIndex != page)
+            {
+                _pdfViewer.GoToPage(page);
+                yield return null;
+            }
+
+            if (!Mathf.Approximately(_pdfViewer.ZoomFactor, zoom))
+            {
+                _pdfViewer.ZoomFactor = zoom;
+                yield return null;
+            }
+
+            // ScrollRect 비활성화 → anchoredPosition 세팅 → 1프레임 대기 → 재활성화
+            if (_pdfScrollRect != null) _pdfScrollRect.enabled = false;
+            ApplyScrollFromViewportRect(page, viewportRect);
+            yield return null;
+            if (_pdfScrollRect != null) _pdfScrollRect.enabled = true;
+
+            _isSyncingFromNetwork = false;
+            _pageZoomCoroutine = null;
+        }
+
+        /// <summary>
+        /// 발표자의 (page, viewportRect)를 관객 쪽 pageContainer 실제 레이아웃으로 역산해
+        /// pageContainer.anchoredPosition을 직접 조작.
+        ///
+        /// ScrollRect.normalizedPosition 대신 anchoredPosition을 직접 쓰는 이유:
+        /// PDFViewer는 X축 스크롤 가능 범위(containerW - viewportW)가 거의 0이라
+        /// normalizedPosition X가 항상 0으로 고정됨. anchoredPosition으로 직접 이동해야 X축도 동작.
+        /// </summary>
+        /// <summary>
+        /// ComputePageViewportRect의 정확한 역함수.
+        /// Compute: ny = (containerY - pageTopY) / pageH, pageTopY = -anchoredY - h*0.5
+        /// Compute: nx = (viewLeftX - pageLeftX) / pageW, viewLeftX = -containerX - viewportW*0.5
+        /// </summary>
+        private void ApplyScrollFromViewportRect(int page, Vector4 viewportRect)
+        {
+            if (_pdfScrollRect == null || _pdfViewer.m_Internal == null) return;
+
+            RectTransform pageContainer = _pdfViewer.m_Internal.PageContainer;
+            RectTransform viewport = _pdfViewer.m_Internal.Viewport;
+
+            if (pageContainer == null || viewport == null
+                || page < 0 || page >= pageContainer.childCount) return;
+
+            RectTransform pageRT = (RectTransform)pageContainer.GetChild(page);
+
+            // Y축 역산: containerY = ny * pageH + pageTopY
+            // pageTopY는 ComputePageViewportRect와 동일한 공식 사용
+            float pageTopY = -pageRT.anchoredPosition.y - pageRT.sizeDelta.y * 0.5f;
+            float targetContainerY = viewportRect.y * pageRT.sizeDelta.y + pageTopY;
+
+            // X축 역산: containerX = -(nx * pageW + pageLeftX + viewportW * 0.5)
+            float pageLeftX = pageRT.anchoredPosition.x - pageRT.sizeDelta.x * 0.5f;
+            float targetContainerX = -(viewportRect.x * pageRT.sizeDelta.x + pageLeftX + viewport.rect.width * 0.5f);
+
+            pageContainer.anchoredPosition = new Vector2(targetContainerX, targetContainerY);
+        }
+
 
         // ──────────────────── 이미지 렌더 + 유틸 ────────────────────
         private void RenderImageLocal()
@@ -519,7 +684,12 @@ namespace MySecondWorld.Network
             string ext = Path.GetExtension(path).ToLowerInvariant();
             switch (ext)
             {
-                case ".jpg": case ".jpeg": case ".png": case ".gif": case ".bmp": case ".webp":
+                case ".jpg":
+                case ".jpeg":
+                case ".png":
+                case ".gif":
+                case ".bmp":
+                case ".webp":
                     return FileType.Image;
                 default:
                     return FileType.PDF;
