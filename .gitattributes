@@ -48,3 +48,7 @@
 *.lxo filter=lfs diff=lfs merge=lfs -text
 *.so filter=lfs diff=lfs merge=lfs -text
 *.jar filter=lfs diff=lfs merge=lfs -text
+ProjectSettings/InputManager.asset filter=lfs diff=lfs merge=lfs -text
+ProjectSettings/MultiplayerManager.asset filter=lfs diff=lfs merge=lfs -text
+ProjectSettings/PackageManagerSettings.asset filter=lfs diff=lfs merge=lfs -text
+ProjectSettings/TagManager.asset filter=lfs diff=lfs merge=lfs -text
