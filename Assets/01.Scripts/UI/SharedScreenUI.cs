@@ -1,9 +1,10 @@
 using System.Collections;
 using System.IO;
-using Paroxe.PdfRenderer;
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
+using Paroxe.PdfRenderer;
+using SimpleFileBrowser;
 
 namespace MySecondWorld.Network
 {
@@ -20,11 +21,11 @@ namespace MySecondWorld.Network
         [SerializeField] private GameObject _fileLoadPanel;
         [SerializeField] private TMP_InputField _urlInputField;
         [SerializeField] private TMP_Text _localFilePathText;
+        [SerializeField] private Button _closeFileLoadPannelButton;
         [SerializeField] private Button _localFileSearchButton;
-        [SerializeField] private Button _clearLocalFileButton;
+        [SerializeField] private Button _clearLocalFileUrlButton;
         [SerializeField] private Button _fileLoadButton;
         [SerializeField] private Toggle _allowDownloadToggle;
-        [SerializeField] private Button _closeFileLoadPannelButton;
 
         [Header("Open View Button")]
         [SerializeField] private Button _openViewButton;
@@ -59,7 +60,7 @@ namespace MySecondWorld.Network
             // FileLoad 패널
             _urlInputField.onValueChanged.AddListener(OnUrlInputChanged);
             _localFileSearchButton.onClick.AddListener(OnLocalFileSelect);
-            _clearLocalFileButton.onClick.AddListener(OnClearLocalFile);
+            _clearLocalFileUrlButton.onClick.AddListener(OnClearLocalFile);
             _fileLoadButton.onClick.AddListener(OnLoad);
             _closeFileLoadPannelButton.onClick.AddListener(OnCloseFileLoad);
             _openViewButton.onClick.AddListener(OnOpenView);
@@ -91,7 +92,7 @@ namespace MySecondWorld.Network
             // FileLoad 패널
             _urlInputField.onValueChanged.RemoveListener(OnUrlInputChanged);
             _localFileSearchButton.onClick.RemoveListener(OnLocalFileSelect);
-            _clearLocalFileButton.onClick.RemoveListener(OnClearLocalFile);
+            _clearLocalFileUrlButton.onClick.RemoveListener(OnClearLocalFile);
             _fileLoadButton.onClick.RemoveListener(OnLoad);
             _closeFileLoadPannelButton.onClick.RemoveListener(OnCloseFileLoad);
             _openViewButton.onClick.RemoveListener(OnOpenView);
@@ -305,10 +306,12 @@ namespace MySecondWorld.Network
         // ──────────────────── 이벤트 핸들러 — 파일 로드 ────────────────────
         private void OnLocalFileSelect()
         {
-            // TODO: OpenFileDialog로 교체
-            _localFilePath = @"C:\Users\BaeSoohyun\Documents\버킷리스트.pdf";
-            _localFilePathText.text = _localFilePath;
-            _urlInputField.text = "";
+
+#if UNITY_STANDALONE || UNITY_EDITOR
+            OpenWithSimpleFileBrowser();
+#elif UNITY_ANDROID || UNITY_IOS
+            OpenWithNativeFilePicker();
+#endif
         }
 
         private void OnClearLocalFile()
@@ -335,8 +338,12 @@ namespace MySecondWorld.Network
             if (!string.IsNullOrEmpty(_localFilePath))
             {
                 FileType type = DetectFileType(_localFilePath);
+                if (type == FileType.Unknown)
+                {
+                    Debug.LogWarning("지원하지 않는 파일 형식입니다.");
+                    return;
+                }
                 FileChunkSender.SendFileFromLocalstore(_controller, _localFilePath, type, allowDownload);
-                _isPresenter = true;
                 return;
             }
 
@@ -344,6 +351,11 @@ namespace MySecondWorld.Network
             if (!string.IsNullOrEmpty(url))
             {
                 FileType type = DetectFileType(url);
+                if (type == FileType.Unknown)
+                {
+                    Debug.LogWarning("지원하지 않는 파일 형식입니다.");
+                    return;
+                }
                 StartCoroutine(FileChunkSender.SendFileFromUrl(_controller, url, type, allowDownload));
             }
         }
@@ -407,11 +419,31 @@ namespace MySecondWorld.Network
 
             string fileName = _controller.CurrentFileName;
             if (string.IsNullOrEmpty(fileName))
-                fileName = "download_" + System.DateTime.Now.ToString("yyyyMMdd_HHmmss");
-
-            string savePath = Path.Combine(Application.persistentDataPath, fileName);
-            File.WriteAllBytes(savePath, buffer);
-            Debug.Log($"[SharedScreenUI] 파일 저장 완료: {savePath}");
+            {
+                string ext = _controller.CurrentFileType == FileType.PDF ? ".pdf" : ".png";
+                fileName = $"download_{System.DateTime.Now:yyyyMMdd_HHmmss}{ext}";
+            }
+#if UNITY_STANDALONE || UNITY_EDITOR
+            // PC: 저장 위치 직접 선택
+            FileBrowser.ShowSaveDialog(
+                (paths) =>
+                {
+                    File.WriteAllBytes(paths[0], buffer);
+                    Debug.Log($"파일 저장 완료: {paths[0]}");
+                },
+                () => { Debug.Log("Save cancelled"); },
+                FileBrowser.PickMode.Files,
+                false, null, fileName, "Save", "Save");
+#elif UNITY_ANDROID || UNITY_IOS
+              // 모바일: 샌드박스에 임시 저장 후 OS 공유 시트 호출
+              // iOS → "파일에 저장" / AirDrop 등 선택 가능
+              // Android → Downloads / Drive 등 선택 가능
+              string tempPath = Path.Combine(Application.temporaryCachePath, fileName);
+              File.WriteAllBytes(tempPath, buffer);
+              NativeFilePicker.ExportFile(tempPath, (success) => {
+                  Debug.Log(success ? "파일 내보내기 완료" : "파일 내보내기 취소");
+      });
+#endif
         }
 
         // ──────────────────── Controller 이벤트 콜백 ────────────────────
@@ -681,9 +713,15 @@ namespace MySecondWorld.Network
 
         private static FileType DetectFileType(string path)
         {
+            // URL의 쿼리 파라미터 제거
+            int queryIdx = path.IndexOf('?');
+            if (queryIdx >= 0) path = path.Substring(0, queryIdx);
+
             string ext = Path.GetExtension(path).ToLowerInvariant();
             switch (ext)
             {
+                case ".pdf":
+                    return FileType.PDF;
                 case ".jpg":
                 case ".jpeg":
                 case ".png":
@@ -692,8 +730,50 @@ namespace MySecondWorld.Network
                 case ".webp":
                     return FileType.Image;
                 default:
-                    return FileType.PDF;
+                    return FileType.Unknown;  // 알 수 없는 형식은 거부
             }
         }
+
+
+#if UNITY_STANDALONE || UNITY_EDITOR
+        private void OpenWithSimpleFileBrowser()
+        {
+            FileBrowser.SetFilters(true, new FileBrowser.Filter("PDF Files", ".pdf"), new FileBrowser.Filter("Images", ".jpg", ".jpeg", ".png"));
+            FileBrowser.SetDefaultFilter(".pdf");
+            FileBrowser.SetExcludedExtensions(".lnk", ".tmp", ".zip", ".rar", ".exe");
+            FileBrowser.ShowLoadDialog((paths) =>
+            {
+                if (paths.Length > 0)
+                    _localFilePath = paths[0]; // 여기서 대입 가능
+                _localFilePathText.text = _localFilePath; // 콜백 안에서 갱신
+                _urlInputField.text = "";
+            },
+            () => { Debug.Log("Canceled"); },
+            FileBrowser.PickMode.Files, false, null, null, "Select File", "Select");
+        }
+#endif
+
+
+#if UNITY_ANDROID || UNITY_IOS
+        private void OpenWithNativeFilePicker()
+        {
+            string[] fileTypes = new[]
+            {
+                NativeFilePicker.ConvertExtensionToFileType("pdf"),
+                NativeFilePicker.ConvertExtensionToFileType("jpg"),
+                NativeFilePicker.ConvertExtensionToFileType("jpeg"),
+                NativeFilePicker.ConvertExtensionToFileType("png"),
+            };
+            NativeFilePicker.PickFile((path) =>
+            {
+                if (path != null)
+                {
+                    _localFilePath = path;
+                    _localFilePathText.text = path;
+                    _urlInputField.text = "";
+                }
+            }, fileTypes);
+        }
+#endif
     }
 }

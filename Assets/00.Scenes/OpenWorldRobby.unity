@@ -351,50 +351,6 @@ MonoBehaviour:
   _joystickCanvas: {fileID: 5461270312039998053}
   _dynamicCanvasPrefabs:
   - {fileID: 3430903996487739053, guid: cc7d3e2b493c1374d9ebed77d4194e3e, type: 3}
---- !u!1 &138811270
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 138811272}
-  - component: {fileID: 138811271}
-  m_Layer: 0
-  m_Name: GameObject
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &138811271
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 138811270}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ed1a1376692e812468da42cbdc3afc30, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PrefabSpowner
---- !u!4 &138811272
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 138811270}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 161.4802, y: -0.00005, z: 7923.0967}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &147242448
 GameObject:
   m_ObjectHideFlags: 0
@@ -728,8 +684,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: UserName Enter
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 287f66ad2b95f4947bf1e9c3ee0d40dc, type: 2}
-  m_sharedMaterial: {fileID: -4117426090818878790, guid: 287f66ad2b95f4947bf1e9c3ee0d40dc,
+  m_fontAsset: {fileID: 11400000, guid: bb523322fbf789c41b050adaac8b05e1, type: 2}
+  m_sharedMaterial: {fileID: -8006966043069266778, guid: bb523322fbf789c41b050adaac8b05e1,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -754,8 +710,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 40
-  m_fontSizeBase: 40
+  m_fontSize: 30
+  m_fontSizeBase: 30
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -2450,8 +2406,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u200B"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 287f66ad2b95f4947bf1e9c3ee0d40dc, type: 2}
-  m_sharedMaterial: {fileID: -4117426090818878790, guid: 287f66ad2b95f4947bf1e9c3ee0d40dc,
+  m_fontAsset: {fileID: 11400000, guid: bb523322fbf789c41b050adaac8b05e1, type: 2}
+  m_sharedMaterial: {fileID: -8006966043069266778, guid: bb523322fbf789c41b050adaac8b05e1,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -2476,8 +2432,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 40
-  m_fontSizeBase: 40
+  m_fontSize: 30
+  m_fontSizeBase: 30
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -5173,4 +5129,3 @@ SceneRoots:
   - {fileID: 1507210982}
   - {fileID: 84244721}
   - {fileID: 2127877140}
-  - {fileID: 138811272}

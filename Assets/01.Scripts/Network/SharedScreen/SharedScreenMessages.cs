@@ -7,8 +7,9 @@ namespace MySecondWorld.Network
 {
     public enum FileType
     {
-        Image,
-        PDF
+        Unknown,
+        PDF,
+        Image
     }
 
     public struct FileStartMessage : NetworkMessage
