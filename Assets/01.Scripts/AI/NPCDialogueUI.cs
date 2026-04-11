@@ -76,6 +76,7 @@ namespace MySecondWorld.AI
         // ── 열기 / 닫기 ──────────────────────────────────────────────────────────
         public void Open(Action<string> onSubmit, Action onClose)
         {
+            Debug.Log($"[NPCDialogueUI] Open 호출, _dialoguePanel={_dialoguePanel}");
             _onSubmit = onSubmit;
             _onClose = onClose;
 

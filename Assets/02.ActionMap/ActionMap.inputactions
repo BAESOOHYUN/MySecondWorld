@@ -268,7 +268,7 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "Attack",
+                    "name": "Inateract",
                     "type": "Button",
                     "id": "35221d19-36db-4e69-9e76-5d8f24a98685",
                     "expectedControlType": "",
@@ -428,7 +428,18 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Attack",
+                    "action": "Inateract",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "ebf45a44-7ec1-4b5e-92ab-8b2557b3db1d",
+                    "path": "<Keyboard>/#(N)",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Inateract",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

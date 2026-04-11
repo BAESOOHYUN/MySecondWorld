@@ -36,12 +36,27 @@ namespace MySecondWorld.AI
             }
 
             if (interactAction != null)
+            {
                 interactAction.action.performed += OnInteractPerformed;
+                Debug.Log($"[NPCInteractable] Start: interactAction 등록됨 — {interactAction.action.name}, enabled: {interactAction.action.enabled}");
+            }
+            else
+            {
+                Debug.LogWarning($"[NPCInteractable] Start: interactAction이 null입니다. Inspector에서 연결 필요.");
+            }
         }
 
         // ── 입력 등록 ────────────────────────────────────────────────────────────
-        private void OnEnable() => interactAction?.action.Enable();
-        private void OnDisable() => interactAction?.action.Disable();
+        private void OnEnable()
+        {
+            interactAction?.action.Enable();
+            Debug.Log($"[NPCInteractable] OnEnable: action enabled");
+        }
+        private void OnDisable()
+        {
+            interactAction?.action.Disable();
+            Debug.Log($"[NPCInteractable] OnDisable: action disabled");
+        }
 
         private void OnDestroy()
         {
@@ -54,6 +69,7 @@ namespace MySecondWorld.AI
         // ── Trigger 감지 ─────────────────────────────────────────────────────────
         private void OnTriggerEnter(Collider other)
         {
+            Debug.Log($"[NPCInteractable] TriggerEnter: {other.name}, tag: {other.tag}");
             if (other.CompareTag("Player"))
                 _playerInRange = true;
         }
@@ -68,7 +84,9 @@ namespace MySecondWorld.AI
         // ── 상호작용 입력 ────────────────────────────────────────────────────────
         private void OnInteractPerformed(InputAction.CallbackContext ctx)
         {
+            Debug.Log($"[NPCInteractable] OnInteractPerformed, playerInRange: {_playerInRange}");
             if (!_playerInRange) return;
+            if (OnUIChecker.IsInputFieldFocused()) return;
 
             if (!_isDialogueOpen) OpenDialogue();
             else CloseDialogue();
@@ -77,6 +95,7 @@ namespace MySecondWorld.AI
         // ── 대화 열기/닫기 ───────────────────────────────────────────────────────
         private void OpenDialogue()
         {
+            Debug.Log($"[NPCInteractable] OpenDialogue 호출, _dialogueUI={_dialogueUI}");
             _isDialogueOpen = true;
             _cts?.Cancel();
             _cts?.Dispose();
@@ -104,6 +123,7 @@ namespace MySecondWorld.AI
 
         private async UniTaskVoid SendMessageToNPCAsync(string userInput, CancellationToken ct)
         {
+            Debug.Log($"[NPCInteractable] SendMessageToNPCAsync 시작: {userInput}");
             if (_brain == null)
             {
                 Debug.LogError($"[NPCInteractable] {name}: NPCBrain이 null입니다.");
@@ -122,6 +142,10 @@ namespace MySecondWorld.AI
             _dialogueUI?.SetInputEnabled(true);
         }
 
-        private void OnCloseRequest() => CloseDialogue();
+        private void OnCloseRequest()
+        {
+            Debug.Log($"[NPCInteractable] OnCloseRequest 호출");
+            CloseDialogue();
+        }
     }
 }

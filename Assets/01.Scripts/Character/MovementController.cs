@@ -33,7 +33,7 @@ namespace MySecondWorld.Move
         public InputAxis MoveX = InputAxis.DefaultMomentary;
         public InputAxis MoveY = InputAxis.DefaultMomentary;
         public InputAxis Jump = InputAxis.DefaultMomentary;
-        public InputAxis Attack = InputAxis.DefaultMomentary;
+        public InputAxis Interact = InputAxis.DefaultMomentary;
 
         private Vector3 _inputDirection;
         private Vector3 _moveDirection; // 수평 이동 벡터 (JoyStickMove에서 계산, Gravity에서 사용)
@@ -76,7 +76,7 @@ namespace MySecondWorld.Move
             axes.Add(new() { DrivenAxis = () => ref MoveX, Name = nameof(MoveX), Hint = IInputAxisOwner.AxisDescriptor.Hints.X });
             axes.Add(new() { DrivenAxis = () => ref MoveY, Name = nameof(MoveY), Hint = IInputAxisOwner.AxisDescriptor.Hints.Y });
             axes.Add(new() { DrivenAxis = () => ref Jump, Name = nameof(Jump) });
-            axes.Add(new() { DrivenAxis = () => ref Attack, Name = nameof(Attack) });
+            axes.Add(new() { DrivenAxis = () => ref Interact, Name = nameof(Interact) });
         }
 
         private void JoyStickMove()

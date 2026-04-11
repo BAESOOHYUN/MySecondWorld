@@ -36,6 +36,7 @@ namespace MySecondWorld.AI
         private void Start()
         {
             _memory?.Load(NpcNameKey);
+            Debug.Log($"[NPCBrain] Start: _llmAgent={_llmAgent}, _systemPrompt={_systemPrompt}, _memory={_memory}");
 
             if (_llmAgent == null)
             {
@@ -45,6 +46,7 @@ namespace MySecondWorld.AI
 
             // systemPrompt 주입 — 대화 세션 시작 전에 설정해야 히스토리 컨텍스트가 보존됨
             _llmAgent.systemPrompt = BuildSystemPromptWithFacts();
+            Debug.Log($"[NPCBrain] systemPrompt 주입 완료: {_llmAgent.systemPrompt}");
         }
 
         // ── 시스템 프롬프트 빌드 ─────────────────────────────────────────────────
@@ -70,14 +72,16 @@ namespace MySecondWorld.AI
         public async UniTask<string> GenerateResponseAsync(
             string userInput, CancellationToken ct = default)
         {
+            Debug.Log($"[NPCBrain] GenerateResponseAsync 시작: isReady={_isReady}, input={userInput}");
             if (!_isReady)
             {
-                Debug.LogWarning("[NPCBrain] LLMAgent가 아직 준비되지 않았습니다.");
+                Debug.LogWarning($"[NPCBrain] LLMAgent가 아직 준비되지 않았습니다. _llmAgent={_llmAgent}, llmAgent={_llmAgent?.llmAgent}");
                 return string.Empty;
             }
 
             ct.Register(() => _llmAgent.CancelRequests());
             string response = await _llmAgent.Chat(userInput).AsUniTask().AttachExternalCancellation(ct);
+            Debug.Log($"[NPCBrain] 응답 수신: {response}");
 
             if (this == null) return string.Empty;
 
