@@ -129,7 +129,13 @@ crashlytics-build.properties
 .history
 .ionide
 
+# Temporary streaming assets (will be replaced by Addressables)
+/Assets/StreamingAssets/*.dll
+/Assets/StreamingAssets/*.so
+/Assets/StreamingAssets/
 
+# Gemma GGUF 모델 파일
+*.gguf
 
 
 
