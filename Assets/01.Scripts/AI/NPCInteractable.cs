@@ -15,7 +15,7 @@ namespace MySecondWorld.AI
     [RequireComponent(typeof(Collider))]
     public class NPCInteractable : MonoBehaviour
     {
-        #region ── 상태 머신 정의 ────────────────────────────────────────────────────────
+        #region 상태 머신 정의
         private enum NpcState
         {
             Idle,        // 아무것도 안 하는 상태
@@ -82,7 +82,7 @@ namespace MySecondWorld.AI
         private CancellationTokenSource _cts;
         #endregion
 
-        #region ── 대기 중인 입력 ────────────────────────────────────────────────────────
+        #region 캐싱
         // Submit 트리거와 실제 텍스트를 동시에 전달할 방법이 없으므로 필드에 임시 보관한다.
         // Stateless의 Fire()는 파라미터를 받는 오버로드가 있지만 OnEntry가 아니라 OnEntryFrom 을 써야 하고, SetTriggerParameters로 미리 등록해야 한다.
         // 나중에 진입 경로가 늘어나면 OnEntryFrom을 여러 개 써야 하고, 각각 다른 파라미터 타입을 처리해야 한다.
@@ -91,7 +91,7 @@ namespace MySecondWorld.AI
         private (string npcName, string response) _pendingResponse;  // C# 튜플 문법. 여러 값을 하나로 묶어서 들고 다닐 수 있다.
         #endregion
 
-        #region ── 초기화 검증 ──────────────────────────────────────────────────────────
+        #region 초기화 검증
         private void Start()
         {
             if (_brain == null)
@@ -122,13 +122,14 @@ namespace MySecondWorld.AI
         }
         #endregion
 
-        #region ── 입력 등록 ────────────────────────────────────────────────────────────
+        #region 입력 등록
         private void OnEnable()
         {
             interactAction?.action.Enable();
             cancelAction?.action.Enable();
             Debug.Log($"[NPCInteractable] OnEnable: action enabled");
         }
+
         private void OnDisable()
         {
             interactAction?.action.Disable();
@@ -145,7 +146,7 @@ namespace MySecondWorld.AI
         }
         #endregion
 
-        #region ── Trigger 감지 ─────────────────────────────────────────────────────────
+        #region Trigger 감지
         private void OnTriggerEnter(Collider other)
         {
             if (!other.CompareTag("Player"))
@@ -163,20 +164,7 @@ namespace MySecondWorld.AI
         }
         #endregion
 
-        #region ── 상태 머신 설정 ────────────────────────────────────────────────────────
-
-        // 상태 전이 그래프
-        //            PlayerEntered
-        //   Idle ──────────────────► InRange
-        //     ▲                         │
-        //     │         PlayerLeft      │ Interact
-        //     │◄────────────────────────┘
-        //     │
-        //     │         PlayerLeft / Close
-        //     │◄────────────────────────────── Talking ◄──────────────── Generating
-        //                                         │                           ▲
-        //                                         │ Submit                    │ ResponseReceived
-        //                                         └───────────────────────────┘
+        #region 상태 머신 설정
 
         // Configure(state)                  "이 상태를 어떻게 동작시킬지 설정하는 빌더를 반환한다."
         // Permit(trigger, destinationState) "이 트리거가 발생하면 저 상태로 이동을 허용한다."
@@ -224,7 +212,7 @@ namespace MySecondWorld.AI
         }
         #endregion
 
-        #region ── 상태 진입/이탈 처리 ──────────────────────────────────────────────────
+        #region 상태 진입/이탈 처리
 
         // Idle 진입 시 항상 정리
         private void OnEnterIdle()
@@ -257,7 +245,8 @@ namespace MySecondWorld.AI
                     .Subscribe(_ => SafeFire(NpcTrigger.Close))
                     .AddTo(_cts.Token);
 
-                cancelAction?.action.PerformedAsObservable()
+                cancelAction?.action
+                    .PerformedAsObservable()
                     .AsUnitObservable()
                     .Subscribe(_ => SafeFire(NpcTrigger.Close))
                     .AddTo(_cts.Token);
@@ -268,7 +257,6 @@ namespace MySecondWorld.AI
                 _dialogueUI.ShowResponse(_pendingResponse.npcName, _pendingResponse.response);
                 _dialogueUI.SetInputEnabled(true);
                 _pendingResponse = default;  // 사용 후 초기화
-
             }
         }
 
@@ -276,7 +264,7 @@ namespace MySecondWorld.AI
         // 나가는 경로는 세 개다. 그러나 특별한 정리작업이 없으므로 OnExit은 따로 작성하지 않는다.
         private void OnEnterGenerating()
         {
-            // userInput은 Submit 시 저장해둔 값을 사용한다. (캐싱)
+            // _pendingInput Submit 시 저장해둔 값을 사용한다. (캐싱)
             if (_pendingInput == null)
                 return;
 
@@ -287,7 +275,7 @@ namespace MySecondWorld.AI
         }
         #endregion
 
-        #region ── 입력 처리 ────────────────────────────────────────────────────────────
+        #region 입력 처리
         private void OnPlayerSubmit(string userInput)
         {
             if (string.IsNullOrWhiteSpace(userInput)) 
@@ -306,7 +294,7 @@ namespace MySecondWorld.AI
         }
         #endregion
 
-        #region ── SafeFire: 불가능한 전이는 무시 ──────────────────────────────────────
+        #region SafeFire: 불가능한 전이는 무시
 
         // Stateless는 기본적으로 불가능한 전이 시 예외를 던진다.
         // 예: Idle 상태에서 Close 발생 같은 경쟁 조건 방어.
@@ -328,7 +316,7 @@ namespace MySecondWorld.AI
         }
         #endregion
 
-        #region ── LLM 호출 ─────────────────────────────────────────────────────────────
+        #region LLM 호출
         private async UniTaskVoid SendMessageToNPCAsync(string userInput, CancellationToken ct)
         {
             Debug.Log($"[NPCInteractable] SendMessageToNPCAsync: {userInput}");
