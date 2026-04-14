@@ -5,6 +5,8 @@ using UnityEngine.InputSystem;
 using R3;
 using ReactiveInputSystem;
 using Stateless;
+using MessagePipe;
+using VContainer;
 
 namespace MySecondWorld.AI
 {
@@ -69,8 +71,34 @@ namespace MySecondWorld.AI
 
         #region 필드
         [Header("References")]
-        [SerializeField] private NPCBrain _brain;
+        [SerializeField] private NPCBrain _brain;       // GUID 소스로만 사용
         [SerializeField] private NPCDialogueUI _dialogueUI;
+        // GUID는 NPCBrain → SystemPromptSO에서 읽는다
+        private string NpcGuid => _brain.SystemPrompt?.NpcGuid ?? _brain.name;
+
+        private IPublisher<PlayerMessageSentEvent> _messagePub;
+        // 기존에는 SendMessageToNPCAsync에서 await _brain.GenerateResponseAsync(userInput, ct); 하여 
+        // Generating → Talking 전이 시점을 알 수 있었다. (응답완료 시점에 SafeFire 해줌)
+        // MessagePipe로 바꾸면 응답 완료 시점을 NPCInteractable이 직접 알 수 없다.
+        // 해결책: NPCResponseReceivedEvent를 NPCInteractable도 구독한다. 응답이 도착하면 상태 머신을 Talking으로 전이시킨다.
+        [Inject]
+        private void Construct(
+            IPublisher<PlayerMessageSentEvent> messagePub,
+            ISubscriber<NPCResponseReceivedEvent> responseSub
+            )
+        {
+            _messagePub = messagePub;
+            responseSub
+                .Subscribe(evt =>
+                {
+                    if (evt.NpcGuid != NpcGuid)
+                        return;
+                    // 내부 로직이므로 Fire() (SafeFire가 아님)
+                    if (_stateMachine.CanFire(NpcTrigger.ResponseReceived))
+                        _stateMachine.Fire(NpcTrigger.ResponseReceived);
+                })
+                .AddTo(destroyCancellationToken);
+        }
 
         [Header("Input")]
         [Tooltip("New Input System — 상호작용 액션 (InputAction)")]
@@ -88,19 +116,11 @@ namespace MySecondWorld.AI
         // 나중에 진입 경로가 늘어나면 OnEntryFrom을 여러 개 써야 하고, 각각 다른 파라미터 타입을 처리해야 한다.
         // 복잡해지므로(보일러플레이트 증가) 여기서는 단순하게 필드 방식을 사용한다.
         private string _pendingInput;
-        private (string npcName, string response) _pendingResponse;  // C# 튜플 문법. 여러 값을 하나로 묶어서 들고 다닐 수 있다.
         #endregion
 
         #region 초기화 검증
         private void Start()
         {
-            if (_brain == null)
-            {
-                Debug.LogError($"[NPCInteractable] {name}: NPCBrain이 연결되지 않았습니다. 컴포넌트를 비활성화합니다.");
-                enabled = false;
-                return;
-            }
-
             if (_dialogueUI == null)
             {
                 Debug.LogError($"[NPCInteractable] {name}: NPCDialogueUI이 연결되지 않았습니다. 컴포넌트를 비활성화합니다.");
@@ -234,7 +254,7 @@ namespace MySecondWorld.AI
                 _cts?.Dispose();
                 _cts = new CancellationTokenSource();
 
-                _dialogueUI.Open();
+                _dialogueUI.Open(NpcGuid);
 
                 // R3 구독 — _cts 해제 시 자동으로 함께 해제된다
                 _dialogueUI.OnSubmit
@@ -253,10 +273,9 @@ namespace MySecondWorld.AI
             }
             else if (t.Trigger == NpcTrigger.ResponseReceived)
             {
+                // 이제 NPCDialogueUI가 NPCResponseReceivedEvent를 직접 구독하므로
                 // Generating에서 돌아옴 — 입력만 다시 활성화
-                _dialogueUI.ShowResponse(_pendingResponse.npcName, _pendingResponse.response);
                 _dialogueUI.SetInputEnabled(true);
-                _pendingResponse = default;  // 사용 후 초기화
             }
         }
 
@@ -270,7 +289,7 @@ namespace MySecondWorld.AI
 
             _dialogueUI.SetInputEnabled(false);
             _dialogueUI.ShowThinking();
-            SendMessageToNPCAsync(_pendingInput, _cts.Token).Forget();
+            _messagePub.Publish(new PlayerMessageSentEvent(NpcGuid, _pendingInput));
             _pendingInput = null;
         }
         #endregion
@@ -278,7 +297,7 @@ namespace MySecondWorld.AI
         #region 입력 처리
         private void OnPlayerSubmit(string userInput)
         {
-            if (string.IsNullOrWhiteSpace(userInput)) 
+            if (string.IsNullOrWhiteSpace(userInput))
                 return;
             _pendingInput = userInput;
             _dialogueUI.ClearInput();
@@ -288,7 +307,7 @@ namespace MySecondWorld.AI
         private void OnInteractPerformed(InputAction.CallbackContext ctx)
         {
             Debug.Log($"[NPCInteractable] OnInteractPerformed, state={_stateMachine.State}");
-            if (OnUIChecker.IsInputFieldFocused()) 
+            if (OnUIChecker.IsInputFieldFocused())
                 return;
             SafeFire(NpcTrigger.Interact);
         }
@@ -311,23 +330,8 @@ namespace MySecondWorld.AI
         {
             if (_stateMachine.CanFire(trigger)) // → 현재 상태에서 이 트리거가 Permit 되어 있으면 true
                 _stateMachine.Fire(trigger);
-            else                                
+            else
                 Debug.Log($"[NPCInteractable] 전이 무시: {_stateMachine.State} + {trigger}");
-        }
-        #endregion
-
-        #region LLM 호출
-        private async UniTaskVoid SendMessageToNPCAsync(string userInput, CancellationToken ct)
-        {
-            Debug.Log($"[NPCInteractable] SendMessageToNPCAsync: {userInput}");
-
-            string response = await _brain.GenerateResponseAsync(userInput, ct);
-
-            if (this == null || ct.IsCancellationRequested) 
-                return;
-
-            _pendingResponse = (_brain.SystemPrompt?.NpcName ?? "NPC", response);  // 필드에 보관
-            SafeFire(NpcTrigger.ResponseReceived);
         }
         #endregion
     }

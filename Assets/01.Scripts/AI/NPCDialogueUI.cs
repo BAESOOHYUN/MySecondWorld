@@ -6,6 +6,8 @@ using Cysharp.Text;
 using Cysharp.Threading.Tasks;
 using TMPro;
 using R3;
+using VContainer;
+using MessagePipe;
 
 namespace MySecondWorld.AI
 {
@@ -43,7 +45,36 @@ namespace MySecondWorld.AI
             .Where(t => t.Length > 0);
         public Observable<Unit> OnClose => _closeButton.OnClickAsObservable().AsUnitObservable();
 
-        // ── 필수 참조 검증 ───────────────────────────────────────────────────────
+        private string _currentNpcGuid;
+        private IDisposable _subscriptions;
+
+        [Inject]
+        private void Construct(
+            ISubscriber<NPCResponseReceivedEvent> responseSub,
+            ISubscriber<NPCThinkingStartedEvent> thinkingSub)
+        {
+            responseSub
+                .Subscribe(evt =>
+                {
+                    if (evt.NpcGuid != _currentNpcGuid)
+                        return;
+                    ShowResponse(evt.NpcGuid, evt.Text);
+                    SetInputEnabled(true);
+                })
+                .AddTo(destroyCancellationToken);
+
+            thinkingSub
+                .Subscribe(evt =>
+                {
+                    if (evt.NpcGuid != _currentNpcGuid)
+                        return;
+                    ShowThinking();
+                    SetInputEnabled(false);
+                })
+                .AddTo(destroyCancellationToken);
+        }
+
+        #region 필수 참조 검증
         private void Awake()
         {
             bool valid = true;
@@ -79,12 +110,13 @@ namespace MySecondWorld.AI
                 enabled = false;
             }
         }
+        #endregion
 
-        // ── 열기 / 닫기 ──────────────────────────────────────────────────────────
-        public void Open()
+        #region 열기 / 닫기
+        public void Open(string npcGuid)
         {
             Debug.Log($"[NPCDialogueUI] Open 호출, _dialoguePanel={_dialoguePanel}");
-
+            _currentNpcGuid = npcGuid;
             _dialoguePanel.SetActive(true);
             _playerInputField.text = string.Empty;
             _npcResponseText.text = string.Empty;
@@ -99,8 +131,9 @@ namespace MySecondWorld.AI
             StopTyping();
             _dialoguePanel.SetActive(false);
         }
+        #endregion
 
-        // ── 입력 제어 ────────────────────────────────────────────────────────────
+        #region 입력 제어
         public void SetInputEnabled(bool enabled)
         {
             _playerInputField.interactable = enabled;
@@ -113,8 +146,9 @@ namespace MySecondWorld.AI
         {
             _playerInputField.text = string.Empty;
         }
+        #endregion
 
-        // ── 응답 표시 ────────────────────────────────────────────────────────────
+        #region 응답 표시
         public void ShowThinking()
         {
             StopTyping();
@@ -160,5 +194,6 @@ namespace MySecondWorld.AI
             if (_scrollRect != null)
                 _scrollRect.verticalNormalizedPosition = 0f;
         }
+        #endregion
     }
 }
