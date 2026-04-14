@@ -2,6 +2,8 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using R3;
+using ReactiveInputSystem;
 
 namespace MySecondWorld.AI
 {
@@ -18,8 +20,11 @@ namespace MySecondWorld.AI
         [SerializeField] private NPCDialogueUI _dialogueUI;
 
         [Header("Input")]
-        [Tooltip("New Input System — 상호작용 액션 (예: 'E' 키 또는 터치 탭)")]
+        [Tooltip("New Input System — 상호작용 액션 (InputAction)")]
         public InputActionReference interactAction;
+        [Header("ESC")]
+        [Tooltip("New Input System — 상호작용 액션 (ESC 키 처리)")]
+        public InputActionReference cancelAction;
 
         private bool _playerInRange;
         private bool _isDialogueOpen;
@@ -31,6 +36,13 @@ namespace MySecondWorld.AI
             if (_brain == null)
             {
                 Debug.LogError($"[NPCInteractable] {name}: NPCBrain이 연결되지 않았습니다. 컴포넌트를 비활성화합니다.");
+                enabled = false;
+                return;
+            }
+
+            if (_dialogueUI == null)
+            {
+                Debug.LogError($"[NPCInteractable] {name}: NPCDialogueUI이 연결되지 않았습니다. 컴포넌트를 비활성화합니다.");
                 enabled = false;
                 return;
             }
@@ -50,11 +62,13 @@ namespace MySecondWorld.AI
         private void OnEnable()
         {
             interactAction?.action.Enable();
+            cancelAction?.action.Enable();
             Debug.Log($"[NPCInteractable] OnEnable: action enabled");
         }
         private void OnDisable()
         {
             interactAction?.action.Disable();
+            cancelAction?.action.Disable();
             Debug.Log($"[NPCInteractable] OnDisable: action disabled");
         }
 
@@ -100,7 +114,14 @@ namespace MySecondWorld.AI
             _cts?.Cancel();
             _cts?.Dispose();
             _cts = new CancellationTokenSource();
-            _dialogueUI?.Open(OnPlayerSubmit, OnCloseRequest);
+            _dialogueUI.Open();
+
+            _dialogueUI.OnSubmit.Subscribe(input => OnPlayerSubmit(input)).AddTo(_cts.Token);
+            _dialogueUI.OnClose.Subscribe(_ => OnCloseRequest()).AddTo(_cts.Token);
+            cancelAction.action.PerformedAsObservable()
+                .AsUnitObservable()
+                .Subscribe(_ => OnCloseRequest())
+                .AddTo(_cts.Token);
         }
 
         public void CloseDialogue()
@@ -110,7 +131,7 @@ namespace MySecondWorld.AI
             _cts?.Cancel();
             _cts?.Dispose();
             _cts = null;
-            _dialogueUI?.Close();
+            _dialogueUI.Close();
         }
 
         // ── 플레이어 메시지 전송 콜백 ────────────────────────────────────────────
@@ -118,6 +139,8 @@ namespace MySecondWorld.AI
         {
             if (string.IsNullOrWhiteSpace(userInput)) return;
             if (_cts == null) return;
+
+            _dialogueUI.ClearInput();
             SendMessageToNPCAsync(userInput, _cts.Token).Forget();
         }
 
@@ -130,16 +153,16 @@ namespace MySecondWorld.AI
                 return;
             }
 
-            _dialogueUI?.SetInputEnabled(false);
-            _dialogueUI?.ShowThinking();
+            _dialogueUI.SetInputEnabled(false);
+            _dialogueUI.ShowThinking();
 
             string response = await _brain.GenerateResponseAsync(userInput, ct);
 
             if (this == null) return;
             if (ct.IsCancellationRequested) return;
 
-            _dialogueUI?.ShowResponse(_brain.SystemPrompt?.NpcName ?? "NPC", response);
-            _dialogueUI?.SetInputEnabled(true);
+            _dialogueUI.ShowResponse(_brain.SystemPrompt?.NpcName ?? "NPC", response);
+            _dialogueUI.SetInputEnabled(true);
         }
 
         private void OnCloseRequest()

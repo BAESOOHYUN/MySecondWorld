@@ -1,4 +1,5 @@
 using UnityEngine;
+using Cysharp.Text;
 
 namespace MySecondWorld.AI
 {
@@ -37,16 +38,47 @@ namespace MySecondWorld.AI
         /// </summary>
         public string BuildSystemPrompt()
         {
-            var sb = new System.Text.StringBuilder();
+            using var sb = ZString.CreateStringBuilder();
             // AppendLine 문자열을 추가할 때 줄 바꿈 문자(\n, \r\n)를 함께 추가하는 메서드
             sb.AppendLine(personality);
             sb.AppendLine(worldContext);
 
             if (knownLocations.Length > 0)
-                sb.AppendLine("알고 있는 장소: " + string.Join(", ", knownLocations));
+            {
+                // ZString.Concat() 패턴
+                sb.Append("알고 있는 장소: ");
+                sb.AppendLine(string.Join(", ", knownLocations));
+            }
 
             if (relationships.Length > 0)
-                sb.AppendLine("관계: " + string.Join(", ", relationships));
+            {
+                sb.Append("관계: ");
+                sb.AppendLine(string.Join(", ", knownLocations));
+            }
+
+            if (knownLocations.Length > 0)
+            {
+                sb.Append("알고 있는 장소: ");
+                for (int i = 0; i < knownLocations.Length; i++)
+                {
+                    sb.Append(knownLocations[i]);
+                    if (i < knownLocations.Length - 1) 
+                        sb.Append(", ");
+                }
+                sb.AppendLine();
+            }
+
+            if (relationships.Length > 0)
+            {
+                sb.Append("관계: ");
+                for (int i = 0; i < relationships.Length; i++)
+                {
+                    sb.Append(relationships[i]);
+                    if (i < relationships.Length - 1) 
+                        sb.Append(", ");
+                }
+                sb.AppendLine();
+            }
 
             sb.AppendLine("짧고 자연스럽게 대답하세요. 한국어로 대화합니다.");
             return sb.ToString().Trim();

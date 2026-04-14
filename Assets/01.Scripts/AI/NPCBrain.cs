@@ -1,7 +1,8 @@
 using System.Threading;
-using Cysharp.Threading.Tasks;
-using LLMUnity;
 using UnityEngine;
+using Cysharp.Threading.Tasks;
+using Cysharp.Text;
+using LLMUnity;
 
 namespace MySecondWorld.AI
 {
@@ -52,7 +53,7 @@ namespace MySecondWorld.AI
         // ── 시스템 프롬프트 빌드 ─────────────────────────────────────────────────
         private string BuildSystemPromptWithFacts()
         {
-            var sb = new System.Text.StringBuilder();
+            using var sb = ZString.CreateStringBuilder();
 
             if (_systemPrompt != null)
                 sb.AppendLine(_systemPrompt.BuildSystemPrompt());
@@ -62,7 +63,10 @@ namespace MySecondWorld.AI
                 sb.AppendLine();
                 sb.AppendLine("당신이 기억해야 할 중요 사실:");
                 foreach (string fact in _memory.KnownFacts)
-                    sb.AppendLine($"- {fact}");
+                {
+                    sb.Append("- ");
+                    sb.AppendLine(fact);
+                }
             }
 
             return sb.ToString().Trim();

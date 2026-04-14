@@ -1,9 +1,11 @@
 using System;
-using System.Collections;
-using System.Text;
-using TMPro;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.UI;
+using Cysharp.Text;
+using Cysharp.Threading.Tasks;
+using TMPro;
+using R3;
 
 namespace MySecondWorld.AI
 {
@@ -32,9 +34,14 @@ namespace MySecondWorld.AI
         [Header("Typing Effect")]
         public float typingSpeed = 0.03f;
 
-        private Action<string> _onSubmit;
-        private Action _onClose;
-        private Coroutine _typingCoroutine;
+        // CancellationTokenSource 비동기 작업 취소 : 실행 중인 작업을 취소하거나 중지. 장기 실행 작업이나 무한 루프를 안전하게 중단하는 데 사용
+        private CancellationTokenSource _typingCts;
+
+        // R3 구독
+        public Observable<string> OnSubmit => _submitButton.OnClickAsObservable()
+            .Select(_ => _playerInputField.text.Trim())
+            .Where(t => t.Length > 0);
+        public Observable<Unit> OnClose => _closeButton.OnClickAsObservable().AsUnitObservable();
 
         // ── 필수 참조 검증 ───────────────────────────────────────────────────────
         private void Awake()
@@ -74,23 +81,14 @@ namespace MySecondWorld.AI
         }
 
         // ── 열기 / 닫기 ──────────────────────────────────────────────────────────
-        public void Open(Action<string> onSubmit, Action onClose)
+        public void Open()
         {
             Debug.Log($"[NPCDialogueUI] Open 호출, _dialoguePanel={_dialoguePanel}");
-            _onSubmit = onSubmit;
-            _onClose = onClose;
 
             _dialoguePanel.SetActive(true);
             _playerInputField.text = string.Empty;
             _npcResponseText.text = string.Empty;
             _playerInputField.ActivateInputField();
-
-            _submitButton.onClick.RemoveAllListeners();
-            _submitButton.onClick.AddListener(Submit);
-
-            _closeButton.onClick.RemoveAllListeners();
-            _closeButton.onClick.AddListener(() => _onClose?.Invoke());
-
             // STT/TTS 비활성화 (자리만 확보)
             _sttButton?.gameObject.SetActive(false);
             _ttsButton?.gameObject.SetActive(false);
@@ -107,7 +105,13 @@ namespace MySecondWorld.AI
         {
             _playerInputField.interactable = enabled;
             _submitButton.interactable = enabled;
-            if (enabled) _playerInputField.ActivateInputField();
+            if (enabled) 
+                _playerInputField.ActivateInputField();
+        }
+
+        public void ClearInput()
+        {
+            _playerInputField.text = string.Empty;
         }
 
         // ── 응답 표시 ────────────────────────────────────────────────────────────
@@ -119,32 +123,35 @@ namespace MySecondWorld.AI
 
         public void ShowResponse(string npcName, string response)
         {
-            if (_npcNameText != null) _npcNameText.text = npcName;
+            if (_npcNameText != null) 
+                _npcNameText.text = npcName;
+
             StopTyping();
-            _typingCoroutine = StartCoroutine(TypeText(response));
+            // 타이핑 시작할 때
+            _typingCts = new CancellationTokenSource();
+            TypeTextAsync(response, _typingCts.Token).Forget();
         }
 
-        private IEnumerator TypeText(string text)
+        private async UniTask TypeTextAsync(string text, CancellationToken ct)
         {
             _npcResponseText.text = string.Empty;
-            var sb = new StringBuilder(text.Length);
+            using var sb = ZString.CreateStringBuilder();
 
-            foreach (char c in text)
+            for (int i = 0; i < text.Length; i++)
             {
-                sb.Append(c);
+                sb.Append(text[i]);
                 _npcResponseText.text = sb.ToString();
                 ScrollToBottom();
-                yield return new WaitForSeconds(typingSpeed);
+                await UniTask.Delay(TimeSpan.FromSeconds(typingSpeed), cancellationToken: ct);
             }
         }
 
         private void StopTyping()
         {
-            if (_typingCoroutine != null)
-            {
-                StopCoroutine(_typingCoroutine);
-                _typingCoroutine = null;
-            }
+            // 타이핑 멈춰야 할 때.
+            _typingCts?.Cancel();
+            _typingCts?.Dispose();
+            _typingCts = null;
         }
 
         private void ScrollToBottom()
@@ -152,22 +159,6 @@ namespace MySecondWorld.AI
             Canvas.ForceUpdateCanvases();
             if (_scrollRect != null)
                 _scrollRect.verticalNormalizedPosition = 0f;
-        }
-
-        // ── 제출 ─────────────────────────────────────────────────────────────────
-        private void Submit()
-        {
-            string input = _playerInputField.text.Trim();
-            if (string.IsNullOrEmpty(input)) return;
-            _playerInputField.text = string.Empty;
-            _onSubmit?.Invoke(input);
-        }
-
-        // ── ESC 단축키 ───────────────────────────────────────────────────────────
-        private void Update()
-        {
-            // TODO: New Input System의 cancelAction으로 교체 필요 (현재 레거시 Input 혼용)
-            // if (Input.GetKeyDown(KeyCode.Escape)) _onClose?.Invoke();
         }
     }
 }
