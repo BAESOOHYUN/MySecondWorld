@@ -14,6 +14,7 @@
   ],
   "dependencies": {
     "ai.undream.llm": "https://github.com/undreamai/LLMUnity.git",
+    "com.annulusgames.reactive-input-system": "https://github.com/AnnulusGames/ReactiveInputSystem.git?path=src/ReactiveInputSystem/Assets/ReactiveInputSystem",
     "com.cysharp.messagepipe": "1.8.1",
     "com.cysharp.messagepipe.vcontainer": "1.8.1",
     "com.cysharp.r3": "https://github.com/Cysharp/R3.git?path=src/R3.Unity/Assets/R3.Unity#main",
