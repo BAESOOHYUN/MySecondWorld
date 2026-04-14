@@ -1,0 +1,22 @@
+{
+  "name": "com.cysharp.r3",
+  "displayName": "R3",
+  "author": {
+    "name": "Cysharp, Inc.",
+    "url": "https://cysharp.co.jp/en/"
+  },
+  "version": "1.3.0",
+  "unity": "2021.3",
+  "description": "Reactive Extensions for Unity.",
+  "keywords": [
+    "rx",
+    "event",
+    "Scripting"
+  ],
+  "license": "MIT",
+  "category": "Scripting",
+  "dependencies": {
+    "com.unity.modules.imgui": "1.0.0"
+  },
+  "_fingerprint": "7000cb68299338432832868d03e43aa574bdcb98"
+}
