@@ -1206,6 +1206,8 @@ MonoBehaviour:
   _dialogueUI: {fileID: 1069773481}
   interactAction: {fileID: 8699023130217952208, guid: 1ef879bb94aacac45a5965f49648d8e3,
     type: 3}
+  cancelAction: {fileID: -2765307170239775135, guid: 1ef879bb94aacac45a5965f49648d8e3,
+    type: 3}
 --- !u!114 &1578081883
 MonoBehaviour:
   m_ObjectHideFlags: 0
