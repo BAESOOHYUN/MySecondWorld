@@ -74,7 +74,18 @@ namespace MySecondWorld.AI
         [SerializeField] private NPCBrain _brain;       // GUID 소스로만 사용
         [SerializeField] private NPCDialogueUI _dialogueUI;
         // GUID는 NPCBrain → SystemPromptSO에서 읽는다
-        private string NpcGuid => _brain.SystemPrompt?.NpcGuid ?? _brain.name;
+        private string NpcGuid
+        {
+            get
+            {
+                if (_brain == null)
+                {
+                    Debug.LogError($"[NPCInteractable] _brain이 null입니다. Inspector에서 NPCBrain을 연결하세요.", this);
+                    return string.Empty;
+                }
+                return _brain.SystemPrompt?.NpcGuid ?? _brain.name;
+            }
+        }
 
         private IPublisher<PlayerMessageSentEvent> _messagePub;
         // 기존에는 SendMessageToNPCAsync에서 await _brain.GenerateResponseAsync(userInput, ct); 하여 
@@ -286,9 +297,10 @@ namespace MySecondWorld.AI
             // _pendingInput Submit 시 저장해둔 값을 사용한다. (캐싱)
             if (_pendingInput == null)
                 return;
-
+            
             _dialogueUI.SetInputEnabled(false);
             _dialogueUI.ShowThinking();
+            Debug.Log($"NpcGuid {NpcGuid} , _pendingInput {_pendingInput}  ");
             _messagePub.Publish(new PlayerMessageSentEvent(NpcGuid, _pendingInput));
             _pendingInput = null;
         }
