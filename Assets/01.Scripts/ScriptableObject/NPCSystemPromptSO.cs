@@ -40,21 +40,9 @@ namespace MySecondWorld.AI
         {
             using var sb = ZString.CreateStringBuilder();
             // AppendLine 문자열을 추가할 때 줄 바꿈 문자(\n, \r\n)를 함께 추가하는 메서드
+            sb.AppendLine(npcName);
             sb.AppendLine(personality);
             sb.AppendLine(worldContext);
-
-            if (knownLocations.Length > 0)
-            {
-                // ZString.Concat() 패턴
-                sb.Append("알고 있는 장소: ");
-                sb.AppendLine(string.Join(", ", knownLocations));
-            }
-
-            if (relationships.Length > 0)
-            {
-                sb.Append("관계: ");
-                sb.AppendLine(string.Join(", ", knownLocations));
-            }
 
             if (knownLocations.Length > 0)
             {

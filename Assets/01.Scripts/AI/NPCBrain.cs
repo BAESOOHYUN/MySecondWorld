@@ -42,32 +42,20 @@ namespace MySecondWorld.AI
         // Awake보다 늦고 Start보다 이르다. 그래서 Start()에서 주입된 필드를 안전하게 쓸 수 있다.
         [Inject]
         private void Constrct(
-            ISubscriber<PlayerMessageSentEvent> messageSub, // 플레이어 메시지를 받아야 한다. Construct 안에서 쓰고 끝
-            IPublisher<NPCResponseReceivedEvent> responsePub, // 응답을 발행해야 한다
-            IPublisher<NPCThinkingStartedEvent> thinkingPub // 생각 중임을 발행해야 한다
+            ISubscriber<string, PlayerMessageSentEvent> messageSub,
+            IPublisher<NPCResponseReceivedEvent> responsePub,
+            IPublisher<NPCThinkingStartedEvent> thinkingPub
             )
         {
-            // messageSub의 람다가 실행될 때 responsePub, thinkingPub를 참조할 수 있으려면 어딘가에 살아있어야 한다.
-            // 그래서 필드에 저장한다.
             _responsePub = responsePub;
             _thinkingPub = thinkingPub;
 
-            // destroyCancellationToken: MonoBehaviour가 Destroy될 때 자동으로 Cancel된다.
-            // 구독도 함께 해제되므로 OnDestroy에서 따로 정리할 필요가 없다.
-            Debug.Log($"[NPCBrain] Inject 호출됨: NpcNameKey={NpcNameKey}, GO={name}");
-
-            // messageSub는 Construct() 안에서.Subscribe()를 호출하는 순간 구독이 연결된다.
-            // 그 이후로 NPCBrain이 직접 쓸 일이 없다.필드에 저장할 이유가 없다.
+            // NpcNameKey(GUID)를 키로 구독 — 이 NPC에게 온 메시지만 수신된다
             messageSub
-                .Subscribe(async evt =>
+                .Subscribe(NpcNameKey, async evt =>
                 {
                     try
                     {
-                        // NpcGuid가 일치하는 메시지만 처리한다.
-                        // 복수 NPC가 같은 채널을 공유하므로 반드시 필터가 필요하다.
-                        if (evt.NpcGuid != NpcNameKey)
-                            return;
-
                         _thinkingPub.Publish(new NPCThinkingStartedEvent(NpcNameKey));
                         var response = await GenerateResponseAsync(evt.Text, evt.CT);
                         _responsePub.Publish(new NPCResponseReceivedEvent(
@@ -76,13 +64,11 @@ namespace MySecondWorld.AI
                                 response));
                     }
                     catch (OperationCanceledException)
-                    { 
+                    {
                         // 취소는 정상 흐름 — 무시
                     }
                 })
                 .AddTo(destroyCancellationToken);
-                    // destroyCancellationToken : Unity 6에서 MonoBehaviour에 내장된 토큰
-                    // .AddTo(destroyCancellationToken)을 쓰면 Destroy 시 구독이 자동으로 정리된다
         }
 
         // NPC 저장 키 — GUID 기반. GUID 미설정 시 GameObject 이름으로 폴백.
@@ -95,21 +81,18 @@ namespace MySecondWorld.AI
         // LLMAgent가 준비됐는지 확인
         private bool _isReady => _llmAgent != null && _llmAgent.llmAgent != null;
 
-        // 초기화
         private void Start()
         {
             _memory?.Load(NpcNameKey);
-            Debug.Log($"[NPCBrain] Start: _llmAgent={_llmAgent}, _systemPrompt={_systemPrompt}, _memory={_memory}");
 
             if (_llmAgent == null)
             {
-                Debug.LogError($"[NPCBrain] LLMAgent가 연결되지 않았습니다. Inspector에서 LLMAgent 컴포넌트를 연결하세요.", this);
+                Debug.LogError($"[NPCBrain] LLMAgent가 연결되지 않았습니다.", this);
                 return;
             }
-
-            // systemPrompt 주입 — 대화 세션 시작 전에 설정해야 히스토리 컨텍스트가 보존됨
+            _llmAgent.save = NpcNameKey + ".json";
+            _llmAgent.slot = Mathf.Abs(_systemPrompt.NpcGuid.GetHashCode());
             _llmAgent.systemPrompt = BuildSystemPromptWithFacts();
-            Debug.Log($"[NPCBrain] systemPrompt 주입 완료: {_llmAgent.systemPrompt}");
         }
 
         // 정리

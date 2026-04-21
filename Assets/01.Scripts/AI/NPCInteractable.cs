@@ -87,14 +87,14 @@ namespace MySecondWorld.AI
             }
         }
 
-        private IPublisher<PlayerMessageSentEvent> _messagePub;
+        private IPublisher<string, PlayerMessageSentEvent> _messagePub;
         // 기존에는 SendMessageToNPCAsync에서 await _brain.GenerateResponseAsync(userInput, ct); 하여 
         // Generating → Talking 전이 시점을 알 수 있었다. (응답완료 시점에 SafeFire 해줌)
         // MessagePipe로 바꾸면 응답 완료 시점을 NPCInteractable이 직접 알 수 없다.
         // 해결책: NPCResponseReceivedEvent를 NPCInteractable도 구독한다. 응답이 도착하면 상태 머신을 Talking으로 전이시킨다.
         [Inject]
         private void Construct(
-            IPublisher<PlayerMessageSentEvent> messagePub,
+            IPublisher<string, PlayerMessageSentEvent> messagePub,
             ISubscriber<NPCResponseReceivedEvent> responseSub
             )
         {
@@ -300,14 +300,14 @@ namespace MySecondWorld.AI
             // _pendingInput Submit 시 저장해둔 값을 사용한다. (캐싱)
             if (_pendingInput == null)
                 return;
-            
+
+            Debug.Log($"[NPCInteractable] Publish 호출: {NpcGuid}, input={_pendingInput}");
             _dialogueUI.SetInputEnabled(false);
             _dialogueUI.ShowThinking();
-            Debug.Log($"NpcGuid {NpcGuid} , _pendingInput {_pendingInput}");
 
             if (_messagePub == null)
                 Debug.LogError("_messagePub null");
-            _messagePub.Publish(new PlayerMessageSentEvent(NpcGuid, _pendingInput, _cts.Token));
+            _messagePub.Publish(NpcGuid, new PlayerMessageSentEvent(_pendingInput, _cts.Token));
             _pendingInput = null;
         }
         #endregion
