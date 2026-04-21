@@ -51,11 +51,36 @@ namespace MySecondWorld.AI
         public int ConversationCount => conversationCount;
         public List<string> KnownFacts => knownFacts;
 
-        // ── 저장 경로 ─────────────────────────────────────────────────────────────
-        private string SavePath(string npcKey) =>
-            Path.Combine(Application.persistentDataPath, $"npc_memory_{npcKey}.json");
+        // Mutator : 변수의 변경을 통제하기 위해 사용하는 메서드
+        public void IncrementConversationCount() => conversationCount++;
 
-        // ── 저장 / 불러오기 ──────────────────────────────────────────────────────
+        public void SetFirstMet(string date, string location)
+        {
+            if (!string.IsNullOrEmpty(firstMetDate))
+                return; // 첫만남 날짜 이미 기록됐으면 스킵
+            firstMetDate = date;
+            firstMetLocation = location;
+        }
+
+        public void AddRelationScore(float delta)
+        {
+            relationScore = Mathf.Clamp(relationScore + delta, -100f, 100f);
+        }
+
+        public void AddKnowFact(string fact)
+        {
+            if (!string.IsNullOrEmpty(fact) && !knownFacts.Contains(fact))
+                knownFacts.Add(fact);
+        }
+
+
+        // 저장 경로
+        private string SavePath(string npcKey)
+        {
+           return Path.Combine(Application.persistentDataPath, $"npc_memory_{npcKey}.json");
+        }
+
+        // 저장/불러오기
         [Serializable]
         private class SaveData
         {

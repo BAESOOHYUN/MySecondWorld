@@ -13,6 +13,9 @@ namespace MySecondWorld.AI
         [Tooltip("NPC 인스턴스 고유 식별자. Inspector 수동 입력 또는 [Generate GUID] 컨텍스트 메뉴로 자동 생성.")]
         [SerializeField] private string npcGuid = "";
 
+        [Tooltip("NPC가 위치한 장소 (예: 마을 광장, 대장간)")]
+        [SerializeField] private string npcLocation = "";
+
         [TextArea(3, 6)]
         [SerializeField] private string personality = "당신은 마을 주민 아리입니다. 친절하고 호기심이 많습니다.";
         [TextArea(3, 6)]
@@ -32,6 +35,7 @@ namespace MySecondWorld.AI
         // 읽기 전용 프로퍼티
         public string NpcName => npcName;
         public string NpcGuid => npcGuid;
+        public string NpcLocation => npcLocation;
 
         /// <summary>
         /// Gemma에 넘길 시스템 프롬프트 문자열 조합
@@ -43,6 +47,9 @@ namespace MySecondWorld.AI
             sb.AppendLine(npcName);
             sb.AppendLine(personality);
             sb.AppendLine(worldContext);
+
+            if (!string.IsNullOrEmpty(npcLocation))
+                sb.AppendLine($"당신은 현재 {npcLocation}에 있습니다.");
 
             if (knownLocations.Length > 0)
             {

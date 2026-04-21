@@ -26,20 +26,17 @@ namespace MySecondWorld.AI
         // 외부 읽기 전용 접근 (NPCInteractable에서 npcName 접근용)
         public NPCSystemPromptSO SystemPrompt => _systemPrompt;
 
-        // MessagePipe 주입
-        // VContainer가 [Inject]를 보고 Construct()를 자동으로 호출한다.
-        // MonoBehaviour는 new로 생성할 수 없으므로, 생성자 주입 대신 메서드 주입을 쓴다.
+        // _responsePub와 _thinkingPub는 람다 안에서 쓰인다.
+        // 람다는 Construct()가 끝난 훨씬 나중에 , 플레이어가 메시지를 보낼 때마다 실행된다.
+        // 그 시점에도 살아있어야 하므로 필드에 저장
         private IPublisher<NPCResponseReceivedEvent> _responsePub;
         private IPublisher<NPCThinkingStartedEvent> _thinkingPub;
 
         // [Inject]가 붙은 메서드를 VContainer가 찾아서,
         // 파라미터 타입에 맞는 인스턴스를 컨테이너에서 꺼내 자동으로 호출한다.
         // 파라미터에 뭘 넣는가의 기준: 이 클래스가 동작하는 데 외부에서 받아야 하는 것들
-        // 호출 순서
-        // Unity가 Awake() 호출
-        // VContainer가 Construct() 호출   ← [Inject]
-        // Unity가 Start() 호출
-        // Awake보다 늦고 Start보다 이르다. 그래서 Start()에서 주입된 필드를 안전하게 쓸 수 있다.
+        // 호출 순서 Awake() -> VContainer가 Construct() 호출 ←[Inject]주입 -> Start() 호출
+        // Start()에서 주입된 필드를 안전하게 쓸 수 있다.
         [Inject]
         private void Constrct(
             ISubscriber<string, PlayerMessageSentEvent> messageSub,
@@ -85,6 +82,13 @@ namespace MySecondWorld.AI
         {
             _memory?.Load(NpcNameKey);
 
+            // 첫만남 기록
+            if( _memory != null && string.IsNullOrEmpty(_memory.FirstMetDate))
+            {
+                string location = SystemPrompt != null ? _systemPrompt.NpcLocation : "알 수 없음";
+                _memory.SetFirstMet(System.DateTime.Now.ToString("yyyy-MM-dd"), location);
+            }
+
             if (_llmAgent == null)
             {
                 Debug.LogError($"[NPCBrain] LLMAgent가 연결되지 않았습니다.", this);
@@ -126,7 +130,6 @@ namespace MySecondWorld.AI
         private async UniTask<string> GenerateResponseAsync(
             string userInput, CancellationToken ct = default)
         {
-            Debug.Log($"[NPCBrain] GenerateResponseAsync 시작: isReady={_isReady}, input={userInput}");
             if (!_isReady)
             {
                 Debug.LogWarning($"[NPCBrain] LLMAgent가 아직 준비되지 않았습니다. _llmAgent={_llmAgent}, llmAgent={_llmAgent?.llmAgent}");
@@ -135,10 +138,13 @@ namespace MySecondWorld.AI
 
             ct.Register(() => _llmAgent.CancelRequests());
             string response = await _llmAgent.Chat(userInput).AsUniTask().AttachExternalCancellation(ct);
-            Debug.Log($"[NPCBrain] 응답 수신: {response}");
 
-            if (this == null) return string.Empty;
 
+            if (this == null) 
+                return string.Empty;
+
+            //응답을 받은 직후, reponse를 반환하기 전, 대화횟수 증가.
+            _memory?.IncrementConversationCount();
             _memory?.Save(NpcNameKey);
 
             return response;

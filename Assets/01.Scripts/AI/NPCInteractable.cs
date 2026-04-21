@@ -144,7 +144,6 @@ namespace MySecondWorld.AI
             if (interactAction != null)
             {
                 interactAction.action.performed += OnInteractPerformed;
-                Debug.Log($"[NPCInteractable] Start: interactAction 등록됨 — {interactAction.action.name}, enabled: {interactAction.action.enabled}");
             }
             else
             {
@@ -158,14 +157,12 @@ namespace MySecondWorld.AI
         {
             interactAction?.action.Enable();
             cancelAction?.action.Enable();
-            Debug.Log($"[NPCInteractable] OnEnable: action enabled");
         }
 
         private void OnDisable()
         {
             interactAction?.action.Disable();
             cancelAction?.action.Disable();
-            Debug.Log($"[NPCInteractable] OnDisable: action disabled");
         }
 
         private void OnDestroy()
@@ -182,11 +179,9 @@ namespace MySecondWorld.AI
         {
             if (!other.CompareTag("Player"))
                 return;
-            Debug.Log($"[NPCInteractable] TriggerEnter: {other.name}, tag: {other.tag}");
             SafeFire(NpcTrigger.PlayerEntered);
         }
 
-        // TODO : OnTriggerStay 상태에서도 대화 기능 필요. NPC가까이 있는데 버튼 상호작용을 안하니 불편, 이상.
         private void OnTriggerExit(Collider other)
         {
             if (!other.CompareTag("Player"))
@@ -301,12 +296,9 @@ namespace MySecondWorld.AI
             if (_pendingInput == null)
                 return;
 
-            Debug.Log($"[NPCInteractable] Publish 호출: {NpcGuid}, input={_pendingInput}");
             _dialogueUI.SetInputEnabled(false);
             _dialogueUI.ShowThinking();
 
-            if (_messagePub == null)
-                Debug.LogError("_messagePub null");
             _messagePub.Publish(NpcGuid, new PlayerMessageSentEvent(_pendingInput, _cts.Token));
             _pendingInput = null;
         }
@@ -324,7 +316,6 @@ namespace MySecondWorld.AI
 
         private void OnInteractPerformed(InputAction.CallbackContext ctx)
         {
-            Debug.Log($"[NPCInteractable] OnInteractPerformed, state={_stateMachine.State}");
             if (OnUIChecker.IsInputFieldFocused())
                 return;
             SafeFire(NpcTrigger.Interact);
