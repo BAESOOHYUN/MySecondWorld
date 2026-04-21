@@ -5,6 +5,7 @@ using Cysharp.Text;
 using LLMUnity;
 using MessagePipe;
 using VContainer;
+using System;
 
 namespace MySecondWorld.AI
 {
@@ -53,23 +54,31 @@ namespace MySecondWorld.AI
 
             // destroyCancellationToken: MonoBehaviour가 Destroy될 때 자동으로 Cancel된다.
             // 구독도 함께 해제되므로 OnDestroy에서 따로 정리할 필요가 없다.
+            Debug.Log($"[NPCBrain] Inject 호출됨: NpcNameKey={NpcNameKey}, GO={name}");
 
             // messageSub는 Construct() 안에서.Subscribe()를 호출하는 순간 구독이 연결된다.
             // 그 이후로 NPCBrain이 직접 쓸 일이 없다.필드에 저장할 이유가 없다.
             messageSub
                 .Subscribe(async evt =>
                 {
-                    // NpcGuid가 일치하는 메시지만 처리한다.
-                    // 복수 NPC가 같은 채널을 공유하므로 반드시 필터가 필요하다.
-                    if (evt.NpcGuid != NpcNameKey)
-                        return;
+                    try
+                    {
+                        // NpcGuid가 일치하는 메시지만 처리한다.
+                        // 복수 NPC가 같은 채널을 공유하므로 반드시 필터가 필요하다.
+                        if (evt.NpcGuid != NpcNameKey)
+                            return;
 
-                    _thinkingPub.Publish(new NPCThinkingStartedEvent(NpcNameKey));
-                    var response = await GenerateResponseAsync(evt.Text, destroyCancellationToken);
-                    _responsePub.Publish(new NPCResponseReceivedEvent(
-                            NpcNameKey,
-                            _systemPrompt?.NpcName ?? name,
-                            response));
+                        _thinkingPub.Publish(new NPCThinkingStartedEvent(NpcNameKey));
+                        var response = await GenerateResponseAsync(evt.Text, evt.CT);
+                        _responsePub.Publish(new NPCResponseReceivedEvent(
+                                NpcNameKey,
+                                _systemPrompt?.NpcName ?? name,
+                                response));
+                    }
+                    catch (OperationCanceledException)
+                    { 
+                        // 취소는 정상 흐름 — 무시
+                    }
                 })
                 .AddTo(destroyCancellationToken);
                     // destroyCancellationToken : Unity 6에서 MonoBehaviour에 내장된 토큰

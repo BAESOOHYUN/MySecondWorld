@@ -1,3 +1,5 @@
+using System.Threading;
+
 namespace MySecondWorld.AI
 {
     /// <summary>
@@ -10,12 +12,15 @@ namespace MySecondWorld.AI
     {
         public readonly string NpcGuid;
         public readonly string Text;
-        public PlayerMessageSentEvent(string npcGuid, string text)
+        public readonly CancellationToken CT;
+        public PlayerMessageSentEvent(string npcGuid, string text, CancellationToken ct)
         {
             NpcGuid = npcGuid;
             Text = text;
+            CT = ct;
         }
     }
+
     public readonly struct NPCResponseReceivedEvent
     {
         public readonly string NpcGuid;
@@ -28,12 +33,24 @@ namespace MySecondWorld.AI
             Text = text;
         }
     }
+
     public readonly struct NPCThinkingStartedEvent
     {
         public readonly string NpcGuid;
         public NPCThinkingStartedEvent(string npcGuid)
         {
             NpcGuid = npcGuid;
+        }
+    }
+
+    public readonly struct AIModelDownloadProgressEvent
+    {
+        public readonly float Progress;
+        public readonly bool IsCompleted;
+        public AIModelDownloadProgressEvent(float progress, bool isCompleted)
+        {
+            Progress = progress;
+            IsCompleted = isCompleted;
         }
     }
 }

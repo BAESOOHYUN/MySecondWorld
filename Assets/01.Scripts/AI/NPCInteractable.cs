@@ -220,6 +220,7 @@ namespace MySecondWorld.AI
 
             // InRange
             _stateMachine.Configure(NpcState.InRange)
+                .OnEntry(OnEnterIdle)
                 .Permit(NpcTrigger.PlayerLeft, NpcState.Idle)
                 .Permit(NpcTrigger.Interact, NpcState.Talking);
 
@@ -227,14 +228,14 @@ namespace MySecondWorld.AI
             _stateMachine.Configure(NpcState.Talking)
                 .OnEntry(OnEnterTalking) //  C#의 메서드 그룹 변환 덕분에 .OnEntry(t => OnEnterTalking(t)) 와 완전 동일
                 .Permit(NpcTrigger.PlayerLeft, NpcState.Idle)
-                .Permit(NpcTrigger.Close, NpcState.Idle)
+                .Permit(NpcTrigger.Close, NpcState.InRange)
                 .Permit(NpcTrigger.Submit, NpcState.Generating);
 
             // Generating
             _stateMachine.Configure(NpcState.Generating)
                 .OnEntry(OnEnterGenerating)
                 .Permit(NpcTrigger.ResponseReceived, NpcState.Talking)
-                .Permit(NpcTrigger.Close, NpcState.Idle)
+                .Permit(NpcTrigger.Close, NpcState.InRange)
                 .Permit(NpcTrigger.PlayerLeft, NpcState.Idle);
 
             // 전이 로그 (디버그용)
@@ -281,6 +282,8 @@ namespace MySecondWorld.AI
                     .AsUnitObservable()
                     .Subscribe(_ => SafeFire(NpcTrigger.Close))
                     .AddTo(_cts.Token);
+
+                _dialogueUI.SetInputEnabled(true);
             }
             else if (t.Trigger == NpcTrigger.ResponseReceived)
             {
@@ -300,8 +303,11 @@ namespace MySecondWorld.AI
             
             _dialogueUI.SetInputEnabled(false);
             _dialogueUI.ShowThinking();
-            Debug.Log($"NpcGuid {NpcGuid} , _pendingInput {_pendingInput}  ");
-            _messagePub.Publish(new PlayerMessageSentEvent(NpcGuid, _pendingInput));
+            Debug.Log($"NpcGuid {NpcGuid} , _pendingInput {_pendingInput}");
+
+            if (_messagePub == null)
+                Debug.LogError("_messagePub null");
+            _messagePub.Publish(new PlayerMessageSentEvent(NpcGuid, _pendingInput, _cts.Token));
             _pendingInput = null;
         }
         #endregion

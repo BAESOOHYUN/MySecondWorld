@@ -58,7 +58,7 @@ namespace MySecondWorld.AI
                 {
                     if (evt.NpcGuid != _currentNpcGuid)
                         return;
-                    ShowResponse(evt.NpcGuid, evt.Text);
+                    ShowResponse(evt.NpcName, evt.Text);
                     SetInputEnabled(true);
                 })
                 .AddTo(destroyCancellationToken);
