@@ -21,7 +21,7 @@ namespace MySecondWorld.AI
     public class NPCDialogueUI : MonoBehaviour
     {
         [Header("UI References")]
-        [SerializeField] private GameObject _dialoguePanel;
+        [SerializeField] private GameObject _canvas;
         [SerializeField] private TextMeshProUGUI _npcNameText;
         [SerializeField] private TextMeshProUGUI _npcResponseText;
         [SerializeField] private TMP_InputField _playerInputField;
@@ -79,7 +79,7 @@ namespace MySecondWorld.AI
         {
             bool valid = true;
 
-            if (_dialoguePanel == null)
+            if (_canvas == null)
             {
                 Debug.LogError($"[NPCDialogueUI] {name}: dialoguePanel이 연결되지 않았습니다.");
                 valid = false;
@@ -115,10 +115,11 @@ namespace MySecondWorld.AI
         #region 열기 / 닫기
         public void Open(string npcGuid)
         {
-            Debug.Log($"[NPCDialogueUI] Open 호출, _dialoguePanel={_dialoguePanel}");
+            //Debug.Log($"[NPCDialogueUI] Open 호출, _dialoguePanel={_dialoguePanel}");
             _currentNpcGuid = npcGuid;
-            _dialoguePanel.SetActive(true);
+            _canvas.SetActive(true);
             _playerInputField.text = string.Empty;
+            _npcNameText.text = string.Empty;
             _npcResponseText.text = string.Empty;
             _playerInputField.ActivateInputField();
             // STT/TTS 비활성화 (자리만 확보)
@@ -129,7 +130,7 @@ namespace MySecondWorld.AI
         public void Close()
         {
             StopTyping();
-            _dialoguePanel.SetActive(false);
+            _canvas.SetActive(false);
         }
         #endregion
 

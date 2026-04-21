@@ -72,7 +72,7 @@ namespace MySecondWorld.AI
         #region 필드
         [Header("References")]
         [SerializeField] private NPCBrain _brain;       // GUID 소스로만 사용
-        [SerializeField] private NPCDialogueUI _dialogueUI;
+        private NPCDialogueUI _dialogueUI;
         // GUID는 NPCBrain → SystemPromptSO에서 읽는다
         private string NpcGuid
         {
@@ -94,10 +94,12 @@ namespace MySecondWorld.AI
         // 해결책: NPCResponseReceivedEvent를 NPCInteractable도 구독한다. 응답이 도착하면 상태 머신을 Talking으로 전이시킨다.
         [Inject]
         private void Construct(
+            NPCDialogueUI dialogueUI,
             IPublisher<string, PlayerMessageSentEvent> messagePub,
             ISubscriber<NPCResponseReceivedEvent> responseSub
             )
         {
+            _dialogueUI = dialogueUI;
             _messagePub = messagePub;
             responseSub
                 .Subscribe(evt =>
