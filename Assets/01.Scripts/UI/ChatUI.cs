@@ -1,4 +1,6 @@
 using System;
+using Cysharp.Text;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -8,13 +10,6 @@ namespace MySecondWorld.Network.Chat
 {
     public class ChatUI : MonoBehaviour
     {
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStatics()
-        {
-            Instance = null;
-        }
-        public static ChatUI Instance { get; private set; }
-
         public event Action<string> OnSubmitListener;
 
         private UnityEngine.Events.UnityAction<string> _onSelectHandler;
@@ -24,13 +19,6 @@ namespace MySecondWorld.Network.Chat
         [SerializeField] private TMP_InputField _messageInput;
         [SerializeField] private TMP_Text _messageTextPrefab;
         [SerializeField] private Button _exitButton;
-
-        private void Awake()
-        {
-            if (Instance != null && Instance != this)
-                return;
-            Instance = this;
-        }
 
         private void Start()
         {
@@ -74,7 +62,15 @@ namespace MySecondWorld.Network.Chat
 
             OnSubmitListener?.Invoke(msg);
             _messageInput.text = string.Empty;
-            _messageInput.ActivateInputField();
+            ReactivateInputFieldAsync().Forget();
+        }
+
+        // TMP InputField는 Enter 제출 후 자체 deselect → 다음 프레임에 재활성화해야 이동 입력 차단 유지
+        private async UniTaskVoid ReactivateInputFieldAsync()
+        {
+            await UniTask.NextFrame();
+            if (_messageInput != null && _messageInput.interactable)
+                _messageInput.ActivateInputField();
         }
 
         public void CreateMessagePrefab(string playerName, string message)
@@ -88,18 +84,18 @@ namespace MySecondWorld.Network.Chat
 
             TMP_Text entry = Instantiate(_messageTextPrefab, _messageContainer);
 
-            if (playerName == PlayerSession.LocalPlayerName && NetworkServer.active == true) // "HOST"일때
-            {
-                entry.text = $"<color=red>{playerName}:</color> {message}";
-            }
-            else if (playerName == PlayerSession.LocalPlayerName) // "나"일때
-            {
-                entry.text = $"<color=blue>{playerName}:</color> {message}";
-            }
-            else // "다른 클라이언트"
-            {
-                entry.text = $"<color=green>{playerName}:</color> {message}";
-            }
+            string color = playerName == PlayerSession.LocalPlayerName
+                ? (NetworkServer.active ? "red" : "blue")
+                : "green";
+
+            using var sb = ZString.CreateStringBuilder();
+            sb.Append("<color=");
+            sb.Append(color);
+            sb.Append(">");
+            sb.Append(playerName);
+            sb.Append(":</color> ");
+            sb.Append(message);
+            entry.text = sb.ToString();
         }
 
         public void CloseChatScrollView()

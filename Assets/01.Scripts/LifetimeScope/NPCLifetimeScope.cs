@@ -18,8 +18,8 @@ namespace MySecondWorld.AI
             builder.RegisterMessageBroker<NPCResponseReceivedEvent>(options);
             builder.RegisterMessageBroker<NPCThinkingStartedEvent>(options);
 
-            // UIManager는 DontDestroyOnLoad이므로 Instance 접근 안전
-            var uiGO = UIManager.Instance.GetOrCreateDynamicCanvas<NPCDialogueUI>();
+            var uiManager = Parent.Container.Resolve<UIManager>();
+            var uiGO = uiManager.GetOrCreateDynamicCanvas<NPCDialogueUI>();
             builder.RegisterComponent(uiGO.GetComponent<NPCDialogueUI>());
         }
     }

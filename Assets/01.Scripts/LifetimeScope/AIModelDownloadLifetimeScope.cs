@@ -8,7 +8,6 @@ using MySecondWorld.UI;
 public class AIModelDownloadLifetimeScope : LifetimeScope
 {
     [SerializeField] private AIModelConfigSO _modelConfig;
-    [SerializeField] private UIManager _uiManager;
 
     protected override void Configure(IContainerBuilder builder)
     {
@@ -17,7 +16,8 @@ public class AIModelDownloadLifetimeScope : LifetimeScope
         builder.Register<IDeviceCapability, LocalDeviceCapability>(Lifetime.Singleton);
         builder.Register<AIModelDownloader>(Lifetime.Singleton);
         builder.RegisterEntryPoint<AIModelDownloadStarter>();
-        var uiGO = _uiManager.GetOrCreateDynamicCanvas<AIModelDownloadUI>();
+        var uiManager = Parent.Container.Resolve<UIManager>();
+        var uiGO = uiManager.GetOrCreateDynamicCanvas<AIModelDownloadUI>();
         builder.RegisterComponent(uiGO.GetComponent<AIModelDownloadUI>());
         builder.RegisterInstance(_modelConfig);
     }

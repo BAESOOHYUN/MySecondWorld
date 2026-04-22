@@ -1,25 +1,12 @@
+using MySecondWorld.Network;
 using UnityEngine;
 using UnityEngine.UI;
-using MySecondWorld.Network;
+using VContainer;
 
 public class MenuUI : MonoBehaviour
 {
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-    private static void ResetStatics()
-    {
-        Instance = null;
-    }
-    public static MenuUI Instance { get; private set; }
-
-
     [SerializeField] private Toggle _robbyToggle;
-
-    private void Awake()
-    {
-        if (Instance != null && Instance != this)
-            return;
-        Instance = this;
-    }
+    [Inject] private LoginUI _loginUI;
 
     private void OnEnable()
     {
@@ -41,12 +28,12 @@ public class MenuUI : MonoBehaviour
 
     private void OnToggleRobby(bool isOn)
     {
-        if (LoginUI.Instance == null)
+        if (_loginUI == null)
         {
-            Debug.LogWarning("[MenuUI] LoginUI.Instance가 null임. 인스펙터에서 확인");
+            Debug.LogWarning("[MenuUI] LoginUI가 null임. ProjectLifetimeScope 연결 확인");
             return;
         }
 
-        LoginUI.Instance.gameObject.SetActive(isOn);
+        _loginUI.gameObject.SetActive(isOn);
     }
 }

@@ -1,11 +1,11 @@
 using System;
-using UnityEngine;
-using Mirror;
-using System.Collections.Generic;
 using System.Collections;
-using UnityEngine.SceneManagement;
-using MySecondWorld.Save;
+using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using Mirror;
+using MySecondWorld.Save;
 
 namespace MySecondWorld.Network
 {
@@ -24,7 +24,7 @@ namespace MySecondWorld.Network
         private int _expectedSceneLoads;                 // 클라이언트: 로드해야 할 씬 수
         private int _completedSceneLoads;                // 클라이언트: 로드 완료된 씬 수
 
-        //─────────────────────────── UI단 ──────────────────────────
+        #region UI단
         public void ToggleHost(bool isOn)
         {
             if (isOn) StartHost();
@@ -36,8 +36,9 @@ namespace MySecondWorld.Network
             if (isOn) StartClient();
             else StopClient();
         }
+        #endregion
 
-        //─────────────────────────── 서버 측 ──────────────────────────
+        #region 서버 측
 
         // [S1] 서버 시작: 핸들러 등록 + 코루틴 시작
         public override void OnStartServer()
@@ -215,9 +216,10 @@ namespace MySecondWorld.Network
             }
             base.OnServerDisconnect(conn);
         }
+        #endregion
 
 
-        //─────────────────────── 서버 측  Zone 관리 ──────────────────────────
+        #region 서버 측  Zone 관리
 
         // [S-Loop] zoneCheckInterval마다 위치 체크 (S5에서 isSpawned=true 된 플레이어만)
         public IEnumerator CheckZones()
@@ -420,8 +422,10 @@ namespace MySecondWorld.Network
             conn.Send(new AdditiveSceneMessage { sceneName = sceneName, load = false });
             session.loadedScenes.Remove(sceneName);
         }
+        #endregion
 
-        //──────────────────── 클라이언트 측 ────────────────────
+
+        #region 클라이언트 측
 
         // [C1] 클라이언트 시작: 핸들러 등록
         public override void OnStartClient()
@@ -482,6 +486,7 @@ namespace MySecondWorld.Network
                 _completedSceneLoads = 0;
             }
         }
+        #endregion
     }
 }
 

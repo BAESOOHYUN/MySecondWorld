@@ -1,19 +1,26 @@
 using Mirror;
+using MySecondWorld.UI;
 using UnityEngine;
+using VContainer;
+using VContainer.Unity;
 
 namespace MySecondWorld.Network.Chat
 {
     public class ChatPlayer : NetworkBehaviour
     {
+        private ChatUI _chatUI;
+
         public override void OnStartLocalPlayer()
         {
-            ChatUI.Instance.OnSubmitListener += OnSubmit;
-            ChatUI.Instance.OnLocalPlayerReady();
+            _chatUI = LifetimeScope.Find<ProjectLifetimeScope>().Container.Resolve<ChatUI>();
+            _chatUI.OnSubmitListener += OnSubmit;
+            _chatUI.OnLocalPlayerReady();
         }
         public override void OnStopLocalPlayer()
         {
-            ChatUI.Instance.OnLocalPlayerStopped();
-            ChatUI.Instance.OnSubmitListener -= OnSubmit;
+            if (_chatUI == null) return;
+            _chatUI.OnLocalPlayerStopped();
+            _chatUI.OnSubmitListener -= OnSubmit;
         }
 
         private void OnSubmit(string msg) => CmdSendMessage(msg); // 브릿지
@@ -38,8 +45,9 @@ namespace MySecondWorld.Network.Chat
         private void RpcReceiveMessage(string playerName, string message)
         {
             Debug.Log($"[Client] RpcReceiveMessage: {message}");
-            // 모든 클라이언트에서 실행
-            ChatUI.Instance.CreateMessagePrefab(playerName, message);
+            if (_chatUI == null)
+                _chatUI = LifetimeScope.Find<ProjectLifetimeScope>().Container.Resolve<ChatUI>();
+            _chatUI.CreateMessagePrefab(playerName, message);
         }
 
     }

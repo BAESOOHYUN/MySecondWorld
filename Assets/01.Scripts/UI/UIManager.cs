@@ -1,18 +1,14 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
+using MessagePipe;
+using VContainer;
 using MySecondWorld.Network;
 
 namespace MySecondWorld.UI
 {
     public class UIManager : MonoBehaviour
     {
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        static void ResetSingleton()
-        {
-            Instance = null; // Domain Reload OFF 환경에서도 매번 초기화
-        }
-        public static UIManager Instance { get; private set; }
-
         [Header("상시 캔버스")]
         [SerializeField] private GameObject _menuCanvas;
         [SerializeField] private GameObject _loginCanvas;
@@ -20,35 +16,34 @@ namespace MySecondWorld.UI
         [SerializeField] private GameObject _joystickCanvas;
         [Header("동적 캔버스 프리팹")]
         [SerializeField] private List<GameObject> _dynamicCanvasPrefabs = new List<GameObject>();
-        private readonly Dictionary<System.Type, GameObject> _dynamicCanvasInstances = new Dictionary<System.Type, GameObject>();
 
+        private readonly Dictionary<Type, GameObject> _dynamicCanvasInstances = new Dictionary<Type, GameObject>();
+        private IDisposable _subscription;
+
+        [Inject]
+        private void Construct(ISubscriber<AuthStateChangedEvent> authSubscriber)
+        {
+            _subscription = authSubscriber.Subscribe(OnAuthStateChanged);
+        }
 
         private void Awake()
         {
-            if (Instance != null && Instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
             SetLobbyState();
         }
 
-        // 이벤트 구독
-        private void OnEnable()
+        private void OnDestroy()
         {
-            PlayerAuthenticator.OnAuthenticated += SetGameState;
-            PlayerAuthenticator.OnDisconnected += ResetToLobbyState;
+            _subscription?.Dispose();
         }
 
-        private void OnDisable()
+        private void OnAuthStateChanged(AuthStateChangedEvent evt)
         {
-            PlayerAuthenticator.OnAuthenticated -= SetGameState;
-            PlayerAuthenticator.OnDisconnected -= ResetToLobbyState;
+            if (evt.IsAuthenticated) 
+                SetGameState();
+            else 
+                ResetToLobbyState();
         }
 
-        // 상태 전환 메서드들
         private void SetLobbyState()
         {
             if (_menuCanvas != null) _menuCanvas.SetActive(false);
@@ -65,15 +60,23 @@ namespace MySecondWorld.UI
             if (_joystickCanvas != null) _joystickCanvas.SetActive(true);
         }
 
+        private void ResetToLobbyState()
+        {
+            foreach (var kvp in _dynamicCanvasInstances)
+            {
+                if (kvp.Value != null)
+                    kvp.Value.SetActive(false);
+            }
+            SetLobbyState();
+        }
+
         public GameObject GetOrCreateDynamicCanvas<T>() where T : Component
         {
             var type = typeof(T);
 
-            // 이미 인스턴스가 있으면 재활용
             if (_dynamicCanvasInstances.TryGetValue(type, out var existing) && existing != null)
                 return existing;
 
-            // 프리팹 리스트에서 해당 컴포넌트가 붙은 프리팹 찾기
             foreach (var prefab in _dynamicCanvasPrefabs)
             {
                 if (prefab.GetComponent<T>() != null)
@@ -87,16 +90,6 @@ namespace MySecondWorld.UI
 
             Debug.LogWarning($"[UIManager] {type.Name} 프리팹을 찾을 수 없습니다.");
             return null;
-        }
-        private void ResetToLobbyState()
-        {
-            foreach (var kvp in _dynamicCanvasInstances)
-            {
-                if (kvp.Value != null)
-                    kvp.Value.SetActive(false);
-            }
-
-            SetLobbyState();
         }
     }
 }

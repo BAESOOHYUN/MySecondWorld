@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
@@ -5,7 +6,6 @@ using Cysharp.Text;
 using LLMUnity;
 using MessagePipe;
 using VContainer;
-using System;
 
 namespace MySecondWorld.AI
 {

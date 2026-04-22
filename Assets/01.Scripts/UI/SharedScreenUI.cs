@@ -161,7 +161,7 @@ namespace MySecondWorld.Network
             }
         }
 
-        // ──────────────────── 패널 전환 ────────────────────
+        // 패널 전환
         private void ShowFileLoadPanel()
         {
             _fileLoadPanel.SetActive(true);
@@ -190,7 +190,7 @@ namespace MySecondWorld.Network
             }
         }
 
-        // ──────────────────── PDFViewer 이벤트 — 발표자 동기화 ────────────────────
+        // PDFViewer 이벤트 — 발표자 동기화
         private void OnPdfViewerPageChanged(PDFViewer sender, int oldIdx, int newIdx)
         {
             if (_isSyncingFromNetwork) return;
@@ -303,7 +303,7 @@ namespace MySecondWorld.Network
             return new Vector4(nx, ny, nw, nh);
         }
 
-        // ──────────────────── 이벤트 핸들러 — 파일 로드 ────────────────────
+        // 이벤트 핸들러 — 파일 로드
         private void OnLocalFileSelect()
         {
 
@@ -360,7 +360,7 @@ namespace MySecondWorld.Network
             }
         }
 
-        // ──────────────────── 이벤트 핸들러 — 뷰어 열기 ────────────────────
+        // 이벤트 핸들러 — 뷰어 열기
         private void OnOpenView()
         {
             byte[] buffer = _controller.FileBuffer;
@@ -389,7 +389,7 @@ namespace MySecondWorld.Network
             ShowViewPanel();
         }
 
-        // ──────────────────── 이벤트 핸들러 — 닫기/종료/저장 ────────────────────
+        // 이벤트 핸들러 — 닫기/종료/저장
         private void OnCloseFileLoad()
         {
             _fileLoadPanel.SetActive(false);
@@ -446,7 +446,7 @@ namespace MySecondWorld.Network
 #endif
         }
 
-        // ──────────────────── Controller 이벤트 콜백 ────────────────────
+        // Controller 이벤트 콜백
         private void OnPresenterChanged(uint newPresenterId)
         {
             uint myNetId = Mirror.NetworkClient.localPlayer?.netId ?? 0;
@@ -694,7 +694,7 @@ namespace MySecondWorld.Network
         }
 
 
-        // ──────────────────── 이미지 렌더 + 유틸 ────────────────────
+        // 이미지 렌더 + 유틸
         private void RenderImageLocal()
         {
             byte[] buffer = _controller.FileBuffer;

@@ -1,6 +1,8 @@
-using UnityEngine;
 using MySecondWorld.Network.Player;
 using MySecondWorld.UI;
+using UnityEngine;
+using VContainer;
+using VContainer.Unity;
 
 namespace MySecondWorld.Network
 {
@@ -10,14 +12,15 @@ namespace MySecondWorld.Network
     /// </summary>
     public class SharedScreenInteraction : MonoBehaviour
     {
-        [SerializeField] private GameObject _screenUI;     // Canvas UI 패널
+        [SerializeField] private GameObject _screenUI;
         private SharedScreenUI _screenUIComponent;
         private SharedScreenController _controller;
-
+        private UIManager _uiManager;
 
         private void Awake()
         {
             _controller = GetComponent<SharedScreenController>();
+            _uiManager = LifetimeScope.Find<ProjectLifetimeScope>().Container.Resolve<UIManager>();
         }
 
         private void OnTriggerEnter(Collider other)
@@ -31,7 +34,7 @@ namespace MySecondWorld.Network
                 }
 
                 if (_screenUI == null)
-                    _screenUI = UIManager.Instance.GetOrCreateDynamicCanvas<SharedScreenUI>();
+                    _screenUI = _uiManager.GetOrCreateDynamicCanvas<SharedScreenUI>();
 
                 if (_screenUIComponent == null)
                     _screenUIComponent = _screenUI.GetComponent<SharedScreenUI>();

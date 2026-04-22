@@ -1,8 +1,9 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Mirror;
+using MessagePipe;
+using VContainer;
 
 /*
   전체 흐름
@@ -29,15 +30,12 @@ namespace MySecondWorld.Network
     public class PlayerAuthenticator : NetworkAuthenticator
     {
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStaticEvents()
+        static void ResetStaticState()
         {
-            OnAuthenticated = null;
-            OnDisconnected = null;
             playerNames.Clear();
         }
 
-        public static event Action OnAuthenticated;
-        public static event Action OnDisconnected;
+        [Inject] private IPublisher<AuthStateChangedEvent> _authPublisher;
 
         // 이름 중복 검사에 사용할 컬렉션
         public static readonly HashSet<string> playerNames = new HashSet<string>();
@@ -76,7 +74,7 @@ namespace MySecondWorld.Network
         public override void OnServerAuthenticate(NetworkConnectionToClient conn)
         {
             //일단 빈 채로 (서버는 메시지가 올 때까지 기다리기만 함)
-            Debug.Log($"[Auth] OnServerAuthenticate conn={conn.connectionId}");
+            //Debug.Log($"[Auth] OnServerAuthenticate conn={conn.connectionId}");
         }
 
         // 실제 인증 처리 메세지
@@ -167,7 +165,7 @@ namespace MySecondWorld.Network
         public override void OnStopClient()
         {
             NetworkClient.UnregisterHandler<AuthResponseMessage>();
-            OnDisconnected?.Invoke();
+            _authPublisher?.Publish(new AuthStateChangedEvent(false));
         }
 
         // 서버 연결되자마자 호출됨. Mirror 자동호출
@@ -190,8 +188,8 @@ namespace MySecondWorld.Network
             if (msg.code == AuthResponseMessage.Success)
             {
                 // Mirror에 "클라이언트 인증 완료" 알림
-                ClientAccept(); 
-                OnAuthenticated?.Invoke();
+                ClientAccept();
+                _authPublisher?.Publish(new AuthStateChangedEvent(true));
             }
             else
             {

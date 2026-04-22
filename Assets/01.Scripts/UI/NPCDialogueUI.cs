@@ -1,9 +1,9 @@
 using System;
 using System.Threading;
-using UnityEngine;
-using UnityEngine.UI;
 using Cysharp.Text;
 using Cysharp.Threading.Tasks;
+using UnityEngine;
+using UnityEngine.UI;
 using TMPro;
 using R3;
 using VContainer;
@@ -47,7 +47,6 @@ namespace MySecondWorld.UI
         public Observable<Unit> OnClose => _closeButton.OnClickAsObservable().AsUnitObservable();
 
         private string _currentNpcGuid;
-        private IDisposable _subscriptions;
 
         [Inject]
         private void Construct(
