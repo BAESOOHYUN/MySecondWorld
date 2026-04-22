@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Mirror;
 using Paroxe.PdfRenderer;
+using R3;
 
 namespace MySecondWorld.Network
 {
@@ -12,12 +13,12 @@ namespace MySecondWorld.Network
     [RequireComponent(typeof(NetworkIdentity))]
     public class SharedScreenController : NetworkBehaviour
     {
-        public event Action<uint> onPresenterChanged;
-        public event Action<bool> onAllowDownloadChanged;
-        public event Action onFileReceived;
-        public event Action<int> onPageChanged;
-        public event Action<float> onZoomChanged;
-        public event Action<Vector4> onViewportRectChanged;
+        public readonly Subject<uint> onPresenterChanged = new();
+        public readonly Subject<bool> onAllowDownloadChanged = new();
+        public readonly Subject<Unit> onFileReceived = new();
+        public readonly Subject<int> onPageChanged = new();
+        public readonly Subject<float> onZoomChanged = new();
+        public readonly Subject<Vector4> onViewportRectChanged = new();
 
         private Renderer _screenRenderer;
 
@@ -108,22 +109,22 @@ namespace MySecondWorld.Network
         // ────────────────── [SyncVar] 필드 hook 이벤트 ────────────────── 
         private void OnPresenterChanged(uint oldValue, uint newValue)
         {
-            onPresenterChanged?.Invoke(newValue);
+            onPresenterChanged.OnNext(newValue);
         }
 
         private void OnAllowDownloadChanged(bool oldValue, bool newValue)
         {
-            onAllowDownloadChanged?.Invoke(newValue);
+            onAllowDownloadChanged.OnNext(newValue);
         }
 
         private void OnZoomLevelChanged(float oldValue, float newValue)
         {
-            onZoomChanged?.Invoke(newValue);
+            onZoomChanged.OnNext(newValue);
         }
 
         private void OnViewportRectChanged(Vector4 oldValue, Vector4 newValue)
         {
-            onViewportRectChanged?.Invoke(newValue);
+            onViewportRectChanged.OnNext(newValue);
         }
 
 
@@ -329,7 +330,7 @@ namespace MySecondWorld.Network
 
             _totalPageCount = totalPageCount;
             RenderToScreen();
-            onFileReceived?.Invoke();
+            onFileReceived.OnNext(Unit.Default);
 
         }
 
@@ -339,7 +340,7 @@ namespace MySecondWorld.Network
         {
             // _currentPage는 SyncVar 자동 동기화로 받음
             RenderToScreen(page);
-            onPageChanged?.Invoke(page);
+            onPageChanged.OnNext(page);
         }
 
         [TargetRpc]
@@ -347,14 +348,14 @@ namespace MySecondWorld.Network
         {
             RenderToScreen(_currentPage);
             ApplyQuadZoom();
-            onZoomChanged?.Invoke(zoom);
+            onZoomChanged.OnNext(zoom);
         }
 
         [TargetRpc]
         private void TargetRpcViewportRectChanged(NetworkConnection target, Vector4 rect)
         {
             ApplyQuadZoom();
-            onViewportRectChanged?.Invoke(rect);
+            onViewportRectChanged.OnNext(rect);
         }
 
         [TargetRpc]

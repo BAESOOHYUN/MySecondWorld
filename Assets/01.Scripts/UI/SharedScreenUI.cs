@@ -1,10 +1,14 @@
 using System.Collections;
 using System.IO;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using Paroxe.PdfRenderer;
 using SimpleFileBrowser;
+using R3;
+using Cysharp.Threading.Tasks;
+using System;
 
 namespace MySecondWorld.Network
 {
@@ -52,8 +56,10 @@ namespace MySecondWorld.Network
         private string _localFilePath;
         private bool _isSyncingFromNetwork; // 무한루프 방지 플래그
         private ScrollRect _pdfScrollRect;  // PDFViewer 내부 ScrollRect 캐시
-        private Coroutine _pageZoomCoroutine;  // 페이지/줌 동기화 코루틴
-        private Coroutine _scrollCoroutine;    // 스크롤 위치 동기화 코루틴 (페이지 코루틴과 독립)
+        private CancellationTokenSource _pageZoomCts;  // 페이지/줌 동기화 코루틴
+        private CancellationTokenSource _scrollCts;    // 스크롤 위치 동기화 코루틴 (페이지 코루틴과 독립)
+
+        private readonly CompositeDisposable _controllerDisposables = new();
 
         private void Awake()
         {
@@ -89,6 +95,12 @@ namespace MySecondWorld.Network
 
         private void OnDestroy()
         {
+            // CTS 정리
+            _pageZoomCts?.Cancel();
+            _pageZoomCts?.Dispose();
+            _scrollCts?.Cancel();
+            _scrollCts?.Dispose();
+
             // FileLoad 패널
             _urlInputField.onValueChanged.RemoveListener(OnUrlInputChanged);
             _localFileSearchButton.onClick.RemoveListener(OnLocalFileSelect);
@@ -114,51 +126,29 @@ namespace MySecondWorld.Network
             if (_pdfScrollRect != null)
                 _pdfScrollRect.onValueChanged.RemoveListener(OnPdfScrollChanged);
 
-            // Controller 이벤트
-            if (_controller != null)
-            {
-                _controller.onPresenterChanged -= OnPresenterChanged;
-                _controller.onAllowDownloadChanged -= OnAllowDownloadChanged;
-                _controller.onFileReceived -= OnFileReceived;
-                _controller.onPageChanged -= OnPageChanged;
-                _controller.onZoomChanged -= OnZoomChanged;
-                _controller.onViewportRectChanged -= OnViewportRectChanged;
-
-            }
+            _controllerDisposables.Dispose(); //구독들을 해제하고 CompositeDisposable 자체도 폐기. 이후에 .AddTo() 해도 무시
         }
 
         public void Init(SharedScreenController controller)
         {
-            // 이전 구독 해제
-            if (_controller != null)
-            {
-                _controller.onPresenterChanged -= OnPresenterChanged;
-                _controller.onAllowDownloadChanged -= OnAllowDownloadChanged;
-                _controller.onFileReceived -= OnFileReceived;
-                _controller.onPageChanged -= OnPageChanged;
-                _controller.onZoomChanged -= OnZoomChanged;
-                _controller.onViewportRectChanged -= OnViewportRectChanged;
-            }
-
+            _controllerDisposables.Clear();  // 이전 controller 구독 해제
+                                             // 구독들을 Dispose(해제)하고 리스트를 비움
+                                             // CompositeDisposable 자체는 살아있어서 이후에 새 구독을 .AddTo() 할 수 있다
             _controller = controller;
-            _controller.onPresenterChanged += OnPresenterChanged;
-            _controller.onAllowDownloadChanged += OnAllowDownloadChanged;
-            _controller.onFileReceived += OnFileReceived;
-            _controller.onPageChanged += OnPageChanged;
-            _controller.onZoomChanged += OnZoomChanged;
-            _controller.onViewportRectChanged += OnViewportRectChanged;
+            _controller.onPresenterChanged.Subscribe(OnPresenterChanged).AddTo(_controllerDisposables);
+            _controller.onAllowDownloadChanged.Subscribe(OnAllowDownloadChanged).AddTo(_controllerDisposables);
+            _controller.onFileReceived.Subscribe(_ => OnFileReceived()).AddTo(_controllerDisposables);
+            _controller.onPageChanged.Subscribe(OnPageChanged).AddTo(_controllerDisposables);
+            _controller.onZoomChanged.Subscribe(OnZoomChanged).AddTo(_controllerDisposables);
+            _controller.onViewportRectChanged.Subscribe(OnViewportRectChanged).AddTo(_controllerDisposables);
 
             uint myNetId = Mirror.NetworkClient.localPlayer?.netId ?? 0;
             _isPresenter = _controller.IsPresenter(myNetId);
 
             if (!_controller.HasPresenter)
-            {
                 ShowFileLoadPanel();
-            }
             else
-            {
                 ShowOpenViewButton();
-            }
         }
 
         // 패널 전환
@@ -205,13 +195,13 @@ namespace MySecondWorld.Network
             {
                 _controller.CmdChangeZoom(newZoom);
                 // 줌 변경 시 viewport rect도 갱신 (ScrollRect onValueChanged가 발화 안 될 수 있음)
-                StartCoroutine(SendViewportRectNextFrame());
+                SendViewportRectNextFrame().Forget();
             }
         }
 
-        private IEnumerator SendViewportRectNextFrame()
+        private async UniTaskVoid SendViewportRectNextFrame()
         {
-            yield return null; // 줌 후 레이아웃 리빌드 대기
+            await UniTask.NextFrame(); // 줌 후 레이아웃 리빌드 대기
             if (_isPresenter && _controller != null)
             {
                 Vector4 viewRect = ComputePageViewportRect();
@@ -232,10 +222,11 @@ namespace MySecondWorld.Network
             }
 
             // 비동기 로드 완료 후 발표자 상태로 동기화 (코루틴으로 순서 보장)
-            StartPageZoomCoroutine(SyncFromPresenterCoroutine(
+            StartPageZoomTask(ct => SyncFromPresenterTask(
                 _controller.CurrentPage,
                 _controller.ZoomLevel,
-                _controller.ViewportRect
+                _controller.ViewportRect,
+                ct
             ));
         }
 
@@ -374,7 +365,7 @@ namespace MySecondWorld.Network
                 if (_pdfViewer != null && !_pdfViewer.IsLoaded)
                 {
                     // 최초 로드만 — 1프레임 대기 후 로드 (BookMark/Thumbnail 초기화 대기)
-                    StartCoroutine(LoadPdfNextFrame());
+                    LoadPdfNextFrame().Forget();
                 }
                 // 이미 로드된 상태면 활성화만으로 충분 (Document 유지)
                 // GoToPage는 OnPdfDocumentLoaded 콜백에서 처리
@@ -485,7 +476,7 @@ namespace MySecondWorld.Network
 
                     _pdfViewerObject.SetActive(true);
                     _imageViewPanel?.SetActive(false);
-                    StartCoroutine(LoadPdfNextFrame());
+                    LoadPdfNextFrame().Forget();
                 }
                 else
                 {
@@ -503,9 +494,9 @@ namespace MySecondWorld.Network
             }
         }
 
-        private IEnumerator LoadPdfNextFrame()
+        private async UniTaskVoid LoadPdfNextFrame()
         {
-            yield return null; // PDFViewer 내부 초기화 대기 (Awake/OnEnable/Start)
+            await UniTask.NextFrame(); // PDFViewer 내부 초기화 대기 (Awake/OnEnable/Start)
             if (_pdfViewer != null && _controller.FileBuffer != null)
             {
                 // 시작시 LeftPanel 닫는 용도. 나중의 기획 변경을 위해 남겨둠.
@@ -523,15 +514,7 @@ namespace MySecondWorld.Network
             if (_isPresenter) return;
             if (!IsFollowingPresenter()) return;
 
-            // 진행 중인 스크롤 코루틴 정리 (경계면 충돌 방지)
-            if (_scrollCoroutine != null)
-            {
-                StopCoroutine(_scrollCoroutine);
-                _scrollCoroutine = null;
-                if (_pdfScrollRect != null) _pdfScrollRect.enabled = true;
-            }
-
-            StartPageZoomCoroutine(SyncPageZoomCoroutine(page, _controller.ZoomLevel));
+            StartPageZoomTask(ct => SyncPageZoomTask(page, _controller.ZoomLevel, ct));
         }
 
         private void OnZoomChanged(float zoom)
@@ -539,7 +522,7 @@ namespace MySecondWorld.Network
             if (_isPresenter) return;
             if (!IsFollowingPresenter()) return;
 
-            StartPageZoomCoroutine(SyncPageZoomCoroutine(_controller.CurrentPage, zoom));
+            StartPageZoomTask(ct => SyncPageZoomTask(_controller.CurrentPage, zoom, ct));
         }
 
         private void OnViewportRectChanged(Vector4 rect)
@@ -548,7 +531,7 @@ namespace MySecondWorld.Network
             if (!IsFollowingPresenter()) return;
 
             // 스크롤만 적용 — _pageZoomCoroutine과 독립 슬롯 사용
-            StartScrollCoroutine(SyncScrollCoroutine(_controller.CurrentPage, rect));
+            StartScrollTask(ct => SyncScrollTask(_controller.CurrentPage, rect, ct));
         }
 
         // 토글 on 시 발표자의 현재 상태를 가져와서 즉시 동기화
@@ -558,10 +541,11 @@ namespace MySecondWorld.Network
             if (!IsFollowingPresenter()) return;
 
             // 토글 ON: 전체 상태를 순서대로 맞춤 (페이지→줌→스크롤)
-            StartPageZoomCoroutine(SyncFromPresenterCoroutine(
+            StartPageZoomTask(ct => SyncFromPresenterTask(
                 _controller.CurrentPage,
                 _controller.ZoomLevel,
-                _controller.ViewportRect
+                _controller.ViewportRect,
+                ct
             ));
         }
 
@@ -574,86 +558,91 @@ namespace MySecondWorld.Network
         }
 
         // 페이지/줌 코루틴 슬롯 — 스크롤 코루틴을 취소하지 않음
-        private void StartPageZoomCoroutine(IEnumerator routine)
+        private void StartPageZoomTask(Func<CancellationToken, UniTask> taskFactory)
         {
-            if (_pageZoomCoroutine != null)
-                StopCoroutine(_pageZoomCoroutine);
-            _pageZoomCoroutine = StartCoroutine(routine);
+            _pageZoomCts?.Cancel();
+            _pageZoomCts?.Dispose();
+            _pageZoomCts = new CancellationTokenSource();
+            taskFactory(_pageZoomCts.Token).Forget();
         }
 
         // 스크롤 코루틴 슬롯 — 페이지/줌 코루틴을 취소하지 않음
-        private void StartScrollCoroutine(IEnumerator routine)
+        private void StartScrollTask(Func<CancellationToken, UniTask> taskFactory)
         {
-            if (_scrollCoroutine != null)
-                StopCoroutine(_scrollCoroutine);
-            _scrollCoroutine = StartCoroutine(routine);
+            _scrollCts?.Cancel();
+            _scrollCts?.Dispose();
+            _scrollCts = new CancellationTokenSource();
+            // taskFactory가 UniTask를 반환하는데, 이걸 await하지 않으면 컴파일러가 경고를 냄.
+            // Forget()은 그 경고를 없애면서 "의도적으로 await 안 함"을 명시
+            taskFactory(_scrollCts.Token).Forget();
         }
 
         // 페이지 + 줌만 동기화
-        private IEnumerator SyncPageZoomCoroutine(int page, float zoom)
+        private async UniTask SyncPageZoomTask(int page, float zoom, CancellationToken ct)
         {
             _isSyncingFromNetwork = true;
 
             if (_pdfViewer.CurrentPageIndex != page)
             {
                 _pdfViewer.GoToPage(page);
-                yield return null;
+                await UniTask.NextFrame(ct);
+                // ct는 취소 신호. 새 작업이 시작되면 StartPageZoomTask에서 이전 CTS를 Cancel()하는데,
+                // 이때 ct가 취소 신호를 받고 await 지점에서 즉시 중단
             }
 
             if (!Mathf.Approximately(_pdfViewer.ZoomFactor, zoom))
             {
                 _pdfViewer.ZoomFactor = zoom;
-                yield return null;
+                await UniTask.NextFrame(ct);
             }
 
             _isSyncingFromNetwork = false;
-            _pageZoomCoroutine = null;
         }
 
         // 스크롤 위치 동기화 — GoToPage 없이 anchoredPosition만 직접 조작
         // GoToPage는 내부 레이아웃 리셋 + 페이지 상단 점프를 유발하므로 사용하지 않음.
         // pageContainer는 모든 페이지를 세로로 나열하므로 anchoredPosition만으로 경계면 포함 어디든 이동 가능.
-        private IEnumerator SyncScrollCoroutine(int page, Vector4 viewportRect)
+        private async UniTask SyncScrollTask(int page, Vector4 viewportRect, CancellationToken ct)
         {
             _isSyncingFromNetwork = true;
 
             // ScrollRect 비활성화 → anchoredPosition 직접 조작 → 1프레임 대기 → 재활성화
             if (_pdfScrollRect != null) _pdfScrollRect.enabled = false;
             ApplyScrollFromViewportRect(page, viewportRect);
-            yield return null;
+            await UniTask.NextFrame(ct);
+
             if (_pdfScrollRect != null) _pdfScrollRect.enabled = true;
 
             _isSyncingFromNetwork = false;
-            _scrollCoroutine = null;
         }
 
         /// <summary>
         /// 페이지 → 줌 → 스크롤 순서로 전체 동기화. 토글 ON 시 또는 문서 로드 완료 시 사용.
         /// </summary>
-        private IEnumerator SyncFromPresenterCoroutine(int page, float zoom, Vector4 viewportRect)
+        private async UniTask SyncFromPresenterTask(int page, float zoom, Vector4 viewportRect, CancellationToken ct)
         {
             _isSyncingFromNetwork = true;
 
             if (_pdfViewer.CurrentPageIndex != page)
             {
                 _pdfViewer.GoToPage(page);
-                yield return null;
+                await UniTask.NextFrame(ct);
             }
 
             if (!Mathf.Approximately(_pdfViewer.ZoomFactor, zoom))
             {
                 _pdfViewer.ZoomFactor = zoom;
-                yield return null;
+                await UniTask.NextFrame(ct);
             }
 
             // ScrollRect 비활성화 → anchoredPosition 세팅 → 1프레임 대기 → 재활성화
             if (_pdfScrollRect != null) _pdfScrollRect.enabled = false;
             ApplyScrollFromViewportRect(page, viewportRect);
-            yield return null;
+            await UniTask.NextFrame(ct);
+
             if (_pdfScrollRect != null) _pdfScrollRect.enabled = true;
 
             _isSyncingFromNetwork = false;
-            _pageZoomCoroutine = null;
         }
 
         /// <summary>
