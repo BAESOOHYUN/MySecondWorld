@@ -3,6 +3,7 @@ using VContainer;
 using VContainer.Unity;
 using MessagePipe;
 using MySecondWorld.AI;
+using MySecondWorld.UI;
 
 public class AIModelDownloadLifetimeScope : LifetimeScope
 {

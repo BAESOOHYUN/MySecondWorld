@@ -8,8 +8,9 @@ using TMPro;
 using R3;
 using VContainer;
 using MessagePipe;
+using MySecondWorld.AI;
 
-namespace MySecondWorld.AI
+namespace MySecondWorld.UI
 {
     // 대화창, 타이핑 효과, STT/TTS 버튼 자리 확보
 

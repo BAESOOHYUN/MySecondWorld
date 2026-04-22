@@ -6,33 +6,36 @@ using MessagePipe;
 using VContainer;
 using MySecondWorld.AI;
 
-public class AIModelDownloadUI: MonoBehaviour
+namespace MySecondWorld.UI
 {
-    [SerializeField] private GameObject _canvas;
-    [SerializeField] private Slider _progressBar;
-    [SerializeField] private TextMeshProUGUI _progressText;
-
-    [Inject]
-    public void Construct(ISubscriber<AIModelDownloadProgressEvent> sub)
+    public class AIModelDownloadUI : MonoBehaviour
     {
-        sub.Subscribe(OnProgress).AddTo(destroyCancellationToken);
-    }
+        [SerializeField] private GameObject _canvas;
+        [SerializeField] private Slider _progressBar;
+        [SerializeField] private TextMeshProUGUI _progressText;
 
-    public void OnProgress(AIModelDownloadProgressEvent evt)
-    {
-        if (evt.IsCompleted) 
+        [Inject]
+        public void Construct(ISubscriber<AIModelDownloadProgressEvent> sub)
         {
-            Hide(); 
-            return; 
+            sub.Subscribe(OnProgress).AddTo(destroyCancellationToken);
         }
 
-        _canvas.SetActive(true);
-        _progressBar.value = evt.Progress;
-        _progressText.text = $"AI 모델을 다운로드 중입니다.\n(최초 한 번만 다운로드 됩니다.)\n{(int)(evt.Progress * 100)}%";
-    }
+        public void OnProgress(AIModelDownloadProgressEvent evt)
+        {
+            if (evt.IsCompleted)
+            {
+                Hide();
+                return;
+            }
 
-    public void Hide()
-    {
-        _canvas.SetActive(false);
+            _canvas.SetActive(true);
+            _progressBar.value = evt.Progress;
+            _progressText.text = $"AI 모델을 다운로드 중입니다.\n(최초 한 번만 다운로드 됩니다.)\n{(int)(evt.Progress * 100)}%";
+        }
+
+        public void Hide()
+        {
+            _canvas.SetActive(false);
+        }
     }
 }
