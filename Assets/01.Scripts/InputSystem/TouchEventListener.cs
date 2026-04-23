@@ -4,8 +4,6 @@ using Unity.Cinemachine;
 using UnityEngine;
 using TMPro;
 using R3;
-using MySecondWorld.AI;
-using System.Threading;
 
 public enum DeviceType
 {
@@ -15,20 +13,6 @@ public enum DeviceType
 
 public class TouchEventListener : MonoBehaviour, IInputAxisOwner
 {
-    public static TouchEventListener Instance { get; private set; }
-
-    private void Awake()
-    {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-
-        Instance = this;
-        DontDestroyOnLoad(gameObject);
-    }
-
     public event Action<float, float> OnPriContactStarted;
     public event Action<float, float> OnSecContactStarted;
     public event Action<float, float> OnPriStartDrag;
@@ -69,7 +53,7 @@ public class TouchEventListener : MonoBehaviour, IInputAxisOwner
     private readonly Subject<Vector2> _onTap = new();
     public Observable<Vector2> OnTap => _onTap;
     // .DistinctUntilChanged() 값이 바뀔 때만 통과 (true→true는 막고, false→true만 통과). 기존 코드의 priStarted = priDown && !_wasPriDown 역할과 완전히 동일
-    // .Where(v => v) true인 것만 통과 (false는 버림)
+    // .Where(v => v) true인 것만 통과 (false는 버림) .Where(v => !v) false 것만 통과 (true는 버림)
     // .AsUnitObservable() bool값 필요없으니 Unit(빈 신호)으로 변환. bool 스트림 → 판단 용도. Unit 스트림 → 통보 용도
     public Observable<Unit> OnPriStarted => _priContact.DistinctUntilChanged().Where(v => v).AsUnitObservable();
     public Observable<Unit> OnPriEnded => _priContact.DistinctUntilChanged().Where(v => !v).AsUnitObservable();

@@ -1,6 +1,7 @@
 using Unity.Cinemachine;
 using UnityEngine;
 using VContainer;
+using VContainer.Unity;
 
 public class ThirdPersonCameraController : MonoBehaviour
 {
@@ -9,7 +10,8 @@ public class ThirdPersonCameraController : MonoBehaviour
     [SerializeField] private CinemachineCamera _cinemachineCamera;
     [SerializeField] private CinemachineOrbitalFollow _orbitFollow; //World Space. Sphere, 10, Tracking Target
     [SerializeField] private CinemachineFollowZoom _followZoom; // With 4.74, Damping 1
-    //[Inject] TouchEventListener _touchEventListener;
+
+    private TouchEventListener _touchEventListener;
 
     [Header("Rotation")]
     [SerializeField] private float _pcRotSpeed = 30f;
@@ -32,27 +34,21 @@ public class ThirdPersonCameraController : MonoBehaviour
 
     public float CameraYAngle => _cinemachineCamera.transform.eulerAngles.y;
 
-
     private void Start()
     {
         _horizontalValue = _orbitFollow.HorizontalAxis.Value;
         _verticalValue = _orbitFollow.VerticalAxis.Value;
-        TouchEventListener.Instance.OnPriDrag += Rotation;
-        TouchEventListener.Instance.OnSecDrag += Rotation;
-        TouchEventListener.Instance.OnZoom += Zoom;
-        //_touchEventListener.OnPriDrag += Rotation;
-        //_touchEventListener.OnSecDrag += Rotation;
-        //_touchEventListener.OnZoom += Zoom;
+        _touchEventListener = LifetimeScope.Find<ProjectLifetimeScope>().Container.Resolve<TouchEventListener>();
+        _touchEventListener.OnPriDrag += Rotation;
+        _touchEventListener.OnSecDrag += Rotation;
+        _touchEventListener.OnZoom += Zoom;
     }
 
     private void OnDisable()
     {
-        TouchEventListener.Instance.OnPriDrag -= Rotation;
-        TouchEventListener.Instance.OnSecDrag -= Rotation;
-        TouchEventListener.Instance.OnZoom -= Zoom;
-        //_touchEventListener.OnPriDrag -= Rotation;
-        //_touchEventListener.OnSecDrag -= Rotation;
-        //_touchEventListener.OnZoom -= Zoom;
+        _touchEventListener.OnPriDrag -= Rotation;
+        _touchEventListener.OnSecDrag -= Rotation;
+        _touchEventListener.OnZoom -= Zoom;
     }
 
     private void LateUpdate()
@@ -69,7 +65,7 @@ public class ThirdPersonCameraController : MonoBehaviour
     // Rotation
     private void Rotation(float dx, float dy)
     {
-        float speed = TouchEventListener.Instance.deviceType == DeviceType.PC ? _pcRotSpeed : _mobileRotSpeed;
+        float speed = _touchEventListener.deviceType == DeviceType.PC ? _pcRotSpeed : _mobileRotSpeed;
         // 해상도에 무관하게 동일한 회전감: 화면 가로/세로 픽셀 수로 정규화
         _horizontalValue += (dx / Screen.width) * speed * _deltaCorrectionValue;
         _verticalValue = Mathf.Clamp(
@@ -80,9 +76,9 @@ public class ThirdPersonCameraController : MonoBehaviour
     // Zoom
     private void Zoom(float delta)
     {
-        float speed = TouchEventListener.Instance.deviceType == DeviceType.PC ? _pcZoomSpeed : _mobileZoomSpeed;
+        float speed = _touchEventListener.deviceType == DeviceType.PC ? _pcZoomSpeed : _mobileZoomSpeed;
         // 모바일 핀치는 픽셀 거리이므로 Screen.height로 정규화, PC 스크롤은 그대로
-        float normalized = TouchEventListener.Instance.deviceType == DeviceType.Mobile
+        float normalized = _touchEventListener.deviceType == DeviceType.Mobile
             ? delta / Screen.height
             : delta;
         delta = normalized * speed * GetAspectCorrection();
