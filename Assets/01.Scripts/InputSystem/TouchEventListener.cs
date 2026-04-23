@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
-using TMPro;
 using Unity.Cinemachine;
 using UnityEngine;
+using TMPro;
+using R3;
+using MySecondWorld.AI;
+using System.Threading;
 
 public enum DeviceType
 {
@@ -57,10 +60,21 @@ public class TouchEventListener : MonoBehaviour, IInputAxisOwner
     private float _prevSecPositionX;
     private float _prevSecPositionY;
     private float _pinchMinDist;
-    private bool _wasPriDown;
-    private bool _wasSecDown;
     private bool _isPriDragging;
-    private bool _isSecDragging;
+    private bool _isSecDragging; 
+    private float DRAG_THRESHOLD  => deviceType == DeviceType.PC? 5f : 15f;
+
+    private readonly Subject<bool> _priContact = new();
+    private readonly Subject<bool> _secContact = new();
+    private readonly Subject<Vector2> _onTap = new();
+    public Observable<Vector2> OnTap => _onTap;
+    // .DistinctUntilChanged() 값이 바뀔 때만 통과 (true→true는 막고, false→true만 통과). 기존 코드의 priStarted = priDown && !_wasPriDown 역할과 완전히 동일
+    // .Where(v => v) true인 것만 통과 (false는 버림)
+    // .AsUnitObservable() bool값 필요없으니 Unit(빈 신호)으로 변환. bool 스트림 → 판단 용도. Unit 스트림 → 통보 용도
+    public Observable<Unit> OnPriStarted => _priContact.DistinctUntilChanged().Where(v => v).AsUnitObservable();
+    public Observable<Unit> OnPriEnded => _priContact.DistinctUntilChanged().Where(v => !v).AsUnitObservable();
+    public Observable<Unit> OnSecStarted => _priContact.DistinctUntilChanged().Where(v => v).AsUnitObservable();
+    public Observable<Unit> OnSecEnded => _priContact.DistinctUntilChanged().Where(v => !v).AsUnitObservable();
 
     #region InputAxis
 
@@ -148,6 +162,56 @@ public class TouchEventListener : MonoBehaviour, IInputAxisOwner
         axes.Add(new() { DrivenAxis = () => ref Zoom, Name = nameof(Zoom), Hint = IInputAxisOwner.AxisDescriptor.Hints.Y });
     }
 
+    private void Start()
+    {
+        #region 터치 시작과 종료
+        OnPriStarted.Subscribe(_ =>
+        {
+            _priStartPosition = new Vector2(PriStartPositionX.Value, PriStartPositionY.Value);
+            isPriStartPositionOnUI = OnUIChecker.IsPointerOverUIObject(_priStartPosition);
+            OnPriContactStarted?.Invoke(_priStartPosition.x, _priStartPosition.y);
+        }).AddTo(this);
+
+        OnPriEnded.Subscribe(_ =>
+        {
+            // 탭 감지
+            bool wasTap = !_isPriDragging && !isPriStartPositionOnUI;
+            Vector2 tapPos = new Vector2(PriPositionX.Value, PriPositionY.Value);
+
+            _isPriDragging = false;
+            OnPriEndDrag?.Invoke();
+            ResetPri();
+
+            // NPC 클릭시
+            if (wasTap)
+                _onTap.OnNext(tapPos);
+        }).AddTo(this);
+
+        OnSecStarted.Subscribe(_ =>
+        {
+            _secStartPosition = new Vector2(SecStartPositionX.Value, SecStartPositionY.Value);
+            isSecStartPositionOnUI = OnUIChecker.IsPointerOverUIObject(_secStartPosition);
+            OnSecContactStarted?.Invoke(_secStartPosition.x, _secStartPosition.y);
+            // 핀치 이전 위치 초기화
+            _prevPriPositionX = PriPositionX.Value;
+            _prevPriPositionY = PriPositionY.Value;
+            _prevSecPositionX = SecPositionX.Value;
+            _prevSecPositionY = SecPositionY.Value;
+        }).AddTo(this);
+
+        OnSecEnded.Subscribe(_ =>
+        {
+            _isSecDragging = false;
+            OnSecEndDrag?.Invoke();
+            ResetSec();
+            _prevPriPositionX = 0;
+            _prevPriPositionY = 0;
+            _prevSecPositionX = 0;
+            _prevSecPositionY = 0;
+        }).AddTo(this);
+        #endregion
+    }
+
     private void Update()
     {
         // 현재 위치 UI 판정 (매 프레임)
@@ -158,55 +222,11 @@ public class TouchEventListener : MonoBehaviour, IInputAxisOwner
         if (deviceType == DeviceType.PC && !isPriPositionOnUI)
             OnZoom?.Invoke(Zoom.Value);
 
-        #region 지역변수
+        _priContact.OnNext(PriContact.Value > 0);
+        _secContact.OnNext(SecContact.Value > 0);
         bool priDown = PriContact.Value > 0;
         bool secDown = SecContact.Value > 0;
-        bool priStarted = priDown && !_wasPriDown;
-        bool secStarted = secDown && !_wasSecDown;
-        bool priEnded = !priDown && _wasPriDown;
-        bool secEnded = !secDown && _wasSecDown;
-        #endregion
-        #region 터치 시작과 종료
-        // 터치 시작: startPosition 판정을 priCanRotate 계산 전에 처리
-        if (priStarted)
-        {
-            _priStartPosition = new Vector2(PriStartPositionX.Value, PriStartPositionY.Value);
-            isPriStartPositionOnUI = OnUIChecker.IsPointerOverUIObject(_priStartPosition);
-            OnPriContactStarted?.Invoke(_priStartPosition.x, _priStartPosition.y);
-        }
-        if (secStarted)
-        {
-            _secStartPosition = new Vector2(SecStartPositionX.Value, SecStartPositionY.Value);
-            isSecStartPositionOnUI = OnUIChecker.IsPointerOverUIObject(_secStartPosition);
-            OnSecContactStarted?.Invoke(_secStartPosition.x, _secStartPosition.y);
-            // 핀치 이전 위치 초기화
-            _prevPriPositionX = PriPositionX.Value;
-            _prevPriPositionY = PriPositionY.Value;
-            _prevSecPositionX = SecPositionX.Value;
-            _prevSecPositionY = SecPositionY.Value;
-        }
 
-        // 터치 종료
-        if (priEnded)
-        {
-            _isPriDragging = false;
-            OnPriEndDrag?.Invoke();
-            ResetPri();
-        }
-        if (secEnded)
-        {
-            _isSecDragging = false;
-            OnSecEndDrag?.Invoke();
-            ResetSec();
-            _prevPriPositionX = 0;
-            _prevPriPositionY = 0;
-            _prevSecPositionX = 0;
-            _prevSecPositionY = 0;
-        }
-
-        _wasPriDown = priDown;
-        _wasSecDown = secDown;
-        #endregion
         #region 터치 무시
         // 아무 클릭도 안함
         if (!priDown && !secDown)
@@ -224,6 +244,11 @@ public class TouchEventListener : MonoBehaviour, IInputAxisOwner
         // [0]번째 단독 드래그
         if (priCanRotate && !secCanRotate)
         {
+            Vector2 currentPos = new Vector2(PriPositionX.Value, PriPositionY.Value);
+            float dragDist = Vector2.Distance(currentPos, _priStartPosition);
+            if (dragDist < DRAG_THRESHOLD)
+                return;  // 임계값 미만이면 드래그 아님
+
             float dx = Mathf.DeltaAngle(_prevPriDeltaX, PriDeltaX.Value);
             float dy = Mathf.DeltaAngle(_prevPriDeltaY, PriDeltaY.Value);
             _prevPriDeltaX = PriDeltaX.Value;
@@ -241,6 +266,11 @@ public class TouchEventListener : MonoBehaviour, IInputAxisOwner
         // [1]번째 단독 드래그
         if (secCanRotate && !priCanRotate)
         {
+            Vector2 currentPos = new Vector2(SecPositionX.Value, SecPositionY.Value);
+            float dragDist = Vector2.Distance(currentPos, _secStartPosition);
+            if (dragDist < DRAG_THRESHOLD)
+                return;  // 임계값 미만이면 드래그 아님
+
             float dx = Mathf.DeltaAngle(_prevSecDeltaX, SecDeltaX.Value);
             float dy = Mathf.DeltaAngle(_prevSecDeltaY, SecDeltaY.Value);
             _prevSecDeltaX = SecDeltaX.Value;
@@ -270,7 +300,6 @@ public class TouchEventListener : MonoBehaviour, IInputAxisOwner
 
         float prevDist = Mathf.Sqrt(prevDX * prevDX + prevDY * prevDY);
         float currDist = Mathf.Sqrt(currDX * currDX + currDY * currDY);
-
 
         _prevPriPositionX = PriPositionX.Value;
         _prevPriPositionY = PriPositionY.Value;

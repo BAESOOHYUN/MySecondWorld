@@ -1,4 +1,4 @@
-using System.Collections;
+using System;
 using System.IO;
 using System.Threading;
 using UnityEngine;
@@ -8,7 +8,6 @@ using Paroxe.PdfRenderer;
 using SimpleFileBrowser;
 using R3;
 using Cysharp.Threading.Tasks;
-using System;
 
 namespace MySecondWorld.Network
 {

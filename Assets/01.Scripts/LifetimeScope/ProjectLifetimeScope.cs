@@ -21,6 +21,7 @@ public class ProjectLifetimeScope : LifetimeScope
         builder.RegisterMessageBroker<AuthStateChangedEvent>(options);
 
         builder.RegisterComponent(_uiManager);
+        builder.RegisterComponentInHierarchy<TouchEventListener>();
         builder.RegisterComponentInHierarchy<PlayerAuthenticator>();
         builder.RegisterComponentInHierarchy<LoginUI>();
         builder.RegisterComponentInHierarchy<MenuUI>();

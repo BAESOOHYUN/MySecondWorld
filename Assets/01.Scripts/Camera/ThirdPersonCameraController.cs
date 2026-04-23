@@ -1,5 +1,6 @@
 using Unity.Cinemachine;
 using UnityEngine;
+using VContainer;
 
 public class ThirdPersonCameraController : MonoBehaviour
 {
@@ -8,6 +9,7 @@ public class ThirdPersonCameraController : MonoBehaviour
     [SerializeField] private CinemachineCamera _cinemachineCamera;
     [SerializeField] private CinemachineOrbitalFollow _orbitFollow; //World Space. Sphere, 10, Tracking Target
     [SerializeField] private CinemachineFollowZoom _followZoom; // With 4.74, Damping 1
+    //[Inject] TouchEventListener _touchEventListener;
 
     [Header("Rotation")]
     [SerializeField] private float _pcRotSpeed = 30f;
@@ -30,13 +32,17 @@ public class ThirdPersonCameraController : MonoBehaviour
 
     public float CameraYAngle => _cinemachineCamera.transform.eulerAngles.y;
 
-    private void OnEnable()
+
+    private void Start()
     {
         _horizontalValue = _orbitFollow.HorizontalAxis.Value;
         _verticalValue = _orbitFollow.VerticalAxis.Value;
         TouchEventListener.Instance.OnPriDrag += Rotation;
         TouchEventListener.Instance.OnSecDrag += Rotation;
         TouchEventListener.Instance.OnZoom += Zoom;
+        //_touchEventListener.OnPriDrag += Rotation;
+        //_touchEventListener.OnSecDrag += Rotation;
+        //_touchEventListener.OnZoom += Zoom;
     }
 
     private void OnDisable()
@@ -44,6 +50,9 @@ public class ThirdPersonCameraController : MonoBehaviour
         TouchEventListener.Instance.OnPriDrag -= Rotation;
         TouchEventListener.Instance.OnSecDrag -= Rotation;
         TouchEventListener.Instance.OnZoom -= Zoom;
+        //_touchEventListener.OnPriDrag -= Rotation;
+        //_touchEventListener.OnSecDrag -= Rotation;
+        //_touchEventListener.OnZoom -= Zoom;
     }
 
     private void LateUpdate()

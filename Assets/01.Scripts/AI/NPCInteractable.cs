@@ -73,7 +73,12 @@ namespace MySecondWorld.AI
         #region 필드
         [Header("References")]
         [SerializeField] private NPCBrain _brain;       // GUID 소스로만 사용
+        [SerializeField] private GameObject _highlightUI; // 범위 진입 시 표시할 하이라이트 오브젝트
+        [Header("NPC Interaction")]
+        [Tooltip("NPC 레이어마스크 — 'NPC' 레이어를 지정하세요")]
+        [SerializeField] private LayerMask _npcLayerMask;
         private NPCDialogueUI _dialogueUI;
+        [Inject] private TouchEventListener _touchEventListener;
         // GUID는 NPCBrain → SystemPromptSO에서 읽는다
         private string NpcGuid
         {
@@ -152,6 +157,20 @@ namespace MySecondWorld.AI
             {
                 Debug.LogWarning($"[NPCInteractable] Start: interactAction이 null입니다. Inspector에서 연결 필요.");
             }
+
+            _touchEventListener.OnTap.Subscribe(screenPos =>
+            {
+                if (Camera.main == null)
+                    return;
+
+                Ray ray = Camera.main.ScreenPointToRay(screenPos);
+                if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, _npcLayerMask, QueryTriggerInteraction.Collide))
+                {
+                    var npc = hit.collider.GetComponentInParent<NPCInteractable>();
+                    npc?.Interact();
+                }
+            })
+            .AddTo(destroyCancellationToken);
         }
         #endregion
 
@@ -182,6 +201,7 @@ namespace MySecondWorld.AI
         {
             if (!other.CompareTag("Player"))
                 return;
+            _highlightUI?.SetActive(true);
             SafeFire(NpcTrigger.PlayerEntered);
         }
 
@@ -189,6 +209,7 @@ namespace MySecondWorld.AI
         {
             if (!other.CompareTag("Player"))
                 return;
+            _highlightUI?.SetActive(false);
             SafeFire(NpcTrigger.PlayerLeft);
         }
         #endregion
@@ -318,6 +339,14 @@ namespace MySecondWorld.AI
         }
 
         private void OnInteractPerformed(InputAction.CallbackContext ctx)
+        {
+            if (OnUIChecker.IsInputFieldFocused())
+                return;
+            SafeFire(NpcTrigger.Interact);
+        }
+
+        // 클릭/탭으로 외부에서 직접 호출 (TouchEventListener의 Raycast 결과)
+        public void Interact()
         {
             if (OnUIChecker.IsInputFieldFocused())
                 return;
