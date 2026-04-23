@@ -106,7 +106,7 @@ namespace MySecondWorld.Network
         }
 
 
-        // ────────────────── [SyncVar] 필드 hook 이벤트 ────────────────── 
+        //  [SyncVar] 필드 hook 이벤트  
         private void OnPresenterChanged(uint oldValue, uint newValue)
         {
             onPresenterChanged.OnNext(newValue);
@@ -128,7 +128,7 @@ namespace MySecondWorld.Network
         }
 
 
-        // ────────────────── 서버에 발표자(_presenterId) 설정/해제 알림 ────────────────────────
+        //  서버에 발표자(_presenterId) 설정/해제 알림
 
         [Command(requiresAuthority = false)]
         public void CmdSetPresenter(NetworkConnectionToClient sender = null)
@@ -154,7 +154,7 @@ namespace MySecondWorld.Network
             }
         }
 
-        // ──────────────────── 서버에 파일 다운로드 요청 ───────────────────────────────
+        // 서버에 파일 다운로드 요청
 
         [Command(requiresAuthority = false)]
         public void CmdSendFileStart(string fileName, FileType fileType, int totalSize, int totalChunkCount, bool allowDownload, NetworkConnectionToClient sender = null)
@@ -213,7 +213,7 @@ namespace MySecondWorld.Network
                 TargetRpcReceiveFileEnd(conn, totalSize, _cachedTotalPageCount);
             }
         }
-        // ──────────────────── 외곽 존 진입/퇴장 ────────────────────────────────────
+        // 외곽 존 진입/퇴장 
 
         [Command(requiresAuthority = false)]
         public void CmdEnterOuterZone(NetworkConnectionToClient sender = null)
@@ -241,7 +241,7 @@ namespace MySecondWorld.Network
             _outerObservers.Remove(sender);
         }
 
-        // ──────────────────── 서버에 페이지 변경 요청 ───────────────────────────────
+        // 서버에 페이지 변경 요청
         [Command(requiresAuthority = false)]
         public void CmdChangePage(int newPage, NetworkConnectionToClient sender = null)
         {
@@ -260,7 +260,7 @@ namespace MySecondWorld.Network
         }
 
 
-        // ──────────────────── 서버에 줌 변경 요청 ───────────────────────────────
+        // 서버에 줌 변경 요청
         [Command(requiresAuthority = false)]
         public void CmdChangeZoom(float newZoom, NetworkConnectionToClient sender = null)
         {
@@ -272,7 +272,7 @@ namespace MySecondWorld.Network
             SendZoomChangeToObservers(newZoom);
         }
 
-        // ──────────────────── 서버에 뷰포트 영역 변경 요청 ────────────────────
+        // 서버에 뷰포트 영역 변경 요청
         [Command(requiresAuthority = false)]
         public void CmdChangeViewportRect(Vector4 newRect, NetworkConnectionToClient sender = null)
         {
@@ -283,8 +283,7 @@ namespace MySecondWorld.Network
             SendViewportRectChangeToObservers(newRect);
         }
 
-        // ──────────────────── 모드 클라이언트가 파일 다운로드 ─────────────────────────
-
+        // 외곽 존 안의 관찰자들(_outerObservers)에게 파일 수신 시작 알림
         [TargetRpc]
         private void TargetRpcReceiveFileStart(NetworkConnection target, string fileName, FileType fileType, int totalSize, int totalChunkCount)
         {
@@ -334,7 +333,7 @@ namespace MySecondWorld.Network
 
         }
 
-        // ──────────────────── 모든 클라이언트가 새 페이지 렌더 ─────────────────────────
+        // 모든 클라이언트가 새 페이지 렌더
         [TargetRpc]
         private void TargetRpcPageChanged(NetworkConnection target, int page)
         {
@@ -376,7 +375,7 @@ namespace MySecondWorld.Network
 
         }
 
-        // ──────────────────── 페이지 렌더 ─────────────────────────
+        // 페이지 렌더
         public void RequestPrevPage()
         {
             CmdChangePage(_currentPage - 1);
@@ -465,7 +464,7 @@ namespace MySecondWorld.Network
             mat.mainTextureOffset = new Vector2(vx, uvOffsetY);
         }
 
-        // ──────────────────── 내부 헬퍼 ──────────────────── 
+        // 내부 헬퍼 
 
         // 특정 1명에게 캐시 전송. 늦게 온 사람이 외곽 트리거 진입하면 호출
         private void SendCachedFileToTarget(NetworkConnectionToClient conn)

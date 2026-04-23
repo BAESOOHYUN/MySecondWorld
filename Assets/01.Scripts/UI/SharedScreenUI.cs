@@ -55,8 +55,8 @@ namespace MySecondWorld.Network
         private string _localFilePath;
         private bool _isSyncingFromNetwork; // 무한루프 방지 플래그
         private ScrollRect _pdfScrollRect;  // PDFViewer 내부 ScrollRect 캐시
-        private CancellationTokenSource _pageZoomCts;  // 페이지/줌 동기화 코루틴
-        private CancellationTokenSource _scrollCts;    // 스크롤 위치 동기화 코루틴 (페이지 코루틴과 독립)
+        private CancellationTokenSource _pageZoomCts;  // 페이지/줌 동기화 취소 토큰
+        private CancellationTokenSource _scrollCts;    // 스크롤 위치 동기화 취소 토큰
 
         private readonly CompositeDisposable _controllerDisposables = new();
 
@@ -84,7 +84,6 @@ namespace MySecondWorld.Network
                 _pdfViewer.OnZoomChanged += OnPdfViewerZoomChanged;
                 _pdfViewer.OnDocumentLoaded += OnPdfDocumentLoaded;
             }
-
         }
 
         private void OnDisable()
@@ -128,6 +127,7 @@ namespace MySecondWorld.Network
             _controllerDisposables.Dispose(); //구독들을 해제하고 CompositeDisposable 자체도 폐기. 이후에 .AddTo() 해도 무시
         }
 
+        // 팩토리 패턴 초기화
         public void Init(SharedScreenController controller)
         {
             _controllerDisposables.Clear();  // 이전 controller 구독 해제
