@@ -6,6 +6,8 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using Mirror;
 using MySecondWorld.Save;
+using Cysharp.Threading.Tasks;
+using System.Threading;
 
 namespace MySecondWorld.Network
 {
@@ -23,6 +25,8 @@ namespace MySecondWorld.Network
         private bool _serverReady;                       // 서버 씬 프리로드 완료 여부
         private int _expectedSceneLoads;                 // 클라이언트: 로드해야 할 씬 수
         private int _completedSceneLoads;                // 클라이언트: 로드 완료된 씬 수
+
+        private CancellationTokenSource _cts;
 
         #region UI단
         public void ToggleHost(bool isOn)
@@ -47,7 +51,13 @@ namespace MySecondWorld.Network
             _roomRegistry = new DungeonRoomRegistry();
             // 클라이언트가 보내는 메시지 → NetworkServer.RegisterHandler (서버가 받으니까)
             NetworkServer.RegisterHandler<SceneLoadedAckMessage>(OnSceneLoadedAck);
-            StartCoroutine(CheckZones());
+            _cts = new CancellationTokenSource();
+            CheckZones(_cts.Token).Forget();
+        }
+        public override void OnStopServer()
+        {
+            _cts?.Cancel();
+            _cts?.Dispose();
         }
 
         // [S2] 모든 존 씬을 서버에만 additive로 프리로드한다.
@@ -55,15 +65,15 @@ namespace MySecondWorld.Network
         public override void OnServerSceneChanged(string sceneName)
         {
             base.OnServerSceneChanged(sceneName);
-            StartCoroutine(LoadAllZoneScenes());
+            LoadAllZoneScenes().Forget();
         }
 
-        private IEnumerator LoadAllZoneScenes()
+        private async UniTaskVoid LoadAllZoneScenes()
         {
             foreach (var zone in zones)
             {
                 if (!SceneManager.GetSceneByPath(zone.sceneName).isLoaded)
-                    yield return SceneManager.LoadSceneAsync(zone.sceneName, LoadSceneMode.Additive);
+                    await SceneManager.LoadSceneAsync(zone.sceneName, LoadSceneMode.Additive).ToUniTask();
 
                 // ★ additive 씬의 NetworkIdentity를 수동 Spawn
                 Scene loadedScene = SceneManager.GetSceneByPath(zone.sceneName);
@@ -111,13 +121,13 @@ namespace MySecondWorld.Network
                 playerId = conn.authenticationData as string
             };
             _sessions.Add(conn.connectionId, session);
-            StartCoroutine(PrepareAndSpawn(conn));
+            PrepareAndSpawn(conn, _cts.Token).Forget();
         }
 
         // [S4] 클라이언트에게 씬 로드 지시 + 스폰 위치 저장
-        public IEnumerator PrepareAndSpawn(NetworkConnectionToClient conn)
+        public async UniTaskVoid PrepareAndSpawn(NetworkConnectionToClient conn, CancellationToken ct)
         {
-            yield return new WaitUntil(() => _serverReady);
+            await UniTask.WaitUntil(() => _serverReady, cancellationToken: ct);
 
             var session = _sessions[conn.connectionId];
             var saveData = SaveManager.Instance?.Load(session.playerId);
@@ -222,7 +232,7 @@ namespace MySecondWorld.Network
         #region 서버 측  Zone 관리
 
         // [S-Loop] zoneCheckInterval마다 위치 체크 (S5에서 isSpawned=true 된 플레이어만)
-        public IEnumerator CheckZones()
+        public async UniTaskVoid CheckZones(CancellationToken ct)
         {
             while (true)
             {
@@ -246,7 +256,7 @@ namespace MySecondWorld.Network
                     RecoverFromFall(session, conn);
                     SyncAdditiveScenes(session, conn, needScenes, playerPos);
                 }
-                yield return new WaitForSeconds(zoneCheckInterval);
+                await UniTask.Delay(TimeSpan.FromSeconds(zoneCheckInterval), cancellationToken: ct);
             }
         }
 
@@ -440,33 +450,33 @@ namespace MySecondWorld.Network
         public void OnAdditiveSceneMessage(AdditiveSceneMessage msg)
         {
             if (msg.load)
-                StartCoroutine(LoadAdditiveScene(msg.sceneName));
+                LoadAdditiveScene(msg.sceneName).Forget();
             else
-                StartCoroutine(UnloadAdditiveScene(msg.sceneName));
+                UnloadAdditiveScene(msg.sceneName).Forget();
         }
 
         // [C2-a] 씬 로드 + 완료 카운터 증가
         // TODO: 데디케이티드 서버 전환 시 변경 필요
-        private IEnumerator LoadAdditiveScene(string sceneName)
+        private async UniTask LoadAdditiveScene(string sceneName)
         {
             // Host 방어: Host는 서버가 이미 프리로드했으므로 isLoaded = true → 스킵
             // 일반 클라이언트: 항상 isLoaded = false → 로드 실행
             if (!SceneManager.GetSceneByPath(sceneName).isLoaded)
-                yield return SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
+                await SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive).ToUniTask();
 
             _completedSceneLoads++; // ACK 판정용: 씬이 몇 개나 로드되었나?
             CheckAndSendSpawnAck();
         }
 
         // [C2-b] 씬 언로드
-        private IEnumerator UnloadAdditiveScene(string sceneName)
+        private async UniTask UnloadAdditiveScene(string sceneName)
         {
             // Host 모드: 같은 프로세스라서 언로드하면 서버 씬까지 날아감 → 스킵
             if (NetworkServer.active)
-                yield break;
+                return;
 
             if (SceneManager.GetSceneByPath(sceneName).isLoaded)
-                yield return SceneManager.UnloadSceneAsync(sceneName);
+                await SceneManager.UnloadSceneAsync(sceneName).ToUniTask();
         }
 
         // [C3] 서버가 보낸 기대 씬 수 저장
