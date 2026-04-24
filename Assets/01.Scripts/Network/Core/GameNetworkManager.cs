@@ -234,29 +234,36 @@ namespace MySecondWorld.Network
         // [S-Loop] zoneCheckInterval마다 위치 체크 (S5에서 isSpawned=true 된 플레이어만)
         public async UniTaskVoid CheckZones()
         {
-            while (true)
+            try
             {
-                // ToList()로 스냅샷: 순회 도중 접속/퇴장으로 _sessions가 변경되면
-                // InvalidOperationException이 발생해 코루틴이 죽고 씬 동기화가 멈춘다.
-                foreach (var session in _sessions.ToList())
+                while (!_cts.Token.IsCancellationRequested)
                 {
-                    if (!_sessions.ContainsKey(session.Key)) continue; // 순회 중 제거된 경우
-                    if (!session.Value.isSpawned) continue;
-                    if (!NetworkServer.connections.ContainsKey(session.Key))
+                    // ToList()로 스냅샷: 순회 도중 접속/퇴장으로 _sessions가 변경되면
+                    // InvalidOperationException이 발생해 코루틴이 죽고 씬 동기화가 멈춘다.
+                    foreach (var session in _sessions.ToList())
                     {
-                        Debug.LogWarning($"[S-Loop] connections에 conn={session.Key} 없음!");
-                        continue;
+                        if (!_sessions.ContainsKey(session.Key)) continue; // 순회 중 제거된 경우
+                        if (!session.Value.isSpawned) continue;
+                        if (!NetworkServer.connections.ContainsKey(session.Key))
+                        {
+                            Debug.LogWarning($"[S-Loop] connections에 conn={session.Key} 없음!");
+                            continue;
+                        }
+
+                        var conn = NetworkServer.connections[session.Key];
+                        var playerPos = conn.identity.transform.position;
+                        var needScenes = new HashSet<string>(); // 이번 틱에 필요한 씬 목록
+
+                        ResolveCurrentZone(session, conn, playerPos);
+                        RecoverFromFall(session, conn);
+                        SyncAdditiveScenes(session, conn, needScenes, playerPos);
                     }
-
-                    var conn = NetworkServer.connections[session.Key];
-                    var playerPos = conn.identity.transform.position;
-                    var needScenes = new HashSet<string>(); // 이번 틱에 필요한 씬 목록
-
-                    ResolveCurrentZone(session, conn, playerPos);
-                    RecoverFromFall(session, conn);
-                    SyncAdditiveScenes(session, conn, needScenes, playerPos);
+                    await UniTask.Delay(TimeSpan.FromSeconds(zoneCheckInterval), cancellationToken: _cts.Token);
                 }
-                await UniTask.Delay(TimeSpan.FromSeconds(zoneCheckInterval), cancellationToken: _cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                // 서버 중지 시 정상 종료
             }
         }
 
