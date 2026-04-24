@@ -43,7 +43,9 @@ namespace MySecondWorld.AI
 
         // 읽기 전용 프로퍼티
         public float RelationScore => relationScore;
-        public float FactionRelation => factionRelation;
+        public float FactionRelation => factionRelation; //클라이언트 로컬 캐시로 유지하되,
+                                                         //NPCBrain에서 서버 상태와 동기화하는 메서드를 하나 추가
+                                                         //SyncFactionFromServer
         public int QuestStage => questStage;
         public bool QuestGiven => questGiven;
         public string FirstMetDate => firstMetDate;
@@ -71,6 +73,11 @@ namespace MySecondWorld.AI
         {
             if (!string.IsNullOrEmpty(fact) && !knownFacts.Contains(fact))
                 knownFacts.Add(fact);
+        }
+
+        public void SyncFactionFromServer(float serverValue)
+        {
+            factionRelation = serverValue;
         }
 
 

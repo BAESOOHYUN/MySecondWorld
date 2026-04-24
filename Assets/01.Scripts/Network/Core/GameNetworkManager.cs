@@ -78,7 +78,7 @@ namespace MySecondWorld.Network
 
                         // ★ 씬 오브젝트에 NetworkMatch가 있으면 해당 씬의 matchId 세팅
                         if (netId.TryGetComponent(out NetworkMatch match))
-                            match.matchId = DungeonRoomRegistry.GetMatchIdFromScene(zone.sceneName);
+                            match.matchId = SceneMatchId.GetMatchIdFromScene(zone.sceneName);
                     }
                 }
             }
@@ -175,7 +175,7 @@ namespace MySecondWorld.Network
             else
             {
                 // session.roomId는 Guid.Empty 그대로 — 던전 방이 아니니까
-                conn.identity.GetComponent<NetworkMatch>().matchId = DungeonRoomRegistry.GetMatchIdFromScene(session.currentScene);
+                conn.identity.GetComponent<NetworkMatch>().matchId = SceneMatchId.GetMatchIdFromScene(session.currentScene);
             }
         }
 
@@ -322,7 +322,7 @@ namespace MySecondWorld.Network
                     session.roomId = Guid.Empty;
                 }
                 // 필드→필드, 던전→필드 모두 항상 갱신
-                networkMatch.matchId = DungeonRoomRegistry.GetMatchIdFromScene(sceneName);
+                networkMatch.matchId = SceneMatchId.GetMatchIdFromScene(sceneName);
             }
         }
 

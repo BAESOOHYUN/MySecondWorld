@@ -6,6 +6,7 @@ using Cysharp.Text;
 using LLMUnity;
 using MessagePipe;
 using VContainer;
+using MySecondWorld.Network;
 
 namespace MySecondWorld.AI
 {
@@ -19,6 +20,7 @@ namespace MySecondWorld.AI
         [Header("References")]
         [SerializeField] private NPCSystemPromptSO _systemPrompt;
         [SerializeField] private NPCMemorySO _memory;
+        [SerializeField] private NPCServerState _serverState; // 선택적, 없으면 null 허용
 
         [Tooltip("씬에 배치된 LLMAgent 컴포넌트를 직접 연결한다.")]
         [SerializeField] private LLMAgent _llmAgent;
@@ -85,6 +87,10 @@ namespace MySecondWorld.AI
         {
             _memory?.Load(NpcNameKey);
 
+            // 서버 상태 => 로컬 메모리 동기화
+            if (_serverState != null && _memory != null)
+                _memory.SyncFactionFromServer(_serverState.FactionRelations);
+
             // 첫만남 기록
             if( _memory != null && string.IsNullOrEmpty(_memory.FirstMetDate))
             {
@@ -115,6 +121,12 @@ namespace MySecondWorld.AI
 
             if (_systemPrompt != null)
                 sb.AppendLine(_systemPrompt.BuildSystemPrompt());
+
+            if (_serverState != null)
+            {
+                sb.AppendLine();
+                sb.AppendLine(_serverState.GetContextLine());
+            }
 
             if (_memory != null && _memory.KnownFacts != null && _memory.KnownFacts.Count > 0)
             {
