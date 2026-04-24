@@ -9,9 +9,7 @@ using Mirror;
 
 namespace MySecondWorld.Network
 {
-    /// <summary>
-    /// 서버 측 Zone 관리. 존 체크 루프 + 씬 동기화 담당.
-    /// </summary>
+    // 서버 측 Zone 관리. 존 체크 루프 + 씬 동기화 담당.
     public class ServerZoneService
     {
         private readonly GameNetworkManager _manager;
@@ -26,9 +24,7 @@ namespace MySecondWorld.Network
         }
 
 
-        /// <summary>
-        /// [S-Loop] zoneCheckInterval마다 위치 체크 (S5에서 isSpawned=true 된 플레이어만)
-        /// </summary>
+        // [S-Loop] zoneCheckInterval마다 위치 체크 (S5에서 isSpawned=true 된 플레이어만)
         public async UniTaskVoid CheckZones(CancellationToken ct)
         {
             try
@@ -64,9 +60,7 @@ namespace MySecondWorld.Network
             }
         }
 
-        /// <summary>
-        /// [S-Loop-1] 소속 씬 판정 (정확한 bounds) + 낙하 타이머 가동
-        /// </summary>
+        // [S-Loop-1] 소속 씬 판정 (정확한 bounds) + 낙하 타이머 가동
         public void ResolveCurrentZone(KeyValuePair<int, PlayerSession> session, NetworkConnectionToClient conn, Vector3 playerPos)
         {
             bool inAnyZone = false;
@@ -87,9 +81,7 @@ namespace MySecondWorld.Network
                 session.Value.fallTimer += _manager.zoneCheckInterval;
         }
 
-        /// <summary>
-        /// [S-Loop-1-a] 소속 씬 변경 — MoveGameObjectToScene으로 플레이어 가시성 갱신
-        /// </summary>
+        // [S-Loop-1-a] 소속 씬 변경 — MoveGameObjectToScene으로 플레이어 가시성 갱신
         public void PlayerChangedScene(NetworkConnectionToClient conn, string sceneName)
         {
             var session = _sessionService.Sessions[conn.connectionId];
@@ -107,9 +99,7 @@ namespace MySecondWorld.Network
             UpdateDungeonMatch(conn, session, prevScene, sceneName);
         }
 
-        /// <summary>
-        /// [S-Loop-1-b] 던전 진입/퇴장 시 matchId 갱신 (MatchInterestManagement가 matchId로 가시성 판단)
-        /// </summary>
+        // [S-Loop-1-b] 던전 진입/퇴장 시 matchId 갱신 (MatchInterestManagement가 matchId로 가시성 판단)
         private void UpdateDungeonMatch(NetworkConnectionToClient conn, PlayerSession session, string prevScene, string sceneName)
         {
             var networkMatch = conn.identity.GetComponent<NetworkMatch>();
@@ -139,9 +129,7 @@ namespace MySecondWorld.Network
             }
         }
 
-        /// <summary>
-        /// [S-Loop-2] 낙하 복귀 텔레포트 (fallTimer >= 3초)
-        /// </summary>
+        // [S-Loop-2] 낙하 복귀 텔레포트 (fallTimer >= 3초)
         public void RecoverFromFall(KeyValuePair<int, PlayerSession> session, NetworkConnectionToClient conn)
         {
             if (session.Value.fallTimer >= 3f)
@@ -176,9 +164,7 @@ namespace MySecondWorld.Network
             }
         }
 
-        /// <summary>
-        /// [S-Loop-3] 씬 로드/언로드 판정 (bounds + preloadMargin 확장 영역)
-        /// </summary>
+        // [S-Loop-3] 씬 로드/언로드 판정 (bounds + preloadMargin 확장 영역)
         public void SyncAdditiveScenes(KeyValuePair<int, PlayerSession> session, NetworkConnectionToClient conn, HashSet<string> needScenes, Vector3 playerPos)
         {
             // preloadMargin만큼 확장된 bounds 안이면 needScenes에 추가
@@ -211,9 +197,7 @@ namespace MySecondWorld.Network
                 PlayerLeftZone(conn, scene);
         }
 
-        /// <summary>
-        /// [S-Loop-3-a] 씬 로드 지시 — 클라이언트가 지형을 볼 수 있게 함
-        /// </summary>
+        // [S-Loop-3-a] 씬 로드 지시 — 클라이언트가 지형을 볼 수 있게 함
         public void PlayerEnteredZone(NetworkConnectionToClient conn, string sceneName)
         {
             var session = _sessionService.Sessions[conn.connectionId];
@@ -223,9 +207,7 @@ namespace MySecondWorld.Network
         }
 
 
-        /// <summary>
-        /// [S-Loop-3-b] 씬 언로드 지시 — 메모리 절약
-        /// </summary>
+        // [S-Loop-3-b] 씬 언로드 지시 — 메모리 절약
         public void PlayerLeftZone(NetworkConnectionToClient conn, string sceneName)
         {
             var session = _sessionService.Sessions[conn.connectionId];

@@ -9,9 +9,7 @@ using MySecondWorld.Save;
 
 namespace MySecondWorld.Network
 {
-    /// <summary>
-    /// 플레이어 세션 소유자. 접속/퇴장/스폰 흐름 담당.
-    /// </summary>
+    // 플레이어 세션 소유자. 접속/퇴장/스폰 흐름 담당.
     public class ServerSessionService
     {
         private readonly GameNetworkManager _manager;
@@ -24,12 +22,9 @@ namespace MySecondWorld.Network
             _roomRegistry = roomRegistry;
         }
 
-        /// <summary>
-        /// [S3] 세션 생성 + PrepareAndSpawn 시작 (서버가 클라이언트에게 씬 준비하라고 시킴)
-        /// Mirror 기본: base.OnServerAddPlayer(conn)에서 바로 캐릭터를 만들지만,
-        /// 씬이 먼저 로드된 후에 스폰해야 하므로 base를 부르지 않는다.
-        /// OnServerAddPlayer에서 호출. 재접속 처리 + 세션 생성.
-        /// </summary>
+        // [S3] 세션 생성 + PrepareAndSpawn 시작
+        // Mirror 기본: base.OnServerAddPlayer(conn)에서 바로 캐릭터를 만들지만,
+        // 씬이 먼저 로드된 후에 스폰해야 하므로 base를 부르지 않는다.
         public void AddPlayer(NetworkConnectionToClient conn)
         {
             // 같은 playerId로 이미 세션 존재 시 → 기존 세션 정리 (재접속 처리)
@@ -55,9 +50,7 @@ namespace MySecondWorld.Network
             PrepareAndSpawn(conn).Forget();
         }
 
-        /// <summary>
-        /// [S4] 클라이언트에게 씬 로드 지시 + 스폰 위치 저장
-        /// </summary>
+        // [S4] 클라이언트에게 씬 로드 지시 + 스폰 위치 저장
         public async UniTaskVoid PrepareAndSpawn(NetworkConnectionToClient conn)
         {
             await UniTask.WaitUntil(() => _manager.ServerReady, cancellationToken: _manager.Cts.Token);
@@ -82,10 +75,8 @@ namespace MySecondWorld.Network
             conn.Send(new SpawnReadyMessage { sceneCount = 1 });
         }
 
-        /// <summary>
-        /// [S5] ACK 수신 → 캐릭터 생성 + 씬 이동 (S1에서 등록한 핸들러)
-        /// 클라이언트가 씬 로드 완료 ACK를 보내면 서버가 캐릭터를 스폰한다.
-        /// </summary>
+        // [S5] ACK 수신 → 캐릭터 생성 + 씬 이동
+        // 클라이언트가 씬 로드 완료 ACK를 보내면 서버가 캐릭터를 스폰한다. (S1에서 핸들러 등록)
         public void OnSceneLoadedAck(NetworkConnectionToClient conn, SceneLoadedAckMessage msg)
         {
             var session = Sessions[conn.connectionId];
@@ -122,6 +113,7 @@ namespace MySecondWorld.Network
             }
         }
 
+        // [S-End] 세이브 + 세션 정리 (OnServerDisconnect에서 호출)
         public void RemovePlayer(NetworkConnectionToClient conn)
         {
             if (Sessions.TryGetValue(conn.connectionId, out var session))

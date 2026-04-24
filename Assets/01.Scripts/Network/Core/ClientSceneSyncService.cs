@@ -5,9 +5,7 @@ using Mirror;
 
 namespace MySecondWorld.Network
 {
-     /// <summary>
-     /// 클라이언트 측 씬 로드/언로드 + ACK 전송 담당.
-     /// </summary>
+    // 클라이언트 측 씬 로드/언로드 + ACK 전송 담당.
     public class ClientSceneSyncService
     {
         private int _expectedSceneLoads;  // 클라이언트: 로드해야 할 씬 수

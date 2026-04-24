@@ -6,9 +6,7 @@ using Mirror;
 
 namespace MySecondWorld.Network
 {
-    /// <summary>
-    /// 총괄 지휘관.서버+클라이언트 양쪽 로직
-    /// </summary>
+    // Mirror 진입점. 콜백 수신 후 각 서비스에 위임한다.
     public class GameNetworkManager : NetworkManager
     {
         [Scene] public string defaultSubScene;           // FieldScene (마을) — 기본 스폰 존
@@ -17,7 +15,7 @@ namespace MySecondWorld.Network
         public bool ServerReady { get; private set; }    // 서버 씬 프리로드 완료 여부
         public CancellationTokenSource Cts { get; private set; } 
 
-        private DungeonRoomRegistry _roomRegistry;       // 던전 룸 관리
+        private DungeonRoomRegistry _roomRegistry;
         private ServerSessionService _sessionService;
         private ServerZoneService _zoneService;
         private ClientSceneSyncService _clientSyncService;
@@ -37,7 +35,6 @@ namespace MySecondWorld.Network
         #endregion
 
         #region 서버 측
-
         // [S1] 서버 시작: 핸들러 등록 + 코루틴 시작
         public override void OnStartServer()
         {
@@ -51,6 +48,7 @@ namespace MySecondWorld.Network
             NetworkServer.RegisterHandler<SceneLoadedAckMessage>(_sessionService.OnSceneLoadedAck);
             _zoneService.CheckZones(Cts.Token).Forget();
         }
+
         public override void OnStopServer()
         {
             Cts?.Cancel();
@@ -92,7 +90,7 @@ namespace MySecondWorld.Network
             ServerReady = true;
         }
 
-        
+        // [S3] → SessionService.AddPlayer로 위임
         public override void OnServerAddPlayer(NetworkConnectionToClient conn)
         {
             _sessionService.AddPlayer(conn);
@@ -106,18 +104,17 @@ namespace MySecondWorld.Network
         }
         #endregion
 
-
         #region 클라이언트 측
 
-        // [C1] 클라이언트 시작: 핸들러 등록
+        // [C1] 클라이언트 시작: 서비스 생성 + 핸들러 등록
+        // 서버가 보내는 메시지 → NetworkClient.RegisterHandler (클라이언트가 받으니까)
         public override void OnStartClient()
         {
             base.OnStartClient();
-            // 서버가 보내는 메시지 → NetworkClient.RegisterHandler (클라이언트가 받으니까)
+            _clientSyncService = new ClientSceneSyncService();
             NetworkClient.RegisterHandler<AdditiveSceneMessage>(_clientSyncService.OnAdditiveSceneMessage);
             NetworkClient.RegisterHandler<SpawnReadyMessage>(_clientSyncService.OnSpawnReadyMessage);
         }
-
         #endregion
     }
 }
@@ -140,7 +137,7 @@ StartHost()
   │    │
   │    └─ OnServerSceneChanged()  ← 내 코드
   │         ├─ zones[] 전부 서버에 프리로드
-  │         └─ _serverReady = true
+  │         └─ ServerReady = true
   │
   ├─ Mirror: SpawnObjects()
   │    └─ 씬의 NetworkIdentity 활성화
