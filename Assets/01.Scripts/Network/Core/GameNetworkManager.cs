@@ -52,7 +52,7 @@ namespace MySecondWorld.Network
             // 클라이언트가 보내는 메시지 → NetworkServer.RegisterHandler (서버가 받으니까)
             NetworkServer.RegisterHandler<SceneLoadedAckMessage>(OnSceneLoadedAck);
             _cts = new CancellationTokenSource();
-            CheckZones(_cts.Token).Forget();
+            CheckZones().Forget();
         }
         public override void OnStopServer()
         {
