@@ -28,6 +28,7 @@ public class LocalDeviceCapability : IDeviceCapability
     }
 }
 
+// TODO
 public class NetworkDeviceCapability : IDeviceCapability
 {
     public bool IsCapable { get; private set; }

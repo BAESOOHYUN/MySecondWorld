@@ -23,6 +23,9 @@ namespace MySecondWorld.AI
         [Tooltip("씬에 배치된 LLMAgent 컴포넌트를 직접 연결한다.")]
         [SerializeField] private LLMAgent _llmAgent;
 
+        [ContextMenu("메모리 초기화")]
+        private void DebugClearMemory() => ResetMemory();
+
         // 외부 읽기 전용 접근 (NPCInteractable에서 npcName 접근용)
         public NPCSystemPromptSO SystemPrompt => _systemPrompt;
 
@@ -139,15 +142,30 @@ namespace MySecondWorld.AI
             ct.Register(() => _llmAgent.CancelRequests());
             string response = await _llmAgent.Chat(userInput).AsUniTask().AttachExternalCancellation(ct);
 
-
             if (this == null) 
                 return string.Empty;
+
+            string extractPrompt = $"다음 대화에서 플레이어에 대해 NPC가 기억해야 할 중요한 사실이 있다면 한 줄로만 써줘. " +
+                                    $"없으면 '없음'이라고만 써. \n\n플레이어: {userInput}\nNPC: {response}";
+            string fact = await _llmAgent.Chat(extractPrompt, null, null, addToHistory: false).AsUniTask().AttachExternalCancellation(ct);
+            Debug.Log($"NPCBrain fact  1 : {fact.Trim()}");
+            if (!string.IsNullOrEmpty(fact) && fact.Trim() != "없음")
+            {
+                Debug.Log($"NPCBrain fact 2 : {fact.Trim()}");
+                _memory?.AddKnowFact(fact.Trim());
+            }
 
             //응답을 받은 직후, reponse를 반환하기 전, 대화횟수 증가.
             _memory?.IncrementConversationCount();
             _memory?.Save(NpcNameKey);
 
             return response;
+        }
+
+        private void ResetMemory()
+        {
+            _memory?.Clear(NpcNameKey);
+            _llmAgent?.ClearHistory(); // 대화 히스토리도 같이 초기화
         }
     }
 }
