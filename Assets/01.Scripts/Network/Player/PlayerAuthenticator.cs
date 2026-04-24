@@ -1,5 +1,6 @@
-using System.Collections;
+using System;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Mirror;
 using MessagePipe;
@@ -81,7 +82,6 @@ namespace MySecondWorld.Network
         // 이름 중복 확인 후 ServerAccept(conn) 또는 거부
         public void OnAuthRequestMessage(NetworkConnectionToClient conn, AuthRequestMessage msg)
         {
-            Debug.Log($"[Auth] OnAuthRequestMessage conn={conn.connectionId}, name='{msg.authUsername}'");
             // 이름 중복으로, 거절된 사람 명단에 있으면 무시
             if (connectionsPendingDisconnect.Contains(conn))
                 return;
@@ -108,7 +108,6 @@ namespace MySecondWorld.Network
 
                 // 서버가 "이 클라이언트 인증 통과"라고 Mirror에 알림
                 // NetworkAuthenticator 상속 클래스
-                Debug.Log($"[Auth] ServerAccept: '{msg.authUsername}'");
                 ServerAccept(conn);
             }
             else //이름이 이미 사용중인 경우 
@@ -131,25 +130,27 @@ namespace MySecondWorld.Network
                 conn.isAuthenticated = false;
 
                 // 클라이언트에게 연결 종료(거부) 이유 알려주기 위해 1초 딜레이
-                StartCoroutine(DelayedDisconnect(conn, 1f));
+                DelayedDisconnect(conn, 1f).Forget();
             }
         }
 
-        private IEnumerator DelayedDisconnect(NetworkConnectionToClient conn, float waitTime)
+        // UniTaskVoid — 호출하고 잊어버릴 때 (fire-and-forget). 호출쪽에서 결과를 await해서 받지 않음.
+        // DelayedDisconnect(conn).Forget();
+        private async UniTaskVoid DelayedDisconnect(NetworkConnectionToClient conn, float waitTime)
         {
-            yield return new WaitForSeconds(waitTime);
-
+            await UniTask.Delay(TimeSpan.FromSeconds(waitTime), cancellationToken: this.GetCancellationTokenOnDestroy());
+            // this.GetCancellationTokenOnDestroy : MonoBehaviour가 OnDestroy될 때 자동으로 Cancel되는 토큰을 줌
             // 대기 중 클라이언트가 먼저 연결을 끊었을 경우 conn이 무효화될 수 있다
             if (conn == null) 
-                yield break;
+                return;
 
             // NetworkAuthenticator 상속 클래스
             ServerReject(conn);
             // 실제 연결 해제는 그 프레임이 끝날 때 Mirror가 네트워크 루프를 돌면서 처리하기 때문에
             // ServerReject(conn) 호출 직후는 "연결 해제 예약됨" 상태지, 아직 완전히 끊긴 게 아니다.
-            // 그래서 yield return null로 한 프레임을 넘겨서,
+            // 그래서 await UniTask.Yield() 로 한 프레임을 넘겨서,
             // Mirror가 disconnect를 완전히 처리한 뒤에 다음 줄로 넘어가는 것
-            yield return null;
+            await UniTask.Yield();
 
             //이제 완전히 끊겼으니 'conn의 거절 처리' 추적 필요 없음
             connectionsPendingDisconnect.Remove(conn);
@@ -171,7 +172,6 @@ namespace MySecondWorld.Network
         // 서버 연결되자마자 호출됨. Mirror 자동호출
         public override void OnClientAuthenticate()
         {
-            Debug.Log($"[Auth] OnClientAuthenticate localPlayerName='{PlayerSession.LocalPlayerName}'");
             // 이름 없이 연결 시도하면 null이 서버 playerNames에 등록될 수 있으므로 사전 차단
             if (string.IsNullOrWhiteSpace(PlayerSession.LocalPlayerName))
             {
@@ -184,7 +184,6 @@ namespace MySecondWorld.Network
 
         public void OnAuthResponseMessage(AuthResponseMessage msg)
         {
-            Debug.Log($"[Auth] OnAuthResponseMessage code={msg.code}");
             if (msg.code == AuthResponseMessage.Success)
             {
                 // Mirror에 "클라이언트 인증 완료" 알림
