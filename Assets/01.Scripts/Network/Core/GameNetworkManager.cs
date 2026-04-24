@@ -121,13 +121,13 @@ namespace MySecondWorld.Network
                 playerId = conn.authenticationData as string
             };
             _sessions.Add(conn.connectionId, session);
-            PrepareAndSpawn(conn, _cts.Token).Forget();
+            PrepareAndSpawn(conn).Forget();
         }
 
         // [S4] 클라이언트에게 씬 로드 지시 + 스폰 위치 저장
-        public async UniTaskVoid PrepareAndSpawn(NetworkConnectionToClient conn, CancellationToken ct)
+        public async UniTaskVoid PrepareAndSpawn(NetworkConnectionToClient conn)
         {
-            await UniTask.WaitUntil(() => _serverReady, cancellationToken: ct);
+            await UniTask.WaitUntil(() => _serverReady, cancellationToken: _cts.Token);
 
             var session = _sessions[conn.connectionId];
             var saveData = SaveManager.Instance?.Load(session.playerId);
@@ -232,7 +232,7 @@ namespace MySecondWorld.Network
         #region 서버 측  Zone 관리
 
         // [S-Loop] zoneCheckInterval마다 위치 체크 (S5에서 isSpawned=true 된 플레이어만)
-        public async UniTaskVoid CheckZones(CancellationToken ct)
+        public async UniTaskVoid CheckZones()
         {
             while (true)
             {
@@ -256,7 +256,7 @@ namespace MySecondWorld.Network
                     RecoverFromFall(session, conn);
                     SyncAdditiveScenes(session, conn, needScenes, playerPos);
                 }
-                await UniTask.Delay(TimeSpan.FromSeconds(zoneCheckInterval), cancellationToken: ct);
+                await UniTask.Delay(TimeSpan.FromSeconds(zoneCheckInterval), cancellationToken: _cts.Token);
             }
         }
 
