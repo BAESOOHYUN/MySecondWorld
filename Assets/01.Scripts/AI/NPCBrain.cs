@@ -53,7 +53,7 @@ namespace MySecondWorld.AI
         {
             _responsePub = responsePub;
             _thinkingPub = thinkingPub;
-            _dialoguePub = dialoguePub;
+            _dialoguePub = dialoguePub; 
 
             // NpcNameKey(GUID)를 키로 구독 — 이 NPC에게 온 메시지만 수신된다
             messageSub
@@ -67,6 +67,7 @@ namespace MySecondWorld.AI
                                 NpcNameKey,
                                 _systemPrompt?.NpcName ?? name,
                                 response));
+                        _dialoguePub.Publish(new NPCDialogueEvent { NpcName = NpcNameKey, Message = response });
                     }
                     catch (OperationCanceledException)
                     {
@@ -163,10 +164,10 @@ namespace MySecondWorld.AI
             string extractPrompt = $"다음 대화에서 플레이어에 대해 NPC가 기억해야 할 중요한 사실이 있다면 한 줄로만 써줘. " +
                                     $"없으면 '없음'이라고만 써. \n\n플레이어: {userInput}\nNPC: {response}";
             string fact = await _llmAgent.Chat(extractPrompt, null, null, addToHistory: false).AsUniTask().AttachExternalCancellation(ct);
-            Debug.Log($"NPCBrain fact  1 : {fact.Trim()}");
+
             if (!string.IsNullOrEmpty(fact) && fact.Trim() != "없음")
             {
-                Debug.Log($"NPCBrain fact 2 : {fact.Trim()}");
+                Debug.Log($"NPCBrain fact : {fact.Trim()}");
                 _memory?.AddKnowFact(fact.Trim());
             }
 
