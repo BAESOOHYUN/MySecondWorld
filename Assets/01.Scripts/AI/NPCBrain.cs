@@ -36,6 +36,7 @@ namespace MySecondWorld.AI
         // 그 시점에도 살아있어야 하므로 필드에 저장
         private IPublisher<NPCResponseReceivedEvent> _responsePub;
         private IPublisher<NPCThinkingStartedEvent> _thinkingPub;
+        private IPublisher<NPCDialogueEvent> _dialoguePub;
 
         // [Inject]가 붙은 메서드를 VContainer가 찾아서,
         // 파라미터 타입에 맞는 인스턴스를 컨테이너에서 꺼내 자동으로 호출한다.
@@ -46,11 +47,13 @@ namespace MySecondWorld.AI
         private void Constrct(
             ISubscriber<string, PlayerMessageSentEvent> messageSub,
             IPublisher<NPCResponseReceivedEvent> responsePub,
-            IPublisher<NPCThinkingStartedEvent> thinkingPub
+            IPublisher<NPCThinkingStartedEvent> thinkingPub,
+            IPublisher<NPCDialogueEvent> dialoguePub
             )
         {
             _responsePub = responsePub;
             _thinkingPub = thinkingPub;
+            _dialoguePub = dialoguePub;
 
             // NpcNameKey(GUID)를 키로 구독 — 이 NPC에게 온 메시지만 수신된다
             messageSub
