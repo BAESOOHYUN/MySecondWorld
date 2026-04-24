@@ -8,11 +8,14 @@ namespace MySecondWorld.Network.Chat
 {
     public class ChatPlayer : NetworkBehaviour
     {
-        private ChatUI _chatUI;
+        [Inject] private ChatUI _chatUI;
 
         public override void OnStartLocalPlayer()
         {
-            _chatUI = LifetimeScope.Find<ProjectLifetimeScope>().Container.Resolve<ChatUI>();
+            // Container.Inject(this)는 "이 객체(ChatPlayer)의 [Inject] 표시된 필드들을 컨테이너에서 찾아서 채워줘" 라는 뜻
+            // Resolve<T>() → 하나씩 직접 꺼내기
+            // Inject(this) → [Inject] 필드 전부 한 번에 채우기
+            LifetimeScope.Find<ProjectLifetimeScope>().Container.Inject(this);
             _chatUI.OnSubmitListener += OnSubmit;
             _chatUI.OnLocalPlayerReady();
         }
@@ -45,8 +48,6 @@ namespace MySecondWorld.Network.Chat
         private void RpcReceiveMessage(string playerName, string message)
         {
             Debug.Log($"[Client] RpcReceiveMessage: {message}");
-            if (_chatUI == null)
-                _chatUI = LifetimeScope.Find<ProjectLifetimeScope>().Container.Resolve<ChatUI>();
             _chatUI.CreateMessagePrefab(playerName, message);
         }
 
