@@ -161,7 +161,10 @@ namespace MySecondWorld.AI
             }
 
             ct.Register(() => _llmAgent.CancelRequests());
+
+            float t0 = Time.realtimeSinceStartup;
             string response = await _llmAgent.Chat(userInput).AsUniTask().AttachExternalCancellation(ct);
+            Debug.Log($"[NPCBrain] 추론 시간: {Time.realtimeSinceStartup - t0:F2}s");
 
             if (this == null) 
                 return string.Empty;

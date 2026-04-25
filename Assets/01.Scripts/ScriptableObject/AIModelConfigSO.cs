@@ -11,4 +11,9 @@ public class AIModelConfigSO : ScriptableObject
 
     [Tooltip("전체 파일 크기 (진행률 계산용)")]
     public long modelSizeBytes = 2490000000;
+
+    [Header("소형 모델 (저 RAM 기기 - 4GB 미만)")]
+    public string smallModelUrl = "https://huggingface.co/bartowski/google_gemma-3-1b-it-GGUF/resolve/main/google_gemma-3-1b-it-Q4_K_M.gguf";
+    public string smallModelFileName = "google_gemma-3-1b-it-Q4_K_M.gguf";
+    public long smallModelSizeBytes = 700000000; // 약 700MB
 }

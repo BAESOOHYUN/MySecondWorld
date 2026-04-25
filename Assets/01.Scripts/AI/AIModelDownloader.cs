@@ -11,29 +11,52 @@ public class AIModelDownloader
 {
     private readonly IPublisher<AIModelDownloadProgressEvent> _publisher;
     private readonly AIModelConfigSO _config;
+    private readonly IDeviceCapability _device;
 
-    public AIModelDownloader(IPublisher<AIModelDownloadProgressEvent> publisher, AIModelConfigSO config)
+    public AIModelDownloader(
+        IPublisher<AIModelDownloadProgressEvent> publisher,
+        AIModelConfigSO config,
+        IDeviceCapability device)
     {
+
         _publisher = publisher;
         _config = config;
+        _device = device;
     }
 
     public async UniTask DownloadAsync(CancellationToken ct)
     {
-        // 1. 파일이 이미 있으면 스킵
-        string savePath = Path.Combine(Application.persistentDataPath, _config.modelFileName);
+        // 기기 역량 평가
+        _device.Evaluate();
+
+        // 다운로드 없이 조기 반환
+        if (!_device.IsCapable)
+        {
+            Debug.LogWarning($"[AIModelDownloader] 로컬 추론 불가 — {_device.Reason}");
+            _publisher.Publish(new AIModelDownloadProgressEvent(0f, false));
+            return;
+        }
+
+        // 모델 URL/파일명 분기
+        bool useLarge = _device.RecommendedModelSize == ModelSize.Large;
+        string url = useLarge ? _config.modelUrl: _config.smallModelUrl;
+        string fileName = useLarge ? _config.modelFileName: _config.smallModelFileName;
+        Debug.LogWarning($"[AIModelDownloader] useLarge {useLarge}, url {url}, {_device.Reason} → {fileName}");
+
+        // 파일이 이미 있으면 스킵
+        string savePath = Path.Combine(Application.persistentDataPath, fileName);
         if (File.Exists(savePath))
         {
             _publisher.Publish(new AIModelDownloadProgressEvent(1f, true));
             return;
         }
 
-        // 2. UnityWebRequest로 다운로드
-        using var req = UnityWebRequest.Get(_config.modelUrl);
+        // UnityWebRequest로 다운로드
+        using var req = UnityWebRequest.Get(url);
         req.downloadHandler = new DownloadHandlerFile(savePath);
         req.SendWebRequest();
 
-        // 3. 진행률마다 _publisher.Publish()
+        // 진행률마다 _publisher.Publish()
         try
         {
             while (!req.isDone)
@@ -52,11 +75,11 @@ public class AIModelDownloader
                 req.Abort();
         }
 
-        // 4. 완료
+        // 완료
         if (req.result == UnityWebRequest.Result.Success)
         {
             _publisher.Publish(new AIModelDownloadProgressEvent(1f, true));
-            Debug.Log($"AI 모델 {_config.modelFileName} 다운로드 완료");
+            Debug.Log($"[AIModelDownloader] {fileName} 다운로드 완료");
         }
         else
         {
