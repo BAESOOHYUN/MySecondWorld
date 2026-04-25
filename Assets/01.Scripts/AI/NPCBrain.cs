@@ -44,7 +44,7 @@ namespace MySecondWorld.AI
         // 호출 순서 Awake() -> VContainer가 Construct() 호출 ←[Inject]주입 -> Start() 호출
         // Start()에서 주입된 필드를 안전하게 쓸 수 있다.
         [Inject]
-        private void Constrct(
+        private void Construct(
             ISubscriber<string, PlayerMessageSentEvent> messageSub,
             IPublisher<NPCResponseReceivedEvent> responsePub,
             IPublisher<NPCThinkingStartedEvent> thinkingPub,
@@ -108,7 +108,9 @@ namespace MySecondWorld.AI
                 return;
             }
             _llmAgent.save = NpcNameKey + ".json";
-            _llmAgent.slot = Mathf.Abs(_systemPrompt.NpcGuid.GetHashCode());
+            _llmAgent.slot = _systemPrompt != null
+                ? Mathf.Abs(_systemPrompt.NpcGuid.GetHashCode())
+                : 0;
             _llmAgent.systemPrompt = BuildSystemPromptWithFacts();
         }
 
@@ -116,6 +118,9 @@ namespace MySecondWorld.AI
         private void OnDestroy()
         {
             _memory?.Save(NpcNameKey);
+            _llmAgent?.CancelRequests();
+            // LLMUnity는 LLMAgent.Destroy() / StopLLM() 공개 API 없음.
+            // CancelRequests()가 진행 중 추론을 중단하는 유일한 공개 메서드.
         }
 
         // 시스템 프롬프트 빌드
