@@ -16,4 +16,8 @@ public class AIModelConfigSO : ScriptableObject
     public string smallModelUrl = "https://huggingface.co/bartowski/google_gemma-3-1b-it-GGUF/resolve/main/google_gemma-3-1b-it-Q4_K_M.gguf";
     public string smallModelFileName = "google_gemma-3-1b-it-Q4_K_M.gguf";
     public long smallModelSizeBytes = 700000000; // 약 700MB
+
+    [Header("인증")]
+    [Tooltip("HuggingFace Access Token — 속도 제한 완화용. 비워두면 무인증.")]
+    public string huggingFaceToken = "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";
 }

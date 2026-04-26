@@ -21,10 +21,10 @@ namespace MySecondWorld.AI
         {
             int memoryMB = SystemInfo.systemMemorySize;
 
-            if (memoryMB < 4000)
+            if (memoryMB < 3500)
             {
                 IsCapable = false;
-                Reason = $"RAM 부족: {memoryMB}MB (최소 4GB 필요)";
+                Reason = $"RAM 부족: {memoryMB}MB (최소 3.5GB 필요)";
                 return;
             }
             
