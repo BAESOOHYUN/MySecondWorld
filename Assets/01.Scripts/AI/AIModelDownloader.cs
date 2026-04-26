@@ -53,21 +53,6 @@ public class AIModelDownloader
 
         string savePath = Path.Combine(Application.persistentDataPath, fileName);
 
-        // 파일이 이미 존재하면 스킵 (totalBytes 부정확할 수 있으므로 99% 이상이면 완료로 간주)
-        long existingBytes = File.Exists(savePath) ? new FileInfo(savePath).Length : 0;
-        if (existingBytes > 0 && (totalBytes <= 0 || existingBytes >= totalBytes * 0.99f))
-        {
-            Debug.Log($"[AIModelDownloader] 이미 존재 — 스킵: {savePath}");
-            _publisher.Publish(new AIModelDownloadProgressEvent(1f, true));
-            return;
-        }
-        if (existingBytes > 0)
-        {
-            Debug.Log($"[AIModelDownloader] 이어받기 — {existingBytes / 1024 / 1024}MB 부터");
-            float resumeProgress = totalBytes > 0 ? (float)existingBytes / totalBytes : 0f;
-            _publisher.Publish(new AIModelDownloadProgressEvent(resumeProgress, false));
-        }
-
         await UniTask.SwitchToThreadPool();
 
         // HEAD 요청으로 실제 파일 크기 조회 — SO에 하드코딩 불필요, 모델 교체 시 URL만 바꾸면 됨
@@ -87,6 +72,24 @@ public class AIModelDownloader
         catch (Exception e)
         {
             Debug.LogWarning($"[AIModelDownloader] 파일 크기 조회 실패 — 진행률 표시 불가: {e.Message}");
+        }
+
+        // 파일이 이미 완전히 받아져 있으면 스킵
+        long existingBytes = File.Exists(savePath) ? new FileInfo(savePath).Length : 0;
+        if (existingBytes > 0 && (totalBytes <= 0 || existingBytes >= totalBytes * 0.99f))
+        {
+            await UniTask.SwitchToMainThread();
+            Debug.Log($"[AIModelDownloader] 이미 존재 — 스킵: {savePath}");
+            _publisher.Publish(new AIModelDownloadProgressEvent(1f, true));
+            return;
+        }
+        if (existingBytes > 0)
+        {
+            Debug.Log($"[AIModelDownloader] 이어받기 — {existingBytes / 1024 / 1024}MB 부터");
+            float resumeProgress = totalBytes > 0 ? (float)existingBytes / totalBytes : 0f;
+            await UniTask.SwitchToMainThread();
+            _publisher.Publish(new AIModelDownloadProgressEvent(resumeProgress, false));
+            await UniTask.SwitchToThreadPool();
         }
 
         const int maxRetries = 10;
