@@ -46,9 +46,8 @@ public class AIModelDownloader
 
         // RAM에 따라 대형(4B) 또는 소형(1B) 모델 선택
         bool useLarge   = _device.RecommendedModelSize == ModelSize.Large;
-        string url      = useLarge ? _config.modelUrl       : _config.smallModelUrl;
-        string fileName = useLarge ? _config.modelFileName  : _config.smallModelFileName;
-        long totalBytes = useLarge ? _config.modelSizeBytes : _config.smallModelSizeBytes;
+        string url      = useLarge ? _config.modelUrl      : _config.smallModelUrl;
+        string fileName = useLarge ? _config.modelFileName : _config.smallModelFileName;
         _selectedFileName = fileName;
         Debug.Log($"[AIModelDownloader] 시작 — {_device.Reason} → {fileName}");
 
@@ -70,6 +69,25 @@ public class AIModelDownloader
         }
 
         await UniTask.SwitchToThreadPool();
+
+        // HEAD 요청으로 실제 파일 크기 조회 — SO에 하드코딩 불필요, 모델 교체 시 URL만 바꾸면 됨
+        long totalBytes = 0;
+        try
+        {
+            using var headClient = new HttpClient();
+            if (!string.IsNullOrEmpty(_config.huggingFaceToken))
+                headClient.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue("Bearer", _config.huggingFaceToken);
+            using var headResponse = await headClient
+                .SendAsync(new HttpRequestMessage(HttpMethod.Head, url), ct)
+                .ConfigureAwait(false);
+            totalBytes = headResponse.Content.Headers.ContentLength ?? 0;
+            Debug.Log($"[AIModelDownloader] 파일 크기: {totalBytes / 1024 / 1024}MB");
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"[AIModelDownloader] 파일 크기 조회 실패 — 진행률 표시 불가: {e.Message}");
+        }
 
         const int maxRetries = 10;
         int retry = 0;
