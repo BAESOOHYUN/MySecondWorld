@@ -3,6 +3,9 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using Cysharp.Threading.Tasks;
 using Mirror;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace MySecondWorld.Network
 {
@@ -33,6 +36,49 @@ namespace MySecondWorld.Network
             else StopClient();
         }
         #endregion
+
+#if UNITY_EDITOR
+        // 클라이언트만 도는 케이스에서도 ExitingPlayMode 정리가 보장되도록 Awake에서 등록.
+        public override void Awake()
+        {
+            base.Awake();
+            EditorApplication.playModeStateChanged += OnEditorPlayModeStateChanged;
+        }
+
+        public override void OnDestroy()
+        {
+            EditorApplication.playModeStateChanged -= OnEditorPlayModeStateChanged;
+            base.OnDestroy();
+        }
+#endif
+
+#if UNITY_EDITOR
+        private void OnEditorPlayModeStateChanged(PlayModeStateChange state)
+        {
+            if (state != PlayModeStateChange.ExitingPlayMode) return;
+
+            // "자기 자신 안에서 자신을 제거" = one-shot listener 패턴.
+            // ExitingPlayMode 때 딱 한 번만 실행하고 자동으로 구독 해제하겠다는 의도
+            EditorApplication.playModeStateChanged -= OnEditorPlayModeStateChanged;
+
+            // offlineScene이 설정된 경우 StopServer() 내부 ServerChangeScene()이 모바일 클라이언트에
+            // 씬 변경 메시지를 보내고 ACK를 기다리며 hang한다. 에디터 종료 시 씬 전환은 불필요하다.
+            // offlineScene을 비워두면 StopHost() 내부에서 씬 전환을 시도하지 않아서 hang이 발생하지 않는다.
+            // hang(프로그램이 멈춰서 아무것도 안 하는 상태 = 먹통) 방지용
+            offlineScene = ""; // // ← 씬 전환 자체를 막아버림
+
+            if (NetworkServer.active)
+            {
+                StopHost();
+            }
+            else if (NetworkClient.isConnected || NetworkClient.active)
+            {
+                // 클라이언트 전용 종료 — KCP UDP 소켓 명시적 close
+                StopClient();
+                NetworkClient.Shutdown();
+            }
+        }
+#endif
 
         #region 서버 측
         // [S1] 서버 시작: 핸들러 등록 + 코루틴 시작
@@ -90,7 +136,7 @@ namespace MySecondWorld.Network
             ServerReady = true;
         }
 
-        // [S3] → SessionService.AddPlayer로 위임
+        // [S3] → ServerSessionService.AddPlayer로 위임
         public override void OnServerAddPlayer(NetworkConnectionToClient conn)
         {
             _sessionService.AddPlayer(conn);
@@ -108,6 +154,7 @@ namespace MySecondWorld.Network
 
         // [C1] 클라이언트 시작: 서비스 생성 + 핸들러 등록
         // 서버가 보내는 메시지 → NetworkClient.RegisterHandler (클라이언트가 받으니까)
+        // -> ClientSceneSyncService.cs 로 이어짐
         public override void OnStartClient()
         {
             base.OnStartClient();
@@ -115,6 +162,7 @@ namespace MySecondWorld.Network
             NetworkClient.RegisterHandler<AdditiveSceneMessage>(_clientSyncService.OnAdditiveSceneMessage);
             NetworkClient.RegisterHandler<SpawnReadyMessage>(_clientSyncService.OnSpawnReadyMessage);
         }
+        // 
         #endregion
     }
 }

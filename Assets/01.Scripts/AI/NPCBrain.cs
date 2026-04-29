@@ -7,6 +7,9 @@ using LLMUnity;
 using MessagePipe;
 using VContainer;
 using MySecondWorld.Network;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace MySecondWorld.AI
 {
@@ -87,6 +90,32 @@ namespace MySecondWorld.AI
         // LLMAgent가 준비됐는지 확인
         private bool _isReady => _llmAgent != null && _llmAgent.llmAgent != null;
 
+        //static = NPCBrain 인스턴스가 여러 개 있어도 하나의 값을 공유
+        // 역할: "지금 Play Mode 종료 중이야?" 플래그
+        // 기본값 false → Play Mode 종료 신호 오면 true
+        private static bool s_isExitingPlayMode;
+
+#if UNITY_EDITOR
+        // Unity Editor가 시작될 때 자동으로 이 메서드를 1회 실행
+        // Play Mode와 무관하게, 에디터 열릴 때마다 호출됨
+        // 왜 필요? → Play Mode 감지 이벤트를 미리 등록해 두기 위해
+        [InitializeOnLoadMethod]
+        private static void RegisterPlayModeHook()
+        {
+            EditorApplication.playModeStateChanged += state =>
+            {
+                if (state == PlayModeStateChange.ExitingPlayMode)
+                    s_isExitingPlayMode = true;                         // ← "종료 중" 플래그 ON
+                else if (state == PlayModeStateChange.EnteredEditMode)
+                    s_isExitingPlayMode = false;                        // ← Edit Mode 진입 후 리셋
+            };
+        }
+        // ■ 버튼 클릭
+        //  → ExitingPlayMode 감지 → s_isExitingPlayMode = true
+        //  → (정리 작업들...)
+        //  → EnteredEditMode 감지 → s_isExitingPlayMode = false (다음 실행 준비)
+#endif
+
         private void Start()
         {
             _memory?.Load(NpcNameKey);
@@ -114,13 +143,12 @@ namespace MySecondWorld.AI
             _llmAgent.systemPrompt = BuildSystemPromptWithFacts();
         }
 
-        // 정리
         private void OnDestroy()
         {
             _memory?.Save(NpcNameKey);
-            _llmAgent?.CancelRequests();
-            // LLMUnity는 LLMAgent.Destroy() / StopLLM() 공개 API 없음.
-            // CancelRequests()가 진행 중 추론을 중단하는 유일한 공개 메서드.
+
+            if (s_isExitingPlayMode) return; // Play Mode 종료 중 → s_isExitingPlayMode = true → CancelRequests() 스킵 → 에디터 안 뻗음
+            _llmAgent?.CancelRequests(); // 게임 중 NPC Destroy(예: 씬 전환) → s_isExitingPlayMode = false → CancelRequests() 정상 실행
         }
 
         // 시스템 프롬프트 빌드
@@ -193,3 +221,43 @@ namespace MySecondWorld.AI
         }
     }
 }
+
+//문제 발생 순서
+//■ 버튼 클릭(Play Mode 종료)
+//  │
+//  ├─ LLMInitializer.CleanupNative() '먼저 실행'
+//  │     → llamalib 프로세스 Kill
+//  │     → _llm.Destroy()  ← LLM 메모리 해제
+//  │          → native handle 이제 무효(댕글링 포인터)
+//  │
+//  └─ NPCBrain.OnDestroy() '나중에 실행'
+//        → _llmAgent.CancelRequests()
+//             → 내부적으로 LLM_Cancel() 호출(P/Invoke)
+//             → "LLM아, 취소해줘!" → 근데 LLM 이미 삭제됨
+//             → dangling pointer 접근
+//             → 💥 에디터 강제종료
+
+//   CleanupNative() → _llm.Destroy() → native handle 해제
+//        ↓ (조금 후)
+//   NPCBrain.OnDestroy() → CancelRequests() → 해제된 handle 접근 → 💥
+
+
+// ExitPlayMode 단계에서
+// LLMInitializer가 LLM native handle(LLM이 내부적으로 들고 있는 C++ 메모리 주소)을 먼저 정리한 후
+// NPCBrain의 OnDestroy가 호출되면 
+// LLM_Cancel(P/Invoke : C#이 C++ 네이티브 함수를 직접 호출하는 방법)이
+// dangling pointer(이미 해제된 메모리를 가리키는 포인터)를 건드려
+// 에디터가 access violation(존재하지 않는 메모리에 접근했을 때 OS가 강제종료 시키는 것)으로 강제종료된다.
+// ExitingPlayMode → set true → OnDestroy에서 CancelRequests skip 으로 차단.
+
+//전체 흐름 요약
+//■ 버튼 클릭
+//  │
+//  ├─ s_isExitingPlayMode = true (RegisterPlayModeHook)
+//  │
+//  ├─ LLMInitializer.CleanupNative()
+//  │     → LLM 메모리 해제 (native handle 무효화)
+//  │
+//  └─ NPCBrain.OnDestroy()
+//        → s_isExitingPlayMode가 true
+//        → CancelRequests() 건너뜀  ✅ 에디터 생존

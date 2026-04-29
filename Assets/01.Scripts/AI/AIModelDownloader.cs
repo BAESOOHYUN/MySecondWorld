@@ -1,18 +1,13 @@
 using System;
 using System.IO;
-using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
-using Application = UnityEngine.Application;
+using UnityEngine.Networking;
 using MessagePipe;
 using MySecondWorld.AI;
 
-// UnityWebRequest 대신 HttpClient를 쓰는 이유:
-// UnityWebRequest는 Range 헤더(이어받기)를 공식 지원하지 않고,
-// DownloadHandlerFile이 파일 이어쓰기(Append)를 지원하지 않는다.
-// HttpClient는 Range 헤더 + FileStream Append 조합으로 이어받기가 가능하다.
+// Range 헤더는 SetRequestHeader로 수동 설정, 이어받기는 DownloadHandlerFile(append: true)로 지원.
 public class AIModelDownloader
 {
     private readonly IPublisher<AIModelDownloadProgressEvent> _publisher;
@@ -44,7 +39,6 @@ public class AIModelDownloader
             return;
         }
 
-        // RAM에 따라 대형(4B) 또는 소형(1B) 모델 선택
         bool useLarge   = _device.RecommendedModelSize == ModelSize.Large;
         string url      = useLarge ? _config.modelUrl      : _config.smallModelUrl;
         string fileName = useLarge ? _config.modelFileName : _config.smallModelFileName;
@@ -53,43 +47,25 @@ public class AIModelDownloader
 
         string savePath = Path.Combine(Application.persistentDataPath, fileName);
 
-        await UniTask.SwitchToThreadPool();
-
-        // HEAD 요청으로 실제 파일 크기 조회 — SO에 하드코딩 불필요, 모델 교체 시 URL만 바꾸면 됨
-        long totalBytes = 0;
-        try
-        {
-            using var headClient = new HttpClient();
-            if (!string.IsNullOrEmpty(_config.huggingFaceToken))
-                headClient.DefaultRequestHeaders.Authorization =
-                    new AuthenticationHeaderValue("Bearer", _config.huggingFaceToken);
-            using var headResponse = await headClient
-                .SendAsync(new HttpRequestMessage(HttpMethod.Head, url), ct)
-                .ConfigureAwait(false);
-            totalBytes = headResponse.Content.Headers.ContentLength ?? 0;
+        // HEAD 요청으로 실제 파일 크기 조회
+        long totalBytes = await FetchTotalBytesAsync(url, ct);
+        if (totalBytes > 0)
             Debug.Log($"[AIModelDownloader] 파일 크기: {totalBytes / 1024 / 1024}MB");
-        }
-        catch (Exception e)
-        {
-            Debug.LogWarning($"[AIModelDownloader] 파일 크기 조회 실패 — 진행률 표시 불가: {e.Message}");
-        }
 
         // 파일이 이미 완전히 받아져 있으면 스킵
         long existingBytes = File.Exists(savePath) ? new FileInfo(savePath).Length : 0;
         if (existingBytes > 0 && (totalBytes <= 0 || existingBytes >= totalBytes * 0.99f))
         {
-            await UniTask.SwitchToMainThread();
             Debug.Log($"[AIModelDownloader] 이미 존재 — 스킵: {savePath}");
             _publisher.Publish(new AIModelDownloadProgressEvent(1f, true));
             return;
         }
+        // 이어받기 구간 계산
         if (existingBytes > 0)
         {
             Debug.Log($"[AIModelDownloader] 이어받기 — {existingBytes / 1024 / 1024}MB 부터");
             float resumeProgress = totalBytes > 0 ? (float)existingBytes / totalBytes : 0f;
-            await UniTask.SwitchToMainThread();
             _publisher.Publish(new AIModelDownloadProgressEvent(resumeProgress, false));
-            await UniTask.SwitchToThreadPool();
         }
 
         const int maxRetries = 10;
@@ -97,65 +73,18 @@ public class AIModelDownloader
 
         while (true)
         {
-            ct.ThrowIfCancellationRequested();
+            ct.ThrowIfCancellationRequested(); // ← 취소 받으면 여기서 예외 터짐. 다운로드 시작 전 확인
 
             long currentBytes = File.Exists(savePath) ? new FileInfo(savePath).Length : 0;
 
-            using var client = new HttpClient();
-            client.Timeout = TimeSpan.FromMinutes(30);
-
-            if (!string.IsNullOrEmpty(_config.huggingFaceToken))
-                client.DefaultRequestHeaders.Authorization =
-                    new AuthenticationHeaderValue("Bearer", _config.huggingFaceToken);
-
-            if (currentBytes > 0)
-                client.DefaultRequestHeaders.Range = new RangeHeaderValue(currentBytes, null);
-
-            bool completed = false;
             try
             {
-                using var response = await client
-                    .GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct)
-                    .ConfigureAwait(false);
-
-                response.EnsureSuccessStatusCode();
-
-                using var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
-
-                FileStream fileStream = null;
-                try
-                {
-                    fileStream = new FileStream(
-                        savePath,
-                        currentBytes > 0 ? FileMode.Append : FileMode.Create,
-                        FileAccess.Write, FileShare.None, bufferSize: 81920, useAsync: true);
-
-                    byte[] buffer = new byte[81920];
-                    long   downloaded = currentBytes;
-                    int    bytesRead;
-
-                    while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length, ct).ConfigureAwait(false)) > 0)
-                    {
-                        await fileStream.WriteAsync(buffer, 0, bytesRead, ct).ConfigureAwait(false);
-                        downloaded += bytesRead;
-
-                        float progress = totalBytes > 0 ? (float)downloaded / totalBytes : 0f;
-
-                        await UniTask.SwitchToMainThread();
-                        _publisher.Publish(new AIModelDownloadProgressEvent(progress, false));
-                        await UniTask.SwitchToThreadPool();
-                    }
-
-                    completed = true;
-                }
-                finally
-                {
-                    fileStream?.Close();
-                }
+                await DownloadOnceAsync(url, savePath, currentBytes, totalBytes, ct);
+                break;
             }
             catch (OperationCanceledException)
             {
-                throw; // 사용자가 명시적으로 취소한 경우는 재시도 없이 바로 던짐
+                throw;
             }
             catch (Exception e) when (retry < maxRetries)
             {
@@ -163,19 +92,73 @@ public class AIModelDownloader
                 long resumeBytes = File.Exists(savePath) ? new FileInfo(savePath).Length : 0;
                 float resumeProgress = totalBytes > 0 ? (float)resumeBytes / totalBytes : 0f;
                 Debug.LogWarning($"[AIModelDownloader] 연결 끊김 ({retry}/{maxRetries}) — 3초 후 재시도: {e.Message}");
-
-                await UniTask.SwitchToMainThread();
                 _publisher.Publish(new AIModelDownloadProgressEvent(resumeProgress, false));
                 await UniTask.Delay(3000, cancellationToken: ct);
-                await UniTask.SwitchToThreadPool();
-                continue;
             }
-
-            if (completed) break;
         }
 
-        await UniTask.SwitchToMainThread();
         Debug.Log($"[AIModelDownloader] 다운로드 완료: {savePath}");
         _publisher.Publish(new AIModelDownloadProgressEvent(1f, true));
+    }
+
+    private async UniTask<long> FetchTotalBytesAsync(string url, CancellationToken ct)
+    {
+        try
+        {
+            using var req = UnityWebRequest.Head(url);
+            if (!string.IsNullOrEmpty(_config.huggingFaceToken))
+                req.SetRequestHeader("Authorization", "Bearer " + _config.huggingFaceToken);
+            await req.SendWebRequest().ToUniTask(cancellationToken: ct);
+            if (req.result != UnityWebRequest.Result.Success) return 0;
+            string len = req.GetResponseHeader("Content-Length");
+            return long.TryParse(len, out var n) ? n : 0;
+        }
+        catch (OperationCanceledException) 
+        { 
+            throw;
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"[AIModelDownloader] 파일 크기 조회 실패: {e.Message}");
+            return 0;
+        }
+    }
+
+    private async UniTask DownloadOnceAsync(
+        string url, string savePath, long currentBytes, long totalBytes, CancellationToken ct)
+    {
+        using var req = UnityWebRequest.Get(url);
+        if (!string.IsNullOrEmpty(_config.huggingFaceToken))
+            req.SetRequestHeader("Authorization", "Bearer " + _config.huggingFaceToken);
+        if (currentBytes > 0)
+            req.SetRequestHeader("Range", "bytes=" + currentBytes + "-");
+
+        // append:true → 이어받기 지원. removeFileOnAbort:false → 중단 시 파일 보존(다음 재시도에 이어받기 가능)
+        var handler = new DownloadHandlerFile(savePath, append: currentBytes > 0);
+        handler.removeFileOnAbort = false;
+        req.downloadHandler = handler;
+        req.disposeDownloadHandlerOnDispose = true;
+
+        var op = req.SendWebRequest();
+
+        // 진행률 폴링 — 메인 스레드만 사용
+        while (!op.isDone)
+        {
+            if (ct.IsCancellationRequested) //다운로드 진행 중 중단
+            {
+                req.Abort();
+                throw new OperationCanceledException(ct);
+            }
+
+            float progress = totalBytes > 0
+                ? (float)(currentBytes + (long)req.downloadedBytes) / totalBytes
+                : 0f;
+            _publisher.Publish(new AIModelDownloadProgressEvent(progress, false));
+
+            await UniTask.Yield(PlayerLoopTiming.Update, ct);
+        }
+
+        if (req.result != UnityWebRequest.Result.Success)
+            throw new Exception($"{req.result}: {req.error}");
     }
 }
