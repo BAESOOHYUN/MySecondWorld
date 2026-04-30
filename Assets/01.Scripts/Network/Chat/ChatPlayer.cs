@@ -10,15 +10,17 @@ namespace MySecondWorld.Network.Chat
     {
         [Inject] private ChatUI _chatUI;
 
+        public override void OnStartClient()
+        {
+            LifetimeScope.Find<ProjectLifetimeScope>().Container.Inject(this);
+        }
+
         public override void OnStartLocalPlayer()
         {
-            // Container.Inject(this)는 "이 객체(ChatPlayer)의 [Inject] 표시된 필드들을 컨테이너에서 찾아서 채워줘" 라는 뜻
-            // Resolve<T>() → 하나씩 직접 꺼내기
-            // Inject(this) → [Inject] 필드 전부 한 번에 채우기
-            LifetimeScope.Find<ProjectLifetimeScope>().Container.Inject(this);
             _chatUI.OnSubmitListener += OnSubmit;
             _chatUI.OnLocalPlayerReady();
         }
+
         public override void OnStopLocalPlayer()
         {
             if (_chatUI == null) return;
