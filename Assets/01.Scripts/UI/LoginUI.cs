@@ -20,6 +20,7 @@ namespace MySecondWorld.Network
             _hostToggle.onValueChanged.AddListener(OnToggleHost);
             _clientToggle.onValueChanged.AddListener(OnToggleClient);
             _playerPrefsDeleteAll.onClick.AddListener(PlayerPrefsDeleteAll);
+            _networkManager.OnClientStopped += ResetClientUI;
         }
 
         private void OnDestroy()
@@ -28,6 +29,16 @@ namespace MySecondWorld.Network
             if (_hostToggle != null) _hostToggle.onValueChanged.RemoveListener(OnToggleHost);
             if (_clientToggle != null) _clientToggle.onValueChanged.RemoveListener(OnToggleClient);
             if (_playerPrefsDeleteAll != null) _playerPrefsDeleteAll.onClick.RemoveListener(PlayerPrefsDeleteAll);
+            if (_networkManager != null) _networkManager.OnClientStopped -= ResetClientUI;
+        }
+
+        private void ResetClientUI()
+        {
+            _clientToggle.SetIsOnWithoutNotify(false);
+            bool hasName = !string.IsNullOrEmpty(_localPlayerNameInput.text);
+            _hostToggle.interactable = hasName;
+            _clientToggle.interactable = hasName;
+            _localPlayerNameInput.interactable = true;
         }
 
         private void OnNameChanged(string name)

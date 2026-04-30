@@ -172,6 +172,7 @@ namespace MySecondWorld.Network
         // 서버 연결되자마자 호출됨. Mirror 자동호출
         public override void OnClientAuthenticate()
         {
+            Debug.Log($"[Auth] OnClientAuthenticate — LocalPlayerName='{PlayerSession.LocalPlayerName}'");
             // 이름 없이 연결 시도하면 null이 서버 playerNames에 등록될 수 있으므로 사전 차단
             if (string.IsNullOrWhiteSpace(PlayerSession.LocalPlayerName))
             {
@@ -184,6 +185,7 @@ namespace MySecondWorld.Network
 
         public void OnAuthResponseMessage(AuthResponseMessage msg)
         {
+            Debug.Log($"[Auth] OnAuthResponseMessage — code={msg.code}");
             if (msg.code == AuthResponseMessage.Success)
             {
                 // Mirror에 "클라이언트 인증 완료" 알림

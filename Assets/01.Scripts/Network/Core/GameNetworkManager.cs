@@ -152,6 +152,8 @@ namespace MySecondWorld.Network
 
         #region 클라이언트 측
 
+        public event System.Action OnClientStopped;
+
         // [C1] 클라이언트 시작: 서비스 생성 + 핸들러 등록
         // 서버가 보내는 메시지 → NetworkClient.RegisterHandler (클라이언트가 받으니까)
         // -> ClientSceneSyncService.cs 로 이어짐
@@ -162,7 +164,19 @@ namespace MySecondWorld.Network
             NetworkClient.RegisterHandler<AdditiveSceneMessage>(_clientSyncService.OnAdditiveSceneMessage);
             NetworkClient.RegisterHandler<SpawnReadyMessage>(_clientSyncService.OnSpawnReadyMessage);
         }
-        // 
+
+        public override void OnClientConnect()
+        {
+            base.OnClientConnect();
+            Debug.Log("[Client] OnClientConnect — 연결 성공, 인증 대기");
+        }
+
+        public override void OnClientDisconnect()
+        {
+            base.OnClientDisconnect();
+            Debug.LogWarning("[Client] OnClientDisconnect — 연결 끊김 또는 타임아웃");
+            OnClientStopped?.Invoke();
+        }
         #endregion
     }
 }
