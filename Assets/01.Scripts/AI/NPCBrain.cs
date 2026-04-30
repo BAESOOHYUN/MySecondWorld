@@ -188,7 +188,7 @@ namespace MySecondWorld.AI
                 return string.Empty;
             }
 
-            ct.Register(() => _llmAgent.CancelRequests());
+            ct.Register(() => { if (!s_isExitingPlayMode) _llmAgent.CancelRequests(); });
 
             float t0 = Time.realtimeSinceStartup;
             string response = await _llmAgent.Chat(userInput).AsUniTask().AttachExternalCancellation(ct);
@@ -197,8 +197,10 @@ namespace MySecondWorld.AI
             if (this == null) 
                 return string.Empty;
 
-            string extractPrompt = $"다음 대화에서 플레이어에 대해 NPC가 기억해야 할 중요한 사실이 있다면 한 줄로만 써줘. " +
-                                    $"없으면 '없음'이라고만 써. \n\n플레이어: {userInput}\nNPC: {response}";
+            string extractPrompt = $"아래 대화에서 '{userInput}'을 말한 사람(플레이어)에 대해 새롭게 알게 된 사실이 있으면 " +
+                                    $"'[플레이어이름]은 [사실].' 형식으로 한 줄만 써줘. " +
+                                    $"NPC 자신에 대한 내용은 절대 쓰지 마. 플레이어에 대한 새 정보가 없으면 '없음'이라고만 써.\n\n" +
+                                    $"플레이어 발화: {userInput}\nNPC 응답: {response}";
             string fact = await _llmAgent.Chat(extractPrompt, null, null, addToHistory: false).AsUniTask().AttachExternalCancellation(ct);
 
             if (!string.IsNullOrEmpty(fact) && fact.Trim() != "없음")
