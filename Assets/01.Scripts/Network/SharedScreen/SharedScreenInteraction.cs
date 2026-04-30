@@ -15,12 +15,12 @@ namespace MySecondWorld.Network
         [SerializeField] private GameObject _screenUI;
         private SharedScreenUI _screenUIComponent;
         private SharedScreenController _controller;
-        private UIManager _uiManager;
+        [Inject] private UIManager _uiManager;
 
         private void Awake()
         {
             _controller = GetComponent<SharedScreenController>();
-            _uiManager = LifetimeScope.Find<ProjectLifetimeScope>().Container.Resolve<UIManager>();
+            LifetimeScope.Find<ProjectLifetimeScope>().Container.Inject(this);
         }
 
         private void OnTriggerEnter(Collider other)

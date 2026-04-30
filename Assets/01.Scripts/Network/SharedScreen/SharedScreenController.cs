@@ -315,13 +315,16 @@ namespace MySecondWorld.Network
         [TargetRpc]
         private void TargetRpcReceiveFileEnd(NetworkConnection target, int totalSize, int totalPageCount)
         {
-            // 검증 — 받은 데이터 크기가 totalSize와 맞는지 확인
             if (_receiveBuffer.Length != totalSize)
             {
-                Debug.LogError($"_receiveBuffer.Length {_receiveBuffer.Length} != totalSize {totalSize}");
+                Debug.LogError($"[SharedScreen] 버퍼 크기 불일치: {_receiveBuffer.Length} != {totalSize}");
                 return;
             }
-            // 수신 상태 종료
+            if (_receivedChunkCount != _expectedChunkCount)
+            {
+                Debug.LogError($"[SharedScreen] 청크 손실: 받은 {_receivedChunkCount} / 예상 {_expectedChunkCount}. 파일 전송이 불완전합니다.");
+                return;
+            }
             _isReceiving = false;
 
             if (_fileType == FileType.PDF)

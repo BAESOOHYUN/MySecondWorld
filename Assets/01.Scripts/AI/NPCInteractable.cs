@@ -1,7 +1,6 @@
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using R3;
 using ReactiveInputSystem;
 using Stateless;
@@ -119,12 +118,6 @@ namespace MySecondWorld.AI
                 .AddTo(destroyCancellationToken);
         }
 
-        [Header("Input")]
-        [Tooltip("New Input System — 상호작용 액션 (InputAction)")]
-        public InputActionReference interactAction;
-        [Tooltip("New Input System — ESC 키 처리")]
-        public InputActionReference cancelAction;
-
         private StateMachine<NpcState, NpcTrigger> _stateMachine;
         private CancellationTokenSource _cts;
         #endregion
@@ -149,15 +142,6 @@ namespace MySecondWorld.AI
 
             InitStateMachine();
 
-            if (interactAction != null)
-            {
-                interactAction.action.performed += OnInteractPerformed;
-            }
-            else
-            {
-                Debug.LogWarning($"[NPCInteractable] Start: interactAction이 null입니다. Inspector에서 연결 필요.");
-            }
-
             _touchEventListener.OnTap.Subscribe(screenPos =>
             {
                 if (Camera.main == null)
@@ -175,22 +159,8 @@ namespace MySecondWorld.AI
         #endregion
 
         #region 입력 등록
-        private void OnEnable()
-        {
-            interactAction?.action.Enable();
-            cancelAction?.action.Enable();
-        }
-
-        private void OnDisable()
-        {
-            interactAction?.action.Disable();
-            cancelAction?.action.Disable();
-        }
-
         private void OnDestroy()
         {
-            if (interactAction != null)
-                interactAction.action.performed -= OnInteractPerformed;
             _cts?.Cancel();
             _cts?.Dispose();
         }
@@ -296,12 +266,6 @@ namespace MySecondWorld.AI
                     .Subscribe(_ => SafeFire(NpcTrigger.Close))
                     .AddTo(_cts.Token);
 
-                cancelAction?.action
-                    .PerformedAsObservable()
-                    .AsUnitObservable()
-                    .Subscribe(_ => SafeFire(NpcTrigger.Close))
-                    .AddTo(_cts.Token);
-
                 _dialogueUI.SetInputEnabled(true);
             }
             else if (t.Trigger == NpcTrigger.ResponseReceived)
@@ -336,13 +300,6 @@ namespace MySecondWorld.AI
             _pendingInput = userInput;
             _dialogueUI.ClearInput();
             SafeFire(NpcTrigger.Submit);
-        }
-
-        private void OnInteractPerformed(InputAction.CallbackContext ctx)
-        {
-            if (OnUIChecker.IsInputFieldFocused())
-                return;
-            SafeFire(NpcTrigger.Interact);
         }
 
         // 클릭/탭으로 외부에서 직접 호출 (TouchEventListener의 Raycast 결과)

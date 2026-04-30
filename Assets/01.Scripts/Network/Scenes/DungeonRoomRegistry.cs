@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace MySecondWorld.Network
 {
@@ -10,11 +8,13 @@ namespace MySecondWorld.Network
     /// </summary>
     public class DungeonRoomRegistry
     {
+        private const int MaxPlayersPerRoom = 4;
+
         private class DungeonRoom
         {
             public Guid roomId;
             public List<int> connIds;
-            public int maxPlayers = 4;
+            public int maxPlayers = MaxPlayersPerRoom;
 
             public DungeonRoom(Guid id)
             {

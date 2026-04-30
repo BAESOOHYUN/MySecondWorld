@@ -37,6 +37,6 @@ namespace MySecondWorld.Network
 
     public static class SharedScreenConstants
     {
-        public const int ChunkSize = 65536;
+        public const int ChunkSize = 12000;
     }
 }

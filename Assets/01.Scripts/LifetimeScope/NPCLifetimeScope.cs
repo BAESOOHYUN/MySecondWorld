@@ -2,6 +2,7 @@ using VContainer;
 using VContainer.Unity;
 using MessagePipe;
 using MySecondWorld.UI;
+using MySecondWorld.Network;
 
 namespace MySecondWorld.AI
 {
@@ -17,6 +18,7 @@ namespace MySecondWorld.AI
             builder.RegisterMessageBroker<string, PlayerMessageSentEvent>(options);
             builder.RegisterMessageBroker<NPCResponseReceivedEvent>(options);
             builder.RegisterMessageBroker<NPCThinkingStartedEvent>(options);
+            builder.RegisterMessageBroker<NPCDialogueEvent>(options);
 
             var uiManager = Parent.Container.Resolve<UIManager>();
             var uiGO = uiManager.GetOrCreateDynamicCanvas<NPCDialogueUI>();

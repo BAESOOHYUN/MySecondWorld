@@ -8,14 +8,19 @@ namespace MySecondWorld.Network.Chat
 {
     public class ChatPlayer : NetworkBehaviour
     {
-        private ChatUI _chatUI;
+        [Inject] private ChatUI _chatUI;
+
+        public override void OnStartClient()
+        {
+            LifetimeScope.Find<ProjectLifetimeScope>().Container.Inject(this);
+        }
 
         public override void OnStartLocalPlayer()
         {
-            _chatUI = LifetimeScope.Find<ProjectLifetimeScope>().Container.Resolve<ChatUI>();
             _chatUI.OnSubmitListener += OnSubmit;
             _chatUI.OnLocalPlayerReady();
         }
+
         public override void OnStopLocalPlayer()
         {
             if (_chatUI == null) return;
@@ -45,8 +50,6 @@ namespace MySecondWorld.Network.Chat
         private void RpcReceiveMessage(string playerName, string message)
         {
             Debug.Log($"[Client] RpcReceiveMessage: {message}");
-            if (_chatUI == null)
-                _chatUI = LifetimeScope.Find<ProjectLifetimeScope>().Container.Resolve<ChatUI>();
             _chatUI.CreateMessagePrefab(playerName, message);
         }
 

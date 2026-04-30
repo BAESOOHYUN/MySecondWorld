@@ -1,6 +1,11 @@
+using System;
 using UnityEngine;
 using Mirror;
-using System;
+using VContainer;
+using VContainer.Unity;
+using MessagePipe;
+using R3;
+using MySecondWorld.AI;
 
 namespace MySecondWorld.Network
 {
@@ -13,17 +18,33 @@ namespace MySecondWorld.Network
     /// 대화 발생 시 → NPCDialogueSync.OnDialogueRequested?.Invoke(npcName, message)
     ///             → 활성화된 NPC만 수신 → RpcShowDialogue
     /// </summary>
+    
+    public struct NPCDialogueEvent
+    {
+        public string NpcName;
+        public string Message;
+    }
+
     public class NPCDialogueSync : NetworkBehaviour
     {
-        public static event Action<string, string> OnDialogueRequested;
+        [Inject] private ISubscriber<NPCDialogueEvent> _subscriber;
+        private IDisposable _subscription; //구독 영수증. 구독을 끊는 것도 리소스 정리의 일종이라 Dispose()로 통일. 
+
+        private void Awake()
+        {
+            LifetimeScope.Find<NPCScope>().Container.Inject(this);
+        }
+
         private void OnEnable()
         {
-            OnDialogueRequested += HandleDialogueRequested;
+            if (_subscription != null) return; // Awake 전 OnEnable 방어
+            //_subscriber.Subscribe 구독 신청
+            _subscription = _subscriber.Subscribe(e => HandleDialogueRequested(e.NpcName, e.Message));
         }
 
         private void OnDisable()
         {
-            OnDialogueRequested -= HandleDialogueRequested;
+            _subscription?.Dispose(); // 구독 해지
         }
 
         private void HandleDialogueRequested(string npcName, string message)
