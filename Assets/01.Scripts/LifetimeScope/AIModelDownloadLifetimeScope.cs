@@ -4,7 +4,9 @@ using VContainer.Unity;
 using MessagePipe;
 using MySecondWorld.AI;
 using MySecondWorld.UI;
-
+/// <summary>
+/// OpenWorldRobby씬 GameObject에 부착
+/// </summary>
 public class AIModelDownloadLifetimeScope : LifetimeScope
 {
     [SerializeField] private AIModelConfigSO _modelConfig;

@@ -19,7 +19,7 @@ namespace MySecondWorld.AI
             builder.RegisterMessageBroker<NPCResponseReceivedEvent>(options);
             builder.RegisterMessageBroker<NPCThinkingStartedEvent>(options);
             builder.RegisterMessageBroker<NPCDialogueEvent>(options);
-
+            builder.RegisterMessageBroker<NPCStopTTSEvent>(options);
             var uiManager = Parent.Container.Resolve<UIManager>();
             var uiGO = uiManager.GetOrCreateDynamicCanvas<NPCDialogueUI>();
             builder.RegisterComponent(uiGO.GetComponent<NPCDialogueUI>());

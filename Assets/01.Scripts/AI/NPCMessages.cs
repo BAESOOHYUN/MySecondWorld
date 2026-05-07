@@ -41,6 +41,12 @@ namespace MySecondWorld.AI
         }
     }
 
+    public readonly struct NPCStopTTSEvent
+    {
+        public readonly string NpcGuid;
+        public NPCStopTTSEvent(string npcGuid) { NpcGuid = npcGuid; }
+    }
+
     public readonly struct AIModelDownloadProgressEvent
     {
         public readonly float Progress;

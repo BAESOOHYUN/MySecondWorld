@@ -31,14 +31,15 @@ namespace MySecondWorld.UI
         [SerializeField] private ScrollRect _scrollRect;
 
         [Header("Future: Voice")]
-        [SerializeField] private Button _sttButton;   // 비활성 — 추후 연결
-        [SerializeField] private Button _ttsButton;   // 비활성 — 추후 연결
+        [SerializeField] private Button _sttButton;
+        [SerializeField] private Button _ttsButton;
 
         [Header("Typing Effect")]
         public float typingSpeed = 0.03f;
 
         // CancellationTokenSource 비동기 작업 취소 : 실행 중인 작업을 취소하거나 중지. 장기 실행 작업이나 무한 루프를 안전하게 중단하는 데 사용
         private CancellationTokenSource _typingCts;
+        private IPublisher<NPCStopTTSEvent> _stopTTSPub;
 
         // R3 구독
         public Observable<string> OnSubmit => _submitButton.OnClickAsObservable()
@@ -51,7 +52,9 @@ namespace MySecondWorld.UI
         [Inject]
         private void Construct(
             ISubscriber<NPCResponseReceivedEvent> responseSub,
-            ISubscriber<NPCThinkingStartedEvent> thinkingSub)
+            ISubscriber<NPCThinkingStartedEvent> thinkingSub,
+            IPublisher<NPCStopTTSEvent> stopTTSPub
+            )
         {
             responseSub
                 .Subscribe(evt =>
@@ -72,6 +75,12 @@ namespace MySecondWorld.UI
                     SetInputEnabled(false);
                 })
                 .AddTo(destroyCancellationToken);
+
+            _stopTTSPub = stopTTSPub;
+            if (_ttsButton != null)
+                _ttsButton.OnClickAsObservable()
+                        .Subscribe(_ => _stopTTSPub.Publish(new NPCStopTTSEvent(_currentNpcGuid))) // NPCVoicePlayer가 구독
+                        .AddTo(destroyCancellationToken);
         }
 
         #region 필수 참조 검증
@@ -115,16 +124,12 @@ namespace MySecondWorld.UI
         #region 열기 / 닫기
         public void Open(string npcGuid)
         {
-            //Debug.Log($"[NPCDialogueUI] Open 호출, _dialoguePanel={_dialoguePanel}");
             _currentNpcGuid = npcGuid;
             _canvas.SetActive(true);
             _playerInputField.text = string.Empty;
             _npcNameText.text = string.Empty;
             _npcResponseText.text = string.Empty;
             _playerInputField.ActivateInputField();
-            // STT/TTS 비활성화 (자리만 확보)
-            _sttButton?.gameObject.SetActive(false);
-            _ttsButton?.gameObject.SetActive(false);
         }
 
         public void Close()
