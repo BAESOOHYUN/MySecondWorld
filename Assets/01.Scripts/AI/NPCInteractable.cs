@@ -238,6 +238,7 @@ namespace MySecondWorld.AI
         // Idle 진입 시 항상 정리
         private void OnEnterIdle()
         {
+            _brain?.OnConversationEnded();  // _cts.Cancel() 전 — destroyCancellationToken 살아있어야 함
             _cts?.Cancel();
             _cts?.Dispose();
             _cts = null;
@@ -287,7 +288,7 @@ namespace MySecondWorld.AI
             _dialogueUI.SetInputEnabled(false);
             _dialogueUI.ShowThinking();
 
-            _messagePub.Publish(NpcGuid, new PlayerMessageSentEvent(_pendingInput, _cts.Token));
+            _messagePub.Publish(NpcGuid, new PlayerMessageSentEvent(_pendingInput, MySecondWorld.Network.PlayerSession.LocalPlayerName, _cts.Token));
             _pendingInput = null;
         }
         #endregion

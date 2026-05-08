@@ -11,10 +11,12 @@ namespace MySecondWorld.AI
     public readonly struct PlayerMessageSentEvent
     {
         public readonly string Text;
+        public readonly string PlayerName;
         public readonly CancellationToken CT;
-        public PlayerMessageSentEvent(string text, CancellationToken ct)
+        public PlayerMessageSentEvent(string text, string playerName, CancellationToken ct)
         {
             Text = text;
+            PlayerName = playerName;
             CT = ct;
         }
     }

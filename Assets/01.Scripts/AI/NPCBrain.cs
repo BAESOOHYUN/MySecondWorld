@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
@@ -41,6 +42,9 @@ namespace MySecondWorld.AI
         private IPublisher<NPCThinkingStartedEvent> _thinkingPub;
         private IPublisher<NPCDialogueEvent> _dialoguePub;
 
+        // 대화 세션 버퍼 — 창 닫힐 때 한 번에 팩트 추출
+        private readonly List<(string user, string npc)> _sessionBuffer = new();
+
         // [Inject]가 붙은 메서드를 VContainer가 찾아서,
         // 파라미터 타입에 맞는 인스턴스를 컨테이너에서 꺼내 자동으로 호출한다.
         // 파라미터에 뭘 넣는가의 기준: 이 클래스가 동작하는 데 외부에서 받아야 하는 것들
@@ -71,6 +75,8 @@ namespace MySecondWorld.AI
                                 _systemPrompt?.NpcName ?? name,
                                 response));
                         _dialoguePub.Publish(new NPCDialogueEvent { NpcName = NpcNameKey, Message = response });
+
+                        _sessionBuffer.Add((evt.Text, response));
                     }
                     catch (OperationCanceledException)
                     {
@@ -178,7 +184,7 @@ namespace MySecondWorld.AI
             return sb.ToString().Trim();
         }
 
-        // 응답 생성
+        // 응답 생성 — 팩트 추출 없이 응답만 반환해 대기 시간 최소화
         private async UniTask<string> GenerateResponseAsync(
             string userInput, CancellationToken ct = default)
         {
@@ -194,26 +200,84 @@ namespace MySecondWorld.AI
             string response = await _llmAgent.Chat(userInput).AsUniTask().AttachExternalCancellation(ct);
             Debug.Log($"[NPCBrain] 추론 시간: {Time.realtimeSinceStartup - t0:F2}s");
 
-            if (this == null) 
+            if (this == null)
                 return string.Empty;
 
-            string extractPrompt = $"아래 대화에서 '{userInput}'을 말한 사람(플레이어)에 대해 새롭게 알게 된 사실이 있으면 " +
-                                    $"'[플레이어이름]은 [사실].' 형식으로 한 줄만 써줘. " +
-                                    $"NPC 자신에 대한 내용은 절대 쓰지 마. 플레이어에 대한 새 정보가 없으면 '없음'이라고만 써.\n\n" +
-                                    $"플레이어 발화: {userInput}\nNPC 응답: {response}";
-            string fact = await _llmAgent.Chat(extractPrompt, null, null, addToHistory: false).AsUniTask().AttachExternalCancellation(ct);
-
-            if (!string.IsNullOrEmpty(fact) && fact.Trim() != "없음")
-            {
-                Debug.Log($"NPCBrain fact : {fact.Trim()}");
-                _memory?.AddKnowFact(fact.Trim());
-            }
-
-            //응답을 받은 직후, reponse를 반환하기 전, 대화횟수 증가.
             _memory?.IncrementConversationCount();
             _memory?.Save(NpcNameKey);
 
             return response;
+        }
+
+        // NPCInteractable.OnEnterIdle()에서 호출 — 대화창 닫힐 때 세션 전체 팩트 추출
+        public void OnConversationEnded()
+        {
+            if (_sessionBuffer.Count == 0) return;
+
+            var snapshot = new List<(string user, string npc)>(_sessionBuffer);
+            _sessionBuffer.Clear();
+
+            ExtractAndSaveFactAsync(snapshot, destroyCancellationToken).Forget();
+        }
+
+        private async UniTaskVoid ExtractAndSaveFactAsync(
+            List<(string user, string npc)> transcript, CancellationToken ct)
+        {
+            if (!_isReady || _memory == null) return;
+
+            string name = string.IsNullOrWhiteSpace(MySecondWorld.Network.PlayerSession.LocalPlayerName)
+                ? "플레이어"
+                : MySecondWorld.Network.PlayerSession.LocalPlayerName;
+
+            // 전체 대화록 조립
+            using var transcriptSb = ZString.CreateStringBuilder();
+            foreach (var (user, npc) in transcript)
+            {
+                transcriptSb.Append("플레이어: ");
+                transcriptSb.AppendLine(user);
+                transcriptSb.Append("NPC: ");
+                transcriptSb.AppendLine(npc);
+            }
+
+            // 기존 사실 블록 — 중복 방지용
+            string knownBlock = "";
+            if (_memory.KnownFacts != null && _memory.KnownFacts.Count > 0)
+            {
+                using var sb = ZString.CreateStringBuilder();
+                sb.AppendLine("이미 알려진 사실 (중복 금지):");
+                foreach (var f in _memory.KnownFacts)
+                {
+                    sb.Append("- ");
+                    sb.AppendLine(f);
+                }
+                knownBlock = sb.ToString();
+            }
+
+            string prompt =
+                $"{knownBlock}" +
+                $"아래는 {name}과 나눈 대화 전체입니다.\n" +
+                $"{transcriptSb}\n" +
+                $"이 대화에서 {name}에 대해 새롭게 알게 된 사실이 있으면 한 문장으로 써줘.\n" +
+                $"예: '{name}은 기침 때문에 걱정하고 있다.'\n" +
+                $"이미 알려진 사실과 같거나 비슷하면 '없음'이라고만 써.\n" +
+                $"NPC 자신에 대한 내용은 절대 쓰지 마.";
+
+            try
+            {
+                string fact = await _llmAgent.Chat(prompt, null, null, addToHistory: false)
+                    .AsUniTask().AttachExternalCancellation(ct);
+
+                if (this == null) return;
+
+                string trimmed = fact?.Trim();
+                if (!string.IsNullOrEmpty(trimmed) && trimmed != "없음")
+                {
+                    Debug.Log($"[NPCBrain] 새 팩트: {trimmed}");
+                    _memory.AddKnowFact(trimmed);
+                    _memory.Save(NpcNameKey);
+                }
+            }
+            catch (OperationCanceledException) { }
         }
 
         private void ResetMemory()
