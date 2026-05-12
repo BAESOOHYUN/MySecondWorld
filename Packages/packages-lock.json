@@ -303,12 +303,13 @@
       "hash": "610157ad762084380380148ba8ce14e266a6da97"
     },
     "com.youngwoocho02.unity-cli-connector": {
-      "version": "file:com.youngwoocho02.unity-cli-connector",
+      "version": "https://github.com/youngwoocho02/unity-cli.git?path=unity-connector",
       "depth": 0,
-      "source": "embedded",
+      "source": "git",
       "dependencies": {
         "com.unity.nuget.newtonsoft-json": "3.2.1"
-      }
+      },
+      "hash": "886058c1bd3fd5f005cf31155fef6726260ce63c"
     },
     "jp.hadashikick.vcontainer": {
       "version": "1.17.0",
