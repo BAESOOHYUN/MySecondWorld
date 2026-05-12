@@ -43,6 +43,17 @@ namespace MySecondWorld.AI
         }
     }
 
+    public readonly struct NPCTTSSentenceEvent
+    {
+        public readonly string NpcGuid;
+        public readonly string Text;
+        public NPCTTSSentenceEvent(string npcGuid, string text)
+        {
+            NpcGuid = npcGuid;
+            Text = text;
+        }
+    }
+
     public readonly struct NPCStopTTSEvent
     {
         public readonly string NpcGuid;

@@ -8,6 +8,8 @@ using LLMUnity;
 using MessagePipe;
 using VContainer;
 using MySecondWorld.Network;
+using System.Linq;
+
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -41,6 +43,7 @@ namespace MySecondWorld.AI
         private IPublisher<NPCResponseReceivedEvent> _responsePub;
         private IPublisher<NPCThinkingStartedEvent> _thinkingPub;
         private IPublisher<NPCDialogueEvent> _dialoguePub;
+        private IPublisher<NPCTTSSentenceEvent> _ttsPub;
 
         // 대화 세션 버퍼 — 창 닫힐 때 한 번에 팩트 추출
         private readonly List<(string user, string npc)> _sessionBuffer = new();
@@ -55,12 +58,14 @@ namespace MySecondWorld.AI
             ISubscriber<string, PlayerMessageSentEvent> messageSub,
             IPublisher<NPCResponseReceivedEvent> responsePub,
             IPublisher<NPCThinkingStartedEvent> thinkingPub,
-            IPublisher<NPCDialogueEvent> dialoguePub
+            IPublisher<NPCDialogueEvent> dialoguePub,
+            IPublisher<NPCTTSSentenceEvent> ttsPub
             )
         {
             _responsePub = responsePub;
             _thinkingPub = thinkingPub;
-            _dialoguePub = dialoguePub; 
+            _dialoguePub = dialoguePub;
+            _ttsPub = ttsPub; 
 
             // NpcNameKey(GUID)를 키로 구독 — 이 NPC에게 온 메시지만 수신된다
             messageSub
@@ -197,7 +202,44 @@ namespace MySecondWorld.AI
             ct.Register(() => { if (!s_isExitingPlayMode) _llmAgent.CancelRequests(); });
 
             float t0 = Time.realtimeSinceStartup;
-            string response = await _llmAgent.Chat(userInput).AsUniTask().AttachExternalCancellation(ct);
+            string lastToken = "";
+            int lastSentEnd = 0;
+            string response = await _llmAgent.Chat(userInput, token =>
+            {
+                // 매번 최신 누적 텍스트 저장
+                lastToken = token;
+                // token이 누적 텍스트 전체
+                // token[lastSentEnd..] 이 새로 추가된 부분
+                // token 마지막 문자가 문장 끝이면
+                //     token[lastSentEnd..] 발행
+                //     lastSentEnd = token.Length 로 업데이트
+                string lastchar = token[token.Length - 1].ToString();
+                if (lastchar == "." ||
+                    lastchar == "!" ||
+                    lastchar == "?" ||
+                    lastchar == "\n")
+                {
+                    string sentence = token[lastSentEnd..];
+                    if (sentence.Any(char.IsLetterOrDigit))
+                    {
+                        // C# 8부터 추가된 범위 연산자(Range operator) token[lastSentEnd..] lastSentEnd부터 끝까지 잘라낸다는 뜻
+                        _ttsPub.Publish(new NPCTTSSentenceEvent(NpcNameKey, token[lastSentEnd..]));
+                        lastSentEnd = token.Length;
+                    }
+                }
+            }).AsUniTask().AttachExternalCancellation(ct);
+            // 마침표 없이 끝나는 경우 대비
+            // ex)"안녕하세요. 저는 의사입니다. 무엇을 도와드릴까요"
+            // "무엇을 도와드릴까요" 출력
+            if (lastSentEnd < lastToken.Length)
+            {
+                string sentence = lastToken[lastSentEnd..];
+                if (sentence.Any(char.IsLetterOrDigit))
+                {
+                    _ttsPub.Publish(new NPCTTSSentenceEvent(NpcNameKey, lastToken[lastSentEnd..]));
+                }
+            }
+
             Debug.Log($"[NPCBrain] 추론 시간: {Time.realtimeSinceStartup - t0:F2}s");
 
             if (this == null)
