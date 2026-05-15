@@ -12,7 +12,7 @@ namespace MySecondWorld.AI.Voice
 {
     // Microsoft Edge 브라우저에서 사용하는 TTS 엔진 edge-tts.
     // 무료, API 키 없음, 한국어 고품질 (ko-KR-SunHiNeural)
-    public class EdgeTTSService : MonoBehaviour, ITTSService
+    public class EdgeTTSServiceClientWebSocket : MonoBehaviour, ITTSService
     {
         private const string WssUrl = "wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1?TrustedClientToken=6A5AA1D4EAFF4E9FB37E23D68491D6F4&ConnectionId=";
 
@@ -35,19 +35,19 @@ namespace MySecondWorld.AI.Voice
         public event Action OnSpeakStarted;
         public event Action OnSpeakFinished;
 
-        public async UniTask SpeakAsync(string text, CancellationToken ct = default)
+        public async UniTask<AudioClip> FetchAsync(string text, CancellationToken ct = default)
         {
             // Unity에서 WSS 연결 시 TLS 버전 불일치로 실패하는 경우 방지
             System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
             System.Net.ServicePointManager.ServerCertificateValidationCallback = (_, _, _, _) => true;
 
             // 1. 웹소켓 연결
-            var ws = new ClientWebSocket();
             // Guid를 문자열로 바꿀 때 포맷 지정
             // "D" → 6ba7b810 - 9dad - 11d1 - 80b4 - 00c04fd430c8(하이픈 있음)
             // "N" → 6ba7b8109dad11d180b400c04fd430c8(하이픈 없음)
             // "B" → {6ba7b810 - 9dad - 11d1 - 80b4 - 00c04fd430c8}(중괄호)
             var uri = new Uri(WssUrl + Guid.NewGuid().ToString("N"));
+            var ws = new ClientWebSocket();
 
             // * Edge-TTS는 공식 API가 아니라서 브라우저인 척 위장해야 작동한다.
             // Edge-TTS API는 원래 Edge 브라우저 확장 프로그램 전용. 서버가 이 Origin 헤더를 보고 "Edge 브라우저에서 온 요청이구나" 하고 허용
@@ -76,7 +76,7 @@ namespace MySecondWorld.AI.Voice
                                 $"\"outputFormat\":\"{AudioFormat}\"}}}}}}}}";      // 오디오 포맷
             await SendTextAsync(ws, configMsg, ct);
 
-            // 3. 읽을 텍스트 + 목소리 전송 (SSML)
+            // 3. 목소리 + 읽을 텍스트 전송 (SSML)
             // Speech Synthesis Markup Language — 음성 합성용 XML
             timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
             string ssml =
@@ -122,7 +122,7 @@ namespace MySecondWorld.AI.Voice
                 var msg = msgBuffer.ToArray();
                 if (msgType == WebSocketMessageType.Binary) 
                 {
-                    // 앞 2바이트 = 헤더길이(big-endian uint16), 그 뒤가 실제 MP3 데이터
+                    // 청크 수신 : 앞 2바이트 = 헤더길이(big-endian uint16), 그 뒤가 실제 MP3 데이터
                     if (msg.Length >= 2)
                     {
                         // Edge-TTS가 헤더 길이를 2바이트 big-endian으로 보냄
@@ -156,13 +156,13 @@ namespace MySecondWorld.AI.Voice
             await ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "done", CancellationToken.None);
 
             if (audioBytes.Count == 0) 
-                return;
+                return null;
 
             // 5. MP3 → AudioClip 변환
             // Application.temporaryCachePath : Unity가 제공하는 임시 폴더 경로
             // NPC가 여러 명이면 동시에 말할 수 있으므로 npc마다 고유 파일명 생성
             // 파일명을 고정이므로 매번 같은 자리에 덮어씀. 최대 NPC 수만큼만 파일이 생김.
-            string tempPath = Path.Combine(Application.temporaryCachePath, $"npc_tts_{GetInstanceID()}.mp3");
+            string tempPath = Path.Combine(Application.temporaryCachePath, $"npc_tts_{GetInstanceID()}_{Guid.NewGuid():N}.mp3");
             File.WriteAllBytes(tempPath, audioBytes.ToArray());
 
             using var req = UnityWebRequestMultimedia.GetAudioClip("file://" + tempPath, AudioType.MPEG); // MP3 (MPEG-1 Audio Layer III)
@@ -171,12 +171,18 @@ namespace MySecondWorld.AI.Voice
             if (req.result != UnityWebRequest.Result.Success)
             {
                 Debug.LogError($"[EdgeTTSService] 오디오 로드 실패: {req.error}");
-                return;
+                return null;
             }
 
-            // 6. 재생 — PlayOneShot 아닌 clip + Play() 로 해야 GetOutputData() 가 작동
-            // PlayOneShot 쓰면 나중에 GetOutputData()로 진폭을 못 읽는다.
-            _audioSource.clip = DownloadHandlerAudioClip.GetContent(req);
+            var clip = DownloadHandlerAudioClip.GetContent(req);
+            File.Delete(tempPath);
+            return clip;
+        }
+
+        public async UniTask PlayAsync(AudioClip clip, CancellationToken ct = default)
+        {
+            if (clip == null) return;
+            _audioSource.clip = clip;
             _audioSource.Play();
             OnSpeakStarted?.Invoke();
 
@@ -190,6 +196,12 @@ namespace MySecondWorld.AI.Voice
                 // 취소되거나 자연 종료되거나 항상 Finished 발행
                 OnSpeakFinished?.Invoke();
             }
+        }
+
+        public async UniTask SpeakAsync(string text, CancellationToken ct = default)
+        {
+            var clip = await FetchAsync(text, ct);
+            await PlayAsync(clip, ct);
         }
 
         public void Stop()

@@ -1,4 +1,5 @@
 <linker>
   <assembly fullname="LLMUnity" preserve="all"/>
-  <assembly fullname="LLMUnitySetup" preserve="all"/>
+  <assembly fullname="LLMUnitySetup" preserve="all"/>    
+  <assembly fullname="NativeWebSocket" preserve="all"/>
 </linker>

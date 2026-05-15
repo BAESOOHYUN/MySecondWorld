@@ -22,7 +22,7 @@ namespace MySecondWorld.AI.Voice
         public event Action OnSpeakStarted;
         public event Action OnSpeakFinished;
 
-        public async UniTask SpeakAsync(string text, CancellationToken ct = default)
+        public async UniTask<AudioClip> FetchAsync(string text, CancellationToken ct = default)
         {
             // 1. JSON 요청 빌드
             string pitch = NormalizePitch(_pitch);
@@ -41,15 +41,16 @@ namespace MySecondWorld.AI.Voice
             if (req.result != UnityWebRequest.Result.Success)
             {
                 Debug.LogError($"[EdgeTTSService] HTTP 오류: {req.error}. tts_server.py 실행 중인지 확인하세요.");
-                return;
+                return null;
             }
 
             byte[] audioBytes = req.downloadHandler.data;
             if (audioBytes == null || audioBytes.Length == 0)
-                return;
+                return null;
 
-            // 3. MP3 → AudioClip 변환 (temp 파일 경유)
-            string tempPath = Path.Combine(Application.temporaryCachePath, $"npc_tts_{GetInstanceID()}.mp3");
+            // 3. MP3 → AudioClip 변환 (temp 폴더 경유)
+            // Guid suffix: FetchAsync가 동시에 여러 개 실행될 때 파일 충돌 방지
+            string tempPath = Path.Combine(Application.temporaryCachePath, $"npc_tts_{GetInstanceID()}_({Guid.NewGuid():N}.mp3"); //GetInstanceID = NPC 고유 ID, Guid.NewGuid():N = 한 NPC가 문장 여러개 
             File.WriteAllBytes(tempPath, audioBytes);
 
             using var audioReq = UnityWebRequestMultimedia.GetAudioClip("file://" + tempPath, AudioType.MPEG);
@@ -58,11 +59,20 @@ namespace MySecondWorld.AI.Voice
             if (audioReq.result != UnityWebRequest.Result.Success)
             {
                 Debug.LogError($"[EdgeTTSService] 오디오 로드 실패: {audioReq.error}");
-                return;
+                return null;
             }
 
             // 4. 재생 (clip + Play — GetOutputData() 사용을 위해 PlayOneShot 아님)
-            _audioSource.clip = DownloadHandlerAudioClip.GetContent(audioReq);
+            var clip = DownloadHandlerAudioClip.GetContent(audioReq);
+            File.Delete(tempPath); // AudioClip이 메모리에 올라왔으니 temp 파일 즉시 삭제 (안 지우면 temp 폴더에 파일이 계속 쌓임)
+            return clip;
+        }
+
+        public async UniTask PlayAsync(AudioClip clip, CancellationToken ct = default)
+        {
+            if (clip == null) 
+                return;
+            _audioSource.clip = clip;
             _audioSource.Play();
             OnSpeakStarted?.Invoke();
 
@@ -77,16 +87,28 @@ namespace MySecondWorld.AI.Voice
             }
         }
 
+        public async UniTask SpeakAsync(string text, CancellationToken ct = default)
+        {
+            var clip = await FetchAsync(text, ct);
+            await PlayAsync(clip, ct);
+        }
+
         public void Stop()
         {
             _audioSource.Stop();
             OnSpeakFinished?.Invoke();
         }
 
+        // JSON 문자열 안에 특수문자가 들어오면 JSON이 깨지는 걸 방지
+        // 원본 변환   이유
+        //  \	 \\	  역슬래시 자체가 이스케이프 문자라서
+        //  "	 \"	  JSON 문자열 구분자
+        //  \n	 \\n  줄바꿈
+        //  \r	 \\r  캐리지 리턴
         private static string EscapeJson(string s) =>
             s.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "\\r");
 
-        // Inspector 구형 값 자동 변환: "1.0" → "+0%", "0%" → "+0%"
+        // rate: 배속값(0.5~2.0) → 상대% (-50%~+100%)
         private static string NormalizeRate(string v)
         {
             if (float.TryParse(v, System.Globalization.NumberStyles.Float,
@@ -98,11 +120,12 @@ namespace MySecondWorld.AI.Voice
             return v.StartsWith("+") || v.StartsWith("-") ? v : "+" + v;
         }
 
-        // Inspector 구형 값 자동 변환: "0%" → "+0Hz", "+5%" → "+5Hz"
+        // pitch: Hz 없으면 붙임, 부호 없으면 + 붙임
         private static string NormalizePitch(string v)
         {
-            if (v.EndsWith("Hz")) return v.StartsWith("+") || v.StartsWith("-") ? v : "+" + v;
-            // 숫자+% 형식이면 Hz로 교체
+            if (v.EndsWith("Hz"))
+                return v.StartsWith("+") || v.StartsWith("-") ? v : "+" + v;
+
             string stripped = v.TrimStart('+', '-').Replace("%", "");
             if (float.TryParse(stripped, out _))
             {
