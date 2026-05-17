@@ -68,7 +68,7 @@ namespace MySecondWorld.AI.Voice
             // 2. 수신 핸들러 등록
             var audioBytes = new List<byte>();
             var tcs = new UniTaskCompletionSource<byte[]>();
-            bool isDone = false;
+            bool isDone = false; // 아직 오디오 전송 완료 안 됨
 
             // 2-1. 음성포맷 설정
             string timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
@@ -122,9 +122,12 @@ namespace MySecondWorld.AI.Voice
                 if (decoded.Contains("Path:turn.end"))
                 {
                     Debug.Log($"[TTS] turn.end 수신. 누적 오디오: {audioBytes.Count} bytes");
-                    isDone = true;
+                    isDone = true; // 오디오 전송 완료됨
                     tcs.TrySetResult(audioBytes.ToArray()); //tcs.TrySetResult()가 호출되는 순간 await가 풀리고 다음 코드로 넘어감.
-                    _ = ws.Close();
+                    //turn.end → tcs 완료 +ws.Close() 호출
+                    //NativeWebSocket 내부에서 연결 종료 처리 close → OnClose 이벤트 발생을 강제로 유도 → await ws.Connect() 풀림
+                    //즉시 mp3Bytes = await tcs.Task → MP3 변환 → 재생
+                    _ = ws.Close(); //fire and forget
                     return;
                 }
 
@@ -161,12 +164,13 @@ namespace MySecondWorld.AI.Voice
             });
 
             // 3. 연결 시작 + 오디오 수신 대기
-            await ws.Connect(); // ← 연결 시작. 완료되면 OnOpen이 자동으로 불림
+            await ws.Connect(); // ← 연결 시작. 완료되면 OnOpen이 자동으로 불림. OnClose 발생 시점에 풀림. 
 
             byte[] mp3Bytes;
             try
             {
-                mp3Bytes = await tcs.Task; // ← 여기서 실제로 기다림
+                //  mp3Bytes == audioBytes.ToArray() 모든 청크가 합쳐진 MP3 바이트 배열
+                mp3Bytes = await tcs.Task; // ← 여기서 tcs.TrySetResult()가 호출될 때까지 실제로 기다림
             }
             finally
             {
