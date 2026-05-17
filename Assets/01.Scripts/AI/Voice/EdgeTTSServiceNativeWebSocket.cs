@@ -15,7 +15,6 @@ namespace MySecondWorld.AI.Voice
     {
         private const string WssUrl = "wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1?TrustedClientToken=6A5AA1D4EAFF4E9FB37E23D68491D6F4&ConnectionId=";
         private const string AudioFormat = "audio-24khz-48kbitrate-mono-mp3";
-        [SerializeField] private AudioSource _audioSource;
         // ko-KR-SunHiNeural  — 여성, 밝고 친근함
         // ko-KR-InJoonNeural — 남성, 차분함
         // ko-KR-BongJinNeural— 남성, 중후함
@@ -25,8 +24,8 @@ namespace MySecondWorld.AI.Voice
         [SerializeField] private string _pitch = "+0Hz";   // ex) +5Hz, -10Hz
         [SerializeField] private string _rate = "+0%";     // ex) +10%, -20% 
 
-        public event Action OnSpeakStarted;
-        public event Action OnSpeakFinished;
+        //public event Action OnSpeakStarted;
+        //public event Action OnSpeakFinished;
 
         private readonly List<WebSocket> _activeConnections = new();
 
@@ -202,36 +201,6 @@ namespace MySecondWorld.AI.Voice
             return clip;
         }
 
-        public async UniTask PlayAsync(AudioClip clip, CancellationToken ct = default)
-        {
-            if (clip == null) return;
-
-            // clip + Play() 고정 — PlayOneShot은 GetOutputData()로 진폭을 못 읽음
-            _audioSource.clip = clip;
-            _audioSource.Play();
-            OnSpeakStarted?.Invoke();
-            try
-            {
-                await UniTask.WaitWhile(()=> _audioSource.isPlaying, cancellationToken:ct);
-            }
-            finally 
-            {
-                OnSpeakFinished?.Invoke();
-            }
-        }
-
-        public async UniTask SpeakAsync(string text, CancellationToken ct = default)
-        {
-            var clip = await FetchAsync(text, ct);
-            await PlayAsync(clip, ct);
-        }
-
-        public void Stop()
-        {
-            _audioSource.Stop();
-            OnSpeakFinished?.Invoke();
-        }
-
         private static string GenerateSecMsGec() // Generate Security Microsoft Gec(Microsoft 내부 약어, 정확한 풀네임은 공개 안 됨)
         {
             // 5분마다 바뀌는 입장권
@@ -258,14 +227,6 @@ namespace MySecondWorld.AI.Voice
             byte[] bytes = new byte[16];
             System.Security.Cryptography.RandomNumberGenerator.Fill(bytes);
             return BitConverter.ToString(bytes).Replace("-", "").ToUpper();
-        }
-
-        // Python의 date_to_string()과 동일한 형식
-        private static string DateToString()
-        {
-            return DateTime.UtcNow.ToString("ddd MMM dd yyyy HH:mm:ss",
-                System.Globalization.CultureInfo.InvariantCulture)
-                + " GMT+0000 (Coordinated Universal Time)";
         }
     }
 }
