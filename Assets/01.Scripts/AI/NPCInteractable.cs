@@ -131,6 +131,12 @@ namespace MySecondWorld.AI
         #endregion
 
         #region 초기화 검증
+        private void Awake()
+        {
+            _highlightUI?.SetActive(false);
+            InitStateMachine();
+        }
+
         private void Start()
         {
             if (_dialogueUI == null)
@@ -139,8 +145,6 @@ namespace MySecondWorld.AI
                 enabled = false;
                 return;
             }
-
-            InitStateMachine();
 
             _touchEventListener.OnTap.Subscribe(screenPos =>
             {
@@ -242,7 +246,7 @@ namespace MySecondWorld.AI
             _cts?.Cancel();
             _cts?.Dispose();
             _cts = null;
-            _dialogueUI.Close();
+            _dialogueUI?.Close();
         }
 
         // Talking에 진입하는 경로는 두 개다.
