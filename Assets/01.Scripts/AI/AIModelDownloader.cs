@@ -27,7 +27,7 @@ public class AIModelDownloader
         _device = device;
     }
 
-    public async UniTask DownloadAsync(CancellationToken ct)
+    public async UniTask DownloadLLMAsync(CancellationToken ct)
     {
         // 기기 RAM 확인 → 4B/1B 모델 선택
         _device.Evaluate();
@@ -35,37 +35,47 @@ public class AIModelDownloader
         if (!_device.IsCapable)
         {
             Debug.LogWarning($"[AIModelDownloader] 로컬 추론 불가 — {_device.Reason}");
-            _publisher.Publish(new AIModelDownloadProgressEvent(0f, false));
+            _publisher.Publish(new AIModelDownloadProgressEvent(0f, false, "LLM"));
             return;
         }
 
-        bool useLarge   = _device.RecommendedModelSize == ModelSize.Large;
-        string url      = useLarge ? _config.modelUrl      : _config.smallModelUrl;
+        bool useLarge = _device.RecommendedModelSize == ModelSize.Large;
+        string url = useLarge ? _config.modelUrl : _config.smallModelUrl;
         string fileName = useLarge ? _config.modelFileName : _config.smallModelFileName;
         _selectedFileName = fileName;
-        Debug.Log($"[AIModelDownloader] 시작 — {_device.Reason} → {fileName}");
 
+        Debug.Log($"[AIModelDownloader] 시작 — {_device.Reason} → {fileName}");
+        await DownloadFileAsync(url, fileName, "LLM", ct);
+    }
+
+    public async UniTask DownloadSTTAsync(CancellationToken ct)
+    {
+        await DownloadFileAsync(_config.sttModelUrl, _config.sttModelFileName, "STT", ct);
+    }
+
+    private async UniTask DownloadFileAsync(string url, string fileName, string label, CancellationToken ct)
+    {
         string savePath = Path.Combine(Application.persistentDataPath, fileName);
 
         // HEAD 요청으로 실제 파일 크기 조회
-        long totalBytes = await FetchTotalBytesAsync(url, ct);
+        long totalBytes = await FetchTotalBytesAsync(url, label, ct);
         if (totalBytes > 0)
-            Debug.Log($"[AIModelDownloader] 파일 크기: {totalBytes / 1024 / 1024}MB");
+            Debug.Log($"[AIModelDownloader] {label} 파일 크기: {totalBytes / 1024 / 1024}MB");
 
         // 파일이 이미 완전히 받아져 있으면 스킵
         long existingBytes = File.Exists(savePath) ? new FileInfo(savePath).Length : 0;
         if (existingBytes > 0 && (totalBytes <= 0 || existingBytes >= totalBytes * 0.99f))
         {
-            Debug.Log($"[AIModelDownloader] 이미 존재 — 스킵: {savePath}");
-            _publisher.Publish(new AIModelDownloadProgressEvent(1f, true));
+            Debug.Log($"[AIModelDownloader] {label} 이미 존재 — 스킵: {savePath}");
+            _publisher.Publish(new AIModelDownloadProgressEvent(1f, true, label));
             return;
         }
         // 이어받기 구간 계산
         if (existingBytes > 0)
         {
-            Debug.Log($"[AIModelDownloader] 이어받기 — {existingBytes / 1024 / 1024}MB 부터");
+            Debug.Log($"[AIModelDownloader] {label} 이어받기 — {existingBytes / 1024 / 1024}MB 부터");
             float resumeProgress = totalBytes > 0 ? (float)existingBytes / totalBytes : 0f;
-            _publisher.Publish(new AIModelDownloadProgressEvent(resumeProgress, false));
+            _publisher.Publish(new AIModelDownloadProgressEvent(resumeProgress, false, label));
         }
 
         const int maxRetries = 10;
@@ -79,7 +89,7 @@ public class AIModelDownloader
 
             try
             {
-                await DownloadOnceAsync(url, savePath, currentBytes, totalBytes, ct);
+                await TryDownloadChunkAsync(url, savePath, currentBytes, totalBytes, label, ct);
                 break;
             }
             catch (OperationCanceledException)
@@ -91,17 +101,17 @@ public class AIModelDownloader
                 retry++;
                 long resumeBytes = File.Exists(savePath) ? new FileInfo(savePath).Length : 0;
                 float resumeProgress = totalBytes > 0 ? (float)resumeBytes / totalBytes : 0f;
-                Debug.LogWarning($"[AIModelDownloader] 연결 끊김 ({retry}/{maxRetries}) — 3초 후 재시도: {e.Message}");
-                _publisher.Publish(new AIModelDownloadProgressEvent(resumeProgress, false));
+                Debug.LogWarning($"[AIModelDownloader] {label} 연결 끊김 ({retry}/{maxRetries}) — 3초 후 재시도: {e.Message}");
+                _publisher.Publish(new AIModelDownloadProgressEvent(resumeProgress, false, label));
                 await UniTask.Delay(3000, cancellationToken: ct);
             }
         }
 
-        Debug.Log($"[AIModelDownloader] 다운로드 완료: {savePath}");
-        _publisher.Publish(new AIModelDownloadProgressEvent(1f, true));
+        Debug.Log($"[AIModelDownloader] {label} 다운로드 완료: {savePath}");
+        _publisher.Publish(new AIModelDownloadProgressEvent(1f, true, label));
     }
 
-    private async UniTask<long> FetchTotalBytesAsync(string url, CancellationToken ct)
+    private async UniTask<long> FetchTotalBytesAsync(string url, string label, CancellationToken ct)
     {
         try
         {
@@ -119,13 +129,13 @@ public class AIModelDownloader
         }
         catch (Exception e)
         {
-            Debug.LogWarning($"[AIModelDownloader] 파일 크기 조회 실패: {e.Message}");
+            Debug.LogWarning($"[AIModelDownloader] {label} 파일 크기 조회 실패: {e.Message}");
             return 0;
         }
     }
 
-    private async UniTask DownloadOnceAsync(
-        string url, string savePath, long currentBytes, long totalBytes, CancellationToken ct)
+    private async UniTask TryDownloadChunkAsync(
+        string url, string savePath, long currentBytes, long totalBytes, string label, CancellationToken ct)
     {
         using var req = UnityWebRequest.Get(url);
         if (!string.IsNullOrEmpty(_config.huggingFaceToken))
@@ -153,7 +163,7 @@ public class AIModelDownloader
             float progress = totalBytes > 0
                 ? (float)(currentBytes + (long)req.downloadedBytes) / totalBytes
                 : 0f;
-            _publisher.Publish(new AIModelDownloadProgressEvent(progress, false));
+            _publisher.Publish(new AIModelDownloadProgressEvent(progress, false, label));
 
             await UniTask.Yield(PlayerLoopTiming.Update, ct);
         }

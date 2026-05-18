@@ -3,6 +3,7 @@ using VContainer.Unity;
 using MessagePipe;
 using MySecondWorld.UI;
 using MySecondWorld.Network;
+using MySecondWorld.AI.Voice;
 
 namespace MySecondWorld.AI
 {
@@ -21,6 +22,7 @@ namespace MySecondWorld.AI
             builder.RegisterMessageBroker<NPCDialogueEvent>(options);
             builder.RegisterMessageBroker<NPCTTSSentenceEvent>(options);
             builder.RegisterMessageBroker<NPCStopTTSEvent>(options);
+            builder.RegisterComponentInHierarchy<WhisperSTTService>().As<ISTTService>();//마이크는 1개, 공유하기 때문에 MainScene에 위치한다.
             var uiManager = Parent.Container.Resolve<UIManager>();
             var uiGO = uiManager.GetOrCreateDynamicCanvas<NPCDialogueUI>();
             builder.RegisterComponent(uiGO.GetComponent<NPCDialogueUI>());

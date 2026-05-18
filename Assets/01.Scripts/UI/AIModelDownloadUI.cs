@@ -11,8 +11,10 @@ namespace MySecondWorld.UI
     public class AIModelDownloadUI : MonoBehaviour
     {
         [SerializeField] private GameObject _canvas;
-        [SerializeField] private Slider _progressBar;
-        [SerializeField] private TextMeshProUGUI _progressText;
+        [SerializeField] private Slider _llmProgressBar;
+        [SerializeField] private TextMeshProUGUI _llmProgressText;
+        [SerializeField] private Slider _sttProgressBar;
+        [SerializeField] private TextMeshProUGUI _sttProgressText;
 
         [Inject]
         public void Construct(ISubscriber<AIModelDownloadProgressEvent> sub)
@@ -22,15 +24,25 @@ namespace MySecondWorld.UI
 
         public void OnProgress(AIModelDownloadProgressEvent evt)
         {
-            if (evt.IsCompleted)
+            _canvas.SetActive(true);
+
+            if(evt.ModelLabel == "LLM")
             {
+                _llmProgressBar.value = evt.Progress;
+                _llmProgressText.text = $"LLM 모델 다운로드 중...\n(최초 한 번만 다운로드 됩니다.)\n{(int)(evt.Progress * 100)}%";
+                if (evt.IsCompleted)
+                    _llmProgressBar.gameObject.SetActive(false);
+                return;
+            }
+            else if (evt.ModelLabel == "STT")
+            {
+                _sttProgressBar.value = evt.Progress;
+                _sttProgressText.text = $"STT 모델 다운로드 중...\n(최초 한 번만 다운로드 됩니다.)\n{(int)(evt.Progress * 100)}%";
+                if (evt.IsCompleted)
+                    _sttProgressBar.gameObject.SetActive(false);
                 Hide();
                 return;
             }
-
-            _canvas.SetActive(true);
-            _progressBar.value = evt.Progress;
-            _progressText.text = $"AI 모델을 다운로드 중입니다.\n(최초 한 번만 다운로드 됩니다.)\n{(int)(evt.Progress * 100)}%";
         }
 
         public void Hide()

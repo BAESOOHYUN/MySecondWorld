@@ -64,10 +64,12 @@ namespace MySecondWorld.AI
     {
         public readonly float Progress;
         public readonly bool IsCompleted;
-        public AIModelDownloadProgressEvent(float progress, bool isCompleted)
+        public readonly string ModelLabel;
+        public AIModelDownloadProgressEvent(float progress, bool isCompleted, string modelLabel ="")
         {
             Progress = progress;
             IsCompleted = isCompleted;
+            ModelLabel = modelLabel;
         }
     }
 }

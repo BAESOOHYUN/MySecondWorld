@@ -16,4 +16,8 @@ public class AIModelConfigSO : ScriptableObject
     [Header("인증")]
     [Tooltip("HuggingFace Access Token — 속도 제한 완화용. 비워두면 무인증.")]
     public string huggingFaceToken = "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";
+
+    [Header("STT 모델")]
+    public string sttModelUrl = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin";
+    public string sttModelFileName = "ggml-tiny.bin";
 }

@@ -26,28 +26,33 @@ public class AIModelDownloadStarter : IStartable, IDisposable
 
     public async void Start()
     {
-        string fileName = PlayerPrefs.GetString("SelectedModelFileName", "");
-        Debug.Log($"[AIModelDownloadStarter] 읽은 파일명: '{fileName}'");
-        if (string.IsNullOrEmpty(fileName))
-        {
-            Debug.LogError("[AIModelDownloadStarter] PlayerPrefs에 모델 파일명이 없습니다...");
-        }
-
+        // 첫 번째 try-catch가 완전히 끝난 후에 두 번째 try-catch가 실행
         try
         {
-            await _downloader.DownloadAsync(_cts.Token);
+            await _downloader.DownloadLLMAsync(_cts.Token);
 
             // 다운로드 완료 후 파일명을 PlayerPrefs에 저장
             // → MainScene의 LLMInitializer가 읽어서 llm.model에 절대경로 주입
             PlayerPrefs.SetString("SelectedModelFileName", _downloader.SelectedFileName);
             PlayerPrefs.Save();
 
-            Debug.Log($"[AIModelDownloadStarter] 다운로드 완료 → {_downloader.SelectedFileName}");
+            Debug.Log($"[AIModelDownloadStarter] LLM 다운로드 완료 → {_downloader.SelectedFileName}");
         }
         catch (OperationCanceledException) { }
         catch (Exception e)
         {
             Debug.LogError($"[AIModelDownloadStarter] 모델 다운로드 실패: {e.Message}");
+        }
+
+        try
+        {
+            await _downloader.DownloadSTTAsync(_cts.Token);
+            Debug.Log("[AIModelDownloadStarter] STT 완료");
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception e)
+        {
+            Debug.LogError($"[AIModelDownloadStarter] STT 다운로드 실패: {e.Message}");
         }
     }
 

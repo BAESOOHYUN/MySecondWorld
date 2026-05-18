@@ -6,6 +6,9 @@ using R3;
 using VContainer;
 using MessagePipe;
 using MySecondWorld.AI;
+using MySecondWorld.AI.Voice;
+using System.Threading;
+using UnityEngine.EventSystems;
 
 namespace MySecondWorld.UI
 {
@@ -30,6 +33,8 @@ namespace MySecondWorld.UI
         [SerializeField] private Button _ttsButton;
 
         private IPublisher<NPCStopTTSEvent> _stopTTSPub;
+        private ISTTService _stt;
+        private CancellationTokenSource _sttCts;
 
         // R3 구독
         public Observable<string> OnSubmit => _submitButton.OnClickAsObservable()
@@ -44,7 +49,8 @@ namespace MySecondWorld.UI
             ISubscriber<NPCResponseReceivedEvent> responseSub,
             ISubscriber<NPCThinkingStartedEvent> thinkingSub,
             ISubscriber<NPCTTSSentenceEvent> ttsSentenceSub,
-            IPublisher<NPCStopTTSEvent> stopTTSPub
+            IPublisher<NPCStopTTSEvent> stopTTSPub,
+            ISTTService stt
             )
         {
             // 스트리밍 중 문장 단위로 텍스트 누적 — TTS와 동시에 표시
@@ -84,6 +90,18 @@ namespace MySecondWorld.UI
                 _ttsButton.OnClickAsObservable()
                         .Subscribe(_ => _stopTTSPub.Publish(new NPCStopTTSEvent(_currentNpcGuid))) // NPCVoicePlayer가 구독
                         .AddTo(destroyCancellationToken);
+
+            _stt = stt;
+            if (_sttButton != null)
+            {
+                var trigger = _sttButton.GetComponent<EventTrigger>() ?? _sttButton.gameObject.AddComponent<EventTrigger>();
+                var down = new EventTrigger.Entry { eventID = EventTriggerType.PointerDown };
+                down.callback.AddListener(_ => StartSTT());
+                trigger.triggers.Add(down);
+                var up = new EventTrigger.Entry {  eventID= EventTriggerType.PointerUp };
+                up.callback.AddListener(_ => stt.StopListening());
+                trigger.triggers.Add(up);
+            }
         }
 
         #region 필수 참조 검증
@@ -156,7 +174,7 @@ namespace MySecondWorld.UI
         }
         #endregion
 
-        #region 응답 표시
+        #region TTS 응답 표시
         public void ShowThinking()
         {
             _npcResponseText.text = "...";
@@ -177,6 +195,32 @@ namespace MySecondWorld.UI
             Canvas.ForceUpdateCanvases();
             if (_scrollRect != null)
                 _scrollRect.verticalNormalizedPosition = 0f;
+        }
+        #endregion
+
+        #region STT 헬퍼 메서드
+        private void StartSTT()
+        {
+            _sttCts?.Cancel(); // 작업 멈춤
+            _sttCts?.Dispose(); // 리소스 해제
+            // CreateLinkedTokenSource : 두 개의 CancellationToken을 하나로 묶는 것
+            // _sttCts.Cancel() 사용자가 대화창 닫음
+            // destroyCancellationToken GameObject가 파괴됨 (씬 전환 등)
+            // 둘 중 하나라도 취소되면 _sttCts.Token(ListenAsync의 ct)이 취소
+            _sttCts = CancellationTokenSource.CreateLinkedTokenSource(destroyCancellationToken);
+            RecordAndFill(_sttCts.Token).Forget();
+        }
+
+        private async UniTaskVoid RecordAndFill(CancellationToken ct)
+        {
+            var text = await _stt.ListenAsync(ct);
+            if (!string.IsNullOrEmpty(text) && !ct.IsCancellationRequested)
+            {
+                _playerInputField.text = text;
+                _playerInputField.ActivateInputField();
+            }
+            _sttCts?.Dispose();
+            _sttCts = null;
         }
         #endregion
     }
