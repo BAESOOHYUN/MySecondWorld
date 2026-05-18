@@ -37,6 +37,9 @@ namespace MySecondWorld.AI
             }
 
             _llm.model = fullPath;
+#if UNITY_ANDROID || UNITY_IOS
+            _llm.numGPULayers = 0;
+#endif
             _llm.gameObject.SetActive(true);
             await _llm.WaitUntilReady();
 

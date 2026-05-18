@@ -1,6 +1,3 @@
-using System;
-using System.Threading;
-using Cysharp.Text;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
@@ -12,11 +9,9 @@ using MySecondWorld.AI;
 
 namespace MySecondWorld.UI
 {
-    // 대화창, 타이핑 효과, STT/TTS 버튼 자리 확보
-
     /// <summary>
     /// NPC 대화창 UI.
-    /// 스트리밍 타이핑 효과, 입력 필드, ESC/닫기 버튼 지원.
+    /// TTS 문장 단위 텍스트 동기화, 입력 필드, ESC/닫기 버튼 지원.
     /// STT/TTS 버튼은 비활성 상태로 자리 확보.
     /// </summary>
     public class NPCDialogueUI : MonoBehaviour
@@ -34,11 +29,6 @@ namespace MySecondWorld.UI
         [SerializeField] private Button _sttButton;
         [SerializeField] private Button _ttsButton;
 
-        [Header("Typing Effect")]
-        public float typingSpeed = 0.03f;
-
-        // CancellationTokenSource 비동기 작업 취소 : 실행 중인 작업을 취소하거나 중지. 장기 실행 작업이나 무한 루프를 안전하게 중단하는 데 사용
-        private CancellationTokenSource _typingCts;
         private IPublisher<NPCStopTTSEvent> _stopTTSPub;
 
         // R3 구독
@@ -53,15 +43,28 @@ namespace MySecondWorld.UI
         private void Construct(
             ISubscriber<NPCResponseReceivedEvent> responseSub,
             ISubscriber<NPCThinkingStartedEvent> thinkingSub,
+            ISubscriber<NPCTTSSentenceEvent> ttsSentenceSub,
             IPublisher<NPCStopTTSEvent> stopTTSPub
             )
         {
+            // 스트리밍 중 문장 단위로 텍스트 누적 — TTS와 동시에 표시
+            ttsSentenceSub
+                .Subscribe(evt =>
+                {
+                    if (evt.NpcGuid != _currentNpcGuid)
+                        return;
+                    AppendSentence(evt.Text);
+                })
+                .AddTo(destroyCancellationToken);
+
+            // 스트리밍 완료 — 입력만 활성화
             responseSub
                 .Subscribe(evt =>
                 {
                     if (evt.NpcGuid != _currentNpcGuid)
                         return;
-                    ShowResponse(evt.NpcName, evt.Text);
+                    if (_npcNameText != null)
+                        _npcNameText.text = evt.NpcName;
                     SetInputEnabled(true);
                 })
                 .AddTo(destroyCancellationToken);
@@ -134,7 +137,6 @@ namespace MySecondWorld.UI
 
         public void Close()
         {
-            StopTyping();
             _canvas.SetActive(false);
         }
         #endregion
@@ -157,41 +159,17 @@ namespace MySecondWorld.UI
         #region 응답 표시
         public void ShowThinking()
         {
-            StopTyping();
             _npcResponseText.text = "...";
         }
 
-        public void ShowResponse(string npcName, string response)
+        // TTS 문장 도착 시 즉시 누적 표시 — TTS 재생과 동기화
+        private void AppendSentence(string sentence)
         {
-            if (_npcNameText != null) 
-                _npcNameText.text = npcName;
-
-            StopTyping();
-            // 타이핑 시작할 때
-            _typingCts = new CancellationTokenSource();
-            TypeTextAsync(response, _typingCts.Token).Forget();
-        }
-
-        private async UniTask TypeTextAsync(string text, CancellationToken ct)
-        {
-            _npcResponseText.text = string.Empty;
-            using var sb = ZString.CreateStringBuilder();
-
-            for (int i = 0; i < text.Length; i++)
-            {
-                sb.Append(text[i]);
-                _npcResponseText.text = sb.ToString();
-                ScrollToBottom();
-                await UniTask.Delay(TimeSpan.FromSeconds(typingSpeed), cancellationToken: ct);
-            }
-        }
-
-        private void StopTyping()
-        {
-            // 타이핑 멈춰야 할 때.
-            _typingCts?.Cancel();
-            _typingCts?.Dispose();
-            _typingCts = null;
+            if (_npcResponseText.text == "...")
+                _npcResponseText.text = sentence;
+            else
+                _npcResponseText.text += sentence;
+            ScrollToBottom();
         }
 
         private void ScrollToBottom()

@@ -114,7 +114,11 @@ namespace MySecondWorld.AI
             finally
             {
                 _isPlaying = false;
-                OnSpeakFinished?.Invoke();
+                // remaining 대기 중 도착한 문장이 있으면 이어서 재생
+                if (_fetchQueue.Count > 0)
+                    PlayQueue(destroyCancellationToken).Forget();
+                else
+                    OnSpeakFinished?.Invoke();
             }
         }
     }
