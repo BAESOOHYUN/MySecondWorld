@@ -40,7 +40,11 @@ namespace MySecondWorld.AI.Voice
             }
 
             _whisper.IsModelPathInStreamingAssets = false;
+#if UNITY_ANDROID && !UNITY_EDITOR
+            _whisper.ModelPath = "file://" + fullPath;
+#else
             _whisper.ModelPath = fullPath;
+#endif
             await _whisper.InitModel();
             Debug.Log($"[STT] Whisper 준비 완료. IsLoaded={_whisper.IsLoaded}");
         }
