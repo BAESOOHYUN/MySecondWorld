@@ -64,11 +64,25 @@ public class AIModelDownloader
 
         // 파일이 이미 완전히 받아져 있으면 스킵
         long existingBytes = File.Exists(savePath) ? new FileInfo(savePath).Length : 0;
-        if (existingBytes > 0 && (totalBytes <= 0 || existingBytes >= totalBytes * 0.99f))
+        if (existingBytes > 0)
         {
-            Debug.Log($"[AIModelDownloader] {label} 이미 존재 — 스킵: {savePath}");
-            _publisher.Publish(new AIModelDownloadProgressEvent(1f, true, label));
-            return;
+            if (totalBytes <= 0)
+            {
+                // HEAD 요청 실패 → 크기 검증 불가, 재다운로드
+                Debug.LogWarning($"[AIModelDownloader] {label} 파일 크기 확인 실패 — 기존 파일({existingBytes / 1024 / 1024}MB) 무결성 검증 불가, 재다운로드");
+            }
+            else if (existingBytes >= totalBytes * 0.99f)
+            {
+                // 99% 이상 → 완전한 파일로 간주
+                Debug.Log($"[AIModelDownloader] {label} 이미 존재 ({existingBytes / 1024 / 1024}MB / {totalBytes / 1024 / 1024}MB) — 스킵: {savePath}");
+                _publisher.Publish(new AIModelDownloadProgressEvent(1f, true, label));
+                return;
+            }
+            else
+            {
+                // 크기 불일치 → 불완전한 파일, 이어받기
+                Debug.LogWarning($"[AIModelDownloader] {label} 불완전한 파일 감지 ({existingBytes / 1024 / 1024}MB / {totalBytes / 1024 / 1024}MB) — 이어받기");
+            }
         }
         // 이어받기 구간 계산
         if (existingBytes > 0)
