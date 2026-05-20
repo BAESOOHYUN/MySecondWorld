@@ -18,7 +18,7 @@ namespace MySecondWorld.AI.Voice
         private float _smoothedAmplitude;
         private const float SMOOTH_SPEED = 5f;  // 낮출수록 더 느리게 반응
         private float _holdTimer;
-        private const float HOLD_TIME = 0.08f; // 80ms 유지
+        private const float HOLD_TIME = 0.05f; // 80ms 유지
 
         [Inject]
         private void Construct(NPCVoicePlayer voicePlayer)
@@ -34,35 +34,17 @@ namespace MySecondWorld.AI.Voice
                 return;
 
             float raw = IsAnySourcePlaying() ? SampleAmplitude() : 0f;
-            Debug.Log($"raw={raw:F4} smoothed={_smoothedAmplitude:F4}");
-            //if (!IsAnySourcePlaying())
-            //{
-            //    SetMaterial(_neutral);
-            //    return;
-            //}
-
-            //float amplitued = SampleAmplitude();
-
-            //if (amplitued < 0.05f) SetMaterial(_neutral);      // _
-            //else if (amplitued < 0.15f) SetMaterial(_mouthSmall);   // AEI
-            //else if (amplitued < 0.30f) SetMaterial(_mouthMid);     // O
-            //else SetMaterial(_mouthOpen);    // A
-
             _smoothedAmplitude = Mathf.Lerp(_smoothedAmplitude, raw, Time.deltaTime * SMOOTH_SPEED);
-
-            //if (_smoothedAmplitude < 0.05f) SetMaterial(_neutral);      // _
-            //else if (_smoothedAmplitude < 0.15f) SetMaterial(_mouthSmall);   // AEI
-            //else if (_smoothedAmplitude < 0.30f) SetMaterial(_mouthMid);     // O
-            //else SetMaterial(_mouthOpen);    // A
+            //Debug.Log($"smoothed={_smoothedAmplitude:F4}");
 
             _holdTimer -= Time.deltaTime;
             if (_holdTimer > 0) return; // 아직 유지 중이면 스킵
 
             Material next;
-            if (_smoothedAmplitude < 0.05f) next = _neutral;      // _
-            else if (_smoothedAmplitude < 0.15f) next = _mouthSmall;   // AEI
-            else if (_smoothedAmplitude < 0.30f) next = _mouthMid;     // O
-            else next =_mouthOpen;    // A
+            if (_smoothedAmplitude < 0.02f) next = _neutral;      // _
+            else if (_smoothedAmplitude < 0.05f) next = _mouthSmall;   // AEI
+            else if (_smoothedAmplitude < 0.10f) next = _mouthMid;     // O
+            else next = _mouthOpen;    // A
 
             SetMaterial(next);
             _holdTimer = HOLD_TIME;
@@ -110,12 +92,10 @@ namespace MySecondWorld.AI.Voice
                     // 이게 RMS(Root Mean Square) 대신 쓰는 간이 진폭 계산이다.
                     sum += Mathf.Abs(_samples[i]);
                 }
-                //
+
                 max = Mathf.Max(max, sum/_samples.Length);
             }
             return max;
         }
-
-        private void ResetToNeutral() => SetMaterial(_neutral);
     }
 }
