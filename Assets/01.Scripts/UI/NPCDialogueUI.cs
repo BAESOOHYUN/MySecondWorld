@@ -54,15 +54,15 @@ namespace MySecondWorld.UI
         [Inject]
         private void Construct(
             ISubscriber<NPCResponseReceivedEvent> responseSub,
-            ISubscriber<NPCThinkingStartedEvent> thinkingSub,
-            ISubscriber<NPCTTSSentenceEvent> ttsSentenceSub, 
+            ISubscriber<NPCThinkingStartedEvent> thinkingSub, 
             ISubscriber<NPCSpeakFinishedEvent> speakFinishedSub,
+            ISubscriber<NPCSentenceStartedEvent> sentenceStartedSub,
             IPublisher<NPCStopTTSEvent> stopTTSPub,
             ISTTService stt
             )
         {
             // 스트리밍 중 문장 단위로 텍스트 누적 — TTS와 동시에 표시
-            ttsSentenceSub
+            sentenceStartedSub
                 .Subscribe(evt =>
                 {
                     if (evt.NpcGuid != _currentNpcGuid)

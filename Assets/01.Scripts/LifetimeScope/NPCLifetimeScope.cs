@@ -23,6 +23,7 @@ namespace MySecondWorld.AI
             builder.RegisterMessageBroker<NPCTTSSentenceEvent>(options);
             builder.RegisterMessageBroker<NPCStopTTSEvent>(options);
             builder.RegisterMessageBroker<NPCSpeakFinishedEvent>(options);
+            builder.RegisterMessageBroker<NPCSentenceStartedEvent>(options);
             builder.RegisterComponentInHierarchy<WhisperSTTService>().As<ISTTService>();//마이크는 1개, 공유하기 때문에 MainScene에 위치한다.
             var uiManager = Parent.Container.Resolve<UIManager>();
             var uiGO = uiManager.GetOrCreateDynamicCanvas<NPCDialogueUI>();

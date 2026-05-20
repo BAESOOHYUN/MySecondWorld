@@ -78,4 +78,11 @@ namespace MySecondWorld.AI
         public readonly string NpcGuid;
         public NPCSpeakFinishedEvent(string npcGuid) { NpcGuid = npcGuid; }
     }
+
+    public readonly struct NPCSentenceStartedEvent
+    {
+        public readonly string NpcGuid;
+        public readonly string Text;
+        public NPCSentenceStartedEvent(string npcGuid, string text) { NpcGuid = npcGuid; Text = text; }
+    }
 }

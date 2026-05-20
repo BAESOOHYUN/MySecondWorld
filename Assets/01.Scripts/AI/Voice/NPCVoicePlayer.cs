@@ -13,30 +13,33 @@ namespace MySecondWorld.AI.Voice
         [SerializeField] private NPCSystemPromptSO _promptSO;
         [SerializeField] private AudioSource[] _sources = new AudioSource[2];
         public AudioSource[] Sources => _sources;
-        private readonly Queue<UniTask<AudioClip>> _fetchQueue = new(); //문장 도착 즉시 fetch 시작
+        private readonly Queue<(string text, UniTask<AudioClip> fetch)> _fetchQueue = new(); //문장 도착 즉시 fetch 시작
         private bool _isPlaying = false;
         public bool IsPlaying => _isPlaying;
-        private ITTSService _tts;
         public event Action OnSpeakStarted;
         public event Action OnSpeakFinished;
+        private ITTSService _tts;
         private IPublisher<NPCSpeakFinishedEvent> _speakFinishedPub;
+        private IPublisher<NPCSentenceStartedEvent> _sentenceStartedPub;
 
        [Inject]
         // NPCScope VContainer가 ITTSService 타입 보고 → .As<ITTSService>()로 등록된 EdgeTTSService 인스턴스를 넣어줌
         private void Construct(ITTSService tts, 
             ISubscriber<NPCTTSSentenceEvent> ttsSub, 
             ISubscriber<NPCStopTTSEvent> stopSub,
-            IPublisher<NPCSpeakFinishedEvent> speakFinishedPub
+            IPublisher<NPCSpeakFinishedEvent> speakFinishedPub,
+            IPublisher<NPCSentenceStartedEvent> sentenceStartedPub
             )
         {
             _tts = tts;
             _speakFinishedPub = speakFinishedPub;
+            _sentenceStartedPub = sentenceStartedPub;
 
             // 이벤트 올 때마다 큐에 Enqueue한 뒤 재생 중이 아니면 큐를 드레인하는 방식
             ttsSub.Subscribe(evt =>
             {
                 if (evt.NpcGuid != _promptSO.NpcGuid) return;
-                _fetchQueue.Enqueue(_tts.FetchAsync(evt.Text, destroyCancellationToken));
+                _fetchQueue.Enqueue((evt.Text, _tts.FetchAsync(evt.Text, destroyCancellationToken)));
                 Debug.Log($"[VoicePlayer] Enqueue. isPlaying={_isPlaying}");
                 if (!_isPlaying)
                    PlayQueue(destroyCancellationToken).Forget();
@@ -66,8 +69,15 @@ namespace MySecondWorld.AI.Voice
             {
                 while (_fetchQueue.Count > 0)
                 {
-                    AudioClip clip = await _fetchQueue.Dequeue();
-                    if (clip == null) continue;
+                    var (text, fetchTask) =  _fetchQueue.Dequeue();
+                    AudioClip clip = await fetchTask;
+
+                    if (clip == null)
+                    {
+                        // TTS 서버 꺼진 경우 — 버블은 즉시 표시
+                        _sentenceStartedPub.Publish(new NPCSentenceStartedEvent(_promptSO.NpcGuid, text));
+                        continue;
+                    }
 
                     // Math.Max — 과거 보정. startTime은 항상 미래의 시각을 보장
                     //   fetch 빠름  → nextStartTime 이 미래 → nextStartTime 채택 (문장 사이 무음 없음)
@@ -78,21 +88,30 @@ namespace MySecondWorld.AI.Voice
                     // 자신의 재생 직전(-0.1)에만 clip을 꽂으므로 오디오 덮어쓰기 방지
                     double waitUntil = startTime - 0.1;
                     if (waitUntil > AudioSettings.dspTime)
+                    {
                         await UniTask.Delay(
                             TimeSpan.FromSeconds(waitUntil - AudioSettings.dspTime),
                             cancellationToken: ct);
+                    }
 
                     _sources[i % 2].clip = clip;
 
-                    // await 이후 startTime이 과거가 됐을 경우 재보정
+                    // await 이후 startTime이 과거가 됐을 경우 [재보정
                     // PlayScheduled에 과거 시각 전달 시 즉시 재생되어 이전 클립과 겹칠 수 있음
                     startTime = System.Math.Max(startTime, AudioSettings.dspTime + 0.05);
-
-                    _sources[i % 2].PlayScheduled(startTime); // 예약만 함. Play() 별도 호출 불필요(Play()시 오히려 예약 취소됨)
+                    // 예약만 함. Play() 별도 호출 불필요(Play()시 오히려 예약 취소됨)
+                    _sources[i % 2].PlayScheduled(startTime);
                     Debug.Log($"[VoicePlayer] PlayScheduled source={i % 2}, startTime={startTime}");
+                    
+                    // 재생 예약 직후 버블 표시 (실제 재생과 ~100ms 차이, 체감 불가)
+                    _sentenceStartedPub.Publish(new NPCSentenceStartedEvent(_promptSO.NpcGuid, text));
 
-                    if (i == 0) OnSpeakStarted?.Invoke(); // 첫 문장 예약 시 발행
-                    nextStartTime = startTime + clip.length; // 다음 문장 시작 시각 = 이 문장이 끝나는 시각 //위에서 말한 "이전 클립 끝 시각"으로 계속 갱신
+                    if (i == 0) 
+                        OnSpeakStarted?.Invoke(); // 첫 문장 예약 시 발행
+
+                    // 다음 문장 시작 시각 = 이 문장이 끝나는 시각 
+                    // 위에서 말한 "이전 클립 끝 시각"으로 계속 갱신
+                    nextStartTime = startTime + clip.length; 
                     i++;
                 }
 
