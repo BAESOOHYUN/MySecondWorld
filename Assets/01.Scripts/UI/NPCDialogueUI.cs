@@ -71,6 +71,7 @@ namespace MySecondWorld.UI
                 })
                 .AddTo(destroyCancellationToken);
 
+            // TTS 마지막 문장 재생 완료 → speakFinishedSub 발행 → SetInputEnabled(true) ← 적절한 타이밍
             // TTS 재생 완료 → 입력창 활성화
             speakFinishedSub
                 .Subscribe(evt =>
@@ -308,6 +309,12 @@ namespace MySecondWorld.UI
 
         private async UniTaskVoid FallbackEnableInputAsync(CancellationToken ct)
         {
+            // ResponseSub가 5초 fallback이 된 이유:
+            // TTS 서버가 꺼져 있으면 speakFinishedSub가 영원히 안 와서 입력창이 영원히 잠겨버린다.
+            // LLM 응답 완료 → responseSub → 5초 대기 → SetInputEnabled(true)  ← 서버 꺼진 경우 구제
+            //                                ↑
+            //         정상 상황에선 speakFinishedSub가 먼저 활성화시키고,
+            //         5초 후에 한 번 더 호출돼도 이미 활성화된 상태라 무해함
             await UniTask.Delay(5000, cancellationToken: ct);
             SetInputEnabled(true);
         }
