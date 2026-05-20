@@ -17,6 +17,7 @@ namespace MySecondWorld.AI
             builder.RegisterComponent(GetComponent<NPCInteractable>());
             builder.RegisterComponent(GetComponent<NPCVoicePlayer>());
             builder.RegisterComponent(GetComponent<EdgeTTSServiceNativeWebSocket>()).As<ITTSService>(); // 씬에서 EdgeTTSService 찾아서 등록, .As 뜻 'ITTSService로 달라
+            builder.RegisterComponent(GetComponent<NPCLipSyncController>());
         }
     }
 }

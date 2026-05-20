@@ -4,15 +4,15 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using MessagePipe;
 using VContainer;
-using MySecondWorld.AI.Voice;
 using System;
 
-namespace MySecondWorld.AI
+namespace MySecondWorld.AI.Voice
 { 
     public class NPCVoicePlayer : MonoBehaviour
     {
         [SerializeField] private NPCSystemPromptSO _promptSO;
         [SerializeField] private AudioSource[] _sources = new AudioSource[2];
+        public AudioSource[] Sources => _sources;
         private readonly Queue<UniTask<AudioClip>> _fetchQueue = new(); //문장 도착 즉시 fetch 시작
         private bool _isPlaying = false;
         private ITTSService _tts;
