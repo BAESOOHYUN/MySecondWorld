@@ -1,3 +1,5 @@
+using Cysharp.Threading.Tasks;
+using System.Threading;
 using UnityEngine;
 using VContainer;
 
@@ -19,16 +21,35 @@ namespace MySecondWorld.AI.Voice
         private const float SMOOTH_SPEED = 5f;  // 낮출수록 더 느리게 반응
         private float _holdTimer;
         private const float HOLD_TIME = 0.05f; // 80ms 유지
+        private CancellationTokenSource _lipSyncCts;
 
         [Inject]
         private void Construct(NPCVoicePlayer voicePlayer)
         {
             _sources = voicePlayer.Sources;
+            voicePlayer.OnSpeakStarted += StartLipSync;
+            voicePlayer.OnSpeakStarted += StopLipSync;
         }
 
-        // Update() 호출마다
+        private void StartLipSync()
+        {
+            _lipSyncCts?.Cancel();
+            _lipSyncCts?.Dispose();
+            _lipSyncCts = CancellationTokenSource.CreateLinkedTokenSource(destroyCancellationToken);
+            LipSyncLoop(_lipSyncCts.Token).Forget();
+        }
+
+        private void StopLipSync()
+        {
+            _lipSyncCts?.Cancel();
+            _lipSyncCts?.Dispose();
+            _lipSyncCts = null;
+            SetMaterial(_neutral);
+        }
+
+        // LipSyncLoop 호출마다
         // "지금 이 5.8ms 동안 얼마나 크게 울렸나?" → 평균 진폭 계산 → Material 결정
-        private void Update()
+        private async UniTaskVoid LipSyncLoop(CancellationToken ct)
         {
             if (_facePlates == null || _facePlates.Length == 0) 
                 return;
@@ -38,16 +59,18 @@ namespace MySecondWorld.AI.Voice
             //Debug.Log($"smoothed={_smoothedAmplitude:F4}");
 
             _holdTimer -= Time.deltaTime;
-            if (_holdTimer > 0) return; // 아직 유지 중이면 스킵
+            if (_holdTimer <= 0)
+            {
+                Material next;
+                if      (_smoothedAmplitude < 0.02f) next = _neutral;      // _
+                else if (_smoothedAmplitude < 0.05f) next = _mouthSmall;   // AEI
+                else if (_smoothedAmplitude < 0.10f) next = _mouthMid;     // O
+                else                                 next = _mouthOpen;    // A
+                SetMaterial(next);
+                _holdTimer = HOLD_TIME;
+            }
 
-            Material next;
-            if (_smoothedAmplitude < 0.02f) next = _neutral;      // _
-            else if (_smoothedAmplitude < 0.05f) next = _mouthSmall;   // AEI
-            else if (_smoothedAmplitude < 0.10f) next = _mouthMid;     // O
-            else next = _mouthOpen;    // A
-
-            SetMaterial(next);
-            _holdTimer = HOLD_TIME;
+            await UniTask.Yield(cancellationToken: ct);
         }
 
         private bool IsAnySourcePlaying()
