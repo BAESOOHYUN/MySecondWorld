@@ -72,4 +72,10 @@ namespace MySecondWorld.AI
             ModelLabel = modelLabel;
         }
     }
+
+    public readonly struct NPCSpeakFinishedEvent
+    {
+        public readonly string NpcGuid;
+        public NPCSpeakFinishedEvent(string npcGuid) { NpcGuid = npcGuid; }
+    }
 }

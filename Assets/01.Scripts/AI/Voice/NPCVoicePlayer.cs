@@ -15,15 +15,22 @@ namespace MySecondWorld.AI.Voice
         public AudioSource[] Sources => _sources;
         private readonly Queue<UniTask<AudioClip>> _fetchQueue = new(); //문장 도착 즉시 fetch 시작
         private bool _isPlaying = false;
+        public bool IsPlaying => _isPlaying;
         private ITTSService _tts;
         public event Action OnSpeakStarted;
         public event Action OnSpeakFinished;
+        private IPublisher<NPCSpeakFinishedEvent> _speakFinishedPub;
 
-        [Inject]
+       [Inject]
         // NPCScope VContainer가 ITTSService 타입 보고 → .As<ITTSService>()로 등록된 EdgeTTSService 인스턴스를 넣어줌
-        private void Construct(ITTSService tts, ISubscriber<NPCTTSSentenceEvent> ttsSub, ISubscriber<NPCStopTTSEvent> stopSub)
+        private void Construct(ITTSService tts, 
+            ISubscriber<NPCTTSSentenceEvent> ttsSub, 
+            ISubscriber<NPCStopTTSEvent> stopSub,
+            IPublisher<NPCSpeakFinishedEvent> speakFinishedPub
+            )
         {
             _tts = tts;
+            _speakFinishedPub = speakFinishedPub;
 
             // 이벤트 올 때마다 큐에 Enqueue한 뒤 재생 중이 아니면 큐를 드레인하는 방식
             ttsSub.Subscribe(evt =>
@@ -102,7 +109,10 @@ namespace MySecondWorld.AI.Voice
                 if (_fetchQueue.Count > 0)
                     PlayQueue(destroyCancellationToken).Forget();
                 else
+                { 
                     OnSpeakFinished?.Invoke();
+                    _speakFinishedPub.Publish(new NPCSpeakFinishedEvent(_promptSO.NpcGuid));
+                }
             }
         }
     }

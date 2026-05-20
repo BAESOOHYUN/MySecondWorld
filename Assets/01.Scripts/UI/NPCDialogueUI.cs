@@ -15,18 +15,22 @@ namespace MySecondWorld.UI
     /// <summary>
     /// NPC 대화창 UI.
     /// TTS 문장 단위 텍스트 동기화, 입력 필드, ESC/닫기 버튼 지원.
-    /// STT/TTS 버튼은 비활성 상태로 자리 확보.
     /// </summary>
     public class NPCDialogueUI : MonoBehaviour
     {
         [Header("UI References")]
         [SerializeField] private GameObject _canvas;
         [SerializeField] private TextMeshProUGUI _npcNameText;
-        [SerializeField] private TextMeshProUGUI _npcResponseText;
+        [SerializeField] private Transform _chatContent;
         [SerializeField] private TMP_InputField _playerInputField;
         [SerializeField] private Button _submitButton;
         [SerializeField] private Button _closeButton;
         [SerializeField] private ScrollRect _scrollRect;
+
+        [Header("Chat Bubble Prefabs")]
+        [SerializeField] private GameObject _npcBubblePrefab;
+        [SerializeField] private GameObject _playerBubblePrefab;
+        [SerializeField] private GameObject _thinkingBubblePrefab;
 
         [Header("Future: Voice")]
         [SerializeField] private Button _sttButton;
@@ -36,19 +40,23 @@ namespace MySecondWorld.UI
         private ISTTService _stt;
         private CancellationTokenSource _sttCts;
 
+        private ChatBubble _thinkingBubble;
+        private CancellationTokenSource _thinkingAnimCts;
+        private string _currentNpcGuid;
+        private string _lastNpcGuid;
+
         // R3 구독
         public Observable<string> OnSubmit => _submitButton.OnClickAsObservable()
             .Select(_ => _playerInputField.text.Trim())
             .Where(t => t.Length > 0);
         public Observable<Unit> OnClose => _closeButton.OnClickAsObservable().AsUnitObservable();
 
-        private string _currentNpcGuid;
-
         [Inject]
         private void Construct(
             ISubscriber<NPCResponseReceivedEvent> responseSub,
             ISubscriber<NPCThinkingStartedEvent> thinkingSub,
-            ISubscriber<NPCTTSSentenceEvent> ttsSentenceSub,
+            ISubscriber<NPCTTSSentenceEvent> ttsSentenceSub, 
+            ISubscriber<NPCSpeakFinishedEvent> speakFinishedSub,
             IPublisher<NPCStopTTSEvent> stopTTSPub,
             ISTTService stt
             )
@@ -63,7 +71,17 @@ namespace MySecondWorld.UI
                 })
                 .AddTo(destroyCancellationToken);
 
-            // 스트리밍 완료 — 입력만 활성화
+            // TTS 재생 완료 → 입력창 활성화
+            speakFinishedSub
+                .Subscribe(evt =>
+                {
+                    if (evt.NpcGuid != _currentNpcGuid)
+                        return;
+                    SetInputEnabled(true);
+                })
+                .AddTo(destroyCancellationToken);
+
+            // TTS 서버 꺼진 경우 안전망: 5초 후 강제 활성화
             responseSub
                 .Subscribe(evt =>
                 {
@@ -71,7 +89,7 @@ namespace MySecondWorld.UI
                         return;
                     if (_npcNameText != null)
                         _npcNameText.text = evt.NpcName;
-                    SetInputEnabled(true);
+                    FallbackEnableInputAsync(destroyCancellationToken).Forget();
                 })
                 .AddTo(destroyCancellationToken);
 
@@ -83,6 +101,12 @@ namespace MySecondWorld.UI
                     ShowThinking();
                     SetInputEnabled(false);
                 })
+                .AddTo(destroyCancellationToken);
+
+            _submitButton.OnClickAsObservable()
+                .Select(_ => _playerInputField.text.Trim())
+                .Where(t => t.Length > 0)
+                .Subscribe(t => ShowPlayerBubble(t))
                 .AddTo(destroyCancellationToken);
 
             _stopTTSPub = stopTTSPub;
@@ -114,14 +138,14 @@ namespace MySecondWorld.UI
                 Debug.LogError($"[NPCDialogueUI] {name}: dialoguePanel이 연결되지 않았습니다.");
                 valid = false;
             }
+            if (_chatContent == null)
+            {
+                Debug.LogError($"[NPCDialogueUI] {name}: _chatContent가 연결되지 않았습니다.");
+                valid = false;
+            }
             if (_playerInputField == null)
             {
                 Debug.LogError($"[NPCDialogueUI] {name}: playerInputField가 연결되지 않았습니다.");
-                valid = false;
-            }
-            if (_npcResponseText == null)
-            {
-                Debug.LogError($"[NPCDialogueUI] {name}: npcResponseText가 연결되지 않았습니다.");
                 valid = false;
             }
             if (_submitButton == null)
@@ -148,8 +172,15 @@ namespace MySecondWorld.UI
             _currentNpcGuid = npcGuid;
             _canvas.SetActive(true);
             _playerInputField.text = string.Empty;
-            _npcNameText.text = string.Empty;
-            _npcResponseText.text = string.Empty;
+
+            // 같은 npc → 히스토리 유지, 다른 NPC → 초기화
+            if(npcGuid != _lastNpcGuid)
+            {
+                ClearChat();
+                if (_npcNameText != null)
+                    _npcNameText.text = string.Empty;
+                _lastNpcGuid = npcGuid;
+            }
             _playerInputField.ActivateInputField();
         }
 
@@ -164,8 +195,6 @@ namespace MySecondWorld.UI
         {
             _playerInputField.interactable = enabled;
             _submitButton.interactable = enabled;
-            if (enabled) 
-                _playerInputField.ActivateInputField();
         }
 
         public void ClearInput()
@@ -174,20 +203,73 @@ namespace MySecondWorld.UI
         }
         #endregion
 
-        #region TTS 응답 표시
+        #region 채팅 버블
+        private void ShowPlayerBubble(string text)
+        {
+            if (_playerBubblePrefab == null || _chatContent == null)
+                return;
+            var go = Instantiate(_playerBubblePrefab, _chatContent);
+            go.GetComponent<ChatBubble>().SetText(text);
+            ScrollToBottom();
+        }
+
         public void ShowThinking()
         {
-            _npcResponseText.text = "...";
+            if (_thinkingBubblePrefab == null || _chatContent == null) return;
+
+            // 이전 생각중 버블 정리 (방어코드)
+            // ex) 플레이어가 Submit을 빠르게 두 번 눌렀을 때
+            // ex) 네트워크 재시도로 NPCThinkingStartedEvent가 두 번 왔을 때
+            StopThinking();
+
+            var go = Instantiate(_thinkingBubblePrefab, _chatContent);
+            _thinkingBubble = go.GetComponent<ChatBubble>();
+            _thinkingAnimCts = CancellationTokenSource.CreateLinkedTokenSource(destroyCancellationToken);
+            AnimateThinking(_thinkingBubble, _thinkingAnimCts.Token).Forget();
+            ScrollToBottom();
+        }
+
+        private void StopThinking()
+        {
+            _thinkingAnimCts?.Cancel();
+            _thinkingAnimCts?.Dispose();
+            _thinkingAnimCts = null;
+
+            if (_thinkingBubble != null)
+            {
+                Destroy(_thinkingBubble.gameObject);
+                _thinkingBubble = null;
+            }
+        }
+
+        private async UniTaskVoid AnimateThinking(ChatBubble bubble, CancellationToken ct)
+        {
+            string[] frames = { ".", "..", "..." };
+            int i = 0;
+            while (!ct.IsCancellationRequested)
+            {
+                if (bubble == null) return;
+                bubble.SetText(frames[i % 3]);
+                i++;
+                await UniTask.Delay(400, cancellationToken: ct);
+            }
         }
 
         // TTS 문장 도착 시 즉시 누적 표시 — TTS 재생과 동기화
         private void AppendSentence(string sentence)
         {
-            if (_npcResponseText.text == "...")
-                _npcResponseText.text = sentence;
-            else
-                _npcResponseText.text += sentence;
+            StopThinking();
+            if (_npcBubblePrefab == null || _chatContent == null) return;
+            var go = Instantiate(_npcBubblePrefab, _chatContent);
+            go.GetComponent<ChatBubble>().SetText(sentence);
             ScrollToBottom();
+        }
+
+        private void ClearChat()
+        {
+            StopThinking();
+            foreach (Transform child in _chatContent)
+                Destroy(child.gameObject);
         }
 
         private void ScrollToBottom()
@@ -217,11 +299,17 @@ namespace MySecondWorld.UI
             if (!string.IsNullOrEmpty(text) && !ct.IsCancellationRequested)
             {
                 _playerInputField.text = text;
-                _playerInputField.ActivateInputField();
+                _submitButton.onClick.Invoke();
             }
             _sttCts?.Dispose();
             _sttCts = null;
         }
         #endregion
+
+        private async UniTaskVoid FallbackEnableInputAsync(CancellationToken ct)
+        {
+            await UniTask.Delay(5000, cancellationToken: ct);
+            SetInputEnabled(true);
+        }
     }
 }
