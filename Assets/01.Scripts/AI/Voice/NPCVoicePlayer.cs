@@ -76,6 +76,11 @@ namespace MySecondWorld.AI.Voice
                             cancellationToken: ct);
 
                     _sources[i % 2].clip = clip;
+
+                    // await 이후 startTime이 과거가 됐을 경우 재보정
+                    // PlayScheduled에 과거 시각 전달 시 즉시 재생되어 이전 클립과 겹칠 수 있음
+                    startTime = System.Math.Max(startTime, AudioSettings.dspTime + 0.05);
+
                     _sources[i % 2].PlayScheduled(startTime); // 예약만 함. Play() 별도 호출 불필요(Play()시 오히려 예약 취소됨)
                     Debug.Log($"[VoicePlayer] PlayScheduled source={i % 2}, startTime={startTime}");
 
