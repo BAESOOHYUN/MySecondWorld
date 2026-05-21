@@ -1,5 +1,12 @@
 <linker>
   <assembly fullname="LLMUnity" preserve="all"/>
-  <assembly fullname="LLMUnitySetup" preserve="all"/>    
+  <assembly fullname="LLMUnitySetup" preserve="all"/>
   <assembly fullname="NativeWebSocket" preserve="all"/>
+  <!-- OpenAI .NET SDK — IL2CPP strip 방어 -->
+  <assembly fullname="OpenAI" preserve="all"/>
+  <assembly fullname="System.Net.Http" preserve="all"/>
+  <assembly fullname="System.Text.Json" preserve="all"/>
+  <!-- OpenAI SDK 내부 의존 어셈블리 -->
+  <assembly fullname="System.ClientModel" preserve="all"/>
+  <assembly fullname="Microsoft.Bcl.AsyncInterfaces" preserve="all"/>
 </linker>

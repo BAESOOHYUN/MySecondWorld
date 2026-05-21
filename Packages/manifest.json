@@ -13,7 +13,6 @@
     }
   ],
   "dependencies": {
-    "com.whisper.unity": "https://github.com/Macoron/whisper.unity.git?path=/Packages/com.whisper.unity",
     "ai.undream.llm": "https://github.com/undreamai/LLMUnity.git",
     "com.annulusgames.reactive-input-system": "https://github.com/AnnulusGames/ReactiveInputSystem.git?path=src/ReactiveInputSystem/Assets/ReactiveInputSystem",
     "com.cysharp.messagepipe": "1.8.1",
@@ -23,6 +22,7 @@
     "com.cysharp.zstring": "2.6.0",
     "com.endel.nativewebsocket": "https://github.com/endel/NativeWebSocket.git#upm",
     "com.github-glitchenzo.nugetforunity": "https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity",
+    "com.unity.addressables": "2.8.1",
     "com.unity.cinemachine": "3.1.6",
     "com.unity.collab-proxy": "2.11.3",
     "com.unity.collections": "2.4.3",
@@ -37,6 +37,7 @@
     "com.unity.ugui": "2.0.0",
     "com.unity.xr.interaction.toolkit": "3.3.1",
     "com.veriorpies.parrelsync": "https://github.com/VeriorPies/ParrelSync.git?path=/ParrelSync",
+    "com.whisper.unity": "https://github.com/Macoron/whisper.unity.git?path=/Packages/com.whisper.unity",
     "com.youngwoocho02.unity-cli-connector": "https://github.com/youngwoocho02/unity-cli.git?path=unity-connector",
     "jp.hadashikick.vcontainer": "1.17.0",
     "com.unity.modules.accessibility": "1.0.0",
