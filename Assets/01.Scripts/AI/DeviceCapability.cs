@@ -9,7 +9,7 @@ namespace MySecondWorld.AI
         public bool IsCapable { get; }
         public string Reason { get; }
         public ModelSize RecommendedModelSize { get; }
-        public bool UseServerMode { get; } // 서버 AI 모드(Groq) 사용 여부
+        public bool UseServerMode { get; } // 서버 AI 모드(Groq) 사용 여부. true:서버, false:로컬
         public void Evaluate();
     }
 

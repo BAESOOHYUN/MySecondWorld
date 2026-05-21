@@ -13,6 +13,7 @@ namespace MySecondWorld.AI
     /// </summary>
     public class NPCLifetimeScope : LifetimeScope
     {
+        // Configure()는 컨테이너를 만드는 단계라 [Inject]를 쓸 수 없어서 Resolve를 직접 쓴다.
         protected override void Configure(IContainerBuilder builder)
         {
             var options = builder.RegisterMessagePipe();
@@ -24,7 +25,16 @@ namespace MySecondWorld.AI
             builder.RegisterMessageBroker<NPCStopTTSEvent>(options);
             builder.RegisterMessageBroker<NPCSpeakFinishedEvent>(options);
             builder.RegisterMessageBroker<NPCSentenceStartedEvent>(options);
-            builder.RegisterComponentInHierarchy<WhisperSTTService>().As<ISTTService>();//마이크는 1개, 공유하기 때문에 MainScene에 위치한다.
+
+            // UseServerMode flag에 따라 ISTTService 구현체 교체
+            // 마이크는 1개, 공유하기 때문에 MainScene에 위치
+            var deviceCapability = Parent.Container.Resolve<IDeviceCapability>();
+            //                     ↑ 부모 컨테이너에서  ↑ IDeviceCapability 인스턴스 꺼내줘
+            if (deviceCapability.UseServerMode)
+                builder.RegisterComponentInHierarchy<GroqWhisperSTTService>().As<ISTTService>();
+            else
+                builder.RegisterComponentInHierarchy<WhisperSTTService>().As<ISTTService>();
+
             var uiManager = Parent.Container.Resolve<UIManager>();
             var uiGO = uiManager.GetOrCreateDynamicCanvas<NPCDialogueUI>();
             builder.RegisterComponent(uiGO.GetComponent<NPCDialogueUI>());

@@ -6,6 +6,7 @@ using VContainer.Unity;
 using MySecondWorld.Network;
 using MySecondWorld.Network.Chat;
 using MySecondWorld.UI;
+using MySecondWorld.AI;
 
 /// <summary>
 /// VContainerSettings에 등록되어 앱 시작 시 자동 인스턴스화되는 최상위 LifetimeScope.
@@ -14,6 +15,7 @@ using MySecondWorld.UI;
 public class ProjectLifetimeScope : LifetimeScope
 {
     [SerializeField] private UIManager _uiManager;
+    [SerializeField] private bool _useServerMode = false; // true: Groq 서버 모드, false: 로컬 모드
 
     protected override void Configure(IContainerBuilder builder)
     {
@@ -26,5 +28,13 @@ public class ProjectLifetimeScope : LifetimeScope
         builder.RegisterComponentInHierarchy<LoginUI>();
         builder.RegisterComponentInHierarchy<MenuUI>();
         builder.RegisterComponentInHierarchy<ChatUI>();
+
+        // 앱 전체 수명 동안 필요 — 형제 스코프(AIModelDownload, NPC) 모두 접근 가능
+        if (_useServerMode)
+            builder.Register<IDeviceCapability, NetworkDeviceCapability>(Lifetime.Singleton);
+        //                "IDeviceCapability 요청이 오면 NetworkDeviceCapability 인스턴스 줘" -> NPCLifetimeScope
+        else
+            builder.Register<IDeviceCapability, LocalDeviceCapability>(Lifetime.Singleton);
+
     }
 }
