@@ -9,6 +9,7 @@ namespace MySecondWorld.AI
         public bool IsCapable { get; }
         public string Reason { get; }
         public ModelSize RecommendedModelSize { get; }
+        public bool UseServerMode { get; } // 서버 AI 모드(Groq) 사용 여부
         public void Evaluate();
     }
 
@@ -17,6 +18,7 @@ namespace MySecondWorld.AI
         public bool IsCapable { get; private set; }  // 이 기기에서 로컬 AI 추론 가능한가?
         public string Reason { get; private set; } // 왜 AI 추론이 불가능한지
         public ModelSize RecommendedModelSize { get; private set; }
+        public bool UseServerMode => false;  // 로컬 모드 전용 — 항상 false
         public void Evaluate()
         {
             int memoryMB = SystemInfo.systemMemorySize;
@@ -51,11 +53,13 @@ namespace MySecondWorld.AI
         public bool IsCapable { get; private set; }
         public string Reason { get; private set; }
         public ModelSize RecommendedModelSize { get; private set; }
-
+        public bool UseServerMode => true;  // 서버 모드 전용 — 항상 true
         public void Evaluate()
         {
-            IsCapable = false;
-            Reason = "미구현 (클라우드 AI 도입 시 구현 예정)";
+            // 네트워크 연결이 있으면 Groq API 사용 가능으로 판정
+            IsCapable = true;
+            Reason = "서버 AI 모드 (Groq API)";
+            // 서버 모드에서는 모델 크기 개념이 없음 — 기본값 유지
         }
     }
 }
