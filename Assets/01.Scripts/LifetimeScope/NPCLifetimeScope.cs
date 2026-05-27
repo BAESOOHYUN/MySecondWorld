@@ -30,6 +30,7 @@ namespace MySecondWorld.AI
             // 마이크는 1개, 공유하기 때문에 MainScene에 위치
             var deviceCapability = Parent.Container.Resolve<IDeviceCapability>();
             //                     ↑ 부모 컨테이너에서  ↑ IDeviceCapability 인스턴스 꺼내줘
+            //                  ProjectLifetimeScope
             if (deviceCapability.UseServerMode)
                 builder.RegisterComponentInHierarchy<GroqWhisperSTTService>().As<ISTTService>();
             else
