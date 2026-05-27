@@ -1,11 +1,10 @@
 using Cysharp.Threading.Tasks;
 using System;
-using System.ClientModel;
 using System.IO;
 using System.Threading;
+using System.Collections.Generic;
 using UnityEngine;
-using OpenAI;
-using OpenAI.Audio;
+using UnityEngine.Networking;
 
 namespace MySecondWorld.AI.Voice
 {
@@ -15,13 +14,12 @@ namespace MySecondWorld.AI.Voice
     /// 마이크 녹음 → WAV 인코딩 → Groq HTTP POST → 텍스트 반환.
     public class GroqWhisperSTTService : MonoBehaviour, ISTTService
     {
-        private const string API_Key = "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";
-        private const string MODEL = "whisper=large-v3";
+        private const string API_KEY = "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";
+        private const string MODEL = "whisper-large-v3";
         [SerializeField] private int _sampleRate = 16000;
         [SerializeField] private int _maxDurationSec = 30;
         private bool _isListening;
         public bool IsListening => _isListening;
-        private AudioClient _audioClient;
 
         private async void Start()
         {
@@ -35,14 +33,6 @@ namespace MySecondWorld.AI.Voice
 
             foreach(var d in Microphone.devices)
                 Debug.Log($"[GroqSTT] 마이크 목록: {d}");
-
-            // Groq는 OpenAI API 완전 호환 — endpoint만 교체
-            var options = new OpenAIClientOptions
-            {
-                Endpoint = new System.Uri("https://api.groq.com/openai/v1")
-            };
-            _audioClient = new AudioClient(MODEL, new ApiKeyCredential(API_Key), options);
-            Debug.Log("[GroqSTT] AudioClient 초기화 완료");
         }
 
         public async UniTask<string> ListenAsync(CancellationToken ct = default)
@@ -71,8 +61,11 @@ namespace MySecondWorld.AI.Voice
                 byte[] wavBytes = EncodeToWav(trimmed);
                 Debug.Log($"[GroqSTT] WAV 인코딩 완료 — {wavBytes.Length} bytes");
 
+                var sw = System.Diagnostics.Stopwatch.StartNew();
                 var result = await TranscribeAsync(wavBytes, ct);
-                Debug.Log($"[GroqSTT] 인식 결과: '{result}'");
+                sw.Stop();
+                Debug.Log($"[GroqSTT] 인식 결과: '{result}' ({sw.ElapsedMilliseconds}ms)");
+
                 return result;
             }
             catch (OperationCanceledException)
@@ -104,26 +97,30 @@ namespace MySecondWorld.AI.Voice
         /// </summary>
         private async UniTask<string> TranscribeAsync(byte[] wavBytes, CancellationToken ct)
         {
-            await UniTask.SwitchToThreadPool();
-            try
+            // OpenAI SDK의 MultipartFormDataContent가 Unity에서 boundary 오류 발생
+            // → UnityWebRequest 직접 구현으로 폴백
+            var form = new List<IMultipartFormSection>
             {
-                using var stream = new MemoryStream(wavBytes);
-                // Language = "ko" 힌트를 주면 짧은 발화에서 일본어/중국어 오탐 방지
-                var transciptionOptions = new AudioTranscriptionOptions
-                {
-                    Language = "ko",
-                    ResponseFormat = AudioTranscriptionFormat.Simple
-                };
+                new MultipartFormFileSection("file", wavBytes, "audio.wav", "audio/wav"),
+                new MultipartFormDataSection("model", MODEL),
+                new MultipartFormDataSection("language", "ko"),
+                new MultipartFormDataSection("response_format", "text"),
+            };
 
-                // 파일명 끝에 .wav 확장자 필수 — Groq가 포맷 판별에 사용
-                AudioTranscription transcription
-                    = _audioClient.TranscribeAudio(stream, "audio.wav", transciptionOptions);
-                return transcription.Text?.Trim() ?? string.Empty;
-            }
-            finally
+            using var request = UnityWebRequest.Post(
+                "https://api.groq.com/openai/v1/audio/transcriptions", form);
+            request.SetRequestHeader("Authorization", $"Bearer {API_KEY}");
+
+            await request.SendWebRequest().WithCancellation(ct);
+
+            if (request.result != UnityWebRequest.Result.Success)
             {
-                await UniTask.SwitchToMainThread();
+                Debug.LogError($"[GroqSTT] HTTP 오류: {request.error} / {request.downloadHandler.text}");
+                return string.Empty;
             }
+
+            // response_format=text → 응답이 JSON 아닌 순수 텍스트
+            return request.downloadHandler.text.Trim();
         }
 
         /// <summary>
