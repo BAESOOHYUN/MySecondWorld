@@ -49,12 +49,12 @@ namespace MySecondWorld.AI.Voice
             var secMsGec = GenerateSecMsGec();
             var url = WssUrl + Guid.NewGuid().ToString("N") +
                 "&Sec-MS-GEC=" + secMsGec +
-                "&Sec-MS-GEC-Version=1-143.0.3650.75";
+                "&Sec-MS-GEC-Version=1-148.0.3967.83";
             // Edge-TTS는 공식 API가 아니라 브라우저인 척 위장해야 작동
             var ws = new WebSocket(url.ToString(), new Dictionary<string, string>
             {
                 ["Origin"] = "chrome-extension://jdiccldimpdaibmpdkjnbmckianbfold",
-                ["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0",
+                ["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36 Edg/148.0.0.0",
                 ["Pragma"] = "no-cache",
                 ["Cache-Control"] = "no-cache",
                 ["Accept-Language"] = "en-US,en;q=0.9",
@@ -162,14 +162,19 @@ namespace MySecondWorld.AI.Voice
                 _ = ws.Close();         // 열려있는 WebSocket 연결 닫음. _는 반환값(Task)을 무시하겠다는 표현 fire-and-forget
             });
 
-            // 3. 연결 시작 + 오디오 수신 대기
-            await ws.Connect(); // ← 연결 시작. 완료되면 OnOpen이 자동으로 불림. OnClose 발생 시점에 풀림. 
-
             byte[] mp3Bytes;
             try
             {
+                // 3. 연결 시작 + 오디오 수신 대기
+                await ws.Connect(); // ← 연결 시작. 완료되면 OnOpen이 자동으로 불림. OnClose 발생 시점에 풀림. 
                 //  mp3Bytes == audioBytes.ToArray() 모든 청크가 합쳐진 MP3 바이트 배열
                 mp3Bytes = await tcs.Task; // ← 여기서 tcs.TrySetResult()가 호출될 때까지 실제로 기다림
+            }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[EdgeTTS] 연결 실패: {e.Message}");
+                return null;
             }
             finally
             {

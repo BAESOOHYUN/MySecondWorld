@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using UnityEngine;
+using System.Linq;
 using Cysharp.Threading.Tasks;
 using Cysharp.Text;
+using UnityEngine;
 using MessagePipe;
 using VContainer;
 using MySecondWorld.Network;
-using System.Linq;
 
 namespace MySecondWorld.AI
 {
@@ -156,10 +156,7 @@ namespace MySecondWorld.AI
                 lastToken = token; // 누적 전체 텍스트 갱신
                                    // 마지막 문자가 문장 끝이면 token[lastSentEnd..]만 TTS로 발행하고 커서 전진
                 string lastchar = token[token.Length - 1].ToString();
-                if (lastchar == "." ||
-                    lastchar == "!" ||
-                    lastchar == "?" ||
-                    lastchar == "\n")
+                if (lastchar == "." || lastchar == "!" || lastchar == "?" || lastchar == "\n")
                 {
                     string sentence = token[lastSentEnd..];
                     if (sentence.Any(char.IsLetterOrDigit))

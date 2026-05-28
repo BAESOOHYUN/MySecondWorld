@@ -3786,6 +3786,16 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 349275300621192709, guid: 301df057ffda16644a17fdacb19192bc,
+        type: 3}
+      propertyPath: _rate
+      value: +0%
+      objectReference: {fileID: 0}
+    - target: {fileID: 349275300621192709, guid: 301df057ffda16644a17fdacb19192bc,
+        type: 3}
+      propertyPath: _pitch
+      value: +0Hz
+      objectReference: {fileID: 0}
     - target: {fileID: 1456443711861342596, guid: 301df057ffda16644a17fdacb19192bc,
         type: 3}
       propertyPath: _promptSO
@@ -4931,6 +4941,16 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 349275300621192709, guid: 301df057ffda16644a17fdacb19192bc,
+        type: 3}
+      propertyPath: _rate
+      value: +0%
+      objectReference: {fileID: 0}
+    - target: {fileID: 349275300621192709, guid: 301df057ffda16644a17fdacb19192bc,
+        type: 3}
+      propertyPath: _pitch
+      value: +0Hz
+      objectReference: {fileID: 0}
     - target: {fileID: 932398097738729490, guid: 301df057ffda16644a17fdacb19192bc,
         type: 3}
       propertyPath: m_Enabled

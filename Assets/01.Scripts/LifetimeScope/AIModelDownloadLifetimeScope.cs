@@ -4,7 +4,6 @@ using VContainer.Unity;
 using MessagePipe;
 using MySecondWorld.AI;
 using MySecondWorld.UI;
-using System;
 /// <summary>
 /// OpenWorldRobby씬 GameObject에 부착
 /// </summary>
