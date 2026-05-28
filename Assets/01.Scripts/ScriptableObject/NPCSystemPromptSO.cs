@@ -32,10 +32,16 @@ namespace MySecondWorld.AI
         [Tooltip("NPC의 관계 정보 (예: '대장장이 철수:친구', '영주:두려움')")]
         [SerializeField] private string[] relationships = { };
 
+        //https://fish.audio/ko/app/discovery/ 복사 -> 주소 끝 해시값만
+        [Header("TTS")]
+        [SerializeField] private string _fishAudioReferenceId = "";
+
+
         // 읽기 전용 프로퍼티
         public string NpcName => npcName;
         public string NpcGuid => npcGuid;
         public string NpcLocation => npcLocation;
+        public string FishAudioReferenceId => _fishAudioReferenceId;
 
         /// <summary>
         /// Gemma에 넘길 시스템 프롬프트 문자열 조합

@@ -16,16 +16,21 @@ namespace MySecondWorld.AI
             builder.RegisterComponent(GetComponent<NPCBrain>());
             builder.RegisterComponent(GetComponent<NPCInteractable>());
             builder.RegisterComponent(GetComponent<NPCVoicePlayer>());
-            builder.RegisterComponent(GetComponent<EdgeTTSServiceNativeWebSocket>()).As<ITTSService>(); // 씬에서 EdgeTTSService 찾아서 등록, .As 뜻 'ITTSService로 달라
             builder.RegisterComponent(GetComponent<NPCLipSyncController>());
 
             var deviceCapability = Parent.Container.Resolve<IDeviceCapability>();
             //                     ↑ 부모 컨테이너에서  ↑ IDeviceCapability 인스턴스 꺼내줘
             //                  ProjectLifetimeScope
             if (deviceCapability.UseServerMode)
+            {
                 builder.Register<GroqLLMService>(Lifetime.Scoped).As<ILLMService>();
+                builder.RegisterComponent(GetComponent<FishAudioTTSService>()).As<ITTSService>();
+            }
             else
+            {
                 builder.RegisterComponentInHierarchy<LocalLLMService>().As<ILLMService>();
+                builder.RegisterComponent(GetComponent<EdgeTTSServiceNativeWebSocket>()).As<ITTSService>(); // 씬에서 EdgeTTSService 찾아서 등록, .As 뜻 'ITTSService로 달라
+            }
         }
     }
 }
