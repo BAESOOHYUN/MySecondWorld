@@ -187,6 +187,7 @@ namespace MySecondWorld.UI
 
         public void Close()
         {
+            _stopTTSPub.Publish(new NPCStopTTSEvent(_currentNpcGuid));
             _canvas.SetActive(false);
         }
         #endregion
