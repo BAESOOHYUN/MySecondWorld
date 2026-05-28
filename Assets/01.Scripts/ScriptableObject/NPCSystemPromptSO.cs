@@ -25,6 +25,16 @@ namespace MySecondWorld.AI
         [Tooltip("응답 최대 토큰 수. 저사양 기기에서는 30~50 권장")]
         [SerializeField] private int maxResponseTokens = 40;
 
+        public enum AzureTTSStyleType
+        {
+            cheerful, sad, angry, fearful,
+            disgruntled, serious, depressed, embarrassed, gentle
+        }
+        [Header("Azure TTS")]
+        [Tooltip("Azure TTS 감정 스타일. 서버 모드에서만 사용.")]
+        [SerializeField] private AzureTTSStyleType _azureTTSStyle = AzureTTSStyleType.cheerful;
+        public string AzureTTSStyle => _azureTTSStyle.ToString();  // 박싱 1번, 전혀 무관
+
         [Header("Future: World Awareness")]
         [Tooltip("NPC가 알고 있는 장소 목록 (장기 세계 인식 확장용)")]
         [SerializeField] private string[] knownLocations = { };

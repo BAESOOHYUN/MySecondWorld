@@ -1,12 +1,12 @@
-using Cysharp.Threading.Tasks;
-using NativeWebSocket;
 using System;
 using System.Text;
 using System.Collections.Generic;
 using System.Threading;
-using UnityEngine;
 using System.IO;
+using Cysharp.Threading.Tasks;
+using UnityEngine;
 using UnityEngine.Networking;
+using NativeWebSocket;
 
 namespace MySecondWorld.AI.Voice
 {
@@ -23,9 +23,6 @@ namespace MySecondWorld.AI.Voice
         [SerializeField] private string _voiceName = "ko-KR-SunHiNeural";
         [SerializeField] private string _pitch = "+0Hz";   // ex) +5Hz, -10Hz
         [SerializeField] private string _rate = "+0%";     // ex) +10%, -20% 
-
-        //public event Action OnSpeakStarted;
-        //public event Action OnSpeakFinished;
 
         private readonly List<WebSocket> _activeConnections = new();
 
