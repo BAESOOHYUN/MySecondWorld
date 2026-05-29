@@ -21,6 +21,11 @@ namespace MySecondWorld.Network
             _clientToggle.onValueChanged.AddListener(OnToggleClient);
             _playerPrefsDeleteAll.onClick.AddListener(PlayerPrefsDeleteAll);
             _networkManager.OnClientStopped += ResetClientUI;
+#if UNITY_EDITOR
+            _localPlayerNameInput.text = "payu 1";
+#elif UNITY_ANDROID || UNITY_IOS
+    _localPlayerNameInput.text = "payu 2";
+#endif
         }
 
         private void OnDestroy()
