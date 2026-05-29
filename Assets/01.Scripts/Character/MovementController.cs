@@ -2,55 +2,83 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Cinemachine;
+using MessagePipe;
+using VContainer;
 using MySecondWorld.Utils;
+using MySecondWorld.Network.Player;
 
 namespace MySecondWorld.Move
 {
+    // TODO: OnLand_Cancel — 착지 취소(공중 재점프) 시나리오 구현 시 IPublisher<PlayerLandCancelledEvent> 추가
+    
     [RequireComponent(typeof(CharacterController))]
     public class MovementController : MonoBehaviour, IInputAxisOwner
     {
+        // Inspector
         [SerializeField] private CharacterController _controller;
+        
+        [Header("Movement")]
         [SerializeField] private float _moveSpeed = 5f;
         [SerializeField] private float _rotationSpeed = 10f;
+        [SerializeField] private float _airControlMultiplier = 0.5f; // 공중 이동 감도
+
+        [Header("Jump")]
         [SerializeField] private float _jumpSpeed = 3f;
         [SerializeField] private float _jumpHeight = 1f;
-        [SerializeField] private float _airControlMultiplier = 0.5f; // 공중 이동 감도
+
+        [Header("Ground")]
         [SerializeField] private float _groundCheckDistance = 0.1f; // 지면 감지 추가 거리
         [SerializeField] private LayerMask _groundLayer;             // 지면 레이어
 
-        public Func<float> GetCameraYAngle;  // 외부에서 주입 (NetworkPlayerController)
-        public event Action OnJump;
-        public event Action OnFall;
-        public event Action OnLand;
-        public event Action<float> OnSpeedChanged;
-        // 향후 착지 취소(공중 재점프 등) 시나리오를 위해 예약된 이벤트. 현재 미사용.
-        public event Action OnLand_Cancel;
-
+        // Public API
+        public Func<float> GetCameraYAngle;  // NetworkPlayerController에서 Authority(권위) 시점에 주입
         public float InputMagnitude { get; private set; }
         public bool IsGrounded { get; private set; } = true;
+        public float JumpStartDuration { get; set; } // PlayerAnimationController에서 클립 길이 주입
+        public float LandDuration { get; set; }       // PlayerAnimationController에서 클립 길이 주입
 
-        // Cinemachine IInputAxisOwner 인터페이스 요구사항으로 public 사용
-        public InputAxis MoveX = InputAxis.DefaultMomentary;
-        public InputAxis MoveY = InputAxis.DefaultMomentary;
-        public InputAxis Jump = InputAxis.DefaultMomentary;
-        public InputAxis Interact = InputAxis.DefaultMomentary;
-
+        // Private State
         private Vector3 _inputDirection;
         private Vector3 _moveDirection; // 수평 이동 벡터 (JoyStickMove에서 계산, Gravity에서 사용)
         private Vector3 _velocity; // 현재 속도
+
         private const float Gravity = -9.81f;
         private const float FallMultiplier = 2.5f; // 낙하 시 추가 가속도
         private const float DeadZone = 0.01f;
         private const float GroundedVelocity = -2f;
+
         private float _jumpStartTimer; // JumpStart 클립 길이만큼 OnFall 발화 지연
         private float _landingTimer;   // Land 클립 길이만큼 이동 차단
         private bool _isFalling;
         private bool _wasFalling;
         private float _airTime;
         private int _groundedFrames = 1;
+
         private bool IsJustLanded => _groundedFrames >= 1 && _airTime >= 0.1f;
-        public float JumpStartDuration { get; set; } // PlayerAnimationController에서 클립 길이 주입
-        public float LandDuration { get; set; }       // PlayerAnimationController에서 클립 길이 주입
+
+        // Cinemachine IInputAxisOwner (인터페이스 요구사항으로 public 사용)
+        public InputAxis MoveX = InputAxis.DefaultMomentary;
+        public InputAxis MoveY = InputAxis.DefaultMomentary;
+        public InputAxis Jump = InputAxis.DefaultMomentary;
+        public InputAxis Interact = InputAxis.DefaultMomentary;
+
+        // DI
+        private IPublisher<PlayerJumpedEvent> _jumpPublisher;
+        private IPublisher<PlayerFalledEvent> _fallPublisher;
+        private IPublisher<PlayerLandedEvent> _landPublisher;
+        private IPublisher<PlayerSpeedChangedEvent> _speedPublisher;
+        [Inject]
+        private void Construct(
+            IPublisher<PlayerJumpedEvent> jumpPublisher,
+            IPublisher<PlayerFalledEvent> fallPublisher,
+            IPublisher<PlayerLandedEvent> landPublisher,
+            IPublisher<PlayerSpeedChangedEvent> speedPublisher)
+        {
+            _jumpPublisher = jumpPublisher;
+            _fallPublisher = fallPublisher;
+            _landPublisher = landPublisher;
+            _speedPublisher = speedPublisher;
+        }
 
         private void Awake()
         {
@@ -90,11 +118,11 @@ namespace MySecondWorld.Move
             {
                 _moveDirection = Vector3.zero;
                 _inputDirection = Vector3.zero;
-                OnSpeedChanged?.Invoke(0f);
+                _speedPublisher.Publish(new PlayerSpeedChangedEvent { Speed = 0 });
                 return;
             }
 
-            OnSpeedChanged?.Invoke(rawInput.magnitude);
+            _speedPublisher.Publish(new PlayerSpeedChangedEvent { Speed = rawInput.magnitude });
             _inputDirection = rawInput.normalized;
 
             // 카메라 Y축 회전만 추출해서 이동 방향 계산 (pitch 영향 없음)
@@ -146,7 +174,7 @@ namespace MySecondWorld.Move
             {
                 _velocity.y = Mathf.Sqrt(_jumpHeight * _jumpSpeed * -Gravity);
                 _jumpStartTimer = JumpStartDuration;
-                OnJump?.Invoke();
+                _jumpPublisher.Publish(new PlayerJumpedEvent());
             }
 
             // JumpStart 클립이 끝난 후에만 FallTrigger 발화 (조기 발화 방지)
@@ -156,13 +184,13 @@ namespace MySecondWorld.Move
             // 낙하 상태 갱신 및 이벤트 (진입 순간 1회)
             _isFalling = _velocity.y < 0 && !IsGrounded && _jumpStartTimer <= 0;
             if (_isFalling && !_wasFalling)
-                OnFall?.Invoke();
+                _fallPublisher.Publish(new PlayerFalledEvent());
 
             // 착지 순간
             if (IsJustLanded)
             {
                 _landingTimer = LandDuration;
-                OnLand?.Invoke();
+                _landPublisher?.Publish(new PlayerLandedEvent());
                 _airTime = 0f;
             }
 

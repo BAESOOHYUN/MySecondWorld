@@ -1,6 +1,7 @@
 using UnityEngine;
 using Mirror;
 using MySecondWorld.Move;
+using MySecondWorld.CameraSystem;
 
 namespace MySecondWorld.Network.Player
 {
@@ -18,26 +19,22 @@ namespace MySecondWorld.Network.Player
             _characterController.enabled = false;
         }
 
-        public override void OnStartAuthority() // "이 오브젝트의 조종권을 얻었을 때"
+        public override void OnStartAuthority() // "이 캐릭터 네 꺼야" → 조종 활성화
         {
             _characterController.enabled = true;
             _movementController.enabled = true;
             _cameraController.enabled = true;
             _cameraController.ActiveCinemachine(true);
-            _movementController.GetCameraYAngle = () => _cameraController.CameraYAngle;
+            _movementController.GetCameraYAngle = () => _cameraController.CameraYAngle; //카메라 각도 함수 주입
         }
 
-        public override void OnStopAuthority() // "이 오브젝트의 조종권을 잃었을 때"
+        public override void OnStopAuthority() // "더 이상 네 꺼 아니야" → 조종 비활성화
         {
             _movementController.GetCameraYAngle = null;
             _movementController.enabled = false;
             _cameraController.ActiveCinemachine(false);
             _cameraController.enabled = false;
             _characterController.enabled = false;
-        }
-
-        public override void OnStartLocalPlayer() // "이 오브젝트가 내 플레이어 캐릭터"일 때 딱 한 번
-        {
         }
     }
 }

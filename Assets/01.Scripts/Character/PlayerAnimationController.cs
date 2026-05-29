@@ -1,15 +1,19 @@
 using UnityEngine;
+using VContainer;
+using MessagePipe;
+using MySecondWorld.Network.Player;
+using Cysharp.Threading.Tasks;
 
 namespace MySecondWorld.Move
 {
     [RequireComponent(typeof(Animator))]
     public class PlayerAnimationController : MonoBehaviour
     {
-        [SerializeField] private MovementController _movementController;
         [SerializeField] private Animator _animator;
-        [SerializeField] private AnimationClip _jumpStartClip; // JumpStart 클립 길이를 MovementController에 주입
-        [SerializeField] private AnimationClip _landClip;      // Land 클립 길이를 MovementController에 주입
-
+        // 클립 길이를 MovementController에 주입하기 위해 [SerializeField]
+        [SerializeField] private AnimationClip _jumpStartClip;
+        [SerializeField] private AnimationClip _landClip;
+        
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void InitStatics()
         {
@@ -24,6 +28,23 @@ namespace MySecondWorld.Move
         private static int LandTrigger = Animator.StringToHash(nameof(LandTrigger));
         private static int Speed = Animator.StringToHash(nameof(Speed));
 
+        private ISubscriber<PlayerJumpedEvent> _jumpSubscriber;
+        private ISubscriber<PlayerFalledEvent> _fallSubscriber;
+        private ISubscriber<PlayerLandedEvent> _landSubscriber;
+        private ISubscriber<PlayerSpeedChangedEvent> _speedSubscriber;
+
+        [Inject]
+        private void Construct(
+            ISubscriber<PlayerJumpedEvent> jumpSubscriber,
+            ISubscriber<PlayerFalledEvent> fallSubscriber,
+            ISubscriber<PlayerLandedEvent> landSubscriber,
+            ISubscriber<PlayerSpeedChangedEvent> speedSubscriber)
+        {
+            _jumpSubscriber = jumpSubscriber;
+            _fallSubscriber = fallSubscriber;
+            _landSubscriber = landSubscriber;
+            _speedSubscriber = speedSubscriber;
+        }
 
         private void Awake()
         {
@@ -32,43 +53,27 @@ namespace MySecondWorld.Move
                 if (!TryGetComponent(out _animator))
                     Debug.LogError($"Animator missing on {gameObject.name}", this);
             }
-
-            if (_movementController == null)
-            {
-                _movementController = GetComponentInParent<MovementController>();
-                if (_movementController == null)
-                    Debug.LogError($"MovementController not found in parent hierarchy of {gameObject.name}", this);
-            }
         }
 
         private void Start()
         {
-            if (_movementController != null && _jumpStartClip != null)
-                _movementController.JumpStartDuration = _jumpStartClip.length;
-            if (_movementController != null && _landClip != null)
-                _movementController.LandDuration = _landClip.length;
-        }
+            var ct = this.GetCancellationTokenOnDestroy();
 
-        private void OnEnable()
-        {
-            if (_movementController == null)
-                return;
+            // 클립 길이 주입 — MovementController를 같은 프리팹에서 찾아서 전달
+            var movementController = GetComponentInParent<MovementController>();
 
-            _movementController.OnJump += HandleJump;
-            _movementController.OnFall += HandleFall;
-            _movementController.OnLand += HandleLand;
-            _movementController.OnSpeedChanged += HandleSpeedChanged;
-        }
+            if (movementController != null)
+            { 
+                if (_jumpStartClip != null)
+                    movementController.JumpStartDuration = _jumpStartClip.length;
+                if (_landClip != null)
+                    movementController.LandDuration = _landClip.length;
+            }
 
-        private void OnDisable()
-        {
-            if (_movementController == null)
-                return;
-
-            _movementController.OnJump -= HandleJump;
-            _movementController.OnFall -= HandleFall;
-            _movementController.OnLand -= HandleLand;
-            _movementController.OnSpeedChanged -= HandleSpeedChanged;
+            _jumpSubscriber.Subscribe(_ => HandleJump()).AddTo(ct);
+            _fallSubscriber.Subscribe(_ => HandleFall()).AddTo(ct);
+            _landSubscriber.Subscribe(_ => HandleLand()).AddTo(ct);
+            _speedSubscriber.Subscribe(evt => HandleSpeedChanged(evt.Speed)).AddTo(ct);
         }
 
         private void HandleSpeedChanged(float speed)
@@ -102,7 +107,7 @@ namespace MySecondWorld.Move
         {
             if (_animator == null)
                 return;
-            Debug.Log("HandleLand 호출");
+
             _animator.ResetTrigger(FallTrigger);
             _animator.ResetTrigger(JumpTrigger);
             _animator.SetTrigger(LandTrigger);
