@@ -24,8 +24,7 @@ namespace MySecondWorld.AI
             string fileName = PlayerPrefs.GetString("SelectedModelFileName", "");
             if (string.IsNullOrEmpty(fileName))
             {
-                Debug.LogError("[LLMInitializer] PlayerPrefs에 모델 파일명이 없습니다. " +
-                               "OpenWorldRobbyScene에서 다운로드가 완료됐는지 확인하세요.");
+                Debug.Log("[LLMInitializer] PlayerPrefs에 모델 파일명 없음 — 서버 모드 또는 다운로드 미완료. LLM 로드 건너뜀.");
                 return;
             }
 

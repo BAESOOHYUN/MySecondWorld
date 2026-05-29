@@ -31,12 +31,22 @@ public class AIModelDownloadStarter : IStartable, IDisposable
         {
             await _downloader.DownloadLLMAsync(_cts.Token);
 
-            // 다운로드 완료 후 파일명을 PlayerPrefs에 저장
-            // → MainScene의 LLMInitializer가 읽어서 llm.model에 절대경로 주입
-            PlayerPrefs.SetString("SelectedModelFileName", _downloader.SelectedFileName);
-            PlayerPrefs.Save();
+            // null 체크 추가 (서버 모드 시 SelectedFileName = null로 만들기)
+            if (!string.IsNullOrEmpty(_downloader.SelectedFileName))
+            {
+                // 다운로드 완료 후 파일명을 PlayerPrefs에 저장
+                // → MainScene의 LLMInitializer가 읽어서 llm.model에 절대경로 주입
+                PlayerPrefs.SetString("SelectedModelFileName", _downloader.SelectedFileName);
+                PlayerPrefs.Save();
 
-            Debug.Log($"[AIModelDownloadStarter] LLM 다운로드 완료 → {_downloader.SelectedFileName}");
+                Debug.Log($"[AIModelDownloadStarter] LLM 다운로드 완료 → {_downloader.SelectedFileName}");
+            }
+            else
+            {
+                // 서버 모드 — 이전 세션의 잔여 경로값 제거. PlayerPrefs를 명시적으로 지우는 게 더 안전
+                PlayerPrefs.DeleteKey("SelectedModelFileName");
+                PlayerPrefs.Save();
+            }
         }
         catch (OperationCanceledException) { }
         catch (Exception e)

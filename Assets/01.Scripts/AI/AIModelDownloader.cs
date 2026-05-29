@@ -29,6 +29,12 @@ public class AIModelDownloader
 
     public async UniTask DownloadLLMAsync(CancellationToken ct)
     {
+        if (_device.UseServerMode)
+        {
+            Debug.Log("[AIModelDownloader] 서버 모드 — LLM 다운로드 스킵");
+            _publisher.Publish(new AIModelDownloadProgressEvent(1f, true, "LLM"));
+        }
+
         // 기기 RAM 확인 → 4B/1B 모델 선택
         _device.Evaluate();
 
@@ -50,6 +56,12 @@ public class AIModelDownloader
 
     public async UniTask DownloadSTTAsync(CancellationToken ct)
     {
+        if (_device.UseServerMode)
+        {
+            Debug.Log("[AIModelDownloader] 서버 모드 — STT 다운로드 스킵");
+            _publisher.Publish(new AIModelDownloadProgressEvent(1f, true, "STT"));
+        }
+
         await DownloadFileAsync(_config.sttModelUrl, _config.sttModelFileName, "STT", ct);
     }
 
