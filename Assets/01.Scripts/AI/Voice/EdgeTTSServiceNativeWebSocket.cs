@@ -86,7 +86,7 @@ namespace MySecondWorld.AI.Voice
                                       $"\"wordBoundaryEnabled\":\"false\"}}," +
                                 $"\"outputFormat\":\"{AudioFormat}\"}}}}}}}}" +
                                 "\r\n"; // Python도 JSON 뒤에 \r\n 있음
-            Debug.Log($"[TTS] configMsg:\n{configMsg}");
+            Debug.Log($"[EdgeTTS] configMsg:\n{configMsg}");
             // 2-2. 목소리 설정
             string ssml =
                 $"<speak " +                                         
@@ -106,7 +106,7 @@ namespace MySecondWorld.AI.Voice
                 $"Content-Type:application/ssml+xml\r\n" +
                 $"X-Timestamp:{timestamp}\r\n" +
                 $"Path:ssml\r\n\r\n{ssml}";
-            Debug.Log($"[TTS] ssmlMsg:\n{ssmlMsg}");
+            Debug.Log($"[EdgeTTS] ssmlMsg:\n{ssmlMsg}");
             // 이벤트와 await를 연결하는 다리가 UniTaskCompletionSource = tcs
             // NativeWebSocket 버전은 OnOpen 이벤트 안에서 순차 전송:
             ws.OnOpen += async () =>
@@ -121,7 +121,7 @@ namespace MySecondWorld.AI.Voice
                 // Edge-TTS가 오디오 전송을 끝냈다는 신호가 오면 그때 await가 완료된다.
                 if (decoded.Contains("Path:turn.end"))
                 {
-                    Debug.Log($"[TTS] turn.end 수신. 누적 오디오: {audioBytes.Count} bytes");
+                    Debug.Log($"[EdgeTTS] turn.end 수신. 누적 오디오: {audioBytes.Count} bytes");
                     isDone = true; // 오디오 전송 완료됨
                     tcs.TrySetResult(audioBytes.ToArray()); //tcs.TrySetResult()가 호출되는 순간 await가 풀리고 다음 코드로 넘어감.
                     //turn.end → tcs 완료 +ws.Close() 호출
@@ -140,18 +140,18 @@ namespace MySecondWorld.AI.Voice
                     {
                         int added = msg.Length - audioStart;
                         audioBytes.AddRange(new ArraySegment<byte>(msg, audioStart, added));
-                        Debug.Log($"[TTS] 바이너리 청크 수신. 추가: {added} bytes, 누적: {audioBytes.Count} bytes");
+                        Debug.Log($"[EdgeTTS] 바이너리 청크 수신. 추가: {added} bytes, 누적: {audioBytes.Count} bytes");
                     }
                     else
                     {
-                        Debug.Log($"[TTS] 텍스트: {decoded}"); // 전체 출력
+                        Debug.Log($"[EdgeTTS] 텍스트: {decoded}"); // 전체 출력
                     }
                 }
             };
             ws.OnError += (string err) => tcs.TrySetException(new Exception(err));
             ws.OnClose += (_) =>
             {
-                Debug.Log($"[TTS] OnClose. isDone={isDone}, audioBytes={audioBytes.Count}");
+                Debug.Log($"[EdgeTTS] OnClose. isDone={isDone}, audioBytes={audioBytes.Count}");
                 if (!isDone)
                     tcs.TrySetResult(audioBytes.ToArray());
             };

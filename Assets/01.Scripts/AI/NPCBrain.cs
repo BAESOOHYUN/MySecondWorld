@@ -195,7 +195,7 @@ namespace MySecondWorld.AI
                 }
             }
 
-            Debug.Log($"[NPCBrain] 추론 시간: {Time.realtimeSinceStartup - t0:F2}s");
+            Debug.Log($"[{_llmService.GetType().Name}] 추론 시간: {Time.realtimeSinceStartup - t0:F2}s");
 
             if (this == null)
                 return string.Empty;
