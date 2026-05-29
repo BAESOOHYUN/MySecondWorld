@@ -4,6 +4,7 @@ using MessagePipe;
 using MySecondWorld.UI;
 using MySecondWorld.Network;
 using MySecondWorld.AI.Voice;
+using Whisper;
 
 namespace MySecondWorld.AI
 {
@@ -33,9 +34,12 @@ namespace MySecondWorld.AI
             //                  ProjectLifetimeScope
 
             if (deviceCapability.UseServerMode)
-                builder.RegisterComponent(gameObject.AddComponent<GroqWhisperSTTService>()).As<ISTTService>();
+                builder.RegisterInstance(gameObject.AddComponent<GroqWhisperSTTService>()).As<ISTTService>();
             else
-                builder.RegisterComponent(gameObject.AddComponent<WhisperSTTService>()).As<ISTTService>();
+            {
+                builder.RegisterComponentInHierarchy<WhisperManager>();
+                builder.RegisterInstance(gameObject.AddComponent<WhisperSTTService>()).As<ISTTService>();
+            }
 
             var uiManager = Parent.Container.Resolve<UIManager>();
             var uiGO = uiManager.GetOrCreateDynamicCanvas<NPCDialogueUI>();

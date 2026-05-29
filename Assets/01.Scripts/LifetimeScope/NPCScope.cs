@@ -28,11 +28,11 @@ namespace MySecondWorld.AI
             else
             {
                 var localLLM = gameObject.AddComponent<LocalLLMService>();
-                builder.RegisterComponent(localLLM).As<ILLMService>();
+                builder.RegisterInstance(localLLM).As<ILLMService>();
             }
 
             // TTS는 Azure 한국어 감정 미지원으로 Edge 고정
-            builder.RegisterComponent(gameObject.AddComponent<EdgeTTSServiceNativeWebSocket>()).As<ITTSService>(); // 씬에서 EdgeTTSService 찾아서 등록, .As 뜻 'ITTSService로 달라
+            builder.RegisterInstance(gameObject.AddComponent<EdgeTTSServiceNativeWebSocket>()).As<ITTSService>(); // 씬에서 EdgeTTSService 찾아서 등록, .As 뜻 'ITTSService로 달라
         }
     }
 }

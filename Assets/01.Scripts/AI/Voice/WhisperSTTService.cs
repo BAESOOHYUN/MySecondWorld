@@ -3,6 +3,7 @@ using System;
 using System.IO;
 using System.Threading;
 using UnityEngine;
+using VContainer;
 using Whisper;
 using Application = UnityEngine.Application;
 
@@ -10,11 +11,16 @@ namespace MySecondWorld.AI.Voice
 {
     public class WhisperSTTService : MonoBehaviour, ISTTService
     {
-        [SerializeField] private WhisperManager _whisper;
-        [SerializeField] private string _modelFileName = "ggml-tiny.bin";
-        [SerializeField] private int _maxDurationSec = 30; //최대 녹음 시간
+        private WhisperManager _whisper;
+        private string _modelFileName = "ggml-tiny.bin";
+        private int _maxDurationSec = 30; //최대 녹음 시간
         private bool _isListening;
         public bool IsListening => _isListening;
+
+        private void Awake()
+        {
+            _whisper = FindFirstObjectByType<WhisperManager>();
+        }
 
         private async void Start()
         {
