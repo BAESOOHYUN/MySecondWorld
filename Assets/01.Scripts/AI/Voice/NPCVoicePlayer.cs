@@ -10,9 +10,9 @@ namespace MySecondWorld.AI.Voice
 { 
     public class NPCVoicePlayer : MonoBehaviour
     {
-        [SerializeField] private NPCSystemPromptSO _promptSO;
         [SerializeField] private AudioSource[] _sources = new AudioSource[2];
         public AudioSource[] Sources => _sources;
+        private NPCSystemPromptSO _promptSO;
         private readonly Queue<(string text, UniTask<AudioClip> fetch)> _fetchQueue = new(); //문장 도착 즉시 fetch 시작
         private bool _isPlaying = false;
         public bool IsPlaying => _isPlaying;
@@ -24,13 +24,16 @@ namespace MySecondWorld.AI.Voice
 
        [Inject]
         // NPCScope VContainer가 ITTSService 타입 보고 → .As<ITTSService>()로 등록된 EdgeTTSService 인스턴스를 넣어줌
-        private void Construct(ITTSService tts, 
+        private void Construct(
+            NPCSystemPromptSO promptSO,
+            ITTSService tts, 
             ISubscriber<NPCTTSSentenceEvent> ttsSub, 
             ISubscriber<NPCStopTTSEvent> stopSub,
             IPublisher<NPCSpeakFinishedEvent> speakFinishedPub,
             IPublisher<NPCSentenceStartedEvent> sentenceStartedPub
             )
         {
+            _promptSO = promptSO;
             _tts = tts;
             _speakFinishedPub = speakFinishedPub;
             _sentenceStartedPub = sentenceStartedPub;

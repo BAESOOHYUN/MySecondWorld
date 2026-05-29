@@ -3,6 +3,8 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using LLMUnity;
+using VContainer;
+
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -14,8 +16,8 @@ namespace MySecondWorld.AI
     /// </summary>
     public class LocalLLMService : MonoBehaviour, ILLMService
     {
-        [SerializeField] private LLMAgent _llmAgent; // (undreamai/LLMForUnity)
-        [SerializeField] private NPCSystemPromptSO _systemPrompt;
+        private LLMAgent _llmAgent; // (undreamai/LLMForUnity)
+        private NPCSystemPromptSO _systemPrompt;
         private static bool s_isExitingPlayMode = false;
 #if UNITY_EDITOR
         // 에디터 로드 시 1회 실행 — PlayMode 상태 변화 감지 이벤트 사전 등록
@@ -37,6 +39,17 @@ namespace MySecondWorld.AI
         private string NpcNameKey => (_systemPrompt != null && !string.IsNullOrEmpty(_systemPrompt.NpcGuid))
                                     ? _systemPrompt.NpcGuid : name;
         public bool IsReady => _llmAgent != null && _llmAgent.llmAgent != null;
+        
+        [Inject]
+        private void Construct(NPCSystemPromptSO systemPrompt)
+        {
+            _systemPrompt = systemPrompt;
+        }
+
+        private void Awake()
+        {
+            _llmAgent = GetComponent<LLMAgent>();
+        }
 
         private void Start()
         {
