@@ -3,6 +3,9 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using Cysharp.Threading.Tasks;
 using Mirror;
+using VContainer;
+using MySecondWorld.Save;
+
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -22,20 +25,12 @@ namespace MySecondWorld.Network
         private ServerSessionService _sessionService;
         private ServerZoneService _zoneService;
         private ClientSceneSyncService _clientSyncService;
-
-        #region UI단
-        public void ToggleHost(bool isOn)
+        private SaveManager _saveManager;
+        [Inject]
+        private void Construct(SaveManager saveManager)
         {
-            if (isOn) StartHost();
-            else StopHost();
+            _saveManager = saveManager;
         }
-
-        public void ToggleClient(bool isOn)
-        {
-            if (isOn) StartClient();
-            else StopClient();
-        }
-        #endregion
 
 #if UNITY_EDITOR
         // 클라이언트만 도는 케이스에서도 ExitingPlayMode 정리가 보장되도록 Awake에서 등록.
@@ -80,6 +75,20 @@ namespace MySecondWorld.Network
         }
 #endif
 
+        #region UI단
+        public void ToggleHost(bool isOn)
+        {
+            if (isOn) StartHost();
+            else StopHost();
+        }
+
+        public void ToggleClient(bool isOn)
+        {
+            if (isOn) StartClient();
+            else StopClient();
+        }
+        #endregion
+
         #region 서버 측
         // [S1] 서버 시작: 핸들러 등록 + 코루틴 시작
         public override void OnStartServer()
@@ -87,7 +96,7 @@ namespace MySecondWorld.Network
             base.OnStartServer(); // Mirror가 onlineScene(MainScene)을 로드. 완료 후 → OnServerSceneChanged
             Cts = new CancellationTokenSource();
             _roomRegistry = new DungeonRoomRegistry();
-            _sessionService = new ServerSessionService(this, _roomRegistry);
+            _sessionService = new ServerSessionService(this, _roomRegistry, _saveManager);
             _zoneService = new ServerZoneService(this, _sessionService, _roomRegistry);
             
             // 클라이언트가 보내는 메시지 → NetworkServer.RegisterHandler (서버가 받으니까)

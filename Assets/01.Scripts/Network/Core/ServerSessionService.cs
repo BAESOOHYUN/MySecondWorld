@@ -14,12 +14,17 @@ namespace MySecondWorld.Network
     {
         private readonly GameNetworkManager _manager;
         private readonly DungeonRoomRegistry _roomRegistry;
+        private readonly SaveManager _saveManager;
         public Dictionary<int, PlayerSession> Sessions { get; } = new();
 
-        public ServerSessionService(GameNetworkManager manager, DungeonRoomRegistry roomRegistry)
+        public ServerSessionService(
+            GameNetworkManager manager,
+            DungeonRoomRegistry roomRegistry,
+            SaveManager saveManager)
         {
             _manager = manager;
             _roomRegistry = roomRegistry;
+            _saveManager = saveManager;
         }
 
         // [S3] 세션 생성 + PrepareAndSpawn 시작
@@ -56,7 +61,7 @@ namespace MySecondWorld.Network
             await UniTask.WaitUntil(() => _manager.ServerReady, cancellationToken: _manager.Cts.Token);
 
             var session = Sessions[conn.connectionId];
-            var saveData = SaveManager.Instance?.Load(session.playerId);
+            var saveData = _saveManager.Load(session.playerId);
             var hasSpawnData = saveData.HasValue;
 
             string spawnScene = _manager.defaultSubScene;
@@ -128,7 +133,7 @@ namespace MySecondWorld.Network
 
                     if (posToSave != Vector3.zero)
                     {
-                        SaveManager.Instance?.Save(session.playerId, new SaveData
+                        _saveManager.Save(session.playerId, new SaveData
                         {
                             lastSceneNames = new string[] { session.currentScene },
                             lastPosition = posToSave

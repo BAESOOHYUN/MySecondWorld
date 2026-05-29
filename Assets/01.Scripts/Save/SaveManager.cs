@@ -3,29 +3,17 @@ using UnityEngine;
 namespace MySecondWorld.Save
 {
     /// <summary>
-    /// PlayerPrefs 기반 세이브 싱글톤.
+    /// PlayerPrefs 기반 세이브 서비스.
+    /// VContainer에 Singleton으로 등록됨. 직접 new 하지 말 것.
     /// 향후 서버 DB 교체 시 이 클래스 내부만 교체한다.
     /// </summary>
-    public class SaveManager : MonoBehaviour
+    public class SaveManager
     {
-        public static SaveManager Instance { get; private set; }
-
         private const string KeyScenes = "save_scenes_";
         private const string KeyPosX   = "save_pos_x_";
         private const string KeyPosY   = "save_pos_y_";
         private const string KeyPosZ   = "save_pos_z_";
         private const char   SceneSep  = '|';
-
-        private void Awake()
-        {
-            if (Instance != null && Instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
 
         /// <param name="playerId">플레이어 식별자 (netId 등). 키 충돌 방지용.</param>
         public void Save(string playerId, SaveData data)
@@ -54,6 +42,10 @@ namespace MySecondWorld.Save
             };
         }
 
+        // 현재 미사용.
+        // -회원 탈퇴
+        // -새 게임 시작(세이브 초기화)
+        // -테스트/디버그용 리셋
         public void Delete(string playerId)
         {
             PlayerPrefs.DeleteKey(KeyScenes + playerId);
