@@ -364,8 +364,6 @@ GameObject:
   m_Component:
   - component: {fileID: 420105294}
   - component: {fileID: 420105293}
-  - component: {fileID: 420105292}
-  - component: {fileID: 420105295}
   m_Layer: 0
   m_Name: STTManager
   m_TagString: Untagged
@@ -373,21 +371,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &420105292
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 420105291}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 992dc272a9259024eaf7653143233fd1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MySecondWorld.AI.Voice.WhisperSTTService
-  _whisper: {fileID: 420105293}
-  _modelFileName: ggml-tiny.bin
-  _maxDurationSec: 30
 --- !u!114 &420105293
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -436,20 +419,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &420105295
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 420105291}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e9408cb67b01b52469831ff2afdab7e3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MySecondWorld.AI.Voice.GroqWhisperSTTService
-  _sampleRate: 16000
-  _maxDurationSec: 30
 --- !u!1 &784603345
 GameObject:
   m_ObjectHideFlags: 0

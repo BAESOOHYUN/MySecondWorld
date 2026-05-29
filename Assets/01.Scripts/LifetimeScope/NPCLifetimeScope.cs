@@ -31,10 +31,11 @@ namespace MySecondWorld.AI
             var deviceCapability = Parent.Container.Resolve<IDeviceCapability>();
             //                     ↑ 부모 컨테이너에서  ↑ IDeviceCapability 인스턴스 꺼내줘
             //                  ProjectLifetimeScope
+
             if (deviceCapability.UseServerMode)
-                builder.RegisterComponentInHierarchy<GroqWhisperSTTService>().As<ISTTService>();
+                builder.RegisterComponent(gameObject.AddComponent<GroqWhisperSTTService>()).As<ISTTService>();
             else
-                builder.RegisterComponentInHierarchy<WhisperSTTService>().As<ISTTService>();
+                builder.RegisterComponent(gameObject.AddComponent<WhisperSTTService>()).As<ISTTService>();
 
             var uiManager = Parent.Container.Resolve<UIManager>();
             var uiGO = uiManager.GetOrCreateDynamicCanvas<NPCDialogueUI>();
