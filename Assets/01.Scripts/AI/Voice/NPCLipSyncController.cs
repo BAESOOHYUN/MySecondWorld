@@ -28,7 +28,7 @@ namespace MySecondWorld.AI.Voice
         {
             _sources = voicePlayer.Sources;
             voicePlayer.OnSpeakStarted += StartLipSync;
-            voicePlayer.OnSpeakStarted += StopLipSync;
+            voicePlayer.OnSpeakFinished += StopLipSync;
         }
 
         private void StartLipSync()
@@ -54,23 +54,26 @@ namespace MySecondWorld.AI.Voice
             if (_facePlates == null || _facePlates.Length == 0) 
                 return;
 
-            float raw = IsAnySourcePlaying() ? SampleAmplitude() : 0f;
-            _smoothedAmplitude = Mathf.Lerp(_smoothedAmplitude, raw, Time.deltaTime * SMOOTH_SPEED);
-            //Debug.Log($"smoothed={_smoothedAmplitude:F4}");
-
-            _holdTimer -= Time.deltaTime;
-            if (_holdTimer <= 0)
+            while (!ct.IsCancellationRequested)
             {
-                Material next;
-                if      (_smoothedAmplitude < 0.02f) next = _neutral;      // _
-                else if (_smoothedAmplitude < 0.05f) next = _mouthSmall;   // AEI
-                else if (_smoothedAmplitude < 0.10f) next = _mouthMid;     // O
-                else                                 next = _mouthOpen;    // A
-                SetMaterial(next);
-                _holdTimer = HOLD_TIME;
-            }
+                float raw = IsAnySourcePlaying() ? SampleAmplitude() : 0f;
+                _smoothedAmplitude = Mathf.Lerp(_smoothedAmplitude, raw, Time.deltaTime * SMOOTH_SPEED);
+                //Debug.Log($"smoothed={_smoothedAmplitude:F4}");
 
-            await UniTask.Yield(cancellationToken: ct);
+                _holdTimer -= Time.deltaTime;
+                if (_holdTimer <= 0)
+                {
+                    Material next;
+                    if (_smoothedAmplitude < 0.02f) next = _neutral;      // _
+                    else if (_smoothedAmplitude < 0.05f) next = _mouthSmall;   // AEI
+                    else if (_smoothedAmplitude < 0.10f) next = _mouthMid;     // O
+                    else next = _mouthOpen;    // A
+                    SetMaterial(next);
+                    _holdTimer = HOLD_TIME;
+                }
+
+                await UniTask.Yield(cancellationToken: ct);
+            }
         }
 
         private bool IsAnySourcePlaying()
