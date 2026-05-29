@@ -41,6 +41,7 @@ namespace MySecondWorld.AI.Voice
 
         public async UniTask<AudioClip> FetchAsync(string text, CancellationToken ct = default)
         {
+            var sw = System.Diagnostics.Stopwatch.StartNew();
             // Unity Editor(Windows)에서 ClientWebSocket 내부 사용 시 TLS 인증서 검증 우회
             // System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
             //System.Net.ServicePointManager.ServerCertificateValidationCallback = (_, _, _, _) => true;
@@ -203,6 +204,10 @@ namespace MySecondWorld.AI.Voice
 
             var clip = DownloadHandlerAudioClip.GetContent(req);
             File.Delete(tempPath);
+            
+            sw.Stop(); // ← 추가
+            Debug.Log($"[EdgeTTS] TTS 처리 시간: {sw.ElapsedMilliseconds}ms ({text.Length}자)");
+
             return clip;
         }
 
