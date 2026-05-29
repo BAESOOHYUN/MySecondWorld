@@ -115,12 +115,8 @@ namespace MySecondWorld.AI
         {
             try
             {
-                using var doc = System.Text.Json.JsonDocument.Parse(json);
-                return doc.RootElement
-                    .GetProperty("choices")[0]
-                    .GetProperty("message")
-                    .GetProperty("content")
-                    .GetString() ?? string.Empty;
+                var obj = Newtonsoft.Json.Linq.JObject.Parse(json);
+                return obj["choices"][0]["message"]["content"]?.ToString() ?? string.Empty;
             }
             catch (Exception e)
             {
