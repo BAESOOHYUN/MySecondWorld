@@ -60,7 +60,11 @@ namespace MySecondWorld.Network
         {
             await UniTask.WaitUntil(() => _manager.ServerReady, cancellationToken: _manager.Cts.Token);
 
-            var session = Sessions[conn.connectionId];
+            // 서버 준비 대기 중 이 클라이언트(conn)가 먼저 연결을 끊으면 RemovePlayer가 세션을 삭제
+            // Sessions[conn.connectionId] 직접 접근 시 KeyNotFoundException 발생
+            if (!Sessions.TryGetValue(conn.connectionId, out var session))
+                return;
+
             var saveData = _saveManager.Load(session.playerId);
             var hasSpawnData = saveData.HasValue;
 
