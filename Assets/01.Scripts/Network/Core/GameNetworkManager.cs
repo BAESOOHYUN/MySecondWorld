@@ -154,7 +154,7 @@ namespace MySecondWorld.Network
         // [S-End] 세이브 + 세션 정리
         public override void OnServerDisconnect(NetworkConnectionToClient conn)
         {
-            _sessionService.RemovePlayer(conn);
+            _sessionService?.RemovePlayer(conn);
             base.OnServerDisconnect(conn);
         }
         #endregion
