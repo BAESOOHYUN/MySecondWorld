@@ -4,6 +4,7 @@ using UnityEngine;
 using MessagePipe;
 using VContainer;
 using MySecondWorld.Network;
+using MySecondWorld.Bundle;
 
 namespace MySecondWorld.UI
 {
@@ -18,12 +19,16 @@ namespace MySecondWorld.UI
         [SerializeField] private List<GameObject> _dynamicCanvasPrefabs = new List<GameObject>();
 
         private readonly Dictionary<Type, GameObject> _dynamicCanvasInstances = new Dictionary<Type, GameObject>();
-        private IDisposable _subscription;
+        private IDisposable _authSubscription;
+        private IDisposable _progressSubscription;
 
         [Inject]
-        private void Construct(ISubscriber<AuthStateChangedEvent> authSubscriber)
+        private void Construct(
+            ISubscriber<AuthStateChangedEvent> authSub,
+            ISubscriber<AddressablesProgressEvent> progressSub)
         {
-            _subscription = authSubscriber.Subscribe(OnAuthStateChanged);
+            _authSubscription = authSub.Subscribe(OnAuthStateChanged);
+            _progressSubscription = progressSub.Subscribe(OnAddressablesProgress);
         }
 
         private void Awake()
@@ -33,7 +38,7 @@ namespace MySecondWorld.UI
 
         private void OnDestroy()
         {
-            _subscription?.Dispose();
+            _authSubscription?.Dispose();
         }
 
         private void OnAuthStateChanged(AuthStateChangedEvent evt)
@@ -42,6 +47,19 @@ namespace MySecondWorld.UI
                 SetGameState();
             else 
                 ResetToLobbyState();
+        }
+
+        private void OnAddressablesProgress(AddressablesProgressEvent evt)
+        {
+            if (evt.IsError) // 에러면 캔버스 그대로 유지
+                return;
+            
+            var canvas = GetOrCreateDynamicCanvas<AddressablesLoadingUI>();
+
+            if (canvas == null) 
+                return;
+            
+            canvas.SetActive(evt.Progress < 1f);
         }
 
         private void SetLobbyState()

@@ -32,6 +32,7 @@ namespace MySecondWorld.Network
         // 씬이 먼저 로드된 후에 스폰해야 하므로 base를 부르지 않는다.
         public void AddPlayer(NetworkConnectionToClient conn)
         {
+            Debug.Log($"[Session] AddPlayer conn={conn.connectionId}");  // ← 추가
             // 같은 playerId로 이미 세션 존재 시 → 기존 세션 정리 (재접속 처리)
             string playerId = conn.authenticationData as string;
             if (!string.IsNullOrEmpty(playerId))
@@ -56,14 +57,19 @@ namespace MySecondWorld.Network
         }
 
         // [S4] 클라이언트에게 씬 로드 지시 + 스폰 위치 저장
+        // 초기 접속은 번들/씬 로드는 PrepareAndSpawn이 담당
         public async UniTaskVoid PrepareAndSpawn(NetworkConnectionToClient conn)
         {
+            Debug.Log($"[Session] PrepareAndSpawn 시작 conn={conn.connectionId}");
             await UniTask.WaitUntil(() => _manager.ServerReady, cancellationToken: _manager.Cts.Token);
-
+            Debug.Log($"[Session] ServerReady 통과");
             // 서버 준비 대기 중 이 클라이언트(conn)가 먼저 연결을 끊으면 RemovePlayer가 세션을 삭제
             // Sessions[conn.connectionId] 직접 접근 시 KeyNotFoundException 발생
             if (!Sessions.TryGetValue(conn.connectionId, out var session))
+            {
+                Debug.Log("[Session] 세션 없음 → return");
                 return;
+            }
 
             var saveData = _saveManager.Load(session.playerId);
             var hasSpawnData = saveData.HasValue;
@@ -80,6 +86,17 @@ namespace MySecondWorld.Network
 
             session.pendingSpawnPosition = spawnPosition;
             session.pendingSpawnScene = spawnScene;
+
+            // spawnScene에 해당하는 번들 메시지도 전송
+            var zone = _manager.zones.FirstOrDefault(z => z.sceneName == spawnScene);
+            if (!NetworkServer.active &&
+                zone != null && !string.IsNullOrEmpty(zone.ZoneAssetLabel?.labelString))
+            {
+                conn.Send(new BundleRequiredMessage { zoneLabel = zone.ZoneAssetLabel.labelString });
+                session.bundleRequired = true;
+            }
+
+            Debug.Log($"[Session] BundleRequired={session.bundleRequired}, spawnScene={spawnScene}");
             conn.Send(new AdditiveSceneMessage { sceneName = spawnScene, load = true });
             conn.Send(new SpawnReadyMessage { sceneCount = 1 });
         }
@@ -88,6 +105,29 @@ namespace MySecondWorld.Network
         // 클라이언트가 씬 로드 완료 ACK를 보내면 서버가 캐릭터를 스폰한다. (S1에서 핸들러 등록)
         public void OnSceneLoadedAck(NetworkConnectionToClient conn, SceneLoadedAckMessage msg)
         {
+            Debug.Log($"[Session] OnSceneLoadedAck conn={conn.connectionId}");
+            var session = Sessions[conn.connectionId];
+
+            // 씬 ACK와 번들 ACK 중 어느 게 먼저 올지 모르므로 IsBundleReady로 체크.
+            if (!session.bundleRequired || _manager.IsBundleReady(conn.connectionId))  // 씬 ACK가 먼저 온 경우
+                SpawnPlayer(conn);
+            else                                            // 번들 ACK가 먼저 온 경우
+                session.isWaitingForBundle = true; // true = 씬 ACK 받았지만 번들 아직 안 됨. '기다려'
+        }
+
+        // 경우 2: 씬이 번들보다 먼저 도착
+        // OnSceneLoadedAck 실행
+        //   IsBundleReady = false (번들 아직 안 옴)
+        //   → isWaitingForBundle = true 로 세팅
+        // 
+        // 나중에 GameNetworkManager.OnBundleReadyMessage 실행
+        //   isWaitingForBundle = true ← OnSceneLoadedAck가 세팅해줬음
+        //   → if문 진입!
+        //   → isWaitingForBundle = false (리셋)
+        //   → SpawnPlayer ✅
+        public void SpawnPlayer(NetworkConnectionToClient conn)
+        {
+            Debug.Log($"[Session] SpawnPlayer 호출 conn={conn.connectionId}");
             var session = Sessions[conn.connectionId];
 
             // Instantiate 시점부터 올바른 위치에 생성해야 Spawn 메시지에 정확한 위치가 포함됨
@@ -120,6 +160,7 @@ namespace MySecondWorld.Network
                 // session.roomId는 Guid.Empty 그대로 — 던전 방이 아니니까
                 conn.identity.GetComponent<NetworkMatch>().matchId = SceneMatchId.GetMatchIdFromScene(session.currentScene);
             }
+
         }
 
         // [S-End] 세이브 + 세션 정리 (OnServerDisconnect에서 호출)

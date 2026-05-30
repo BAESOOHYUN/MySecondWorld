@@ -7,7 +7,7 @@ using MySecondWorld.Network;
 /// <summary>
 /// ZoneDefinition SO를 Inspector에서 클릭하면 자동으로 이 에디터가 표시된다
 /// </summary>
-[CustomEditor(typeof(ZoneDefinition))]
+[CustomEditor(typeof(ZoneDefinitionSO))]
 public class ZoneBoundsCalculatorEditor : Editor
 {
     public override void OnInspectorGUI()
@@ -45,7 +45,7 @@ public class ZoneBoundsCalculatorEditor : Editor
 
     private void OnSceneViewGUI(SceneView sceneView)
     {
-        ZoneDefinition zoneDef = target as ZoneDefinition;
+        ZoneDefinitionSO zoneDef = target as ZoneDefinitionSO;
         if (zoneDef == null || zoneDef.bounds.size == Vector3.zero) return;
 
         // bounds (플레이어 소속 판정 영역) — 초록색
@@ -66,7 +66,7 @@ public class ZoneBoundsCalculatorEditor : Editor
 
     private void CalculateBounds()
     {
-        ZoneDefinition zoneDef = (ZoneDefinition)target;
+        ZoneDefinitionSO zoneDef = (ZoneDefinitionSO)target;
         //  sceneName 비어있으면 경고
         if (string.IsNullOrEmpty(zoneDef.sceneName))
         {

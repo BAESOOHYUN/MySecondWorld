@@ -5,6 +5,12 @@ using Cysharp.Threading.Tasks;
 using Mirror;
 using VContainer;
 using MySecondWorld.Save;
+using MySecondWorld.Bundle;
+using MessagePipe;
+using System.Collections.Generic;
+
+
+
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -16,20 +22,35 @@ namespace MySecondWorld.Network
     public class GameNetworkManager : NetworkManager
     {
         [Scene] public string defaultSubScene;           // FieldScene (마을) — 기본 스폰 존
-        public ZoneDefinition[] zones;                   // 모든 존 정의 (SO 배열). defaultSubScene도 포함.
+        public ZoneDefinitionSO[] zones;                 // 모든 존 정의 (SO 배열). defaultSubScene도 포함.
         public float zoneCheckInterval = 0.5f;           // 존 체크 주기 (초)
         public bool ServerReady { get; private set; }    // 서버 씬 프리로드 완료 여부
-        public CancellationTokenSource Cts { get; private set; } 
+        public CancellationTokenSource Cts { get; private set; }
+        
+        private readonly HashSet<int> _bundleReadyConnIds = new(); // 번들 준비 완료된 connectionId 목록
+        public bool IsBundleReady(int connId) => _bundleReadyConnIds.Contains(connId);
 
         private DungeonRoomRegistry _roomRegistry;
         private ServerSessionService _sessionService;
         private ServerZoneService _zoneService;
         private ClientSceneSyncService _clientSyncService;
+        private ClientBundleSyncService _clientBundleService;
+        private ZoneAddressableLoader _zoneLoader;
         private SaveManager _saveManager;
+        private IPublisher<AddressablesProgressEvent> _progressPub;
+        private ISubscriber<AddressablesProgressEvent> _progressSub;
+
         [Inject]
-        private void Construct(SaveManager saveManager)
+        private void Construct(
+            ZoneAddressableLoader zoneLoader,
+            SaveManager saveManager,
+            IPublisher<AddressablesProgressEvent> progressPub,
+            ISubscriber<AddressablesProgressEvent> progressSub)
         {
+            _zoneLoader = zoneLoader;
             _saveManager = saveManager;
+            _progressPub = progressPub;
+            _progressSub = progressSub;
         }
 
 #if UNITY_EDITOR
@@ -93,13 +114,15 @@ namespace MySecondWorld.Network
         // [S1] 서버 시작: 핸들러 등록 + 코루틴 시작
         public override void OnStartServer()
         {
+            Debug.Log("[Server] OnStartServer");
             base.OnStartServer(); // Mirror가 onlineScene(MainScene)을 로드. 완료 후 → OnServerSceneChanged
             Cts = new CancellationTokenSource();
             _roomRegistry = new DungeonRoomRegistry();
             _sessionService = new ServerSessionService(this, _roomRegistry, _saveManager);
             _zoneService = new ServerZoneService(this, _sessionService, _roomRegistry);
-            
+
             // 클라이언트가 보내는 메시지 → NetworkServer.RegisterHandler (서버가 받으니까)
+            NetworkServer.RegisterHandler<BundleReadyMessage>(OnBundleReadyMessage);
             NetworkServer.RegisterHandler<SceneLoadedAckMessage>(_sessionService.OnSceneLoadedAck);
             _zoneService.CheckZones(Cts.Token).Forget();
         }
@@ -114,6 +137,7 @@ namespace MySecondWorld.Network
         // MoveGameObjectToScene(캐릭터 스폰)의 대상 씬이 서버에 로드되어 있어야 하기 때문
         public override void OnServerSceneChanged(string sceneName)
         {
+            Debug.Log($"[Server] OnServerSceneChanged: {sceneName}");
             base.OnServerSceneChanged(sceneName);
             LoadAllZoneScenes().Forget();
         }
@@ -148,6 +172,7 @@ namespace MySecondWorld.Network
         // [S3] → ServerSessionService.AddPlayer로 위임
         public override void OnServerAddPlayer(NetworkConnectionToClient conn)
         {
+            Debug.Log($"[Server] OnServerAddPlayer conn={conn.connectionId}");
             _sessionService.AddPlayer(conn);
         }
 
@@ -168,8 +193,12 @@ namespace MySecondWorld.Network
         // -> ClientSceneSyncService.cs 로 이어짐
         public override void OnStartClient()
         {
+            Debug.Log("[Client] OnStartClient");
             base.OnStartClient();
-            _clientSyncService = new ClientSceneSyncService();
+            _clientSyncService = new ClientSceneSyncService(this, _zoneLoader);
+            _clientBundleService = new ClientBundleSyncService(_zoneLoader, _progressPub, _progressSub);
+            NetworkClient.RegisterHandler<BundleRequiredMessage>(msg =>
+                            _clientBundleService.OnBundleRequired(msg, destroyCancellationToken).Forget());
             NetworkClient.RegisterHandler<AdditiveSceneMessage>(_clientSyncService.OnAdditiveSceneMessage);
             NetworkClient.RegisterHandler<SpawnReadyMessage>(_clientSyncService.OnSpawnReadyMessage);
         }
@@ -187,85 +216,70 @@ namespace MySecondWorld.Network
             OnClientStopped?.Invoke();
         }
         #endregion
+
+        // 경우 1: 번들이 씬보다 먼저 도착
+        // OnBundleReadyMessage 실행
+        //  isWaitingForBundle = false (OnSceneLoadedAck 아직 안 실행됨, 초기값)
+        //  → if문 진입 안 함
+        //  → _bundleReadyConnIds에 기록만
+        //
+        // 나중에 OnSceneLoadedAck 실행 (ServerSessionService.SpawnPlayer)
+        //  IsBundleReady = true(이미 기록해뒀으니까)
+        //  → SpawnPlayer ✅
+        private void OnBundleReadyMessage(NetworkConnectionToClient conn, BundleReadyMessage msg)
+        {
+            _bundleReadyConnIds.Add(conn.connectionId); //서버는 그 클라이언트의 connectionId를 HashSet에 "이 클라이언트는 번들 준비 완료" 기록
+
+            if (_sessionService.Sessions.TryGetValue(
+                conn.connectionId, out var sessions) && sessions.isWaitingForBundle)
+            {
+                sessions.isWaitingForBundle = false; // false = 번들 준비됨
+                _sessionService.SpawnPlayer(conn);   // 플레이어 스폰!
+            }
+        }
     }
 }
 
-
 /*
-서버                                    클라이언트
-────                                    ──────
+서버                                      클라이언트
+────                                      ──────
 
-[Host 버튼 클릭]
-StartHost()
-  │
-  ├─ StartServer() 내부 실행
-  │    ├─ Transport 리슨 시작
-  │    └─ OnStartServer()  ← 내 코드
-  │         ├─ 핸들러 등록
-  │         └─ CheckZones 코루틴 시작
-  │
-  ├─ Mirror: onlineScene(MainScene) 로드
-  │    │
-  │    └─ OnServerSceneChanged()  ← 내 코드
-  │         ├─ zones[] 전부 서버에 프리로드
-  │         └─ ServerReady = true
-  │
-  ├─ Mirror: SpawnObjects()
-  │    └─ 씬의 NetworkIdentity 활성화
-  │
-  └─ FinishStartHost()
-       ├─ OnStartHost()
-       └─ Host의 로컬 클라이언트 자동 연결
-            │
-            │ (Host는 서버+클라이언트이므로
-            │  아래 과정이 내부적으로 즉시 발생)
-            │
-            ▼
-OnServerConnect(conn)                   OnClientConnect()
-  │                                       ├─ Ready()
-  │                                       │     │
-OnServerReady(conn)  ←────────────────────┘     │
-  │                                       └─ AddPlayer()
-  │                                              │
-OnServerAddPlayer(conn)  ←───────────────────────┘
-  │
-  └─ 내 코드: PrepareAndSpawn(conn) 시작
-       │
-       ├─ AdditiveSceneMessage 전송 ──→  씬 로드 시작...
-       ├─ SpawnReadyMessage 전송    ──→  _expected = 1
-       │
-       │                                 씬 로드 완료
-       │                                 _completed >= _expected
-       │   SceneLoadedAckMessage  ←────  "다 됐어!"
-       │
-  OnSceneLoadedAck(conn)
-       ├─ base.OnServerAddPlayer()
-       │    → playerPrefab 생성
-       ├─ position 설정
-       ├─ MoveGameObjectToScene()
-       └─ session.IsSpawned = true
+[Host/Client 버튼 클릭]
+  └─ OnStartServer()
+       ├─ BundleReadyMessage 핸들러 등록
+       ├─ SceneLoadedAckMessage 핸들러 등록
+       └─ CheckZones 루프 시작 (0.5초 간격, isSpawned=true 플레이어만)
 
-===============================================
-이후 다른 클라이언트가 접속하면:
-===============================================
+  └─ OnStartClient()
+       ├─ BundleRequiredMessage 핸들러 등록 → ClientBundleSyncService
+       ├─ AdditiveSceneMessage 핸들러 등록 → ClientSceneSyncService
+       └─ SpawnReadyMessage 핸들러 등록 → ClientSceneSyncService
 
-                                        [Client 버튼 클릭]
-                                        StartClient()
-                                          ├─ Transport.Connect()
-                                          └─ OnStartClient()
-                                                │
-Transport에서 연결 수락                     (연결 중...)
-  │                                             │
-  ▼                                             ▼
-OnServerConnect(conn)               ←→  OnClientConnect()
-  │                                       ├─ Ready()
-  │                                       │     │
-OnServerReady(conn)  ←────────────────────┘     │
-  │                                       └─ AddPlayer()
-  │                                              │
-OnServerAddPlayer(conn)  ←───────────────────────┘
-  │
-  └─ PrepareAndSpawn(conn) 시작
-       │
-       (위와 동일한 ACK 흐름)
+OnServerAddPlayer(conn)
+  └─ PrepareAndSpawn(conn)
+       ├─ BundleRequiredMessage 전송 ──→  번들 다운로드 시작
+       │                                   └─ 완료 시 BundleReadyMessage 전송
+       ├─ AdditiveSceneMessage 전송  ──→  씬 로드 시작
+       └─ SpawnReadyMessage 전송    ──→  _expectedSceneLoads = 1
+
+                                         씬 로드 완료
+   SceneLoadedAckMessage  ←──────────   "씬 됐어!"
+
+OnSceneLoadedAck(conn)
+  ├─ IsBundleReady? → Yes → SpawnPlayer()
+  └─ No → session.isWaitingForBundle = true
+
+                                         번들 다운로드 완료
+   BundleReadyMessage     ←──────────   "번들 됐어!"
+
+OnBundleReadyMessage(conn)
+  ├─ _bundleReadyConnIds에 기록
+  └─ isWaitingForBundle? → Yes → SpawnPlayer()
+
+SpawnPlayer(conn)
+  ├─ playerPrefab Instantiate
+  ├─ NetworkServer.AddPlayerForConnection
+  ├─ MoveGameObjectToScene
+  └─ session.isSpawned = true
+       └─ CheckZones 루프 대상에 포함됨
 */

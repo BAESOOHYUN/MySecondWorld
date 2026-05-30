@@ -9,4 +9,7 @@
   <!-- OpenAI SDK 내부 의존 어셈블리 -->
   <assembly fullname="System.ClientModel" preserve="all"/>
   <assembly fullname="Microsoft.Bcl.AsyncInterfaces" preserve="all"/>
+  <!-- Addressables IL2CPP 코드 스트리핑 방지 -->
+  <assembly fullname="Unity.ResourceManager" preserve="all"/>
+  <assembly fullname="Unity.Addressables" preserve="all"/>
 </linker>
