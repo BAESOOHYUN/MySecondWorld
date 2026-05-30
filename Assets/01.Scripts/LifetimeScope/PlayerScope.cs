@@ -2,6 +2,8 @@ using VContainer;
 using VContainer.Unity;
 using MessagePipe;
 using MySecondWorld.Network.Player;
+using MySecondWorld.Move;
+using MySecondWorld.CameraSystem;
 
 /// <summary>
 /// Mirror-spawned 플레이어 프리팹 전용 LifetimeScope.
@@ -16,5 +18,9 @@ public class PlayerScope : LifetimeScope
         builder.RegisterMessageBroker<PlayerFalledEvent>(options);
         builder.RegisterMessageBroker<PlayerLandedEvent>(options);
         builder.RegisterMessageBroker<PlayerSpeedChangedEvent>(options);
+
+        builder.RegisterComponentInHierarchy<MovementController>();
+        builder.RegisterComponentInHierarchy<PlayerAnimationController>();
+        builder.RegisterComponentInHierarchy<ThirdPersonCameraController>();
     }
 }
