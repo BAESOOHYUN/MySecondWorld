@@ -6,6 +6,7 @@ using UnityEngine.AddressableAssets;
 using MessagePipe;
 using Mirror;
 using MySecondWorld.Bundle;
+using MySecondWorld.UI;
 
 namespace MySecondWorld.Network
 {
@@ -21,11 +22,13 @@ namespace MySecondWorld.Network
         private IDisposable _retrySubscription;
         private readonly ZoneAddressableLoader _zoneLoader;
         private readonly IPublisher<AddressablesProgressEvent> _progressPub;
+        private UIManager _uiManager;
 
         public ClientBundleSyncService (
             ZoneAddressableLoader zoneLoader,
             IPublisher<AddressablesProgressEvent> progressPub,
-            ISubscriber<AddressablesProgressEvent> progressSub)
+            ISubscriber<AddressablesProgressEvent> progressSub,
+            UIManager uiManager)
         {
             _zoneLoader = zoneLoader;
             _progressPub = progressPub;
@@ -36,6 +39,7 @@ namespace MySecondWorld.Network
 
                 await OnBundleRequired(new BundleRequiredMessage { zoneLabel = _lastFailedLabel }, CancellationToken.None);
             });
+            _uiManager = uiManager;
         }
 
         // ServerZoneService.PlayerEnteredZone 에서 BundleRequiredMessage 받고
@@ -44,20 +48,53 @@ namespace MySecondWorld.Network
             if (NetworkServer.active) // Host면 스킵
                 return;
 
-            _progressPub.Publish(new AddressablesProgressEvent { Progress = 0f });
-            var label = new AssetLabelReference();
+            var uiObj = _uiManager.GetOrCreateDynamicCanvas<AddressablesLoadingUI>();
+            uiObj?.SetActive(true);
+            var addressableUI =uiObj?.GetComponent<AddressablesLoadingUI>();
 
+            //재귀처럼 보이지만 아님. SetRetryCallback은 콜백을 지금 실행하는 게 아니라 등록하는 것
+            addressableUI?.SetRetryCallback(() =>
+                                OnBundleRequired(new BundleRequiredMessage { zoneLabel = _lastFailedLabel}, default).Forget());
+            
+            addressableUI?.UpdateProgress(0f);
+            
+            // try-catch는 번들 다운로드 실패 시 재시도 기능을 위한 것
             try
             {
                 await _zoneLoader.LoadZoneAsync(msg.zoneLabel, ct); //번들 다운로드
-                _progressPub.Publish(new AddressablesProgressEvent { Progress = 1f });
+                addressableUI?.UpdateProgress(1f);
                 NetworkClient.Send(new BundleReadyMessage { zoneLabel = msg.zoneLabel }); // > GameNetworkManager.OnStartServer
             }
-            catch
+            catch (Exception e)
             {
+                Debug.LogError($"[Bundle] 다운로드 실패: {e.Message}");
                 _lastFailedLabel = msg.zoneLabel;
-                _progressPub.Publish(new AddressablesProgressEvent { IsError = true });
+                addressableUI?.UpdateProgress(0f, isError:true);
             }
         }
     }
 }
+
+//addressableUI?.SetRetryCallback 람다 등록
+//
+//OnBundleRequired 실행
+//  └→ SetRetryCallback(람다 등록만 해둠)  ← 지금은 실행 안 됨
+//  └→ 번들 다운로드 시도
+//       └→ 실패
+//            └→ RetryButton 표시
+
+//나중에 사용자가 RetryButton 클릭
+//  └→ OnRetryClicked
+//       └→ _retryCallback.Invoke()  ← 이때 람다 실행
+//            └→ OnBundleRequired 다시 호출  ← 재시도
+
+
+
+//OnBundleRequired (try-catch)
+//
+//LoadZoneAsync 실패(CDN 연결 실패, 파일 없음 등)
+//  └→ catch
+//       └→ _lastFailedLabel 저장
+//       └→ IsError = true 발행
+//            └→ AddressablesLoadingUI에서 RetryButton 표시
+//                 └→ 클릭 시 저장된 _lastFailedLabel로 재시도

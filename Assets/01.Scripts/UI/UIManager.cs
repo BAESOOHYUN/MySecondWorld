@@ -5,6 +5,7 @@ using MessagePipe;
 using VContainer;
 using MySecondWorld.Network;
 using MySecondWorld.Bundle;
+using VContainer.Unity;
 
 namespace MySecondWorld.UI
 {
@@ -20,15 +21,13 @@ namespace MySecondWorld.UI
 
         private readonly Dictionary<Type, GameObject> _dynamicCanvasInstances = new Dictionary<Type, GameObject>();
         private IDisposable _authSubscription;
-        private IDisposable _progressSubscription;
 
         [Inject]
         private void Construct(
             ISubscriber<AuthStateChangedEvent> authSub,
-            ISubscriber<AddressablesProgressEvent> progressSub)
+            IObjectResolver container)
         {
             _authSubscription = authSub.Subscribe(OnAuthStateChanged);
-            _progressSubscription = progressSub.Subscribe(OnAddressablesProgress);
         }
 
         private void Awake()
@@ -47,19 +46,6 @@ namespace MySecondWorld.UI
                 SetGameState();
             else 
                 ResetToLobbyState();
-        }
-
-        private void OnAddressablesProgress(AddressablesProgressEvent evt)
-        {
-            if (evt.IsError) // 에러면 캔버스 그대로 유지
-                return;
-            
-            var canvas = GetOrCreateDynamicCanvas<AddressablesLoadingUI>();
-
-            if (canvas == null) 
-                return;
-            
-            canvas.SetActive(evt.Progress < 1f);
         }
 
         private void SetLobbyState()

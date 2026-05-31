@@ -8,6 +8,8 @@ using MySecondWorld.Save;
 using MySecondWorld.Bundle;
 using MessagePipe;
 using System.Collections.Generic;
+using MySecondWorld.UI;
+
 
 
 
@@ -37,6 +39,7 @@ namespace MySecondWorld.Network
         private ClientBundleSyncService _clientBundleService;
         private ZoneAddressableLoader _zoneLoader;
         private SaveManager _saveManager;
+        private UIManager _uiManager;
         private IPublisher<AddressablesProgressEvent> _progressPub;
         private ISubscriber<AddressablesProgressEvent> _progressSub;
 
@@ -44,6 +47,7 @@ namespace MySecondWorld.Network
         private void Construct(
             ZoneAddressableLoader zoneLoader,
             SaveManager saveManager,
+            UIManager uiManager,
             IPublisher<AddressablesProgressEvent> progressPub,
             ISubscriber<AddressablesProgressEvent> progressSub)
         {
@@ -51,6 +55,7 @@ namespace MySecondWorld.Network
             _saveManager = saveManager;
             _progressPub = progressPub;
             _progressSub = progressSub;
+            _uiManager = uiManager;
         }
 
 #if UNITY_EDITOR
@@ -196,7 +201,7 @@ namespace MySecondWorld.Network
             Debug.Log("[Client] OnStartClient");
             base.OnStartClient();
             _clientSyncService = new ClientSceneSyncService(this, _zoneLoader);
-            _clientBundleService = new ClientBundleSyncService(_zoneLoader, _progressPub, _progressSub);
+            _clientBundleService = new ClientBundleSyncService(_zoneLoader, _progressPub, _progressSub, _uiManager);
             NetworkClient.RegisterHandler<BundleRequiredMessage>(msg =>
                             _clientBundleService.OnBundleRequired(msg, destroyCancellationToken).Forget());
             NetworkClient.RegisterHandler<AdditiveSceneMessage>(_clientSyncService.OnAdditiveSceneMessage);

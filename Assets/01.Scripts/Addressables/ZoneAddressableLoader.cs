@@ -28,10 +28,13 @@ namespace MySecondWorld.Bundle
             if (_handles.ContainsKey(label))  
                 return;
 
-            // 처음 로드할 때만 여기까지 옴 (A 진입 시)
+            // Addressables 초기화 완료 대기
+            await Addressables.InitializeAsync().ToUniTask();
+
+            // 처음 로드할 때만 여기까지 옴 (플레이어A 진입 시)
             var newHandle = Addressables.DownloadDependenciesAsync(label, false); // false는 "자동 Release 안 함" 옵션
             _handles[label] = newHandle;                                          // handle 저장 (나중에 Release 때 필요)
-            await newHandle.ToUniTask(cancellationToken: ct);                   // 다운로드 완료 대기
+            await newHandle.ToUniTask(cancellationToken: ct);                     // 다운로드 완료 대기
         }
 
         public void ReleaseZone(string label)

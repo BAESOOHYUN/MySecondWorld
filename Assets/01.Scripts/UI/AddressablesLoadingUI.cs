@@ -14,35 +14,36 @@ namespace MySecondWorld.UI
         [SerializeField] private TextMeshProUGUI _progressText;
         [SerializeField] private Button _retryButton;
 
-        [Inject] private ISubscriber<AddressablesProgressEvent> _subscriber;
-        [Inject] private IPublisher<AddressablesProgressEvent> _publisher;
+        private Action _retryCallback;
 
-        private IDisposable _subscription;
-
-
-        private void OnEnable()
+        private void Awake()
         {
-            _subscription = _subscriber.Subscribe(evt =>
-            {
-                _progressSlider.value = Mathf.Clamp01(evt.Progress);
-                _progressText.text = $"에셋번들 다운로드 중...\n{Mathf.Min(100, (int)(evt.Progress * 100))}%";
-
-                if (evt.IsError)
-                    _retryButton.gameObject.SetActive(true); // 에러일 때만 활성화, 비활성화는 OnRetryClicked에서
-            });
-
             _retryButton.onClick.AddListener(OnRetryClicked);
+            _retryButton.gameObject.SetActive(false);  // 기본 숨김
+        }
+        private void OnDestroy()
+        {
+            _retryButton.onClick.RemoveListener(OnRetryClicked);
         }
 
-        private void OnDisable()
+        public void UpdateProgress(float progress, bool isError = false)
         {
-            _subscription?.Dispose();
-            _retryButton.onClick.RemoveListener(OnRetryClicked);
+            gameObject.SetActive(progress < 1f);  // 스스로 켜고 끔
+            _progressSlider.value = Mathf.Clamp01(progress);
+            _progressText.text = $"에셋번들 다운로드 중...\n{Mathf.Min(100, (int)(progress * 100))}%";
+            if (isError)
+                _retryButton.gameObject.SetActive(true);// 에러일 때만 활성화
+        }
+
+        public void SetRetryCallback(Action callback)
+        {
+            _retryCallback = callback;
         }
 
         public void OnRetryClicked()
         {
-            _publisher.Publish(new AddressablesProgressEvent { NeedsRetry = true });
+            _retryButton.gameObject.SetActive(false);
+            _retryCallback?.Invoke(); // ← 이때 ClientBundleSyncService.OnBundleRequired 에서 등록한 람다 실행
         }
     }
 }

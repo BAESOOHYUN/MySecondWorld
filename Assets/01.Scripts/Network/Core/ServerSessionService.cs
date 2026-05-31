@@ -89,14 +89,18 @@ namespace MySecondWorld.Network
 
             // spawnScene에 해당하는 번들 메시지도 전송
             var zone = _manager.zones.FirstOrDefault(z => z.sceneName == spawnScene);
-            if (!NetworkServer.active &&
-                zone != null && !string.IsNullOrEmpty(zone.ZoneAssetLabel?.labelString))
+            bool isLocalHost = NetworkServer.localConnection != null
+                            && conn == NetworkServer.localConnection;
+
+            if (!isLocalHost 
+                && zone != null 
+                && !string.IsNullOrEmpty(zone.ZoneAssetLabel?.labelString))
             {
                 conn.Send(new BundleRequiredMessage { zoneLabel = zone.ZoneAssetLabel.labelString });
                 session.bundleRequired = true;
             }
 
-            Debug.Log($"[Session] BundleRequired={session.bundleRequired}, spawnScene={spawnScene}");
+            Debug.Log($"[Session] BundleRequired={session.bundleRequired}, conn={conn.connectionId}, spawnScene={spawnScene}");
             conn.Send(new AdditiveSceneMessage { sceneName = spawnScene, load = true });
             conn.Send(new SpawnReadyMessage { sceneCount = 1 });
         }
