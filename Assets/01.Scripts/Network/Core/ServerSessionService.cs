@@ -97,10 +97,15 @@ namespace MySecondWorld.Network
                 && !string.IsNullOrEmpty(zone.ZoneAssetLabel?.labelString))
             {
                 conn.Send(new BundleRequiredMessage { zoneLabel = zone.ZoneAssetLabel.labelString });
-                session.bundleRequired = true;
+                // 번들 완료까지 대기
+                await UniTask.WaitUntil(() =>
+                    _manager.IsBundleReady(conn.connectionId) || !Sessions.ContainsKey(conn.connectionId),
+                    cancellationToken: _manager.Cts.Token);
+                // 세션이 없으면 return (연결 끊김)
+                if (!Sessions.TryGetValue(conn.connectionId, out session))
+                    return;
             }
-
-            Debug.Log($"[Session] BundleRequired={session.bundleRequired}, conn={conn.connectionId}, spawnScene={spawnScene}");
+            // 번들 완료 확인 후 씬 로드 지시
             conn.Send(new AdditiveSceneMessage { sceneName = spawnScene, load = true });
             conn.Send(new SpawnReadyMessage { sceneCount = 1 });
         }
@@ -110,25 +115,9 @@ namespace MySecondWorld.Network
         public void OnSceneLoadedAck(NetworkConnectionToClient conn, SceneLoadedAckMessage msg)
         {
             Debug.Log($"[Session] OnSceneLoadedAck conn={conn.connectionId}");
-            var session = Sessions[conn.connectionId];
-
-            // 씬 ACK와 번들 ACK 중 어느 게 먼저 올지 모르므로 IsBundleReady로 체크.
-            if (!session.bundleRequired || _manager.IsBundleReady(conn.connectionId))  // 씬 ACK가 먼저 온 경우
-                SpawnPlayer(conn);
-            else                                            // 번들 ACK가 먼저 온 경우
-                session.isWaitingForBundle = true; // true = 씬 ACK 받았지만 번들 아직 안 됨. '기다려'
+            SpawnPlayer(conn);  // 씬 ACK 오면 항상 스폰 (번들은 이미 완료됨)
         }
 
-        // 경우 2: 씬이 번들보다 먼저 도착
-        // OnSceneLoadedAck 실행
-        //   IsBundleReady = false (번들 아직 안 옴)
-        //   → isWaitingForBundle = true 로 세팅
-        // 
-        // 나중에 GameNetworkManager.OnBundleReadyMessage 실행
-        //   isWaitingForBundle = true ← OnSceneLoadedAck가 세팅해줬음
-        //   → if문 진입!
-        //   → isWaitingForBundle = false (리셋)
-        //   → SpawnPlayer ✅
         public void SpawnPlayer(NetworkConnectionToClient conn)
         {
             Debug.Log($"[Session] SpawnPlayer 호출 conn={conn.connectionId}");
@@ -144,7 +133,7 @@ namespace MySecondWorld.Network
             NetworkServer.AddPlayerForConnection(conn, player);
 
             session.currentScene = session.pendingSpawnScene;
-            SceneManager.MoveGameObjectToScene(conn.identity.gameObject, SceneManager.GetSceneByPath(session.currentScene));
+            SceneManager.MoveGameObjectToScene(conn.identity.gameObject, _manager.GetServerScene(session.currentScene));
 
             // 스폰 직후 lastSafePosition 초기화:
             // zone bounds 체크 실패해도 즉시 텔레포트되지 않도록 안전 위치를 스폰 위치로 세팅
@@ -164,7 +153,6 @@ namespace MySecondWorld.Network
                 // session.roomId는 Guid.Empty 그대로 — 던전 방이 아니니까
                 conn.identity.GetComponent<NetworkMatch>().matchId = SceneMatchId.GetMatchIdFromScene(session.currentScene);
             }
-
         }
 
         // [S-End] 세이브 + 세션 정리 (OnServerDisconnect에서 호출)

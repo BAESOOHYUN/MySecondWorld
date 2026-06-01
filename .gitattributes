@@ -52,3 +52,7 @@ ProjectSettings/InputManager.asset filter=lfs diff=lfs merge=lfs -text
 ProjectSettings/MultiplayerManager.asset filter=lfs diff=lfs merge=lfs -text
 ProjectSettings/PackageManagerSettings.asset filter=lfs diff=lfs merge=lfs -text
 ProjectSettings/TagManager.asset filter=lfs diff=lfs merge=lfs -text
+
+# Addressables 그룹/설정 데이터는 LFS 제외 + 텍스트 3-way 머지 (엔트리 유실 방지)
+# 위의 *.asset LFS 규칙보다 뒤에 와야 우선 적용됨
+Assets/AddressableAssetsData/**/*.asset text eol=lf !filter !diff !merge

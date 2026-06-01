@@ -1,3 +1,20 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:a73b7bc5e265ed96222d6b7c39f3944cdf932dddfdbaa1ec21354ca164a64d35
-size 732
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dea69d41f90c6ea4fa55c27c1d60c145, type: 3}
+  m_Name: AddressableAssetGroupSortSettings
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.GroupSchemas.AddressableAssetGroupSortSettings
+  sortOrder:
+  - c945ea4baf23e2f4ebae9b0c7efc1159
+  - 744b2acd18b532547887753a4927effd
+  - 699b03197ee732b4b966f56bdfefb24e
+  - 73fa5f48b0c536d4194dd944c537ec07
+  - d79ab3afdd2844841ab127b9da93bfa6

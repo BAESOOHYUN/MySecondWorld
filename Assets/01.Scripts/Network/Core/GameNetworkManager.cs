@@ -1,19 +1,17 @@
 using System.Threading;
+using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using Cysharp.Threading.Tasks;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
+using UnityEngine.ResourceManagement.ResourceProviders;
 using Mirror;
+using MessagePipe;
 using VContainer;
 using MySecondWorld.Save;
 using MySecondWorld.Bundle;
-using MessagePipe;
-using System.Collections.Generic;
 using MySecondWorld.UI;
-
-
-
-
-
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -28,7 +26,8 @@ namespace MySecondWorld.Network
         public float zoneCheckInterval = 0.5f;           // 존 체크 주기 (초)
         public bool ServerReady { get; private set; }    // 서버 씬 프리로드 완료 여부
         public CancellationTokenSource Cts { get; private set; }
-        
+
+        private readonly Dictionary<string, AsyncOperationHandle<SceneInstance>> _serverSceneHandles = new();
         private readonly HashSet<int> _bundleReadyConnIds = new(); // 번들 준비 완료된 connectionId 목록
         public bool IsBundleReady(int connId) => _bundleReadyConnIds.Contains(connId);
 
@@ -40,7 +39,6 @@ namespace MySecondWorld.Network
         private ZoneAddressableLoader _zoneLoader;
         private SaveManager _saveManager;
         private UIManager _uiManager;
-        private IPublisher<AddressablesProgressEvent> _progressPub;
         private ISubscriber<AddressablesProgressEvent> _progressSub;
 
         [Inject]
@@ -48,12 +46,10 @@ namespace MySecondWorld.Network
             ZoneAddressableLoader zoneLoader,
             SaveManager saveManager,
             UIManager uiManager,
-            IPublisher<AddressablesProgressEvent> progressPub,
             ISubscriber<AddressablesProgressEvent> progressSub)
         {
             _zoneLoader = zoneLoader;
             _saveManager = saveManager;
-            _progressPub = progressPub;
             _progressSub = progressSub;
             _uiManager = uiManager;
         }
@@ -151,26 +147,39 @@ namespace MySecondWorld.Network
         {
             foreach (var zone in zones)
             {
-                if (!SceneManager.GetSceneByPath(zone.sceneName).isLoaded)
-                    await SceneManager.LoadSceneAsync(zone.sceneName, LoadSceneMode.Additive).ToUniTask();
-
-                // ★ additive 씬의 NetworkIdentity를 수동 Spawn
-                Scene loadedScene = SceneManager.GetSceneByPath(zone.sceneName);
-                foreach (GameObject rootObj in loadedScene.GetRootGameObjects())
+                // 이미 로드된 씬은 스킵 (OnServerSceneChanged 재호출 대비)
+                if (!_serverSceneHandles.ContainsKey(zone.sceneName))
                 {
-                    foreach (var netId in rootObj.GetComponentsInChildren<NetworkIdentity>())
-                    {
-                        // netId == 0 → 아직 Spawn 안 된 오브젝트 → Spawn 해줘야 함
-                        // netId != 0 → 이미 Spawn 된 오브젝트 → 건드릴 필요 없음
-                        if (netId.gameObject.activeInHierarchy && netId.netId == 0)
-                            NetworkServer.Spawn(netId.gameObject);
+                    // Addressables 초기화 완료 대기 (이미 됐으면 즉시 반환)
+                    await Addressables.InitializeAsync().ToUniTask();
 
-                        // ★ 씬 오브젝트에 NetworkMatch가 있으면 해당 씬의 matchId 세팅
-                        if (netId.TryGetComponent(out NetworkMatch match))
-                            match.matchId = SceneMatchId.GetMatchIdFromScene(zone.sceneName);
+                    var handle = Addressables.LoadSceneAsync(zone.sceneName, LoadSceneMode.Additive);
+                    _serverSceneHandles[zone.sceneName] = handle;
+                    await handle.ToUniTask();
+
+                    // ★ await 이후 서버가 여전히 활성 상태인지 재확인
+                    if (!NetworkServer.active) return;
+
+                    // ★ additive 씬의 NetworkIdentity를 수동 Spawn
+                    // Addressables 번들 씬은 GetSceneByPath로 못 찾을 수 있음 → handle.Result.Scene으로 직접 접근
+                    Scene loadedScene = handle.Result.Scene;
+                    foreach (GameObject rootObj in loadedScene.GetRootGameObjects())
+                    {
+                        foreach (var netId in rootObj.GetComponentsInChildren<NetworkIdentity>())
+                        {
+                            // netId == 0 → 아직 Spawn 안 된 오브젝트 → Spawn 해줘야 함
+                            // netId != 0 → 이미 Spawn 된 오브젝트 → 건드릴 필요 없음
+                            if (netId.gameObject.activeInHierarchy && netId.netId == 0)
+                                NetworkServer.Spawn(netId.gameObject);
+
+                            // ★ 씬 오브젝트에 NetworkMatch가 있으면 해당 씬의 matchId 세팅
+                            if (netId.TryGetComponent(out NetworkMatch match))
+                                match.matchId = SceneMatchId.GetMatchIdFromScene(zone.sceneName);
+                        }
                     }
                 }
             }
+
             ServerReady = true;
         }
 
@@ -184,6 +193,7 @@ namespace MySecondWorld.Network
         // [S-End] 세이브 + 세션 정리
         public override void OnServerDisconnect(NetworkConnectionToClient conn)
         {
+            _bundleReadyConnIds.Remove(conn.connectionId);
             _sessionService?.RemovePlayer(conn);
             base.OnServerDisconnect(conn);
         }
@@ -201,7 +211,7 @@ namespace MySecondWorld.Network
             Debug.Log("[Client] OnStartClient");
             base.OnStartClient();
             _clientSyncService = new ClientSceneSyncService(this, _zoneLoader);
-            _clientBundleService = new ClientBundleSyncService(_zoneLoader, _progressPub, _progressSub, _uiManager);
+            _clientBundleService = new ClientBundleSyncService(_zoneLoader, _progressSub, _uiManager);
             NetworkClient.RegisterHandler<BundleRequiredMessage>(msg =>
                             _clientBundleService.OnBundleRequired(msg, destroyCancellationToken).Forget());
             NetworkClient.RegisterHandler<AdditiveSceneMessage>(_clientSyncService.OnAdditiveSceneMessage);
@@ -222,26 +232,17 @@ namespace MySecondWorld.Network
         }
         #endregion
 
-        // 경우 1: 번들이 씬보다 먼저 도착
-        // OnBundleReadyMessage 실행
-        //  isWaitingForBundle = false (OnSceneLoadedAck 아직 안 실행됨, 초기값)
-        //  → if문 진입 안 함
-        //  → _bundleReadyConnIds에 기록만
-        //
-        // 나중에 OnSceneLoadedAck 실행 (ServerSessionService.SpawnPlayer)
-        //  IsBundleReady = true(이미 기록해뒀으니까)
-        //  → SpawnPlayer ✅
+        // IsBundleReady(int connId) => _bundleReadyConnIds.Contains(connId);
+        // ServerSessionService.PrepareAndSpawn의 WaitUntil이 IsBundleReady 감지 → 씬 로드 지시로 진행
         private void OnBundleReadyMessage(NetworkConnectionToClient conn, BundleReadyMessage msg)
         {
-            _bundleReadyConnIds.Add(conn.connectionId); //서버는 그 클라이언트의 connectionId를 HashSet에 "이 클라이언트는 번들 준비 완료" 기록
-
-            if (_sessionService.Sessions.TryGetValue(
-                conn.connectionId, out var sessions) && sessions.isWaitingForBundle)
-            {
-                sessions.isWaitingForBundle = false; // false = 번들 준비됨
-                _sessionService.SpawnPlayer(conn);   // 플레이어 스폰!
-            }
+            _bundleReadyConnIds.Add(conn.connectionId);
         }
+
+        // 씬 접근용 메서드
+        public Scene GetServerScene(string sceneName) =>
+            _serverSceneHandles.TryGetValue(sceneName, out var handle)
+            ? handle.Result.Scene : SceneManager.GetSceneByPath(sceneName); //폴백
     }
 }
 
@@ -262,24 +263,24 @@ namespace MySecondWorld.Network
 
 OnServerAddPlayer(conn)
   └─ PrepareAndSpawn(conn)
-       ├─ BundleRequiredMessage 전송 ──→  번들 다운로드 시작
-       │                                   └─ 완료 시 BundleReadyMessage 전송
-       ├─ AdditiveSceneMessage 전송  ──→  씬 로드 시작
-       └─ SpawnReadyMessage 전송    ──→  _expectedSceneLoads = 1
+       └─ BundleRequiredMessage 전송 ──→  번들 다운로드 시작 (UI 표시)
+                                           └─ 완료 시 BundleReadyMessage 전송
+
+   BundleReadyMessage     ←──────────   "번들 됐어!"
+
+OnBundleReadyMessage(conn)
+  └─ _bundleReadyConnIds에 기록
+       └─ PrepareAndSpawn WaitUntil 해제
+
+PrepareAndSpawn(cont.)
+  ├─ AdditiveSceneMessage 전송  ──→  씬 로드 시작 (번들 이미 캐시됨)
+  └─ SpawnReadyMessage 전송    ──→  _expectedSceneLoads = 1
 
                                          씬 로드 완료
    SceneLoadedAckMessage  ←──────────   "씬 됐어!"
 
 OnSceneLoadedAck(conn)
-  ├─ IsBundleReady? → Yes → SpawnPlayer()
-  └─ No → session.isWaitingForBundle = true
-
-                                         번들 다운로드 완료
-   BundleReadyMessage     ←──────────   "번들 됐어!"
-
-OnBundleReadyMessage(conn)
-  ├─ _bundleReadyConnIds에 기록
-  └─ isWaitingForBundle? → Yes → SpawnPlayer()
+  └─ SpawnPlayer()   ← 조건 분기 없이 항상 스폰
 
 SpawnPlayer(conn)
   ├─ playerPrefab Instantiate

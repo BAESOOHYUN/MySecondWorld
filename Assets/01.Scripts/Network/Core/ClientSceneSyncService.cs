@@ -51,7 +51,7 @@ namespace MySecondWorld.Network
             // 단, _completedSceneLoads++ 카운터와 ACK는 Host도 실행해야 함
             if (!NetworkServer.active)
             {
-
+                // 이미 로드된 씬은 스킵 (AdditiveSceneMessage 중복 수신 대비)
                 if (!_sceneHandles.ContainsKey(sceneName))
                 {
                     // Addressables 초기화 완료 대기 (이미 됐으면 즉시 반환)

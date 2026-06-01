@@ -1,3 +1,119 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:53002aa0f49bed684d17b5c9899c087fad7bc0fe44f997ee4d77e1597b196aef
-size 1066
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Remote_Zone
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: Remote_Zone
+  m_GUID: 73fa5f48b0c536d4194dd944c537ec07
+  m_SerializeEntries:
+  - m_GUID: 0355ea4a24adb7840a83de8ce71998cf
+    m_Address: Assets/00.Scenes/Dungeon/00.Entrance.unity
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - zone_dungeon_1
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 03d261b93a7644c45be310bb9dfb8257
+    m_Address: Assets/00.Scenes/Dungeon/05.Ritual.unity
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - zone_dungeon_1
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 147ddd9e22dda7c4ca92ade8d086d0e7
+    m_Address: Assets/00.Scenes/Dungeon/04.Barracks.unity
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - zone_dungeon_1
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4afdafdd02decdd44aef2bd76e883ecc
+    m_Address: Assets/00.Scenes/Dungeon/03.Long_Hall.unity
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - zone_dungeon_1
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4e8f0049d40874d4f96bc4b7383718ea
+    m_Address: Assets/00.Scenes/Dungeon/02.Center_Hall.unity
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - zone_dungeon_1
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 52ce8d9374036504e868f9d2c8c60e56
+    m_Address: Assets/00.Scenes/Dungeon/04.Cellar.unity
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - zone_dungeon_1
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5ef93108d8085d84cad082588103b905
+    m_Address: Assets/00.Scenes/Dungeon/03.Laboratory.unity
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - zone_dungeon_1
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8288055d114303040a8d5282cd956def
+    m_Address: Assets/00.Scenes/Dungeon/01.Entrance_Stairs.unity
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - zone_dungeon_1
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8342c93a7c50b1948b47763bde534f42
+    m_Address: Assets/00.Scenes/FieldScene.unity
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - zone_field
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 92896e87ada475a48af14874f579acf4
+    m_Address: Assets/00.Scenes/Dungeon/03.Sewer.unity
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - zone_dungeon_1
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9e8cacac6be5d5443a32a992a163a073
+    m_Address: Assets/00.Scenes/Dungeon/04.Furnace.unity
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - zone_dungeon_1
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c0c81d286ccf26e4dbdeb9525ff3d8e3
+    m_Address: Assets/00.Scenes/Dungeon/04.Goblin_Cave.unity
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - zone_dungeon_1
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c0e7ab82566cee347a175c2ce69f5e83
+    m_Address: Assets/00.Scenes/Dungeon/03.Outside.unity
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - zone_dungeon_1
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c7a5458d9a17bb449923c8787894664e
+    m_Address: Assets/00.Scenes/Dungeon/04.Torture_Room.unity
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - zone_dungeon_1
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d2e50da2d27f7fd4f9d38e1e7f78b92a
+    m_Address: Assets/00.Scenes/Dungeon/03.Cells.unity
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - zone_dungeon_1
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: dd881ceb6b6330d4bbf6dd3bc86a04db
+    m_Address: Assets/00.Scenes/Dungeon/04.Crystal_Caves.unity
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - zone_dungeon_1
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: d2176961fdb6fe549bc4ce1763ceb434, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: d3dcccb9e60700d499d5d67077f0136f, type: 2}
+    - {fileID: 11400000, guid: cdfb95259b2b96e4784f8a4e80caa10e, type: 2}

@@ -2,7 +2,6 @@ using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
 using MessagePipe;
 using Mirror;
 using MySecondWorld.Bundle;
@@ -16,22 +15,19 @@ namespace MySecondWorld.Network
     /// 진행률 AddressablesProgressEvent로 발행 → UI가 받아서 표시
     /// 완료되면 BundleReadyMessage를 서버에 ACK
     /// </summary>
-    public class ClientBundleSyncService : MonoBehaviour
+    public class ClientBundleSyncService
     {
         private string _lastFailedLabel;
         private IDisposable _retrySubscription;
         private readonly ZoneAddressableLoader _zoneLoader;
-        private readonly IPublisher<AddressablesProgressEvent> _progressPub;
         private UIManager _uiManager;
 
         public ClientBundleSyncService (
             ZoneAddressableLoader zoneLoader,
-            IPublisher<AddressablesProgressEvent> progressPub,
             ISubscriber<AddressablesProgressEvent> progressSub,
             UIManager uiManager)
         {
             _zoneLoader = zoneLoader;
-            _progressPub = progressPub;
             _retrySubscription = progressSub.Subscribe(async evt =>
             {
                 if (!evt.NeedsRetry || string.IsNullOrEmpty(_lastFailedLabel))

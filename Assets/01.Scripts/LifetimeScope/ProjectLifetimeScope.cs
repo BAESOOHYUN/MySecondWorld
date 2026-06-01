@@ -41,7 +41,7 @@ public class ProjectLifetimeScope : LifetimeScope
             builder.Register<IDeviceCapability, LocalDeviceCapability>(Lifetime.Singleton);
 
         builder.Register<ZoneAddressableLoader>(Lifetime.Singleton);
-        builder.Register<AddressablesService>(Lifetime.Singleton);
+        builder.RegisterEntryPoint<AddressablesService>(Lifetime.Singleton);
         builder.RegisterMessageBroker<AddressablesProgressEvent>(options);
     }
 }

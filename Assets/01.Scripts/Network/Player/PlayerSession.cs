@@ -28,9 +28,5 @@ namespace MySecondWorld.Network
         public float fallTimer;                    // 낙하 경과 시간
 
         public Guid roomId = Guid.Empty;
-
-        public bool isWaitingForBundle;            // true = 씬 ACK 먼저 왔는데 번들 아직 안 됨 → GameNetworkManager.OnBundleReadyMessage에서 spawn 위임
-                                                   // false = 씬 ACK 받았고 번들 됨            → ServerSessionService.OnSceneLoadedAck에서 spawn 위임
-        public bool bundleRequired;
     }
 }
