@@ -57,6 +57,12 @@ namespace MySecondWorld.Move
 
         private void Start()
         {
+            if (_jumpSubscriber == null)
+            {
+                // 원격 플레이어 — 구독 불필요
+                return;
+            }
+
             var ct = this.GetCancellationTokenOnDestroy();
 
             // 클립 길이 주입 — MovementController를 같은 프리팹에서 찾아서 전달

@@ -110,7 +110,13 @@ namespace MySecondWorld.Move
         private void JoyStickMove()
         {
             if (OnUIChecker.IsInputFieldFocused()) return;
-            if (GetCameraYAngle == null) return;
+            if (GetCameraYAngle == null)
+            {
+                // 카메라 없어도 Speed 0 발행해서 모션 고착 방지
+                _moveDirection = Vector3.zero;
+                _speedPublisher?.Publish(new PlayerSpeedChangedEvent { Speed = 0 });
+                return;
+            }
 
             Vector3 rawInput = new Vector3(MoveX.Value, 0f, MoveY.Value);
 
