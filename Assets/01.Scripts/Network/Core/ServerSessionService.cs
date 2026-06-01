@@ -96,7 +96,9 @@ namespace MySecondWorld.Network
                 && zone != null 
                 && !string.IsNullOrEmpty(zone.ZoneAssetLabel?.labelString))
             {
-                conn.Send(new BundleRequiredMessage { zoneLabel = zone.ZoneAssetLabel.labelString });
+                var label = zone.ZoneAssetLabel.labelString;
+                session.sentBundleLabels.Add(label);
+                conn.Send(new BundleRequiredMessage { zoneLabel = label });
                 // 번들 완료까지 대기
                 await UniTask.WaitUntil(() =>
                     _manager.IsBundleReady(conn.connectionId) || !Sessions.ContainsKey(conn.connectionId),
@@ -187,6 +189,7 @@ namespace MySecondWorld.Network
                     PlayerAuthenticator.playerNames.Remove(username);
 
                 // 4. 세션 제거
+                session.sentBundleLabels.Clear();
                 Sessions.Remove(conn.connectionId);
             }
         }

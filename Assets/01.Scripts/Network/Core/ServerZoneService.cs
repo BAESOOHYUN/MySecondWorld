@@ -204,15 +204,15 @@ namespace MySecondWorld.Network
             var session = _sessionService.Sessions[conn.connectionId];
             if (session.loadedScenes.Contains(sceneName)) return;
 
-
             // AdditiveSceneMessage 보내기 전에 BundleRequiredMessage 먼저 전송해야 번들 다운로드가 씬 로드보다 먼저 시작됨
-            
-            // _manager.zones에서 sceneName 매칭되는 zone 찾기
-            var zone = _manager.zones.FirstOrDefault(z => z.name == sceneName);
+            var zone = _manager.zones.FirstOrDefault(z => z.sceneName == sceneName);
+            var label = zone?.ZoneAssetLabel?.labelString;
             // label이 있을 때만 BundleRequiredMessage 전송
-            if (zone != null && !string.IsNullOrEmpty(zone.ZoneAssetLabel?.labelString))
-                conn.Send(new BundleRequiredMessage { zoneLabel = zone.ZoneAssetLabel.labelString }); // > GameNetworkManager.OnStartClient
-
+            if (!string.IsNullOrEmpty(label) && !session.sentBundleLabels.Contains(label)) // 중복 체크
+            {
+                session.sentBundleLabels.Add(label);
+                conn.Send(new BundleRequiredMessage { zoneLabel = label }); // > GameNetworkManager.OnStartClient
+            }
             conn.Send(new AdditiveSceneMessage { sceneName = sceneName, load = true });
             session.loadedScenes.Add(sceneName);
         }

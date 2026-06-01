@@ -16,6 +16,7 @@ namespace MySecondWorld.Network
         }
         public static string LocalPlayerName { get; set; }
 
+        public HashSet<string> sentBundleLabels = new(); // 이미 전송한 레이블 추적
         public HashSet<string> loadedScenes;       // 클라이언트에 로드된 씬 목록
         public string currentScene;                // 플레이어 GameObject가 속한 씬 (MoveGameObjectToScene 대상)
         public Vector3 pendingSpawnPosition;       // ACK 대기 중 임시 저장할 스폰 위치
