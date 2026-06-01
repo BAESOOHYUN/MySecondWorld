@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using UnityEngine;
 using UnityEngine.AddressableAssets;
 using MessagePipe;
 using MySecondWorld.Network;
@@ -65,14 +66,13 @@ namespace MySecondWorld.Bundle
             return true;
         }
 
-        public async UniTask<long> GetCachedBundleSize(AssetLabelReference label)
+        public UniTask<bool> CleanupUnusedCacheAsync(CancellationToken ct = default)
         {
-            return await Addressables.GetDownloadSizeAsync(label.labelString);
-        }
-
-        public void CleanupUnusedCache()
-        {
-            Addressables.CleanBundleCache(null);
+            // 앱 활성 상태에서는 즉시 삭제 불가 → 다음 시작 시 처리 예약
+            PlayerPrefs.SetInt("ClearCacheOnStart", 1);
+            PlayerPrefs.Save();
+            Debug.Log("[Addressables] 캐시 삭제 예약됨 (앱 재시작 시 적용)");
+            return UniTask.FromResult(true);
         }
     }
 }

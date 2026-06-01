@@ -1,5 +1,0 @@
-<linker>
-  <!-- IL2CPP 빌드 시 Addressables 관련 타입 스트리핑 방지 -->
-  <assembly fullname="Unity.ResourceManager" preserve="all"/>
-  <assembly fullname="Unity.Addressables" preserve="all"/>
-</linker>

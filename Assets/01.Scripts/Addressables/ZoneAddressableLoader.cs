@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 
@@ -25,27 +26,40 @@ namespace MySecondWorld.Bundle
             _refCounts[label]++;              // A 진입: 0→1, B 진입: 1→2
 
             // 이미 로드됐으면 끝 (B 진입 시 여기서 return)
-            if (_handles.ContainsKey(label))  
+            if (_handles.ContainsKey(label))
+            {
+                Debug.Log($"[Bundle] '{label}' 이미 로드됨 (refCount={_refCounts[label]})");
                 return;
+            }
 
             // Addressables 초기화 완료 대기
             await Addressables.InitializeAsync().ToUniTask();
+           
+            // 캐시 유무 확인
+            var size = await Addressables.GetDownloadSizeAsync(label).ToUniTask(cancellationToken: ct);
+            Debug.Log(size > 0
+                ? $"[Bundle] '{label}' 캐시 없음 → 서버 다운로드 ({size} bytes)"
+                : $"[Bundle] '{label}' 캐시 있음 → 즉시 로드");
 
             // 처음 로드할 때만 여기까지 옴 (플레이어A 진입 시)
             var newHandle = Addressables.DownloadDependenciesAsync(label, false); // false는 "자동 Release 안 함" 옵션
             _handles[label] = newHandle;                                          // handle 저장 (나중에 Release 때 필요)
             await newHandle.ToUniTask(cancellationToken: ct);                     // 다운로드 완료 대기
+
+            Debug.Log($"[Bundle] '{label}' 로드 완료");
         }
 
         public void ReleaseZone(string label)
         {
             _refCounts[label]--;
+            Debug.Log($"[Bundle] '{label}' refCount={_refCounts[label]}");
 
             if (_refCounts[label] <= 0)
             {
                 Addressables.Release(_handles[label]);
                 _handles.Remove(label);
                 _refCounts.Remove(label);
+                Debug.Log($"[Bundle] '{label}' 언로드 완료");
             }
         }
     }
