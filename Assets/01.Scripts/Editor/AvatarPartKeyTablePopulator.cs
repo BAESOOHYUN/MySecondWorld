@@ -123,16 +123,17 @@ namespace MySecondWorld.Editor
             var match = CategoryPattern.Match(folderName);
             var category = match.Success ? match.Groups[1].Value : folderName;
             var normalized = category.Replace("_", "");
-            
+
+            // CategoryPattern 정규식으로 접두사·번호를 먼저 떼어낸 카테고리 문자열을 비교 대상으로 바꾼 뒤에야 제대로 동작
             if (Enum.TryParse(normalized, true, out partType)) 
                 return true;
             // 1차 시도(Enum.TryParse)가 실패했을 때
-            // 2차로 사전에 등록된 별칭으로 한 번 더 시도
+            // 2차로 CategoryAliases 사전에 등록된 별칭으로 한 번 더 시도
 
             // Dictionary의 TryGetValue는 표준 패턴
             // 폴더 이름이 PartType enum 이름과 글자 그대로 똑같지 않을 때를 위한 "이름 변환 사전"
-            // Synty가 만든 실제 폴더명이 우리 enum과 정확히 안 맞을 가능성에 대한 대비용 빈 사전 (아직 내용 없음, 필요하면 채우는 용도).
-            // 키가 사전에 있으면 true+값 채움, 없으면 false+partType은 기본값
+            // Synty가 만든 실제 폴더명이 우리 enum과 정확히 안 맞을 가능성에 대한 대비용 빈 사전
+            // 키가 사전에 있으면 true + 값 채움, 없으면 false + partType은 기본값
             return CategoryAliases.TryGetValue(category, out partType);
         }
 
