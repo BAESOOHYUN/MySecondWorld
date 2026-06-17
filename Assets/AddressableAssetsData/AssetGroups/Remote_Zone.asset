@@ -15,50 +15,8 @@ MonoBehaviour:
   m_GroupName: Remote_Zone
   m_GUID: 73fa5f48b0c536d4194dd944c537ec07
   m_SerializeEntries:
-  - m_GUID: 0355ea4a24adb7840a83de8ce71998cf
-    m_Address: Assets/00.Scenes/Dungeon/00.Entrance.unity
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - zone_dungeon_1
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 03d261b93a7644c45be310bb9dfb8257
-    m_Address: Assets/00.Scenes/Dungeon/05.Ritual.unity
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - zone_dungeon_1
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 147ddd9e22dda7c4ca92ade8d086d0e7
-    m_Address: Assets/00.Scenes/Dungeon/04.Barracks.unity
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - zone_dungeon_1
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 4afdafdd02decdd44aef2bd76e883ecc
-    m_Address: Assets/00.Scenes/Dungeon/03.Long_Hall.unity
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - zone_dungeon_1
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 4e8f0049d40874d4f96bc4b7383718ea
-    m_Address: Assets/00.Scenes/Dungeon/02.Center_Hall.unity
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - zone_dungeon_1
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 52ce8d9374036504e868f9d2c8c60e56
-    m_Address: Assets/00.Scenes/Dungeon/04.Cellar.unity
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - zone_dungeon_1
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 5ef93108d8085d84cad082588103b905
-    m_Address: Assets/00.Scenes/Dungeon/03.Laboratory.unity
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - zone_dungeon_1
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 8288055d114303040a8d5282cd956def
-    m_Address: Assets/00.Scenes/Dungeon/01.Entrance_Stairs.unity
+  - m_GUID: 17c8f93cb49dd8f48af8194228ec26b5
+    m_Address: Assets/00.Scenes/Dungeon
     m_ReadOnly: 0
     m_SerializedLabels:
     - zone_dungeon_1
@@ -68,48 +26,6 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels:
     - zone_field
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 92896e87ada475a48af14874f579acf4
-    m_Address: Assets/00.Scenes/Dungeon/03.Sewer.unity
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - zone_dungeon_1
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 9e8cacac6be5d5443a32a992a163a073
-    m_Address: Assets/00.Scenes/Dungeon/04.Furnace.unity
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - zone_dungeon_1
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: c0c81d286ccf26e4dbdeb9525ff3d8e3
-    m_Address: Assets/00.Scenes/Dungeon/04.Goblin_Cave.unity
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - zone_dungeon_1
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: c0e7ab82566cee347a175c2ce69f5e83
-    m_Address: Assets/00.Scenes/Dungeon/03.Outside.unity
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - zone_dungeon_1
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: c7a5458d9a17bb449923c8787894664e
-    m_Address: Assets/00.Scenes/Dungeon/04.Torture_Room.unity
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - zone_dungeon_1
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: d2e50da2d27f7fd4f9d38e1e7f78b92a
-    m_Address: Assets/00.Scenes/Dungeon/03.Cells.unity
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - zone_dungeon_1
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: dd881ceb6b6330d4bbf6dd3bc86a04db
-    m_Address: Assets/00.Scenes/Dungeon/04.Crystal_Caves.unity
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - zone_dungeon_1
     FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: d2176961fdb6fe549bc4ce1763ceb434, type: 2}
