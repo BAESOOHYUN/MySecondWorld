@@ -147,5 +147,73 @@ namespace MySecondWorld.Customization
                 return hash.ToHashCode();
             }
         }
+
+        // 인덱서 추가
+        // 인덱서 : 배열 int[], string[] 등에서 쓰는 [] 문법을 내가 만든 class/struct에도 쓸 수 있게 해줌
+        // this = CharacterAppearanceData struct 자기자신
+        public int this[PartType part]
+        {
+            get => part switch
+            {
+
+                PartType.Hair => Hair,
+                PartType.Head => Head,
+                PartType.Eyebrows => Eyebrows,
+                PartType.FacialHair => FacialHair,
+                PartType.Torso => Torso,
+                PartType.ArmUpperRight => ArmUpperRight,
+                PartType.ArmUpperLeft => ArmUpperLeft,
+                PartType.ArmLowerRight => ArmLowerRight,
+                PartType.ArmLowerLeft => ArmLowerLeft,
+                PartType.HandLeft => HandLeft,
+                PartType.HandRight => HandRight,
+                PartType.Hips => Hips,
+                PartType.LegLeft => LegLeft,
+                PartType.LegRight => LegRight,
+                PartType.Ear => Ear,
+                PartType.HeadCoverings => HeadCoverings,
+                PartType.BackAttachment => BackAttachment,
+                PartType.ShoulderAttachLeft => ShoulderAttachLeft,
+                PartType.ShoulderAttachRight => ShoulderAttachRight,
+                PartType.ElbowAttachLeft => ElbowAttachLeft,
+                PartType.ElbowAttachRight => ElbowAttachRight,
+                PartType.KneeAttachLeft => KneeAttachLeft,
+                PartType.KneeAttachRight => KneeAttachRight,
+                PartType.HelmetAttachment => HelmetAttachment,
+                PartType.HipsAttachment => HipsAttachment,
+                _ => 0,
+            };
+            set 
+            {
+                switch (part)
+                {
+                    case PartType.Hair: Hair = value; break;
+                    case PartType.Head: Head = value; break;
+                    case PartType.Eyebrows: Eyebrows = value; break;
+                    case PartType.FacialHair: FacialHair = value; break;
+                    case PartType.Torso: Torso = value; break;
+                    case PartType.ArmUpperRight: ArmUpperRight = value; break;
+                    case PartType.ArmUpperLeft: ArmUpperLeft = value; break;
+                    case PartType.ArmLowerRight: ArmLowerRight = value; break;
+                    case PartType.ArmLowerLeft: ArmLowerLeft = value; break;
+                    case PartType.HandLeft: HandLeft = value; break;
+                    case PartType.HandRight: HandRight = value; break;
+                    case PartType.Hips: Hips = value; break;
+                    case PartType.LegLeft: LegLeft = value; break;
+                    case PartType.LegRight: LegRight = value; break;
+                    case PartType.Ear: Ear = value; break;
+                    case PartType.HeadCoverings: HeadCoverings = value; break;
+                    case PartType.BackAttachment: BackAttachment = value; break;
+                    case PartType.ShoulderAttachLeft: ShoulderAttachLeft = value; break;
+                    case PartType.ShoulderAttachRight: ShoulderAttachRight = value; break;
+                    case PartType.ElbowAttachLeft: ElbowAttachLeft = value; break;
+                    case PartType.ElbowAttachRight: ElbowAttachRight = value; break;
+                    case PartType.KneeAttachLeft: KneeAttachLeft = value; break;
+                    case PartType.KneeAttachRight: KneeAttachRight = value; break;
+                    case PartType.HelmetAttachment: HelmetAttachment = value; break;
+                    case PartType.HipsAttachment: HipsAttachment = value; break;
+                }
+            }
+        }
     }
 }

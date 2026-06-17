@@ -1,12 +1,10 @@
-using Cysharp.Threading.Tasks;
-using MySecondWorld.Character;
-using MySecondWorld.Customization;
 using System.Collections.Generic;
-using System.Dynamic;
-using UnityEditor.Rendering;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
 using VContainer;
+using MySecondWorld.Character;
+using MySecondWorld.Customization;
 
 namespace MySecondWorld.UI
 {
@@ -147,44 +145,12 @@ namespace MySecondWorld.UI
         {
             var data = new CharacterAppearanceData { Gender = _currentGender };
             foreach (PartType part in System.Enum.GetValues(typeof(PartType)))
-                SetIndex(ref data, part, _currentIndices[part]);
+                data[part] = _currentIndices[part]; //인덱서로 직접 접근
             return data;
         }
 
         private void OnSaveClicked()
         { 
-        }
-
-        private static void SetIndex(ref CharacterAppearanceData d, PartType part, int idx)
-        {
-            switch (part)
-            {
-                case PartType.Hair: d.Hair = idx; break;
-                case PartType.Head: d.Head = idx; break;
-                case PartType.Eyebrows: d.Eyebrows = idx; break;
-                case PartType.FacialHair: d.FacialHair = idx; break;
-                case PartType.Torso: d.Torso = idx; break;
-                case PartType.ArmUpperRight: d.ArmUpperRight = idx; break;
-                case PartType.ArmUpperLeft: d.ArmUpperLeft = idx; break;
-                case PartType.ArmLowerRight: d.ArmLowerRight = idx; break;
-                case PartType.ArmLowerLeft: d.ArmLowerLeft = idx; break;
-                case PartType.HandLeft: d.HandLeft = idx; break;
-                case PartType.HandRight: d.HandRight = idx; break;
-                case PartType.Hips: d.Hips = idx; break;
-                case PartType.LegLeft: d.LegLeft = idx; break;
-                case PartType.LegRight: d.LegRight = idx; break;
-                case PartType.Ear: d.Ear = idx; break;
-                case PartType.HeadCoverings: d.HeadCoverings = idx; break;
-                case PartType.BackAttachment: d.BackAttachment = idx; break;
-                case PartType.ShoulderAttachLeft: d.ShoulderAttachLeft = idx; break;
-                case PartType.ShoulderAttachRight: d.ShoulderAttachRight = idx; break;
-                case PartType.ElbowAttachLeft: d.ElbowAttachLeft = idx; break;
-                case PartType.ElbowAttachRight: d.ElbowAttachRight = idx; break;
-                case PartType.KneeAttachLeft: d.KneeAttachLeft = idx; break;
-                case PartType.KneeAttachRight: d.KneeAttachRight = idx; break;
-                case PartType.HelmetAttachment: d.HelmetAttachment = idx; break;
-                case PartType.HipsAttachment: d.HipsAttachment = idx; break;
-            }
         }
     }
 }
