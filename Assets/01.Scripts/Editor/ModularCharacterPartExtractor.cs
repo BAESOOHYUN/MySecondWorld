@@ -1,8 +1,8 @@
-using MySecondWorld.Customization;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using MySecondWorld.Customization;
 
 namespace MySecondWorld.Editor
 {
