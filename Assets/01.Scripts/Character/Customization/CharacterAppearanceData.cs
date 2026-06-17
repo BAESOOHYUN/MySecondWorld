@@ -53,7 +53,10 @@ namespace MySecondWorld.Customization
         public int KneeAttachRight;
         public int HelmetAttachment;
         public int HipsAttachment;
-
+        
+        // 성별
+        public Gender Gender;
+        
         // 색상
         public Color PrimaryColor;
         public Color SecondaryColor;
@@ -88,7 +91,8 @@ namespace MySecondWorld.Customization
                 && HipsAttachment == other.HipsAttachment
                 && PrimaryColor == other.PrimaryColor
                 && SecondaryColor == other.SecondaryColor
-                && SkinColor == other.SkinColor;
+                && SkinColor == other.SkinColor
+                && Gender == other.Gender;
         }
 
         public override bool Equals(object obj)
@@ -139,6 +143,7 @@ namespace MySecondWorld.Customization
                 hash.Add(KneeAttachRight);
                 hash.Add(HelmetAttachment);
                 hash.Add(HipsAttachment);
+                hash.Add(Gender);
                 return hash.ToHashCode();
             }
         }

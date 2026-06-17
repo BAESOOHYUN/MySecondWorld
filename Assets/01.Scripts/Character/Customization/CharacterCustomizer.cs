@@ -1,0 +1,231 @@
+using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
+using UnityEngine;
+using UnityEngine.AddressableAssets;
+using MessagePipe;
+using VContainer;
+using MySecondWorld.Customization;
+
+namespace MySecondWorld.Character
+{
+    public class CharacterCustomizer : MonoBehaviour
+    {
+        [SerializeField] Transform _partRoot; // Modular_Characters
+
+        // Hair/Head/FacialHair/HeadCoverings — 동시에 하나만 활성화
+        private static readonly HashSet<PartType> _headGroup = new()
+        {
+            PartType.Hair,
+            PartType.Head,
+            PartType.FacialHair,
+            PartType.HeadCoverings,
+        };
+
+        private IPublisher<CharacterAppearanceChangedEvent> _publisher;
+        private AvatarPartKeyTableSO _avatarPartKeyTable;
+
+        private CharacterAppearanceData _currentAppearance;
+        private readonly Dictionary<PartType, GameObject> _activePartInstances = new();
+        private readonly Dictionary<string, Transform> _boneMap = new();
+        private readonly HashSet<PartType> _loadingParts = new(); //연타방지
+
+        [Inject]
+        public void Construct(
+            IPublisher<CharacterAppearanceChangedEvent> publisher,
+            AvatarPartKeyTableSO avatarPartKeyTable)
+        {
+            _publisher = publisher;
+            _avatarPartKeyTable = avatarPartKeyTable;
+        }
+
+        // 전체 외형 교체 (로그인 시 / 랜덤 / 불러오기)
+        public async UniTask ApplyAppearance(CharacterAppearanceData data)
+        {
+            _currentAppearance = data;
+
+            // 기존 인스턴스 전부 해제
+            foreach (var key in new List<PartType>(_activePartInstances.Keys))
+                ReleasePartInstance(key);
+
+            // 본 맵을 병렬(25개 파츠를 동시에) 로드 전에 1회 구성 (race condition 방지)
+            // _boneMap은 이미 완성된 상태라 읽기만 하면 됨.
+            EnsureBoneMap();
+
+            // WhenAll로 동시 로드
+            await UniTask.WhenAll(
+                InstantiatePart(PartType.Hair, data.Hair, data.Gender),
+                InstantiatePart(PartType.Head, data.Head, data.Gender),
+                InstantiatePart(PartType.Eyebrows, data.Eyebrows, data.Gender),
+                InstantiatePart(PartType.FacialHair, data.FacialHair, data.Gender),
+                InstantiatePart(PartType.Torso, data.Torso, data.Gender),
+                InstantiatePart(PartType.ArmUpperRight, data.ArmUpperRight, data.Gender),
+                InstantiatePart(PartType.ArmUpperLeft, data.ArmUpperLeft, data.Gender),
+                InstantiatePart(PartType.ArmLowerRight, data.ArmLowerRight, data.Gender),
+                InstantiatePart(PartType.ArmLowerLeft, data.ArmLowerLeft, data.Gender),
+                InstantiatePart(PartType.HandRight, data.HandRight, data.Gender),
+                InstantiatePart(PartType.HandLeft, data.HandLeft, data.Gender),
+                InstantiatePart(PartType.Hips, data.Hips, data.Gender),
+                InstantiatePart(PartType.LegRight, data.LegRight, data.Gender),
+                InstantiatePart(PartType.LegLeft, data.LegLeft, data.Gender),
+                InstantiatePart(PartType.HeadCoverings, data.HeadCoverings, data.Gender),
+                InstantiatePart(PartType.Ear, data.Ear, data.Gender),
+                InstantiatePart(PartType.HelmetAttachment, data.HelmetAttachment, data.Gender),
+                InstantiatePart(PartType.BackAttachment, data.BackAttachment, data.Gender),
+                InstantiatePart(PartType.ShoulderAttachRight, data.ShoulderAttachRight, data.Gender),
+                InstantiatePart(PartType.ShoulderAttachLeft, data.ShoulderAttachLeft, data.Gender),
+                InstantiatePart(PartType.ElbowAttachRight, data.ElbowAttachRight, data.Gender),
+                InstantiatePart(PartType.ElbowAttachLeft, data.ElbowAttachLeft, data.Gender),
+                InstantiatePart(PartType.KneeAttachRight, data.KneeAttachRight, data.Gender),
+                InstantiatePart(PartType.KneeAttachLeft, data.KneeAttachLeft, data.Gender),
+                InstantiatePart(PartType.HipsAttachment, data.HipsAttachment, data.Gender)
+            );
+
+            SetColor(ColorTarget.Primary, data.PrimaryColor);
+            SetColor(ColorTarget.Secondary, data.SecondaryColor);
+            SetColor(ColorTarget.Skin, data.SkinColor);
+
+            _publisher.Publish(new CharacterAppearanceChangedEvent(_currentAppearance));
+        }
+
+        // 단일 파츠 변경 (UI 버튼에서 호출). 연타 방지 필요
+        public async UniTask SetPart(PartType part, int index)
+        {
+            if (_loadingParts.Contains(part)) return;
+
+            _loadingParts.Add(part);
+
+            // 머리 상호배제: 같은 그룹의 다른 파츠 해제
+            if (_headGroup.Contains(part)) // 바꾸려는 게 머리 그룹 중 하나면
+            {
+                // 그룹 내 나머지 전부 해제
+                // ex) Hair는 headGroup 소속
+                //    → Head, FacialHair, HeadCoverings 인스턴스 해제. Hair 새로 로드
+                foreach (var groupPart in _headGroup)
+                {
+                    if (groupPart != part)
+                        ReleasePartInstance(groupPart);
+                }
+            }
+            else                           // 머리 그룹이 아닌 파츠면 (Torso, Arm 등)
+            {
+                // 그냥 자기 자신의 이전 인스턴스만 해제
+                // → Torso는 headGroup 비소속 → else
+                //   → 이전 Torso 인스턴스만 해제. Torso 새로 로드
+                ReleasePartInstance(part);
+            }
+
+            SetCurrentIndex(part, index);
+            await InstantiatePart(part, index, _currentAppearance.Gender);
+            _publisher.Publish(new CharacterAppearanceChangedEvent(_currentAppearance));
+            _loadingParts.Remove(part);
+        }
+
+        public void SetColor(ColorTarget target, Color color)
+        {
+            // SetColor는 한 번 호출에 하나의 ColorTarget만 처리
+            switch (target)
+            {
+                case ColorTarget.Primary: _currentAppearance.PrimaryColor = color; break;
+                case ColorTarget.Secondary: _currentAppearance.SecondaryColor = color; break;
+                case ColorTarget.Skin: _currentAppearance.SkinColor = color; break;
+            }
+
+            // prop 셰이더 코드 안의 프로퍼티 이름
+            var prop = target switch
+            {
+                ColorTarget.Primary => "_Color_Primary",
+                ColorTarget.Secondary => "_Color_Secondary",
+                ColorTarget.Skin => "_Color_Skin",
+                _ => null
+            };
+
+            if (prop == null) return;
+
+            foreach (var instance in _activePartInstances.Values)
+            {
+                if (instance == null) continue;
+                var smr = instance.GetComponent<SkinnedMeshRenderer>();
+                if (smr != null)
+                    smr.material.SetColor(prop, color);
+            }
+        }
+
+        public CharacterAppearanceData GetCurrentAppearance() => _currentAppearance;
+
+        private async UniTask InstantiatePart(PartType part, int index, Gender gender)
+        {
+            var candidates = _avatarPartKeyTable.GetCandidates(part, gender);
+            if (index < 0 || index >= candidates.Count) return;
+
+            var instance = await Addressables.InstantiateAsync(candidates[index], _partRoot).ToUniTask();
+            _activePartInstances[part] = instance;
+
+            var smr = instance.GetComponent<SkinnedMeshRenderer>();
+            var boneNames = instance.GetComponent<PartBoneNames>();
+            if (smr != null && boneNames != null)
+                RemapBones(smr, boneNames.BoneNames);
+        }
+
+        private void ReleasePartInstance(PartType part)
+        {
+            if (_activePartInstances.TryGetValue(part, out var old) && old != null)
+            {
+                Addressables.ReleaseInstance(old);
+                _activePartInstances.Remove(part);
+            }
+        }
+
+        private void EnsureBoneMap()
+        {
+            if (_boneMap.Count > 0) return;
+            //이 오브젝트(CharacterCustomizer가 붙은 것) + 모든 자손에서 Transform 컴포넌트를 전부 긁어온다
+            // true  = 비활성(SetActive false) 오브젝트도 포함
+            // false = 활성화된 것만(기본값)
+            foreach (Transform t in GetComponentsInChildren<Transform>(true))
+                _boneMap[t.name] = t;
+        }
+
+        private void RemapBones(SkinnedMeshRenderer smr, string[] boneNames)
+        {
+            var bones = new Transform[boneNames.Length];
+            for (int i = 0; i < boneNames.Length; i++)
+                _boneMap.TryGetValue(boneNames[i], out bones[i]);
+            
+            smr.bones = bones;
+            if (_boneMap.TryGetValue("Hips", out var hips))
+                smr.rootBone = hips;
+        }
+
+        private void SetCurrentIndex(PartType part, int index)
+        {
+            switch (part)
+            {
+                case PartType.Hair: _currentAppearance.Hair = index; break;
+                case PartType.Head: _currentAppearance.Head = index; break;
+                case PartType.Eyebrows: _currentAppearance.Eyebrows = index; break;
+                case PartType.FacialHair: _currentAppearance.FacialHair = index; break;
+                case PartType.Torso: _currentAppearance.Torso = index; break;
+                case PartType.ArmUpperRight: _currentAppearance.ArmUpperRight = index; break;
+                case PartType.ArmUpperLeft: _currentAppearance.ArmUpperLeft = index; break;
+                case PartType.ArmLowerRight: _currentAppearance.ArmLowerRight = index; break;
+                case PartType.ArmLowerLeft: _currentAppearance.ArmLowerLeft = index; break;
+                case PartType.HandRight: _currentAppearance.HandRight = index; break;
+                case PartType.HandLeft: _currentAppearance.HandLeft = index; break;
+                case PartType.Hips: _currentAppearance.Hips = index; break;
+                case PartType.LegRight: _currentAppearance.LegRight = index; break;
+                case PartType.LegLeft: _currentAppearance.LegLeft = index; break;
+                case PartType.HeadCoverings: _currentAppearance.HeadCoverings = index; break;
+                case PartType.Ear: _currentAppearance.Ear = index; break;
+                case PartType.HelmetAttachment: _currentAppearance.HelmetAttachment = index; break;
+                case PartType.BackAttachment: _currentAppearance.BackAttachment = index; break;
+                case PartType.ShoulderAttachRight: _currentAppearance.ShoulderAttachRight = index; break;
+                case PartType.ShoulderAttachLeft: _currentAppearance.ShoulderAttachLeft = index; break;
+                case PartType.ElbowAttachRight: _currentAppearance.ElbowAttachRight = index; break;
+                case PartType.ElbowAttachLeft: _currentAppearance.ElbowAttachLeft = index; break;
+                case PartType.KneeAttachRight: _currentAppearance.KneeAttachRight = index; break;
+                case PartType.KneeAttachLeft: _currentAppearance.KneeAttachLeft = index; break;
+                case PartType.HipsAttachment: _currentAppearance.HipsAttachment = index; break;
+            }
+        }
+    }
+}
