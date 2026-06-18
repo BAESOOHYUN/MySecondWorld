@@ -76,6 +76,9 @@ namespace MySecondWorld.Editor
 
             if (GUILayout.Button("4) 썸네일 전부 Sprite 타입으로 설정"))
                 SetThumbnailsAsSprite();
+
+            if (GUILayout.Button("5) 기존 썸네일 이름 접미사 제거"))
+                StripThumbnailSuffix();
         }
 
         private void ScanGroups()
@@ -164,27 +167,55 @@ namespace MySecondWorld.Editor
         private void SetThumbnailsAsSprite()
         {
             var guids = AssetDatabase.FindAssets("t:Texture2D", new[] { ThumbnailRoot });
+            Debug.Log($"대상 텍스처 {guids.Length}개 검사 시작.");   // ← 0이면 ThumbnailRoot 경로 문제
             var changed = 0;
+            AssetDatabase.StartAssetEditing();   // 720개 reimport를 한 묶음으로 (개별 갱신보다 빠름)
+            foreach (var guid in guids)
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                if (AssetImporter.GetAtPath(path) is not TextureImporter importer) 
+                    continue;
+
+                // Sprite + Single 둘 다 맞아야 스킵 (지금은 Multiple이라 다시 처리돼야 함)
+                if (importer.textureType == TextureImporterType.Sprite &&
+                    importer.spriteImportMode == SpriteImportMode.Single)
+                    continue;
+
+                importer.textureType = TextureImporterType.Sprite;   // 기본 Sprite Mode=Single (썸네일 1장씩이라 적합)
+                importer.spriteImportMode = SpriteImportMode.Single;
+                importer.SaveAndReimport();
+                changed++;
+            }
+
+            AssetDatabase.Refresh();
+            Debug.Log($"{changed}개 텍스처를 Sprite로 설정 완료.");
+        }
+
+        private void StripThumbnailSuffix()
+        {
+            var renamed = 0;
             try
             {
-                AssetDatabase.StartAssetEditing();   // 720개 reimport를 한 묶음으로 (개별 갱신보다 빠름)
-                foreach (var guid in guids)
+                AssetDatabase.StartAssetEditing();
+                foreach (var guid in AssetDatabase.FindAssets("t:Texture2D", new[] { ThumbnailRoot }))
                 {
                     var path = AssetDatabase.GUIDToAssetPath(guid);
-                    if (AssetImporter.GetAtPath(path) is not TextureImporter importer) continue;
-                    if (importer.textureType == TextureImporterType.Sprite) continue;
+                    var fileName = Path.GetFileNameWithoutExtension(path);
+                    var m = BakedPngPattern.Match(fileName);     // 아직 BakedPngPattern 있을 때 실행
+                    if (!m.Success) continue;
 
-                    importer.textureType = TextureImporterType.Sprite;   // 기본 Sprite Mode=Single (썸네일 1장씩이라 적합)
-                    importer.SaveAndReimport();
-                    changed++;
+                    var g = m.Groups["gender"].Value;
+                    var clean = string.IsNullOrEmpty(g)
+                        ? $"Chr_{m.Groups["cat"].Value}_{m.Groups["num"].Value}_Static"
+                        : $"Chr_{m.Groups["cat"].Value}_{g}_{m.Groups["num"].Value}_Static";
+                    if (clean == fileName) continue;
+
+                    AssetDatabase.RenameAsset(path, clean);      // 확장자 없이 새 이름
+                    renamed++;
                 }
             }
-            finally
-            {
-                AssetDatabase.StopAssetEditing();
-                AssetDatabase.Refresh();
-            }
-            Debug.Log($"{changed}개 텍스처를 Sprite로 설정 완료.");
+            finally { AssetDatabase.StopAssetEditing(); AssetDatabase.Refresh(); }
+            Debug.Log($"{renamed}개 이름 정리 완료.");
         }
     }
 }

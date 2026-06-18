@@ -14,6 +14,8 @@ namespace MySecondWorld.Editor
     public class AvatarPartKeyTablePopulator : EditorWindow
     {
         private const string SourceRoot = "Assets/Addressables/CharacterParts";
+        private const string ThumbnailRoot = "Assets/Addressables/CharacterPartThumbnails";
+
         private static readonly string[] GenderRootFolders =
         {
             "Male_Parts",
@@ -38,6 +40,30 @@ namespace MySecondWorld.Editor
             { "Knee_Attachement_Left", PartType.KneeAttachLeft },
             { "Extra", PartType.Ear },                                 // All_12_Extra 안엔 Elf_Ear만 존재
         };
+
+        // 썸네일 이름→참조 사전 만드는 메서드
+        // 썸네일 이름에서 "_Static"을 뗀 게 곧 파츠 프리팹 이름.
+        // 예: 썸네일 "Chr_BackAttachment_01_Static" → 키 "Chr_BackAttachment_01"
+        private static Dictionary<string, AssetReferenceSprite> BuildThumbnailLookup()
+        {
+            var dict = new Dictionary<string, AssetReferenceSprite>();
+            foreach (var guid in AssetDatabase.FindAssets("t:Sprite", new[] { ThumbnailRoot }))
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                var fileName = Path.GetFileNameWithoutExtension(path);
+                var partName = fileName.EndsWith("_Static")
+                    ? fileName.Substring(0, fileName.Length - "_Static".Length)
+                    : fileName;
+
+                var spriteRef = new AssetReferenceSprite(guid);
+                // Single 모드 스프라이트는 텍스처의 서브에셋이라, 서브오브젝트를 명시해야 Sprite로 로드됨
+                var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+                if (sprite != null) spriteRef.SetEditorSubObject(sprite);
+
+                dict[partName] = spriteRef;
+            }
+            return dict;
+        }
 
         private AvatarPartKeyTableSO _target;
 
@@ -66,7 +92,9 @@ namespace MySecondWorld.Editor
         private void Populate()
         {
             var unmatchedFolders = new List<string>();
+            var missingThumbs = new List<string>();
             var addedCount = 0;
+            var thumbByName = BuildThumbnailLookup();
 
             foreach (var genderRoot in GenderRootFolders)
             {
@@ -101,7 +129,17 @@ namespace MySecondWorld.Editor
                     var refs = prefabGuids.Select(guid => new AssetReferenceGameObject(guid))
                                           .ToList();
 
-                    AssignToEntry(partType, genderRoot, refs);
+                    // 파츠와 "같은 순서"로 썸네일 참조를 만든다 (인덱스 정합 보장)
+                    var thumbs = prefabGuids.Select(guid =>
+                    {
+                        var partName = Path.GetFileNameWithoutExtension(AssetDatabase.GUIDToAssetPath(guid));
+                        if (thumbByName.TryGetValue(partName, out var t)) 
+                            return t;
+                        missingThumbs.Add(partName);
+                        return null;   // 짝 없으면 null (UI에서 placeholder 처리)
+                    }).ToList();
+
+                    AssignToEntry(partType, genderRoot, refs, thumbs);
                     addedCount += refs.Count;
                 }
             }
@@ -115,6 +153,13 @@ namespace MySecondWorld.Editor
                 Debug.LogWarning(
                     "매칭 실패 폴더 (CategoryAliases에 추가 필요):\n" +
                     string.Join("\n", unmatchedFolders));
+            }
+
+            if (missingThumbs.Count > 0)
+            {
+                Debug.LogWarning(
+                    $"썸네일 매칭 실패 {missingThumbs.Count}개:\n" +
+                    string.Join("\n", missingThumbs));
             }
         }
 
@@ -137,7 +182,10 @@ namespace MySecondWorld.Editor
             return CategoryAliases.TryGetValue(category, out partType);
         }
 
-        private void AssignToEntry(PartType partType, string genderRoot, List<AssetReferenceGameObject> refs)
+        private void AssignToEntry(PartType partType, 
+                                    string genderRoot, 
+                                    List<AssetReferenceGameObject> refs,
+                                    List<AssetReferenceSprite> thumbs)
         {
             var entry = _target.Entries.Find(e => e.PartType == partType);
             if (entry == null)
@@ -147,12 +195,13 @@ namespace MySecondWorld.Editor
             }
 
             // C# 8.0부터 생긴 문법. 값을 직접 반환하는 식(expression)
-            var list = genderRoot switch
+            // 파츠 리스트 + 썸네일 리스트를 같은 genderRoot 기준으로 함께 선택
+            var (list, thumbList) = genderRoot switch
             {
-                "Male_Parts" => entry.MaleParts,
-                "Female_Parts" => entry.FemaleParts,
-                "All_Gender_Parts" => entry.AllGenderParts,
-                _ => null // _는 default
+                "Male_Parts" => (entry.MaleParts, entry.MaleThumbnails),
+                "Female_Parts" => (entry.FemaleParts, entry.FemaleThumbnails),
+                "All_Gender_Parts" => (entry.AllGenderParts, entry.AllGenderThumbnails),
+                _ => ((List<AssetReferenceGameObject>)null, (List<AssetReferenceSprite>)null)
             };
 
             // list는 entry.MaleParts 등 기존 리스트에 대한 참조(레퍼런스). entry.MaleParts 자체를 비우는 것
@@ -160,6 +209,8 @@ namespace MySecondWorld.Editor
             // 매번 실행할 때 "일단 비우고 → 지금 스캔한 결과로 새로 채운다"는 방식으로, 여러 번 실행해도 항상 같은 결과가 나오게(idempotent)
             list?.Clear();
             list?.AddRange(refs);
+            thumbList?.Clear(); 
+            thumbList?.AddRange(thumbs);
         }
     }
 }
