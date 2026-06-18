@@ -7,6 +7,8 @@ using MySecondWorld.Move;
 using MySecondWorld.CameraSystem;
 using MySecondWorld.Customization;
 using MySecondWorld.Character;
+using MySecondWorld.Save;
+using MySecondWorld.Network;
 
 /// <summary>
 /// Mirror-spawned 플레이어 프리팹 전용 LifetimeScope.
@@ -15,6 +17,7 @@ using MySecondWorld.Character;
 public class PlayerScope : LifetimeScope
 {
     [SerializeField] private AvatarPartKeyTableSO _avatarPartKeyTable;
+    [SerializeField] private CharacterAppearanceSO _defaultAppearanceSO;
     protected override void Configure(IContainerBuilder builder)
     {
         var options = builder.RegisterMessagePipe();
@@ -29,8 +32,13 @@ public class PlayerScope : LifetimeScope
         builder.RegisterComponentInHierarchy<MovementController>();
         builder.RegisterComponentInHierarchy<PlayerAnimationController>();
         builder.RegisterComponentInHierarchy<ThirdPersonCameraController>();
-
         builder.RegisterComponentInHierarchy<CharacterCustomizer>();
+        builder.RegisterComponentInHierarchy<NetworkCharacterAppearance>();
+        builder.RegisterComponentInHierarchy<NetworkPlayerController>();
+
         builder.RegisterInstance(_avatarPartKeyTable);
+        builder.RegisterInstance(_defaultAppearanceSO);
+
+        builder.Register<CharacterSaveService>(Lifetime.Singleton);
     }
 }

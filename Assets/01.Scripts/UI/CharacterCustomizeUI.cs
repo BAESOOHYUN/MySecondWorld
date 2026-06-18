@@ -5,6 +5,9 @@ using UnityEngine.UI;
 using VContainer;
 using MySecondWorld.Character;
 using MySecondWorld.Customization;
+using MySecondWorld.Save;
+using System;
+using MessagePipe;
 
 namespace MySecondWorld.UI
 {
@@ -25,7 +28,6 @@ namespace MySecondWorld.UI
 
         [Header("색상")]
         [SerializeField] private FlexibleColorPicker _colorPicker;
-        [SerializeField] private Image _colorPreview;
         [SerializeField] private ColorTarget _activeColorTarget = ColorTarget.Primary;
 
         [Header("공통")]
@@ -34,14 +36,22 @@ namespace MySecondWorld.UI
 
         private CharacterCustomizer _customizer;
         private AvatarPartKeyTableSO _keyTable;
+        private CharacterSaveService _saveService;
         private Gender _currentGender = Gender.Male;
         private readonly Dictionary<PartType, int> _currentIndices = new(); // 각 파츠의 인덱스
 
+        private IDisposable _subscription;
+
         [Inject]
-        public void Construct(CharacterCustomizer customizer, AvatarPartKeyTableSO keyTable)
+        public void Construct(CharacterCustomizer customizer,
+                              AvatarPartKeyTableSO keyTable,
+                              CharacterSaveService saveService,
+                              ISubscriber<CharacterCustomizeOpenEvent> openSub)
         {
             _customizer = customizer;
             _keyTable = keyTable;
+            _saveService = saveService;
+            _subscription = openSub.Subscribe(_ => gameObject.SetActive(true));
         }
 
         private void Start()
@@ -49,6 +59,11 @@ namespace MySecondWorld.UI
             InitIndices();
             RegisterButtons();
             ShowTab(_partsPanel);
+        }
+
+        private void OnDestroy()
+        {
+            _subscription?.Dispose();
         }
 
         // 초기값 설정
@@ -132,12 +147,12 @@ namespace MySecondWorld.UI
             foreach (PartType part in System.Enum.GetValues(typeof(PartType)))
             {
                 var count = _keyTable.GetCount(part, _currentGender);
-                _currentIndices[part] = count > 0 ? Random.Range(0, count) : 0;
+                _currentIndices[part] = count > 0 ? UnityEngine.Random.Range(0, count) : 0;
             }
             var data = BuildData();
-            data.PrimaryColor = Random.ColorHSV(0f, 1f, 0f, 1f, 0f, 1f);
-            data.SecondaryColor = Random.ColorHSV(0f, 1f, 0f, 1f, 0f, 1f);
-            data.SkinColor = Random.ColorHSV(0.03f, 0.10f, 0.2f, 0.5f, 0.5f, 1.0f);
+            data.PrimaryColor = UnityEngine.Random.ColorHSV(0f, 1f, 0f, 1f, 0f, 1f);
+            data.SecondaryColor = UnityEngine.Random.ColorHSV(0f, 1f, 0f, 1f, 0f, 1f);
+            data.SkinColor = UnityEngine.Random.ColorHSV(0.03f, 0.10f, 0.2f, 0.5f, 0.5f, 1.0f);
             await _customizer.ApplyAppearance(data);
         }
 
@@ -150,7 +165,9 @@ namespace MySecondWorld.UI
         }
 
         private void OnSaveClicked()
-        { 
+        {
+            var data = BuildData();
+            _saveService.Save(data);
         }
     }
 }

@@ -8,6 +8,7 @@ using MySecondWorld.UI;
 using MySecondWorld.AI;
 using MySecondWorld.Save;
 using MySecondWorld.Bundle;
+using MySecondWorld.Customization;
 
 /// <summary>
 /// VContainerSettings에 등록되어 앱 시작 시 자동 인스턴스화되는 최상위 LifetimeScope.
@@ -33,6 +34,7 @@ public class ProjectLifetimeScope : LifetimeScope
         builder.RegisterComponentInHierarchy<MenuUI>();
         builder.RegisterComponentInHierarchy<ChatUI>();
         builder.RegisterComponentInHierarchy<SettingsUI>();
+        builder.RegisterComponentInHierarchy<CharacterCustomizeUI>();
 
         // 앱 전체 수명 동안 필요 — 형제 스코프(AIModelDownload, NPC) 모두 접근 가능
         if (_useServerMode)
@@ -44,5 +46,7 @@ public class ProjectLifetimeScope : LifetimeScope
         builder.Register<ZoneAddressableLoader>(Lifetime.Singleton);
         builder.RegisterEntryPoint<AddressablesService>(Lifetime.Singleton).AsSelf();
         builder.RegisterMessageBroker<AddressablesProgressEvent>(options);
+
+        builder.RegisterMessageBroker<CharacterCustomizeOpenEvent>(options);
     }
 }

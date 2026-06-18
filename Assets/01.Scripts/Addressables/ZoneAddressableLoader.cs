@@ -18,6 +18,7 @@ namespace MySecondWorld.Bundle
         public async UniTask LoadZoneAsync(string label, CancellationToken ct)
         {
             // label = "zone_dungeon_1"
+            // label = "character_parts"
 
             // 참조 카운트 증가
             if (!_refCounts.ContainsKey(label))
