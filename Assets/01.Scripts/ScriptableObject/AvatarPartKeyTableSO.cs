@@ -25,6 +25,11 @@ namespace MySecondWorld.Customization
 
             // 성별 무관 공용 후보 목록 (액세서리류)
             public List<AssetReferenceGameObject> AllGenderParts = new();
+
+            // 파츠 리스트와 "동일 인덱스"의 썸네일. Populator가 같은 패스에서 이름 매칭으로 채움.
+            public List<AssetReferenceSprite> MaleThumbnails = new();
+            public List<AssetReferenceSprite> FemaleThumbnails = new();
+            public List<AssetReferenceSprite> AllGenderThumbnails = new();
         }
 
         public List<PartEntry> Entries = new();
@@ -42,6 +47,16 @@ namespace MySecondWorld.Customization
             return genderList.Concat(entry.AllGenderParts).ToList();
         }
 
+        // GetCandidates와 동일한 순서(전용 + AllGender)로 합쳐서 반환.
+        // → 반환 리스트의 index i 가 GetCandidates(part, gender)[i] 와 같은 파츠를 가리킨다.
+        public List<AssetReferenceSprite> GetThumbnails(PartType part, Gender gender)
+        {
+            var entry = Entries.Find(e => e.PartType == part);
+            if (entry == null)
+                return new List<AssetReferenceSprite>();
+            var genderList = gender == Gender.Male ? entry.MaleThumbnails : entry.FemaleThumbnails;
+            return genderList.Concat(entry.AllGenderThumbnails).ToList();
+        }
 
         public int GetCount(PartType part, Gender gender)
         {
