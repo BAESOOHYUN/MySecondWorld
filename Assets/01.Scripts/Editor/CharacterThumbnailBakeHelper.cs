@@ -13,16 +13,19 @@ namespace MySecondWorld.Editor
     //   (2) bake 후 평면 출력된 PNG를 CharacterParts와 같은 폴더 구조로 정렬한다.
     public class CharacterThumbnailBakeHelper : EditorWindow
     {
-        private const string StaticPrefabFolder = "Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Characters_ModularParts_Static";
+        private const string DefaultStaticFolder = "Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Characters_ModularParts_Static";
+        private const string SourcePrefKey = "ThumbnailBaker.SourceFolder";
         private const string BakedIconsFolder = "Assets/Saved/Icons";   // ItemPopulate.CreateIcons 고정 출력 경로
         private const string ThumbnailRoot = "Assets/Addressables/CharacterPartThumbnails";
         // "Chr_Head_No_Elements_Male_02_Static" → cat=Head_No_Elements, gender=Male, num=02
         // "Chr_Hair_34_Static"                  → cat=Hair, gender=(없음), num=34
+        // Chr_<카테고리>_<성별?>_<NN>_Static 규칙만 지키면, 소스 폴더만 바꿔주면 끝
         private static readonly Regex PrefabNamePattern =
             new(@"^Chr_(?<cat>.+?)(?:_(?<gender>Male|Female))?_(?<num>\d+)_Static$");
         // bake된 PNG: "Chr_Hair_34_Static_256_RRGGBBAA" (사이즈+배경색 접미사가 붙음)
         private static readonly Regex BakedPngPattern =
             new(@"^Chr_(?<cat>.+?)(?:_(?<gender>Male|Female))?_(?<num>\d+)_Static_\d+_[0-9A-Fa-f]+$");
+        private string _staticPrefabFolder;
         private ItemPopulate _populate; //Synty 확장팩 스크립트
         private List<string> _groupKeys = new();
         private Dictionary<string, List<GameObject>> _groups = new();
@@ -30,8 +33,23 @@ namespace MySecondWorld.Editor
 
         [MenuItem("Tools/Customization/Bake Character Part Thumbnails")]
         private static void Open() => GetWindow<CharacterThumbnailBakeHelper>("Thumbnail Bake Helper");
+        private void OnEnable() => _staticPrefabFolder = EditorPrefs.GetString(SourcePrefKey, DefaultStaticFolder);
+        private void OnDisable() => EditorPrefs.SetString(SourcePrefKey, _staticPrefabFolder);
+
         private void OnGUI()
         {
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                _staticPrefabFolder = EditorGUILayout.TextField("Source Folder", _staticPrefabFolder);
+                if (GUILayout.Button("...", GUILayout.Width(28)))
+                {
+                    var abs = EditorUtility.OpenFolderPanel("소스 폴더 선택", _staticPrefabFolder, "");
+                    // 프로젝트 밖 폴더는 무시 (Addressables/AssetDatabase는 Assets/ 상대경로만 인식)
+                    if (!string.IsNullOrEmpty(abs) && abs.StartsWith(Application.dataPath))
+                        _staticPrefabFolder = "Assets" + abs.Substring(Application.dataPath.Length);
+                }
+            }
+
             _populate = (ItemPopulate)EditorGUILayout.ObjectField(
                 "ItemPopulate (씬)", _populate, typeof(ItemPopulate), true);
 
@@ -60,7 +78,7 @@ namespace MySecondWorld.Editor
         private void ScanGroups()
         {
             _groups = new Dictionary<string, List<GameObject>>();
-            foreach (var guid in AssetDatabase.FindAssets("t:Prefab", new[] { StaticPrefabFolder }))
+            foreach (var guid in AssetDatabase.FindAssets("t:Prefab", new[] { _staticPrefabFolder }))
             {
                 var path = AssetDatabase.GUIDToAssetPath(guid);
                 var name = Path.GetFileNameWithoutExtension(path);
