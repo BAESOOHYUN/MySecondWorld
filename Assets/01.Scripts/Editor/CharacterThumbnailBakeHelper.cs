@@ -73,6 +73,9 @@ namespace MySecondWorld.Editor
             EditorGUILayout.Space();
             if (GUILayout.Button("3) bake된 PNG를 폴더 구조로 정렬"))
                 SortBakedIcons();
+
+            if (GUILayout.Button("4) 썸네일 전부 Sprite 타입으로 설정"))
+                SetThumbnailsAsSprite();
         }
 
         private void ScanGroups()
@@ -156,6 +159,32 @@ namespace MySecondWorld.Editor
                 cur = next;
             }
             return full;
+        }
+
+        private void SetThumbnailsAsSprite()
+        {
+            var guids = AssetDatabase.FindAssets("t:Texture2D", new[] { ThumbnailRoot });
+            var changed = 0;
+            try
+            {
+                AssetDatabase.StartAssetEditing();   // 720개 reimport를 한 묶음으로 (개별 갱신보다 빠름)
+                foreach (var guid in guids)
+                {
+                    var path = AssetDatabase.GUIDToAssetPath(guid);
+                    if (AssetImporter.GetAtPath(path) is not TextureImporter importer) continue;
+                    if (importer.textureType == TextureImporterType.Sprite) continue;
+
+                    importer.textureType = TextureImporterType.Sprite;   // 기본 Sprite Mode=Single (썸네일 1장씩이라 적합)
+                    importer.SaveAndReimport();
+                    changed++;
+                }
+            }
+            finally
+            {
+                AssetDatabase.StopAssetEditing();
+                AssetDatabase.Refresh();
+            }
+            Debug.Log($"{changed}개 텍스처를 Sprite로 설정 완료.");
         }
     }
 }
