@@ -82,6 +82,10 @@ namespace MySecondWorld.Editor
             // 이름순 정렬: bake 순서를 파츠 인덱스 순서(이름 매칭)와 맞추기 위함
             _populate.itemsToPopulate = _groups[key].OrderBy(go => go.name).ToList();
             EditorUtility.SetDirty(_populate);
+
+            if (Application.isPlaying)
+                _populate.RegenerateIcons();   // 플레이 중이면 나가지 않고 바로 다시 스폰
+
             Debug.Log($"'{key}' {_populate.itemsToPopulate.Count}개 채움. ▶Play로 bake하세요.");
         }
 
