@@ -3,6 +3,7 @@ namespace MySecondWorld.Customization
 {
     public enum PartType // 파츠 배열 인덱싱 키
     {
+        // Male & Female
         Hair,
         Head,
         Eyebrows,
