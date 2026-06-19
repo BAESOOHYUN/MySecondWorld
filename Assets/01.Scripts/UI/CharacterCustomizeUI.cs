@@ -57,7 +57,7 @@ namespace MySecondWorld.UI
         [SerializeField] private Button _resetButton;
         
         // ── DI ──
-        private CharacterCustomizer _customizer;
+        private CharacterCustomizerBase _customizer;
         private AvatarPartKeyTableSO _keyTable;
         private CharacterSaveService _saveService;
         private IDisposable _subscription;
@@ -74,7 +74,7 @@ namespace MySecondWorld.UI
         private readonly Dictionary<ColorTarget, ColorChannelRow> _colorRows = new();
 
         [Inject]
-        public void Construct(CharacterCustomizer customizer,
+        public void Construct(CharacterCustomizerBase customizer,
                               AvatarPartKeyTableSO keyTable,
                               CharacterSaveService saveService,
                               ISubscriber<CharacterCustomizeOpenEvent> openSub)

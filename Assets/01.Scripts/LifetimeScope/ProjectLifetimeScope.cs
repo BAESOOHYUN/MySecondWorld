@@ -22,7 +22,7 @@ public class ProjectLifetimeScope : LifetimeScope
     [Header("캐릭터 커스터마이즈")]
     [SerializeField] private AvatarPartKeyTableSO _avatarPartKeyTable;
     [SerializeField] private CharacterAppearanceSO _defaultAppearanceSO;
-    [SerializeField] private CharacterCustomizer _previewCharacterCustomizer; // 복제본에 붙은 것
+    [SerializeField] private CharacterCustomizerBase _previewCharacterCustomizer; // 복제본에 붙은 것
     protected override void Configure(IContainerBuilder builder)
     {
         var options = builder.RegisterMessagePipe();

@@ -2,15 +2,13 @@ using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
-using MessagePipe;
 using VContainer;
 
 namespace MySecondWorld.Customization
 {
-    public class CharacterCustomizer : MonoBehaviour
+    public abstract class CharacterCustomizerBase : MonoBehaviour
     {
         [SerializeField] Transform _partRoot; // Modular_Characters
-        private CharacterAppearanceSO _defaultAppearanceSO;
 
         // Hair/Head/FacialHair/HeadCoverings — 동시에 하나만 활성화
         private static readonly HashSet<PartType> _headGroup = new()
@@ -21,21 +19,20 @@ namespace MySecondWorld.Customization
             PartType.HeadCoverings,
         };
 
-        private IPublisher<CharacterAppearanceChangedEvent> _publisher;
         private AvatarPartKeyTableSO _avatarPartKeyTable;
+        private CharacterAppearanceSO _defaultAppearanceSO;
 
-        private CharacterAppearanceData _currentAppearance;
+        protected CharacterAppearanceData _currentAppearance;
+
         private readonly Dictionary<PartType, GameObject> _activePartInstances = new();
         private readonly Dictionary<string, Transform> _boneMap = new();
         private readonly HashSet<PartType> _loadingParts = new(); //연타방지
 
         [Inject]
         public void Construct(
-            IPublisher<CharacterAppearanceChangedEvent> publisher,
             AvatarPartKeyTableSO avatarPartKeyTable,
             CharacterAppearanceSO defaultAppearanceSO)
         {
-            _publisher = publisher;
             _avatarPartKeyTable = avatarPartKeyTable;
             _defaultAppearanceSO = defaultAppearanceSO;
         }
@@ -101,7 +98,7 @@ namespace MySecondWorld.Customization
             SetColor(ColorTarget.Eyes, data.EyesColor);
             SetColor(ColorTarget.BodyArt, data.BodyArtColor);
 
-            _publisher.Publish(new CharacterAppearanceChangedEvent(_currentAppearance));
+            OnAppearanceChanged();
         }
 
         // 단일 파츠 변경 (UI 버튼에서 호출). 연타 방지 필요
@@ -133,7 +130,7 @@ namespace MySecondWorld.Customization
 
             SetCurrentIndex(part, index);
             await InstantiatePart(part, index, _currentAppearance.Gender);
-            _publisher.Publish(new CharacterAppearanceChangedEvent(_currentAppearance));
+            OnAppearanceChanged();
             _loadingParts.Remove(part);
         }
 
@@ -189,6 +186,8 @@ namespace MySecondWorld.Customization
 
         public CharacterAppearanceData GetCurrentAppearance() => _currentAppearance;
 
+        protected virtual void OnAppearanceChanged() { }
+
         private async UniTask InstantiatePart(PartType part, int index, Gender gender)
         {
             var candidates = _avatarPartKeyTable.GetCandidates(part, gender);
@@ -227,7 +226,7 @@ namespace MySecondWorld.Customization
             var bones = new Transform[boneNames.Length];
             for (int i = 0; i < boneNames.Length; i++)
                 _boneMap.TryGetValue(boneNames[i], out bones[i]);
-            
+
             smr.bones = bones;
             if (_boneMap.TryGetValue("Hips", out var hips))
                 smr.rootBone = hips;
