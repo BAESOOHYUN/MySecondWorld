@@ -36,7 +36,7 @@ namespace MySecondWorld.Customization
 
         // Gender에 맞는 전용 리스트 + 공용 리스트를 합쳐서 반환
         // 순서를 고정해야 인덱스가 클라이언트/서버 양쪽에서 항상 같은 의미를 가짐
-        // etCandidates가 매번 Concat+ToList로 새 리스트를 만드는 점은 호출 빈도가 낮으면(파츠 변경 시점에만) 문제 없지만,
+        // GetCandidates가 매번 Concat+ToList로 새 리스트를 만드는 점은 호출 빈도가 낮으면(파츠 변경 시점에만) 문제 없지만,
         // 매 프레임 호출되는 곳에서 쓰면 GC 부담이 생길 수 있다
         public List<AssetReferenceGameObject> GetCandidates(PartType part, Gender gender)
         {
