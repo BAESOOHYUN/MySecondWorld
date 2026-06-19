@@ -6,9 +6,9 @@ using UnityEngine.UI;
 using UnityEngine.AddressableAssets;
 using VContainer;
 using MessagePipe;
-using MySecondWorld.Character;
 using MySecondWorld.Customization;
 using MySecondWorld.Save;
+using Random = UnityEngine.Random;
 
 namespace MySecondWorld.UI
 {
@@ -16,16 +16,15 @@ namespace MySecondWorld.UI
     public struct PartTabEntry
     {
         public PartType Part;
-        public Button Button;
-        public Image Highlight;
+        public Toggle Toggle;
     }
 
     public class CharacterCustomizeUI : MonoBehaviour
     {
         [Header("최상위 탭")]
-        [SerializeField] private Button _partsTopTab;
-        [SerializeField] private Button _accessoryTopTab;
-        [SerializeField] private Button _colorTopTab;
+        [SerializeField] private Toggle _partsTopTab;
+        [SerializeField] private Toggle _accessoryTopTab;
+        [SerializeField] private Toggle _colorTopTab;
         [SerializeField] private GameObject _partsTabGroup;     // 파츠 탭 버튼 묶음 부모
         [SerializeField] private GameObject _accessoryTabGroup; // 액세서리 탭 버튼 묶음 부모
         [SerializeField] private GameObject _colorPanel;        // 색상 패널
@@ -47,7 +46,9 @@ namespace MySecondWorld.UI
         [SerializeField] private Button _femaleButton;
 
         [Header("색상")]
-        [SerializeField] private FlexibleColorPicker _colorPicker;
+        [SerializeField] private Transform _colorRowParent;        // VerticalLayoutGroup 부모
+        [SerializeField] private ColorChannelRow _colorRowPrefab;  // 행 프리팹
+        [SerializeField] private FlexibleColorPicker _colorPicker; // 공유 팝업 피커
         [SerializeField] private ColorTarget _activeColorTarget = ColorTarget.Primary;
 
         [Header("공통")]
@@ -65,13 +66,12 @@ namespace MySecondWorld.UI
         private Gender _currentGender = Gender.Male;
         private PartType _currentTab = PartType.Hair;
         private readonly Dictionary<PartType, int> _currentIndices = new(); // 각 파츠의 인덱스
-
         // 현재 탭에 표시된 썸네일 버튼 목록 (탭 전환 시 정리용)
         private readonly List<PartThumbnailButton> _spawnedButtons = new();
         // 현재 탭 썸네일 Addressables 핸들 (탭 전환 시 Release 필요)
         private readonly List<UnityEngine.ResourceManagement.AsyncOperations.AsyncOperationHandle<Sprite>> _thumbHandles = new();
-
-        private bool _isSwitchingTab;
+        private bool _isSwitchingTab; 
+        private readonly Dictionary<ColorTarget, ColorChannelRow> _colorRows = new();
 
         [Inject]
         public void Construct(CharacterCustomizer customizer,
@@ -89,9 +89,12 @@ namespace MySecondWorld.UI
         {
             InitIndices();
             RegisterButtons();
+            InitColorRows();
+            _colorPicker.gameObject.SetActive(false);
             UpdateFacialHairTabVisibility();
             ShowTopTab(0); // 파츠 탭 먼저
             SwitchTab(_currentTab).Forget();
+            gameObject.SetActive(false); // 초기화 끝나고 패널 숨기기
         }
 
         private void OnDestroy()
@@ -113,29 +116,38 @@ namespace MySecondWorld.UI
             _maleButton.onClick.AddListener(() => SetGender(Gender.Male));
             _femaleButton.onClick.AddListener(() => SetGender(Gender.Female));
 
-            _partsTopTab.onClick.AddListener(() => ShowTopTab(0));
-            _accessoryTopTab.onClick.AddListener(() => ShowTopTab(1));
-            _colorTopTab.onClick.AddListener(() => ShowTopTab(2));
+            _partsTopTab.onValueChanged.AddListener(isOn => { if (isOn) ShowTopTab(0); });
+            _accessoryTopTab.onValueChanged.AddListener(isOn => { if (isOn) ShowTopTab(1); });
+            _colorTopTab.onValueChanged.AddListener(isOn => { if (isOn) ShowTopTab(2); });
 
             foreach (var entry in _partsTabEntries)
             {
                 var part = entry.Part;
-                entry.Button?.onClick.AddListener(() => SwitchTab(part).Forget());
+                entry.Toggle?.onValueChanged.AddListener(isOn =>
+                {
+                    if (isOn) SwitchTab(part).Forget();
+                });
             }
             foreach (var entry in _accessoryTabEntries)
             {
                 var part = entry.Part;
-                entry.Button?.onClick.AddListener(() => SwitchTab(part).Forget());
+                entry.Toggle?.onValueChanged.AddListener(isOn =>
+                {
+                    if (isOn) SwitchTab(part).Forget();
+                });
             }
 
-            _colorPicker.onColorChange.AddListener(color => _customizer.SetColor(_activeColorTarget, color));
+            _colorPicker.onColorChange.AddListener(color =>
+            {
+                _customizer.SetColor(_activeColorTarget, color);
+                if (_colorRows.TryGetValue(_activeColorTarget, out var row))
+                    row.UpdatePreview(color);
+            });
+
             _saveButton.onClick.AddListener(OnSaveClicked);
             _randomButton.onClick.AddListener(() => ApplyRandom().Forget());
             _resetButton.onClick.AddListener(() => ResetToDefault().Forget());
         }
-
-        // 색상 탭 내 Primary/Secondary/Skin 버튼 OnClick에서 호출 (int 캐스팅)
-        public void SetActiveColorTarget(int target) => _activeColorTarget = (ColorTarget)target;
 
         // 탭 전환
 
@@ -156,34 +168,22 @@ namespace MySecondWorld.UI
             _isSwitchingTab = true;
 
             _currentTab = part;
-            UpdateTabHighlights();
             await PopulateThumbnails(part);
             _isSwitchingTab = false;
-        }
-
-        private void UpdateTabHighlights()
-        {
-            bool isParts = (int)_currentTab < 14;
-            // PartType 0~13 = 파츠, 14~24 = 액세서리
-            var group = isParts ? _partsTabEntries : _accessoryTabEntries;
-
-            foreach (var entry in group)
-                if (entry.Highlight != null)
-                    entry.Highlight.enabled = entry.Part == _currentTab;
         }
 
         // Female 시 FacialHair 탭 버튼 숨김 처리
         private void UpdateFacialHairTabVisibility()
         {
             var entry = System.Array.Find(_partsTabEntries, e => e.Part == PartType.FacialHair);
-            if (entry.Button == null)
+            if (entry.Toggle == null)
                 return;
            
             bool hide =
                 _currentGender == Gender.Female &&   //여성인가?
                 _keyTable.GetCount(PartType.FacialHair, Gender.Female) == 0; //여성용 수염 파츠가 0개인가?
             
-            entry.Button.gameObject.SetActive(!hide); // 둘 다 맞으면 탭 버튼을 숨겨라
+            entry.Toggle.gameObject.SetActive(!hide); // 둘 다 맞으면 탭 버튼을 숨겨라
         }
 
         // 썸네일 스크롤뷰 채우기
@@ -287,6 +287,46 @@ namespace MySecondWorld.UI
             SwitchTab(_currentTab).Forget();
         }
 
+        // 색상
+        private void InitColorRows()
+        {
+            foreach (ColorTarget target in System.Enum.GetValues(typeof(ColorTarget)))
+            {
+                var row = Instantiate(_colorRowPrefab, _colorRowParent);
+                row.Setup(target, GetColorFromAppearance(target), OnColorChannelSelected);
+                _colorRows[target] = row;
+            }
+        }
+
+        private void OnColorChannelSelected(ColorTarget target)
+        {
+            _activeColorTarget = target;
+            _colorPicker.color = GetColorFromAppearance(target);
+            _colorPicker.gameObject.SetActive(true);
+        }
+
+        private Color GetColorFromAppearance(ColorTarget target)
+        {
+            var a = _customizer.GetCurrentAppearance();
+            return target switch
+            {
+                ColorTarget.Primary => a.PrimaryColor,
+                ColorTarget.Secondary => a.SecondaryColor,
+                ColorTarget.LeatherPrimary => a.LeatherPrimaryColor,
+                ColorTarget.LeatherSecondary => a.LeatherSecondaryColor,
+                ColorTarget.MetalPrimary => a.MetalPrimaryColor,
+                ColorTarget.MetalSecondary => a.MetalSecondaryColor,
+                ColorTarget.MetalDark => a.MetalDarkColor,
+                ColorTarget.Hair => a.HairColor,
+                ColorTarget.Skin => a.SkinColor,
+                ColorTarget.Stubble => a.StubbleColor,
+                ColorTarget.Scar => a.ScarColor,
+                ColorTarget.Eyes => a.EyesColor,
+                ColorTarget.BodyArt => a.BodyArtColor,
+                _ => Color.white
+            };
+        }
+
         // 외형 적용
         private async UniTask ApplyCurrentAppearance()
         {
@@ -298,18 +338,30 @@ namespace MySecondWorld.UI
             foreach (PartType part in System.Enum.GetValues(typeof(PartType)))
             {
                 var count = _keyTable.GetCount(part, _currentGender);
-                _currentIndices[part] = count > 0 ? UnityEngine.Random.Range(0, count) : 0;
+                _currentIndices[part] = count > 0 ? Random.Range(0, count) : 0;
             }
-            var data = BuildData();
-            data.PrimaryColor = UnityEngine.Random.ColorHSV(0f, 1f, 0f, 1f, 0f, 1f);
-            data.SecondaryColor = UnityEngine.Random.ColorHSV(0f, 1f, 0f, 1f, 0f, 1f);
-            data.SkinColor = UnityEngine.Random.ColorHSV(0.03f, 0.10f, 0.2f, 0.5f, 0.5f, 1.0f);
+            var data = BuildData(); 
+            data.PrimaryColor = Random.ColorHSV(0f, 1f, 0f, 1f, 0f, 1f);
+            data.SecondaryColor = Random.ColorHSV(0f, 1f, 0f, 1f, 0f, 1f);
+            data.LeatherPrimaryColor = Random.ColorHSV(0f, 1f, 0f, 1f, 0f, 1f);
+            data.LeatherSecondaryColor = Random.ColorHSV(0f, 1f, 0f, 1f, 0f, 1f);
+            data.MetalPrimaryColor = Random.ColorHSV(0f, 1f, 0f, 1f, 0f, 1f);
+            data.MetalSecondaryColor = Random.ColorHSV(0f, 1f, 0f, 1f, 0f, 1f);
+            data.MetalDarkColor = Random.ColorHSV(0f, 1f, 0f, 1f, 0f, 1f);
+            data.HairColor = Random.ColorHSV(0f, 1f, 0f, 1f, 0f, 1f);
+            data.SkinColor = Random.ColorHSV(0.03f, 0.10f, 0.2f, 0.5f, 0.5f, 1.0f);
+            data.StubbleColor = Random.ColorHSV(0.03f, 0.10f, 0.2f, 0.5f, 0.5f, 1.0f);
+            data.ScarColor = Random.ColorHSV(0.03f, 0.10f, 0.2f, 0.5f, 0.5f, 1.0f);
+            data.EyesColor = Random.ColorHSV(0f, 1f, 0.3f, 0.8f, 0.7f, 1.0f);
+            data.BodyArtColor = Random.ColorHSV(0f, 1f, 0f, 1f, 0f, 1f);
             await _customizer.ApplyAppearance(data);
 
             // 현재 탭 썸네일 하이라이트 갱신
             UpdateThumbnailSelection();
         }
 
+
+        // 리셋
         private async UniTaskVoid ResetToDefault()
         {
             InitIndices();

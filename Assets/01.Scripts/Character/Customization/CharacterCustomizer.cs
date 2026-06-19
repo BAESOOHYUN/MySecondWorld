@@ -82,7 +82,17 @@ namespace MySecondWorld.Character
 
             SetColor(ColorTarget.Primary, data.PrimaryColor);
             SetColor(ColorTarget.Secondary, data.SecondaryColor);
+            SetColor(ColorTarget.LeatherPrimary, data.LeatherPrimaryColor);
+            SetColor(ColorTarget.LeatherSecondary, data.LeatherSecondaryColor);
+            SetColor(ColorTarget.MetalPrimary, data.MetalPrimaryColor);
+            SetColor(ColorTarget.MetalSecondary, data.MetalSecondaryColor);
+            SetColor(ColorTarget.MetalDark, data.MetalDarkColor);
+            SetColor(ColorTarget.Hair, data.HairColor);
             SetColor(ColorTarget.Skin, data.SkinColor);
+            SetColor(ColorTarget.Stubble, data.StubbleColor);
+            SetColor(ColorTarget.Scar, data.ScarColor);
+            SetColor(ColorTarget.Eyes, data.EyesColor);
+            SetColor(ColorTarget.BodyArt, data.BodyArtColor);
 
             _publisher.Publish(new CharacterAppearanceChangedEvent(_currentAppearance));
         }
@@ -127,7 +137,17 @@ namespace MySecondWorld.Character
             {
                 case ColorTarget.Primary: _currentAppearance.PrimaryColor = color; break;
                 case ColorTarget.Secondary: _currentAppearance.SecondaryColor = color; break;
+                case ColorTarget.LeatherPrimary: _currentAppearance.LeatherPrimaryColor = color; break;
+                case ColorTarget.LeatherSecondary: _currentAppearance.LeatherSecondaryColor = color; break;
+                case ColorTarget.MetalPrimary: _currentAppearance.MetalPrimaryColor = color; break;
+                case ColorTarget.MetalSecondary: _currentAppearance.MetalSecondaryColor = color; break;
+                case ColorTarget.MetalDark: _currentAppearance.MetalDarkColor = color; break;
+                case ColorTarget.Hair: _currentAppearance.HairColor = color; break;
                 case ColorTarget.Skin: _currentAppearance.SkinColor = color; break;
+                case ColorTarget.Stubble: _currentAppearance.StubbleColor = color; break;
+                case ColorTarget.Scar: _currentAppearance.ScarColor = color; break;
+                case ColorTarget.Eyes: _currentAppearance.EyesColor = color; break;
+                case ColorTarget.BodyArt: _currentAppearance.BodyArtColor = color; break;
             }
 
             // prop 셰이더 코드 안의 프로퍼티 이름
@@ -135,7 +155,17 @@ namespace MySecondWorld.Character
             {
                 ColorTarget.Primary => "_Color_Primary",
                 ColorTarget.Secondary => "_Color_Secondary",
+                ColorTarget.LeatherPrimary => "_Color_Leather_Primary",
+                ColorTarget.LeatherSecondary => "_Color_Leather_Secondary",
+                ColorTarget.MetalPrimary => "_Color_Metal_Primary",
+                ColorTarget.MetalSecondary => "_Color_Metal_Secondary",
+                ColorTarget.MetalDark => "_Color_Metal_Dark",
+                ColorTarget.Hair => "_Color_Hair",
                 ColorTarget.Skin => "_Color_Skin",
+                ColorTarget.Stubble => "_Color_Stubble",
+                ColorTarget.Scar => "_Color_Scar",
+                ColorTarget.Eyes => "_Color_Eyes",
+                ColorTarget.BodyArt => "_Color_BodyArt",
                 _ => null
             };
 

@@ -56,11 +56,21 @@ namespace MySecondWorld.Customization
         
         // 성별
         public Gender Gender;
-        
+
         // 색상
         public Color PrimaryColor;
         public Color SecondaryColor;
+        public Color LeatherPrimaryColor;
+        public Color LeatherSecondaryColor;
+        public Color MetalPrimaryColor;
+        public Color MetalSecondaryColor;
+        public Color MetalDarkColor;
+        public Color HairColor;
         public Color SkinColor;
+        public Color StubbleColor;
+        public Color ScarColor;
+        public Color EyesColor;
+        public Color BodyArtColor;
 
         public bool Equals(CharacterAppearanceData other)
         {
@@ -89,10 +99,20 @@ namespace MySecondWorld.Customization
                 && KneeAttachRight == other.KneeAttachRight
                 && HelmetAttachment == other.HelmetAttachment
                 && HipsAttachment == other.HipsAttachment
+                && Gender == other.Gender
                 && PrimaryColor == other.PrimaryColor
                 && SecondaryColor == other.SecondaryColor
+                && LeatherPrimaryColor == other.LeatherPrimaryColor
+                && LeatherSecondaryColor == other.LeatherSecondaryColor
+                && MetalPrimaryColor == other.MetalPrimaryColor
+                && MetalSecondaryColor == other.MetalSecondaryColor
+                && MetalDarkColor == other.MetalDarkColor
+                && HairColor == other.HairColor
                 && SkinColor == other.SkinColor
-                && Gender == other.Gender;
+                && StubbleColor == other.StubbleColor
+                && ScarColor == other.ScarColor
+                && EyesColor == other.EyesColor
+                && BodyArtColor == other.BodyArtColor;
         }
 
         public override bool Equals(object obj)
