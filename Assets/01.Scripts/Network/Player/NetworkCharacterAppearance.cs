@@ -1,7 +1,6 @@
 using Cysharp.Threading.Tasks;
 using Mirror;
 using VContainer;
-using MySecondWorld.Character;
 using MySecondWorld.Customization;
 
 namespace MySecondWorld.Network

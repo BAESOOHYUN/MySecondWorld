@@ -19,12 +19,19 @@ public class ProjectLifetimeScope : LifetimeScope
     [SerializeField] private UIManager _uiManager;
     [SerializeField] private bool _useServerMode = false; // true: Groq 서버 모드, false: 로컬 모드
 
+    [Header("캐릭터 커스터마이즈")]
+    [SerializeField] private AvatarPartKeyTableSO _avatarPartKeyTable;
+    [SerializeField] private CharacterAppearanceSO _defaultAppearanceSO;
+    [SerializeField] private CharacterCustomizer _previewCharacterCustomizer; // 복제본에 붙은 것
     protected override void Configure(IContainerBuilder builder)
     {
         var options = builder.RegisterMessagePipe();
         builder.RegisterMessageBroker<AuthStateChangedEvent>(options);
+        builder.RegisterMessageBroker<CharacterCustomizeOpenEvent>(options);
+        builder.RegisterMessageBroker<CharacterAppearanceSavedEvent>(options);
 
         builder.Register<SaveManager>(Lifetime.Singleton);
+        builder.Register<CharacterSaveService>(Lifetime.Singleton);
 
         builder.RegisterComponent(_uiManager);
         builder.RegisterComponentInHierarchy<TouchEventListener>();
@@ -36,6 +43,10 @@ public class ProjectLifetimeScope : LifetimeScope
         builder.RegisterComponentInHierarchy<SettingsUI>();
         builder.RegisterComponentInHierarchy<CharacterCustomizeUI>();
 
+        builder.RegisterInstance(_avatarPartKeyTable);
+        builder.RegisterInstance(_defaultAppearanceSO);
+        builder.RegisterComponent(_previewCharacterCustomizer);
+
         // 앱 전체 수명 동안 필요 — 형제 스코프(AIModelDownload, NPC) 모두 접근 가능
         if (_useServerMode)
             builder.Register<IDeviceCapability, NetworkDeviceCapability>(Lifetime.Singleton);
@@ -46,7 +57,5 @@ public class ProjectLifetimeScope : LifetimeScope
         builder.Register<ZoneAddressableLoader>(Lifetime.Singleton);
         builder.RegisterEntryPoint<AddressablesService>(Lifetime.Singleton).AsSelf();
         builder.RegisterMessageBroker<AddressablesProgressEvent>(options);
-
-        builder.RegisterMessageBroker<CharacterCustomizeOpenEvent>(options);
     }
 }

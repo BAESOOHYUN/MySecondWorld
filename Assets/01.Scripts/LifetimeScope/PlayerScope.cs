@@ -1,4 +1,3 @@
-using UnityEngine;
 using VContainer;
 using VContainer.Unity;
 using MessagePipe;
@@ -6,8 +5,6 @@ using MySecondWorld.Network.Player;
 using MySecondWorld.Move;
 using MySecondWorld.CameraSystem;
 using MySecondWorld.Customization;
-using MySecondWorld.Character;
-using MySecondWorld.Save;
 using MySecondWorld.Network;
 
 /// <summary>
@@ -16,8 +13,6 @@ using MySecondWorld.Network;
 /// </summary>
 public class PlayerScope : LifetimeScope
 {
-    [SerializeField] private AvatarPartKeyTableSO _avatarPartKeyTable;
-    [SerializeField] private CharacterAppearanceSO _defaultAppearanceSO;
     protected override void Configure(IContainerBuilder builder)
     {
         var options = builder.RegisterMessagePipe();
@@ -27,7 +22,6 @@ public class PlayerScope : LifetimeScope
         builder.RegisterMessageBroker<PlayerLandedEvent>(options);
         builder.RegisterMessageBroker<PlayerSpeedChangedEvent>(options);
         builder.RegisterMessageBroker<CharacterAppearanceChangedEvent>(options);
-        builder.RegisterMessageBroker<CharacterAppearanceSavedEvent>(options);
 
         builder.RegisterComponentInHierarchy<MovementController>();
         builder.RegisterComponentInHierarchy<PlayerAnimationController>();
@@ -35,10 +29,5 @@ public class PlayerScope : LifetimeScope
         builder.RegisterComponentInHierarchy<CharacterCustomizer>();
         builder.RegisterComponentInHierarchy<NetworkCharacterAppearance>();
         builder.RegisterComponentInHierarchy<NetworkPlayerController>();
-
-        builder.RegisterInstance(_avatarPartKeyTable);
-        builder.RegisterInstance(_defaultAppearanceSO);
-
-        builder.Register<CharacterSaveService>(Lifetime.Singleton);
     }
 }

@@ -4,13 +4,13 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using MessagePipe;
 using VContainer;
-using MySecondWorld.Customization;
 
-namespace MySecondWorld.Character
+namespace MySecondWorld.Customization
 {
     public class CharacterCustomizer : MonoBehaviour
     {
         [SerializeField] Transform _partRoot; // Modular_Characters
+        private CharacterAppearanceSO _defaultAppearanceSO;
 
         // Hair/Head/FacialHair/HeadCoverings — 동시에 하나만 활성화
         private static readonly HashSet<PartType> _headGroup = new()
@@ -32,10 +32,17 @@ namespace MySecondWorld.Character
         [Inject]
         public void Construct(
             IPublisher<CharacterAppearanceChangedEvent> publisher,
-            AvatarPartKeyTableSO avatarPartKeyTable)
+            AvatarPartKeyTableSO avatarPartKeyTable,
+            CharacterAppearanceSO defaultAppearanceSO)
         {
             _publisher = publisher;
             _avatarPartKeyTable = avatarPartKeyTable;
+            _defaultAppearanceSO = defaultAppearanceSO;
+        }
+
+        private void Start()
+        {
+            ApplyAppearance(_defaultAppearanceSO.DefaultAppearance).Forget();
         }
 
         // 전체 외형 교체 (로그인 시 / 랜덤 / 불러오기)
