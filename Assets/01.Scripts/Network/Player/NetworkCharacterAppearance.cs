@@ -1,23 +1,32 @@
 using Cysharp.Threading.Tasks;
+using UnityEngine;
 using Mirror;
 using VContainer;
 using MySecondWorld.Customization;
+using MySecondWorld.UI;
 
 namespace MySecondWorld.Network
 {
     public class NetworkCharacterAppearance : NetworkBehaviour
     {
+        private const string PrefKeyCustomized = "CharacterCustomized";
+
         [SyncVar(hook = nameof(OnAppearanceChanged))]
         private CharacterAppearanceData _appearance;
 
         private ObservableCharacterCustomizer _customizer;
-        private AvatarPartKeyTableSO _avatarPartKeyTable;
+        private AvatarPartKeyTableSO _avatarPartKeyTable; 
+        private CharacterCustomizeUI _customizeUI;
 
         [Inject]
-        public void Construct(ObservableCharacterCustomizer customizer, AvatarPartKeyTableSO avatarPartKeyTable)
+        public void Construct(
+            ObservableCharacterCustomizer customizer,
+            AvatarPartKeyTableSO avatarPartKeyTable,
+            CharacterCustomizeUI customizeUI)
         {
             _customizer = customizer;
             _avatarPartKeyTable = avatarPartKeyTable;
+            _customizeUI = customizeUI;
         }
 
         [Command]
@@ -45,5 +54,12 @@ namespace MySecondWorld.Network
 
         private static int Clamp(int value, int count, int fallback)
             => value >= 0 && value < count ? value : fallback;
+
+        public override void OnStartLocalPlayer()
+        {
+            base.OnStartLocalPlayer();
+            if (!PlayerPrefs.HasKey(PrefKeyCustomized))
+                _customizeUI.OpenForFirstLaunch();
+        }
     }
 }

@@ -4,11 +4,13 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.AddressableAssets;
+using UnityEngine.U2D;
+using UnityEngine.ResourceManagement.AsyncOperations;
+using Random = UnityEngine.Random;
 using VContainer;
 using MessagePipe;
 using MySecondWorld.Customization;
 using MySecondWorld.Save;
-using Random = UnityEngine.Random;
 
 namespace MySecondWorld.UI
 {
@@ -35,44 +37,53 @@ namespace MySecondWorld.UI
         [Header("액세서리 탭 (Ear~HipsAttachment 11개)")]
         [SerializeField] private PartTabEntry[] _accessoryTabEntries;
 
-        // ── 썸네일 스크롤뷰 ──
-        [Header("썸네일 스크롤뷰")]
+        [Header("썸네일")]
         [SerializeField] private ScrollRect _thumbnailScrollRect;
         [SerializeField] private Transform _thumbnailContent;  // GridLayoutGroup 부착
         [SerializeField] private PartThumbnailButton _thumbnailButtonPrefab;
 
-        [Header("Gender")]
-        [SerializeField] private Button _maleButton;
-        [SerializeField] private Button _femaleButton;
-
         [Header("색상")]
-        [SerializeField] private Transform _colorRowParent;        // VerticalLayoutGroup 부모
+        [SerializeField] private Transform _colorRowParent;        // Content (VerticalLayoutGroup)
         [SerializeField] private ColorChannelRow _colorRowPrefab;  // 행 프리팹
         [SerializeField] private FlexibleColorPicker _colorPicker; // 공유 팝업 피커
         [SerializeField] private ColorTarget _activeColorTarget = ColorTarget.Primary;
 
-        [Header("공통")]
+        [Header("버튼")]
+        [SerializeField] private Button _maleButton;
+        [SerializeField] private Button _femaleButton;
         [SerializeField] private Button _saveButton;
         [SerializeField] private Button _randomButton;
         [SerializeField] private Button _resetButton;
+        [SerializeField] private Button _exitButton;
 
         [Header("프리뷰 캐릭터")]
         [SerializeField] private LocalCharacterCustomizer _previewCustomizer;
 
+        // ── 상수 ──
+        private const string PrefKeyCustomized = "CharacterCustomized";
+
         // ── DI ──
         private AvatarPartKeyTableSO _keyTable;
+        private CharacterAppearanceSO _defaultAppearanceSO;
         private CharacterSaveService _saveService;
         private IDisposable _subscription;
 
-        // ── 런타임 상태 ──
+        // ── 아틀라스 ──
+        private SpriteAtlas _thumbnailAtlas;
+        private AsyncOperationHandle<SpriteAtlas> _atlasHandle;
+
+        // ── 탭 상태 ──
+        private bool _isSwitchingTab;
         private Gender _currentGender = Gender.Male;
         private PartType _currentTab = PartType.Hair;
-        private readonly Dictionary<PartType, int> _currentIndices = new(); // 각 파츠의 인덱스
-        // 현재 탭에 표시된 썸네일 버튼 목록 (탭 전환 시 정리용)
+        private PartType _lastPartsTab;
+        private PartType _lastAccessoryTab;
+
+        // ── 파츠 인덱스 ──
+        private readonly Dictionary<PartType, int> _currentIndices = new();
+
+        // ── UI 요소 ──
         private readonly List<PartThumbnailButton> _spawnedButtons = new();
-        // 현재 탭 썸네일 Addressables 핸들 (탭 전환 시 Release 필요)
-        private readonly List<UnityEngine.ResourceManagement.AsyncOperations.AsyncOperationHandle<Sprite>> _thumbHandles = new();
-        private bool _isSwitchingTab; 
         private readonly Dictionary<ColorTarget, ColorChannelRow> _colorRows = new();
 
         [Inject]
@@ -83,8 +94,7 @@ namespace MySecondWorld.UI
         {
             _keyTable = keyTable;
             _saveService = saveService;
-            _subscription = openSub.Subscribe(_ => gameObject.SetActive(true));
-
+            _defaultAppearanceSO = defaultAppearanceSO;
             // 프리뷰 커스터마이저에 수동으로 의존성 전달
             _previewCustomizer.Construct(keyTable, defaultAppearanceSO);
         }
@@ -92,26 +102,40 @@ namespace MySecondWorld.UI
         private void Start()
         {
             InitIndices();
+            _lastPartsTab = _partsTabEntries.Length > 0 ? _partsTabEntries[0].Part : default;
+            _lastAccessoryTab = _accessoryTabEntries.Length > 0 ? _accessoryTabEntries[0].Part : default;
             RegisterButtons();
             InitColorRows();
             _colorPicker.gameObject.SetActive(false);
             UpdateFacialHairTabVisibility();
-            ShowTopTab(0); // 파츠 탭 먼저
-            SwitchTab(_currentTab).Forget();
-            gameObject.SetActive(false); // 초기화 끝나고 패널 숨기기
+            ShowTopTab(0); // 파츠 탭(0) 먼저
+            StartupAsync().Forget();
         }
 
         private void OnDestroy()
         {
             _subscription?.Dispose();
-            ReleaseThumbnailHandles();
+            if (_atlasHandle.IsValid())
+                Addressables.Release(_atlasHandle);
         }
+
+        private async UniTaskVoid StartupAsync()
+        {
+            _atlasHandle = Addressables.LoadAssetAsync<SpriteAtlas>(_keyTable.ThumbnailAtlas);
+            _thumbnailAtlas = await _atlasHandle.ToUniTask();
+            SwitchTab(_currentTab);
+            gameObject.SetActive(false);
+        }
+
+        public void OpenForFirstLaunch() => gameObject.SetActive(true);
 
         // 인덱스 초기화
         private void InitIndices()
         {
+            var d = _defaultAppearanceSO.DefaultAppearance;
+
             foreach (PartType part in System.Enum.GetValues(typeof(PartType)))
-                _currentIndices[part] = 0;
+                _currentIndices[part] = d[part];
         }
 
         // 버튼 등록
@@ -129,7 +153,11 @@ namespace MySecondWorld.UI
                 var part = entry.Part;
                 entry.Toggle?.onValueChanged.AddListener(isOn =>
                 {
-                    if (isOn) SwitchTab(part).Forget();
+                    if (isOn) 
+                    { 
+                        _lastPartsTab = part; 
+                        SwitchTab(part); 
+                    }
                 });
             }
             foreach (var entry in _accessoryTabEntries)
@@ -137,7 +165,11 @@ namespace MySecondWorld.UI
                 var part = entry.Part;
                 entry.Toggle?.onValueChanged.AddListener(isOn =>
                 {
-                    if (isOn) SwitchTab(part).Forget();
+                    if (isOn) 
+                    { 
+                        _lastAccessoryTab = part;
+                        SwitchTab(part); 
+                    }
                 });
             }
 
@@ -151,6 +183,7 @@ namespace MySecondWorld.UI
             _saveButton.onClick.AddListener(OnSaveClicked);
             _randomButton.onClick.AddListener(() => ApplyRandom().Forget());
             _resetButton.onClick.AddListener(() => ResetToDefault().Forget());
+            _exitButton.onClick.AddListener(Close);
         }
 
         // 탭 전환
@@ -161,18 +194,23 @@ namespace MySecondWorld.UI
             _partsTabGroup.SetActive(index == 0);
             _accessoryTabGroup.SetActive(index == 1);
             _colorPanel.SetActive(index == 2);
+
+            if (index == 0)
+                SwitchTab(_lastPartsTab);
+            else if (index == 1)
+                SwitchTab(_lastAccessoryTab);
+            
+            if (index != 2)
+                _colorPicker.gameObject.SetActive(false);  // 색상 탭 벗어나면 피커 닫기
         }
 
         // 하위 탭
-        private async UniTaskVoid SwitchTab(PartType part)
+        private void SwitchTab(PartType part)
         {
-            if (_isSwitchingTab) 
-                return;
-            
+            if (_isSwitchingTab) return;
             _isSwitchingTab = true;
-
             _currentTab = part;
-            await PopulateThumbnails(part);
+            PopulateThumbnails(part);
             _isSwitchingTab = false;
         }
 
@@ -191,26 +229,18 @@ namespace MySecondWorld.UI
         }
 
         // 썸네일 스크롤뷰 채우기
-        private async UniTask PopulateThumbnails(PartType part)
+        private void PopulateThumbnails(PartType part)
         {
             ClearThumbnailContent();
-
-            // thumbRefs = AssetReferenceSprite
-            var thumbRefs = _keyTable.GetThumbnails(part, _currentGender);
+            var names = _keyTable.GetThumbnailNames(part, _currentGender);
             int selectedIndex = _currentIndices[part];
 
-            for (int i = 0; i < thumbRefs.Count; i++)
+            for (int i = 0; i < names.Count; i++)
             {
-                Sprite sprite = null;
-                if (thumbRefs[i] != null && thumbRefs[i].RuntimeKeyIsValid())
-                {
-                    // 로드 요청 → 영수증(AsyncOperationHandle) 반환
-                    var handle = Addressables.LoadAssetAsync<Sprite>(thumbRefs[i]);
-                    // _thumbHandles 리스트에 영수증을 모아뒀다가 탭 전환 시 ReleaseThumbnailHandles()에서 일괄 반납
-                    _thumbHandles.Add(handle);
-                    // 영수증으로 실제 스프라이트 꺼내기
-                    sprite = await handle;
-                }
+                Sprite sprite = 
+                    !string.IsNullOrEmpty(names[i]) ?
+                    _thumbnailAtlas?.GetSprite(names[i]) : null;
+               
                 var btn = Instantiate(_thumbnailButtonPrefab, _thumbnailContent);
                 int capturedIndex = i;
                 btn.Setup(part, capturedIndex, sprite, OnThumbnailClicked);
@@ -248,21 +278,10 @@ namespace MySecondWorld.UI
                     Destroy(btn.gameObject);
             }
             _spawnedButtons.Clear();
-            ReleaseThumbnailHandles();
 
             // 탭 전환 시 스크롤 맨 위로
             if (_thumbnailScrollRect != null)
                 _thumbnailScrollRect.normalizedPosition = Vector2.up;
-        }
-
-        private void ReleaseThumbnailHandles()
-        {
-            foreach (var handle in _thumbHandles)
-            {
-                if (handle.IsValid())
-                    Addressables.Release(handle);
-            }
-            _thumbHandles.Clear();
         }
 
         // Gender
@@ -288,7 +307,7 @@ namespace MySecondWorld.UI
                 _currentTab = PartType.Hair;
 
             ApplyCurrentAppearance().Forget();
-            SwitchTab(_currentTab).Forget();
+            SwitchTab(_currentTab);
         }
 
         // 색상
@@ -312,6 +331,12 @@ namespace MySecondWorld.UI
         private Color GetColorFromAppearance(ColorTarget target)
         {
             var a = _previewCustomizer.GetCurrentAppearance();
+
+            // 미로드 상태(모든 프리뷰 색상버튼 default(Color) = (0, 0, 0, 0) = 완전 투명) 방어
+            // → SO 기본값으로 대체
+            if (a.PrimaryColor == default && a.SkinColor == default)
+                a = _defaultAppearanceSO.DefaultAppearance;
+
             return target switch
             {
                 ColorTarget.Primary => a.PrimaryColor,
@@ -337,6 +362,7 @@ namespace MySecondWorld.UI
             await _previewCustomizer.ApplyAppearance(BuildData());
         }
 
+        // 랜덤
         private async UniTaskVoid ApplyRandom()
         {
             foreach (PartType part in System.Enum.GetValues(typeof(PartType)))
@@ -378,6 +404,8 @@ namespace MySecondWorld.UI
         {
             var data = BuildData();
             _saveService.Save(data);
+            PlayerPrefs.SetInt(PrefKeyCustomized, 1);
+            PlayerPrefs.Save();
         }
 
         // 유틸
@@ -387,6 +415,11 @@ namespace MySecondWorld.UI
             foreach (PartType part in System.Enum.GetValues(typeof(PartType)))
                 data[part] = _currentIndices[part]; //인덱서로 직접 접근
             return data;
+        }
+
+        private void Close()
+        {
+            gameObject.SetActive(false);
         }
     }
 }

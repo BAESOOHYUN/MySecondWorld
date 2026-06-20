@@ -8,26 +8,18 @@ namespace MySecondWorld.Customization
 {
     public abstract class CharacterCustomizerBase : MonoBehaviour
     {
+        // ── DI ──
         [SerializeField] Transform _partRoot; // Modular_Characters
-
-        // Hair/Head/FacialHair/HeadCoverings — 동시에 하나만 활성화
-        private static readonly HashSet<PartType> _headGroup = new()
-        {
-            PartType.Hair,
-            PartType.Head,
-            PartType.FacialHair,
-            PartType.HeadCoverings,
-        };
-
         private AvatarPartKeyTableSO _avatarPartKeyTable;
         private CharacterAppearanceSO _defaultAppearanceSO;
 
+        // ── 상태 ──
         protected CharacterAppearanceData _currentAppearance;
-
         private readonly Dictionary<PartType, GameObject> _activePartInstances = new();
         private readonly Dictionary<string, Transform> _boneMap = new();
         private readonly HashSet<PartType> _loadingParts = new(); //연타방지
 
+        // ── 초기화 ──
         [Inject]
         public void Construct(
             AvatarPartKeyTableSO avatarPartKeyTable,
@@ -46,6 +38,7 @@ namespace MySecondWorld.Customization
             ApplyAppearance(_defaultAppearanceSO.DefaultAppearance).Forget();
         }
 
+        // ── 공개 API ──
         // 전체 외형 교체 (로그인 시 / 랜덤 / 불러오기)
         public async UniTask ApplyAppearance(CharacterAppearanceData data)
         {
@@ -109,35 +102,15 @@ namespace MySecondWorld.Customization
         public async UniTask SetPart(PartType part, int index)
         {
             if (_loadingParts.Contains(part)) return;
-
             _loadingParts.Add(part);
-
-            // 머리 상호배제: 같은 그룹의 다른 파츠 해제
-            if (_headGroup.Contains(part)) // 바꾸려는 게 머리 그룹 중 하나면
-            {
-                // 그룹 내 나머지 전부 해제
-                // ex) Hair는 headGroup 소속
-                //    → Head, FacialHair, HeadCoverings 인스턴스 해제. Hair 새로 로드
-                foreach (var groupPart in _headGroup)
-                {
-                    if (groupPart != part)
-                        ReleasePartInstance(groupPart);
-                }
-            }
-            else                           // 머리 그룹이 아닌 파츠면 (Torso, Arm 등)
-            {
-                // 그냥 자기 자신의 이전 인스턴스만 해제
-                // → Torso는 headGroup 비소속 → else
-                //   → 이전 Torso 인스턴스만 해제. Torso 새로 로드
-                ReleasePartInstance(part);
-            }
-
+            ReleasePartInstance(part);  // 자기 자신의 이전 인스턴스 해제
             SetCurrentIndex(part, index);
             await InstantiatePart(part, index, _currentAppearance.Gender);
             OnAppearanceChanged();
             _loadingParts.Remove(part);
         }
 
+        // 색 변경
         public void SetColor(ColorTarget target, Color color)
         {
             // SetColor는 한 번 호출에 하나의 ColorTarget만 처리
@@ -190,8 +163,11 @@ namespace MySecondWorld.Customization
 
         public CharacterAppearanceData GetCurrentAppearance() => _currentAppearance;
 
+        // ── 오버라이드 포인트 ──
         protected virtual void OnAppearanceChanged() { }
+        protected virtual void OnPartInstantiated(GameObject instance) { }
 
+        // ── 내부 구현 ──
         private async UniTask InstantiatePart(PartType part, int index, Gender gender)
         {
             var candidates = _avatarPartKeyTable.GetCandidates(part, gender);
@@ -199,6 +175,8 @@ namespace MySecondWorld.Customization
 
             var instance = await Addressables.InstantiateAsync(candidates[index], _partRoot).ToUniTask();
             _activePartInstances[part] = instance;
+
+            OnPartInstantiated(instance);
 
             var smr = instance.GetComponent<SkinnedMeshRenderer>();
             var partBoneNames = instance.GetComponent<PartBoneNames>();
@@ -214,34 +192,6 @@ namespace MySecondWorld.Customization
                 Addressables.ReleaseInstance(old);
                 _activePartInstances.Remove(part);
             }
-        }
-
-        private void EnsureBoneMap()
-        {
-            if (_boneMap.Count > 0) return;
-            // 이 오브젝트 + 모든 자손에서 Transform 컴포넌트를 전부 긁어온다.
-            // true = 비활성(SetActive false) 오브젝트도 포함
-            // false = 활성된 것만 (기본값)
-            foreach (Transform t in GetComponentsInChildren<Transform>(true))
-                _boneMap[t.name] = t;
-        }
-
-        private void RemapBones(SkinnedMeshRenderer smr, PartBoneNames partBoneNames)
-        {
-            var boneNames = partBoneNames.BoneNames;
-            var bones = new Transform[boneNames.Length];
-            for (int i = 0; i < boneNames.Length; i++)
-                _boneMap.TryGetValue(boneNames[i], out bones[i]);
-            smr.bones = bones;
-
-            smr.updateWhenOffscreen = true; // 초기 바운즈 0으로 인한 SMR 컬링 방지
-
-            string rootName = !string.IsNullOrEmpty(partBoneNames.RootBoneName)
-                ? partBoneNames.RootBoneName
-                : "Hips";
-
-            if (_boneMap.TryGetValue(rootName, out var root))
-                smr.rootBone = root;
         }
 
         private void SetCurrentIndex(PartType part, int index)
@@ -274,6 +224,36 @@ namespace MySecondWorld.Customization
                 case PartType.KneeAttachLeft: _currentAppearance.KneeAttachLeft = index; break;
                 case PartType.HipsAttachment: _currentAppearance.HipsAttachment = index; break;
             }
+        }
+
+
+        // ── 본 관련 ──
+        private void EnsureBoneMap()
+        {
+            if (_boneMap.Count > 0) return;
+            // 이 오브젝트 + 모든 자손에서 Transform 컴포넌트를 전부 긁어온다.
+            // true = 비활성(SetActive false) 오브젝트도 포함
+            // false = 활성된 것만 (기본값)
+            foreach (Transform t in GetComponentsInChildren<Transform>(true))
+                _boneMap[t.name] = t;
+        }
+
+        private void RemapBones(SkinnedMeshRenderer smr, PartBoneNames partBoneNames)
+        {
+            var boneNames = partBoneNames.BoneNames;
+            var bones = new Transform[boneNames.Length];
+            for (int i = 0; i < boneNames.Length; i++)
+                _boneMap.TryGetValue(boneNames[i], out bones[i]);
+            smr.bones = bones;
+
+            smr.updateWhenOffscreen = true; // 초기 바운즈 0으로 인한 SMR 컬링 방지
+
+            string rootName = !string.IsNullOrEmpty(partBoneNames.RootBoneName)
+                ? partBoneNames.RootBoneName
+                : "Hips";
+
+            if (_boneMap.TryGetValue(rootName, out var root))
+                smr.rootBone = root;
         }
     }
 }

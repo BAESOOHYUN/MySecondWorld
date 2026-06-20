@@ -1,3 +1,28 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:3deb3ac13f5c7ccd86a8473d3b45a9755381644c96996e44d93e36748f0c868a
-size 856
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Local_Core
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: Local_Core
+  m_GUID: d79ab3afdd2844841ab127b9da93bfa6
+  m_SerializeEntries:
+  - m_GUID: 8e6004a678cddb74e89cb91a0a868eaf
+    m_Address: Assets/06.ScriptableObject/CharacterPartThumbnails Sprite Atlas.spriteatlas
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: d2176961fdb6fe549bc4ce1763ceb434, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 7e5bf849cb0249640ae76896d4492b3d, type: 2}
+    - {fileID: 11400000, guid: de9439cab0a880e48be7eeb1becb67b8, type: 2}

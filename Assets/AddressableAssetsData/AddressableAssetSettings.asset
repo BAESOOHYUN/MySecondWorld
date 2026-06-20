@@ -15,7 +15,7 @@ MonoBehaviour:
   m_DefaultGroup: d79ab3afdd2844841ab127b9da93bfa6
   m_currentHash:
     serializedVersion: 2
-    Hash: a60b200202988e9664f013f440456fb1
+    Hash: 3963c5af9cb7feafcce46a1d1e2f336c
   m_OptimizeCatalogSize: 0
   m_BuildRemoteCatalog: 1
   m_BundleLocalCatalog: 0
@@ -65,7 +65,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: d5fe92ea75d418a4b86ed62a2e222007, type: 2}
   - {fileID: 11400000, guid: a3bea0b273eb5d947bf7a6a9adfb3c76, type: 2}
   - {fileID: 11400000, guid: b1035ebee6300334f846136984720ee9, type: 2}
-  - {fileID: 11400000, guid: afbe32ada987cba449aa045ad0a098ad, type: 2}
   - {fileID: 11400000, guid: 8eaec5c048016114da152a5c6849be77, type: 2}
   m_BuildSettings:
     m_LogResourceManagerExceptions: 1
@@ -109,7 +108,6 @@ MonoBehaviour:
     - zone_dungeon_1
     - zone_dungeon_2
     - character_parts
-    - character_thumbnails
   m_SchemaTemplates: []
   m_GroupTemplateObjects:
   - {fileID: 11400000, guid: c10c9648adfab8d42ba6b2d4ae9d310c, type: 2}

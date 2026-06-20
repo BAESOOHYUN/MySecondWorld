@@ -12,12 +12,50 @@ namespace MySecondWorld.Customization
     {
         public CharacterAppearanceData DefaultAppearance;
 
+        [ContextMenu("Set Default Indices")]
+        private void SetDefaultIndices()
+        {
+            var d = DefaultAppearance;
+            d.Gender = Gender.Male;
+
+            // 기본 착용 (0)
+            d.Hair = 0;
+            d.Head = 0;
+            d.Eyebrows = 0;
+            d.Torso = 0;
+            d.ArmUpperRight = 0;
+            d.ArmUpperLeft = 0;
+            d.ArmLowerRight = 0;
+            d.ArmLowerLeft = 0;
+            d.HandRight = 0;
+            d.HandLeft = 0;
+            d.Hips = 0;
+            d.LegRight = 0;
+            d.LegLeft = 0;
+
+            // 미착용 (-1)
+            d.FacialHair = -1;
+            d.HeadCoverings = -1;
+            d.Ear = -1;
+            d.HelmetAttachment = -1;
+            d.BackAttachment = -1;
+            d.ShoulderAttachRight = -1;
+            d.ShoulderAttachLeft = -1;
+            d.ElbowAttachRight = -1;
+            d.ElbowAttachLeft = -1;
+            d.KneeAttachRight = -1;
+            d.KneeAttachLeft = -1;
+            d.HipsAttachment = -1;
+
+            DefaultAppearance = d;
+        }
+
         [ContextMenu("Set Default Colors")]
         private void SetDefaultColors()
         {
             var d = DefaultAppearance;
-            d.PrimaryColor = Color.white;
-            d.SecondaryColor = Color.white;
+            d.PrimaryColor = new Color(0.35f, 0.30f, 0.25f);
+            d.SecondaryColor = new Color(0.70f, 0.58f, 0.30f);
             d.LeatherPrimaryColor = new Color(0.55f, 0.35f, 0.15f);
             d.LeatherSecondaryColor = new Color(0.35f, 0.22f, 0.08f);
             d.MetalPrimaryColor = new Color(0.75f, 0.75f, 0.75f);
@@ -28,7 +66,7 @@ namespace MySecondWorld.Customization
             d.StubbleColor = new Color(0.40f, 0.30f, 0.22f);
             d.ScarColor = new Color(0.80f, 0.62f, 0.62f);
             d.EyesColor = new Color(0.28f, 0.50f, 0.80f);
-            d.BodyArtColor = Color.white;
+            d.BodyArtColor = new Color(0.35f, 0.08f, 0.08f);
             DefaultAppearance = d;
         }
     }
