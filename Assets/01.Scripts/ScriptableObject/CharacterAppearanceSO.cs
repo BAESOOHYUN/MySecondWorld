@@ -11,5 +11,26 @@ namespace MySecondWorld.Customization
     public class CharacterAppearanceSO : ScriptableObject
     {
         public CharacterAppearanceData DefaultAppearance;
+
+        [ContextMenu("Set Default Colors")]
+        private void SetDefaultColors()
+        {
+            var d = DefaultAppearance;
+            d.PrimaryColor = Color.white;
+            d.SecondaryColor = Color.white;
+            d.LeatherPrimaryColor = new Color(0.55f, 0.35f, 0.15f);
+            d.LeatherSecondaryColor = new Color(0.35f, 0.22f, 0.08f);
+            d.MetalPrimaryColor = new Color(0.75f, 0.75f, 0.75f);
+            d.MetalSecondaryColor = new Color(0.55f, 0.55f, 0.55f);
+            d.MetalDarkColor = new Color(0.25f, 0.25f, 0.25f);
+            d.HairColor = new Color(0.18f, 0.10f, 0.04f);
+            d.SkinColor = new Color(0.90f, 0.75f, 0.60f);
+            d.StubbleColor = new Color(0.40f, 0.30f, 0.22f);
+            d.ScarColor = new Color(0.80f, 0.62f, 0.62f);
+            d.EyesColor = new Color(0.28f, 0.50f, 0.80f);
+            d.BodyArtColor = Color.white;
+            DefaultAppearance = d;
+        }
     }
+
 }

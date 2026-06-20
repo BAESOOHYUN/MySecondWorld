@@ -10,11 +10,11 @@ namespace MySecondWorld.Network
         [SyncVar(hook = nameof(OnAppearanceChanged))]
         private CharacterAppearanceData _appearance;
 
-        private CharacterCustomizer _customizer;
+        private ObservableCharacterCustomizer _customizer;
         private AvatarPartKeyTableSO _avatarPartKeyTable;
 
         [Inject]
-        public void Construct(CharacterCustomizer customizer, AvatarPartKeyTableSO avatarPartKeyTable)
+        public void Construct(ObservableCharacterCustomizer customizer, AvatarPartKeyTableSO avatarPartKeyTable)
         {
             _customizer = customizer;
             _avatarPartKeyTable = avatarPartKeyTable;

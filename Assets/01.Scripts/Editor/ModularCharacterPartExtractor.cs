@@ -82,6 +82,7 @@ namespace MySecondWorld.Editor
                 // 이 파츠를 변형시키는 본은 여러 개(Inspector의 Root Bone 하나가 아님) → 전체 이름을 배열로 저장
                 // ex) Torso(몸통) 메시 하나만 해도, 애니메이션 중에 자연스럽게 휘어지려면 척추(Spine), 가슴(Chest), 어깨(Shoulder L/R), 목(Neck) 등 여러 본의 영향을 동시에 받아야 함.
                 boneNames.BoneNames = source.bones.Select(b => b.name).ToArray();
+                boneNames.RootBoneName = source.rootBone?.name ?? string.Empty;
 
                 // PrefabUtility.SaveAsPrefabAsset는 씬에 떠 있는 GameObject 인스턴스를 통째로 찍어서(.prefab 파일로) 디스크에 저장하는 함수
                 PrefabUtility.SaveAsPrefabAsset(tempGo, assetPath);

@@ -37,8 +37,12 @@ namespace MySecondWorld.Customization
             _defaultAppearanceSO = defaultAppearanceSO;
         }
 
-        private void Start()
+        protected virtual void Start()
         {
+            var anim = GetComponent<Animator>() ?? GetComponentInParent<Animator>();
+            if (anim != null)
+                anim.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+
             ApplyAppearance(_defaultAppearanceSO.DefaultAppearance).Forget();
         }
 
@@ -197,9 +201,10 @@ namespace MySecondWorld.Customization
             _activePartInstances[part] = instance;
 
             var smr = instance.GetComponent<SkinnedMeshRenderer>();
-            var boneNames = instance.GetComponent<PartBoneNames>();
-            if (smr != null && boneNames != null)
-                RemapBones(smr, boneNames.BoneNames);
+            var partBoneNames = instance.GetComponent<PartBoneNames>();
+
+            if (smr != null && partBoneNames != null)
+                RemapBones(smr, partBoneNames);
         }
 
         private void ReleasePartInstance(PartType part)
@@ -214,22 +219,29 @@ namespace MySecondWorld.Customization
         private void EnsureBoneMap()
         {
             if (_boneMap.Count > 0) return;
-            //이 오브젝트(CharacterCustomizer가 붙은 것) + 모든 자손에서 Transform 컴포넌트를 전부 긁어온다
-            // true  = 비활성(SetActive false) 오브젝트도 포함
-            // false = 활성화된 것만(기본값)
+            // 이 오브젝트 + 모든 자손에서 Transform 컴포넌트를 전부 긁어온다.
+            // true = 비활성(SetActive false) 오브젝트도 포함
+            // false = 활성된 것만 (기본값)
             foreach (Transform t in GetComponentsInChildren<Transform>(true))
                 _boneMap[t.name] = t;
         }
 
-        private void RemapBones(SkinnedMeshRenderer smr, string[] boneNames)
+        private void RemapBones(SkinnedMeshRenderer smr, PartBoneNames partBoneNames)
         {
+            var boneNames = partBoneNames.BoneNames;
             var bones = new Transform[boneNames.Length];
             for (int i = 0; i < boneNames.Length; i++)
                 _boneMap.TryGetValue(boneNames[i], out bones[i]);
-
             smr.bones = bones;
-            if (_boneMap.TryGetValue("Hips", out var hips))
-                smr.rootBone = hips;
+
+            smr.updateWhenOffscreen = true; // 초기 바운즈 0으로 인한 SMR 컬링 방지
+
+            string rootName = !string.IsNullOrEmpty(partBoneNames.RootBoneName)
+                ? partBoneNames.RootBoneName
+                : "Hips";
+
+            if (_boneMap.TryGetValue(rootName, out var root))
+                smr.rootBone = root;
         }
 
         private void SetCurrentIndex(PartType part, int index)

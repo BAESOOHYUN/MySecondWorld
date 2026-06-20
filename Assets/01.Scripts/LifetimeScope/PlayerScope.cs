@@ -26,7 +26,7 @@ public class PlayerScope : LifetimeScope
         builder.RegisterComponentInHierarchy<MovementController>();
         builder.RegisterComponentInHierarchy<PlayerAnimationController>();
         builder.RegisterComponentInHierarchy<ThirdPersonCameraController>();
-        builder.RegisterComponentInHierarchy<CharacterCustomizer>();
+        builder.RegisterComponentInHierarchy<ObservableCharacterCustomizer>();
         builder.RegisterComponentInHierarchy<NetworkCharacterAppearance>();
         builder.RegisterComponentInHierarchy<NetworkPlayerController>();
     }

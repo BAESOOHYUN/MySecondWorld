@@ -55,9 +55,11 @@ namespace MySecondWorld.UI
         [SerializeField] private Button _saveButton;
         [SerializeField] private Button _randomButton;
         [SerializeField] private Button _resetButton;
-        
+
+        [Header("프리뷰 캐릭터")]
+        [SerializeField] private LocalCharacterCustomizer _previewCustomizer;
+
         // ── DI ──
-        private CharacterCustomizerBase _customizer;
         private AvatarPartKeyTableSO _keyTable;
         private CharacterSaveService _saveService;
         private IDisposable _subscription;
@@ -74,15 +76,17 @@ namespace MySecondWorld.UI
         private readonly Dictionary<ColorTarget, ColorChannelRow> _colorRows = new();
 
         [Inject]
-        public void Construct(CharacterCustomizerBase customizer,
-                              AvatarPartKeyTableSO keyTable,
-                              CharacterSaveService saveService,
-                              ISubscriber<CharacterCustomizeOpenEvent> openSub)
+        public void Construct(AvatarPartKeyTableSO keyTable,
+                            CharacterSaveService saveService,
+                            CharacterAppearanceSO defaultAppearanceSO,
+                            ISubscriber<CharacterCustomizeOpenEvent> openSub)
         {
-            _customizer = customizer;
             _keyTable = keyTable;
             _saveService = saveService;
             _subscription = openSub.Subscribe(_ => gameObject.SetActive(true));
+
+            // 프리뷰 커스터마이저에 수동으로 의존성 전달
+            _previewCustomizer.Construct(keyTable, defaultAppearanceSO);
         }
 
         private void Start()
@@ -139,7 +143,7 @@ namespace MySecondWorld.UI
 
             _colorPicker.onColorChange.AddListener(color =>
             {
-                _customizer.SetColor(_activeColorTarget, color);
+                _previewCustomizer.SetColor(_activeColorTarget, color);
                 if (_colorRows.TryGetValue(_activeColorTarget, out var row))
                     row.UpdatePreview(color);
             });
@@ -220,7 +224,7 @@ namespace MySecondWorld.UI
         {
             _currentIndices[part] = index;
             UpdateThumbnailSelection();
-            _customizer.SetPart(part, index).Forget();
+            _previewCustomizer.SetPart(part, index).Forget();
         }
 
         private void UpdateThumbnailSelection()
@@ -307,7 +311,7 @@ namespace MySecondWorld.UI
 
         private Color GetColorFromAppearance(ColorTarget target)
         {
-            var a = _customizer.GetCurrentAppearance();
+            var a = _previewCustomizer.GetCurrentAppearance();
             return target switch
             {
                 ColorTarget.Primary => a.PrimaryColor,
@@ -330,7 +334,7 @@ namespace MySecondWorld.UI
         // 외형 적용
         private async UniTask ApplyCurrentAppearance()
         {
-            await _customizer.ApplyAppearance(BuildData());
+            await _previewCustomizer.ApplyAppearance(BuildData());
         }
 
         private async UniTaskVoid ApplyRandom()
@@ -354,7 +358,7 @@ namespace MySecondWorld.UI
             data.ScarColor = Random.ColorHSV(0.03f, 0.10f, 0.2f, 0.5f, 0.5f, 1.0f);
             data.EyesColor = Random.ColorHSV(0f, 1f, 0.3f, 0.8f, 0.7f, 1.0f);
             data.BodyArtColor = Random.ColorHSV(0f, 1f, 0f, 1f, 0f, 1f);
-            await _customizer.ApplyAppearance(data);
+            await _previewCustomizer.ApplyAppearance(data);
 
             // 현재 탭 썸네일 하이라이트 갱신
             UpdateThumbnailSelection();

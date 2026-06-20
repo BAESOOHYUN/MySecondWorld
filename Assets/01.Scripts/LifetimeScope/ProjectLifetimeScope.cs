@@ -22,7 +22,6 @@ public class ProjectLifetimeScope : LifetimeScope
     [Header("캐릭터 커스터마이즈")]
     [SerializeField] private AvatarPartKeyTableSO _avatarPartKeyTable;
     [SerializeField] private CharacterAppearanceSO _defaultAppearanceSO;
-    [SerializeField] private CharacterCustomizerBase _previewCharacterCustomizer; // 복제본에 붙은 것
     protected override void Configure(IContainerBuilder builder)
     {
         var options = builder.RegisterMessagePipe();
@@ -45,7 +44,6 @@ public class ProjectLifetimeScope : LifetimeScope
 
         builder.RegisterInstance(_avatarPartKeyTable);
         builder.RegisterInstance(_defaultAppearanceSO);
-        builder.RegisterComponent(_previewCharacterCustomizer);
 
         // 앱 전체 수명 동안 필요 — 형제 스코프(AIModelDownload, NPC) 모두 접근 가능
         if (_useServerMode)
