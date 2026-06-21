@@ -31,10 +31,10 @@ namespace MySecondWorld.UI
         [SerializeField] private GameObject _accessoryTabGroup; // 액세서리 탭 버튼 묶음 부모
         [SerializeField] private GameObject _colorPanel;        // 색상 패널
 
-        [Header("파츠 탭 (Hair~LegRight 14개)")]
+        [Header("파츠 탭 (Hair~LegRight 15개)")]
         [SerializeField] private PartTabEntry[] _partsTabEntries;
 
-        [Header("액세서리 탭 (Ear~HipsAttachment 11개)")]
+        [Header("액세서리 탭 (HeadCoverings~HipsAttachment 10개)")]
         [SerializeField] private PartTabEntry[] _accessoryTabEntries;
 
         [Header("썸네일")]
@@ -81,6 +81,16 @@ namespace MySecondWorld.UI
 
         // ── 파츠 인덱스 ──
         private readonly Dictionary<PartType, int> _currentIndices = new();
+        private static readonly HashSet<PartType> _optionalParts = new() // 필수가 아닌 파츠. -1로 세팅하여 빈칸 썸네일 생성
+        {
+            PartType.Hair, PartType.FacialHair, PartType.Eyebrows,
+            PartType.HeadCoverings, PartType.HelmetAttachment,
+            PartType.Ear, PartType.BackAttachment,
+            PartType.ShoulderAttachRight, PartType.ShoulderAttachLeft,
+            PartType.ElbowAttachRight, PartType.ElbowAttachLeft,
+            PartType.KneeAttachRight, PartType.KneeAttachLeft,
+            PartType.HipsAttachment,
+        };
 
         // ── UI 요소 ──
         private readonly List<PartThumbnailButton> _spawnedButtons = new();
@@ -234,6 +244,15 @@ namespace MySecondWorld.UI
             ClearThumbnailContent();
             var names = _keyTable.GetThumbnailNames(part, _currentGender);
             int selectedIndex = _currentIndices[part];
+
+            // 선택적 파츠: 맨 앞에 "없음(-1)" 슬롯 삽입
+            if (_optionalParts.Contains(part))
+            {
+                var noneBtn = Instantiate(_thumbnailButtonPrefab, _thumbnailContent);
+                noneBtn.Setup(part, -1, null, OnThumbnailClicked);  // sprite null
+                noneBtn.SetSelected(selectedIndex == -1);
+                _spawnedButtons.Add(noneBtn);
+            }
 
             for (int i = 0; i < names.Count; i++)
             {

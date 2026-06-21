@@ -30,6 +30,12 @@ namespace MySecondWorld.Customization
             public List<string> MaleThumbnailNames = new();
             public List<string> FemaleThumbnailNames = new();
             public List<string> AllGenderThumbnailNames = new();
+
+            // 파츠 리스트와 "동일 인덱스" 대응. Populator가 서브폴더 이름에서 채움.
+            // ex) Head: "All_Elements" / "No_Elements", HeadCoverings: "Base_Hair" / "No_FacialHair" / "No_Hair"
+            public List<string> MalePartSubTypes = new();
+            public List<string> FemalePartSubTypes = new();
+            public List<string> AllGenderPartSubTypes = new();
         }
 
         [Header("썸네일 아틀라스")]
@@ -64,6 +70,19 @@ namespace MySecondWorld.Customization
         }
 
         public int GetCount(PartType part, Gender gender) => GetCandidates(part, gender).Count;
+
+        // GetCandidates/GetThumbnailNames와 동일 순서(전용 + AllGender)로 서브타입 반환
+        public string GetSubType(PartType part, Gender gender, int index)
+        {
+            var entry = Entries.Find(e => e.PartType == part);
+            if (entry == null) 
+                return string.Empty;
+            var genderList = 
+                gender == Gender.Male ? 
+                entry.MalePartSubTypes : entry.FemalePartSubTypes;
+            var combined = genderList.Concat(entry.AllGenderPartSubTypes).ToList();
+            return (index >= 0 && index < combined.Count) ? combined[index] : string.Empty;
+        }
 
         // 프리팹을 가리키는 실제 키
         // data.Head == 3 이라면

@@ -11,6 +11,7 @@ namespace MySecondWorld.UI
         [SerializeField] private Image _thumbnail; // 썸네일 스프라이트
         [SerializeField] private GameObject _selectedFrame; // 선택 강조 테두리 (껐다 켬)
         [SerializeField] private Button _button;
+        [SerializeField] private Sprite _noneSprite;
 
         public PartType Part { get; private set; }
 
@@ -20,7 +21,7 @@ namespace MySecondWorld.UI
         {
             Part = part;
             Index = index;
-            _thumbnail.sprite = sprite;
+            _thumbnail.sprite = sprite != null ? sprite : _noneSprite; // null이면 X 아이콘
             _thumbnail.enabled = sprite != null; // 못 받은 슬롯은 빈칸 처리
             _button.onClick.RemoveAllListeners();
             _button.onClick.AddListener(() => onClick?.Invoke(Part, Index));

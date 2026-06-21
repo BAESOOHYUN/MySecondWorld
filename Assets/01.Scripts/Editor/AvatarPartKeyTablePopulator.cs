@@ -119,6 +119,7 @@ namespace MySecondWorld.Editor
                     var prefabGuids = AssetDatabase.FindAssets("t:Prefab", new[] { categoryFolder })
                                                    .OrderBy(guid => AssetDatabase.GUIDToAssetPath(guid))
                                                    .ToArray();
+
                     var refs = prefabGuids.Select(guid => new AssetReferenceGameObject(guid))
                                           .ToList();
 
@@ -132,7 +133,34 @@ namespace MySecondWorld.Editor
                         return string.Empty;   // 짝 없으면 null (UI에서 placeholder 처리)
                     }).ToList();
 
-                    AssignToEntry(partType, genderRoot, refs, thumbs);
+                    // 파츠와 동일 순서로 서브타입 문자열 추출
+                    // 직접 categoryFolder에 있으면 "" / 서브폴더에 있으면 서브폴더 이름에서 partType 접두사 제거
+                    var subTypes = prefabGuids.Select(guid =>
+                    {
+                        var path = AssetDatabase.GUIDToAssetPath(guid).Replace("\\", "/");
+                        var parentDir = Path.GetDirectoryName(path).Replace("\\", "/");
+                        if (parentDir == categoryFolder.Replace("\\", "/"))
+                            return string.Empty;
+                        var subFolderName = Path.GetFileName(parentDir);     // ex) "Head_All_Elements"
+
+                        // 성별 접두사 제거 (Male_Head_All_Elements → Head_All_Elements)
+                        foreach (var genderPrefix in new[] { "Male_", "Female_", "All_" })
+                        {
+                            if (subFolderName.StartsWith(genderPrefix))
+                            {
+                                subFolderName = subFolderName.Substring(genderPrefix.Length);
+                                break;
+                            }
+                        }
+
+                        // 파츠 타입 접두사 제거 (Head_All_Elements → All_Elements)
+                        var partTypePrefix = partType.ToString() + "_";
+                        return subFolderName.StartsWith(partTypePrefix)
+                            ? subFolderName.Substring(partTypePrefix.Length)
+                            : subFolderName;
+                    }).ToList();
+
+                    AssignToEntry(partType, genderRoot, refs, thumbs, subTypes);
                     addedCount += refs.Count;
                 }
             }
@@ -178,7 +206,8 @@ namespace MySecondWorld.Editor
         private void AssignToEntry(PartType partType, 
                                     string genderRoot, 
                                     List<AssetReferenceGameObject> refs,
-                                    List<string> thumbs)
+                                    List<string> thumbs,
+                                    List<string> subTypes)
         {
             var entry = _target.Entries.Find(e => e.PartType == partType);
             if (entry == null)
@@ -189,12 +218,12 @@ namespace MySecondWorld.Editor
 
             // C# 8.0부터 생긴 문법. 값을 직접 반환하는 식(expression)
             // 파츠 리스트 + 썸네일 리스트를 같은 genderRoot 기준으로 함께 선택
-            var (list, thumbList) = genderRoot switch
+            var (list, thumbList, subTypeList) = genderRoot switch
             {
-                "Male_Parts" => (entry.MaleParts, entry.MaleThumbnailNames),
-                "Female_Parts" => (entry.FemaleParts, entry.FemaleThumbnailNames),
-                "All_Gender_Parts" => (entry.AllGenderParts, entry.AllGenderThumbnailNames),
-                _ => ((List<AssetReferenceGameObject>)null, (List<string>)null)
+                "Male_Parts" => (entry.MaleParts, entry.MaleThumbnailNames, entry.MalePartSubTypes),
+                "Female_Parts" => (entry.FemaleParts, entry.FemaleThumbnailNames, entry.FemalePartSubTypes),
+                "All_Gender_Parts" => (entry.AllGenderParts, entry.AllGenderThumbnailNames, entry.AllGenderPartSubTypes),
+                _ => ((List<AssetReferenceGameObject>)null, (List<string>)null, (List<string>)null)
             };
 
             // list는 entry.MaleParts 등 기존 리스트에 대한 참조(레퍼런스). entry.MaleParts 자체를 비우는 것
@@ -204,6 +233,8 @@ namespace MySecondWorld.Editor
             list?.AddRange(refs);
             thumbList?.Clear(); 
             thumbList?.AddRange(thumbs);
+            subTypeList?.Clear(); 
+            subTypeList?.AddRange(subTypes);
         }
     }
 }

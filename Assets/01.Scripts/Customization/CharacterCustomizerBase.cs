@@ -108,6 +108,7 @@ namespace MySecondWorld.Customization
             await InstantiatePart(part, index, _currentAppearance.Gender);
             OnAppearanceChanged();
             _loadingParts.Remove(part);
+            await ApplyMutualExclusion(part, index, _currentAppearance.Gender);
         }
 
         // 색 변경
@@ -226,6 +227,115 @@ namespace MySecondWorld.Customization
             }
         }
 
+        // 파츠 선택 시 Synty 상호배제 규칙 적용
+        // ── 상호배제 매트릭스 (Synty ModularCharacters 규칙) ──────────────────────────────
+        // 선택 파츠                  │ 조건                      │ 결과
+        // ───────────────────────────┼───────────────────────────┼─────────────────────────
+        // HeadCoverings  (index ≥ 0) │ subtype = No_Hair          │ Hair              → -1
+        // HeadCoverings  (index ≥ 0) │ subtype = No_FacialHair    │ FacialHair        → -1
+        // HeadCoverings  (index ≥ 0) │ 현재 Head = No_Elements    │ Head → 첫 All_Elements
+        // Hair           (index ≥ 0) │ 현재 HC   = No_Hair        │ HeadCoverings     → -1
+        // Hair           (index ≥ 0) │ 현재 Head = No_Elements    │ Head → 첫 All_Elements
+        // Eyebrows       (index ≥ 0) │ 현재 Head = No_Elements    │ Head → 첫 All_Elements
+        // FacialHair     (index ≥ 0) │ 현재 HC   = No_FacialHair  │ HeadCoverings     → -1
+        // FacialHair     (index ≥ 0) │ 현재 Head = No_Elements    │ Head → 첫 All_Elements
+        // Head           (index ≥ 0) │ subtype   = All_Elements   │ HelmetAttachment  → -1
+        // Head           (index ≥ 0) │ subtype   = No_Elements    │ Hair, Eyebrows, FacialHair, HeadCoverings → -1
+        // HelmetAttachment(index ≥ 0)│ 현재 Head = All_Elements   │ Head → 첫 No_Elements
+        // ───────────────────────────┼───────────────────────────┼─────────────────────────
+        // ※ index < 0 (없음 슬롯) 는 추가 배제 없음
+        private async UniTask ApplyMutualExclusion(PartType changedPart, int newIndex, Gender gender)
+        {
+            var subtype = _avatarPartKeyTable.GetSubType(changedPart, gender, newIndex);
+
+            switch (changedPart)
+            {
+                case PartType.HeadCoverings when newIndex >= 0:
+                    {
+                        // 헤드커버 선택 → No_Hair면 머리카락, No_FacialHair면 수염 해제
+                        if (subtype == "No_Hair")
+                            await SetPart(PartType.Hair, -1);
+                        else if (subtype == "No_FacialHair")
+                            await SetPart(PartType.FacialHair, -1);
+
+                        // 어떤 헤드커버든 No_Elements 헤드와 충돌 → All_Elements로 교체
+                        if (_avatarPartKeyTable.GetSubType(PartType.Head, gender, _currentAppearance.Head) == "No_Elements")
+                            await SwitchHeadTo("All_Elements", gender);
+                        break;
+                    }
+
+                case PartType.Hair when newIndex >= 0:
+                    {
+                        // 머리카락 선택 → No_Hair 헤드커버와 충돌 → 헤드커버 해제
+                        if (_avatarPartKeyTable.GetSubType(PartType.HeadCoverings, gender, _currentAppearance.HeadCoverings) == "No_Hair")
+                            await SetPart(PartType.HeadCoverings, -1);
+
+                        // No_Elements 헤드와도 충돌 → All_Elements로 교체
+                        if (_avatarPartKeyTable.GetSubType(PartType.Head, gender, _currentAppearance.Head) == "No_Elements")
+                            await SwitchHeadTo("All_Elements", gender);
+                        break;
+                    }
+
+                case PartType.Eyebrows when newIndex >= 0:
+                    {
+                        // 눈썹 선택 → No_Elements 헤드와 충돌 (눈썹 메시가 빈 얼굴판에 클리핑) → All_Elements로 교체
+                        if (_avatarPartKeyTable.GetSubType(PartType.Head, gender, _currentAppearance.Head) == "No_Elements")
+                            await SwitchHeadTo("All_Elements", gender);
+                        break;
+                    }
+
+                case PartType.FacialHair when newIndex >= 0:
+                    {
+                        // 수염 선택 → No_FacialHair 헤드커버와 충돌 → 헤드커버 해제
+                        if (_avatarPartKeyTable.GetSubType(PartType.HeadCoverings, gender, _currentAppearance.HeadCoverings) == "No_FacialHair")
+                            await SetPart(PartType.HeadCoverings, -1);
+
+                        // No_Elements 헤드와도 충돌 → All_Elements로 교체
+                        if (_avatarPartKeyTable.GetSubType(PartType.Head, gender, _currentAppearance.Head) == "No_Elements")
+                            await SwitchHeadTo("All_Elements", gender);
+                        break;
+                    }
+
+                case PartType.Head when newIndex >= 0:
+                    {
+                        // 헤드 선택
+                        // All_Elements(얼굴판 있음) → 헬멧과 충돌 → 헬멧 해제
+                        // No_Elements(빈 얼굴판) → 머리카락·눈썹·수염·헤드커버 전부 충돌 → 일괄 해제
+                        if (subtype == "All_Elements")
+                            await SetPart(PartType.HelmetAttachment, -1);
+                        else if (subtype == "No_Elements")
+                        {
+                            await SetPart(PartType.Hair, -1);
+                            await SetPart(PartType.Eyebrows, -1);
+                            await SetPart(PartType.FacialHair, -1);
+                            await SetPart(PartType.HeadCoverings, -1);
+                        }
+                        break;
+                    }
+
+                case PartType.HelmetAttachment when newIndex >= 0:
+                    {
+                        // 헬멧 선택 → All_Elements 헤드와 충돌 (헬멧이 얼굴판을 뚫고 나옴)
+                        // → No_Elements 헤드 중 첫 번째로 자동 교체
+                        if (_avatarPartKeyTable.GetSubType(PartType.Head, gender, _currentAppearance.Head) == "All_Elements")
+                            await SwitchHeadTo("No_Elements", gender);
+                        break;
+                    }
+            }
+        }
+
+        private async UniTask SwitchHeadTo(string targetSubtype, Gender gender)
+        {
+            var count = _avatarPartKeyTable.GetCount(PartType.Head, gender);
+            for (int i = 0; i < count; i++)
+            {
+                if (_avatarPartKeyTable.GetSubType(PartType.Head, gender, i) == targetSubtype)
+                {
+                    await SetPart(PartType.Head, i);
+                    return;
+                }
+            }
+        }
 
         // ── 본 관련 ──
         private void EnsureBoneMap()
