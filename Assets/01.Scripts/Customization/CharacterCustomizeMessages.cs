@@ -9,4 +9,9 @@ namespace MySecondWorld.Customization
         }
     }
     public readonly struct CharacterAppearanceSavedEvent { } // 저장 완료 토스트 신호용
+    public readonly struct CharacterAppearanceSyncRequestedEvent // UI → Network 방향 (저장 클릭 시 서버 동기화 요청)
+    {
+        public readonly CharacterAppearanceData Data;
+        public CharacterAppearanceSyncRequestedEvent(CharacterAppearanceData data) => Data = data;
+    }
 }

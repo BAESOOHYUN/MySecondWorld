@@ -2,6 +2,7 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Mirror;
 using VContainer;
+using MessagePipe;
 using MySecondWorld.Customization;
 using MySecondWorld.UI;
 
@@ -22,11 +23,25 @@ namespace MySecondWorld.Network
         public void Construct(
             ObservableCharacterCustomizer customizer,
             AvatarPartKeyTableSO avatarPartKeyTable,
-            CharacterCustomizeUI customizeUI)
+            CharacterCustomizeUI customizeUI,
+            ISubscriber<CharacterAppearanceSyncRequestedEvent> saveRequestSub)
         {
             _customizer = customizer;
             _avatarPartKeyTable = avatarPartKeyTable;
             _customizeUI = customizeUI;
+
+            // isLocalPlayer로 필터링하는 이유:
+            // 이 broker는 ProjectLifetimeScope에 등록되어 화면에 보이는
+            // 모든 NetworkCharacterAppearance 인스턴스(다른 플레이어 캐릭터 포함)가 함께 구독한다.
+            // Mirror가 권한 없는 CmdSetAppearance 호출을 내부적으로 막아주므로(SendCommandInternal)
+            // isLocalPlayer 필터링 없이도 잘못된 동기화는 안 생기지만,
+            // 보이는 플레이어 수만큼 "without authority" 경고 로그 + 헛호출이 매번 발생한다.
+            // 그걸 막기 위해 로컬 플레이어 본인 객체일 때만 호출한다.
+            saveRequestSub.Subscribe(evt =>
+            {
+                if (!isLocalPlayer) return;
+                CmdSetAppearance(evt.Data);
+            }).AddTo(destroyCancellationToken);
         }
 
         [Command]

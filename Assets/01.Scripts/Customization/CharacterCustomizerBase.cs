@@ -35,6 +35,7 @@ namespace MySecondWorld.Customization
             if (anim != null)
                 anim.cullingMode = AnimatorCullingMode.AlwaysAnimate;
 
+            // 디폴트 SO로 외형 적용
             ApplyAppearance(_defaultAppearanceSO.DefaultAppearance).Forget();
         }
 

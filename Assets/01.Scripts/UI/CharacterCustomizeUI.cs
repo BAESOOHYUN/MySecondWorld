@@ -8,6 +8,7 @@ using UnityEngine.U2D;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using Random = UnityEngine.Random;
 using VContainer;
+using MessagePipe;
 using MySecondWorld.Customization;
 using MySecondWorld.Save;
 
@@ -65,6 +66,7 @@ namespace MySecondWorld.UI
         private AvatarPartKeyTableSO _keyTable;
         private CharacterAppearanceSO _defaultAppearanceSO;
         private CharacterSaveService _saveService;
+        private IPublisher<CharacterAppearanceSyncRequestedEvent> _saveRequestPub;
 
         // ── 아틀라스 ──
         private SpriteAtlas _thumbnailAtlas;
@@ -98,18 +100,23 @@ namespace MySecondWorld.UI
         [Inject]
         public void Construct(AvatarPartKeyTableSO keyTable,
                             CharacterSaveService saveService,
-                            CharacterAppearanceSO defaultAppearanceSO)
+                            CharacterAppearanceSO defaultAppearanceSO,
+                            IPublisher<CharacterAppearanceSyncRequestedEvent> saveRequestPub)
         {
             _keyTable = keyTable;
             _saveService = saveService;
             _defaultAppearanceSO = defaultAppearanceSO;
+            _saveRequestPub = saveRequestPub;
             // 프리뷰 커스터마이저에 수동으로 의존성 전달
             _previewCustomizer.Construct(keyTable, defaultAppearanceSO);
         }
 
         private void Start()
         {
-            InitIndices();
+            var saved = _saveService.Load();
+            _currentGender = saved.Gender;
+            InitIndices(saved); // 디폴트 SO 대신 저장된 외형으로 인덱스 캐시 채움
+
             _lastPartsTab = _partsTabEntries.Length > 0 ? _partsTabEntries[0].Part : default;
             _lastAccessoryTab = _accessoryTabEntries.Length > 0 ? _accessoryTabEntries[0].Part : default;
             RegisterButtons();
@@ -117,7 +124,7 @@ namespace MySecondWorld.UI
             _colorPicker.gameObject.SetActive(false);
             UpdateFacialHairTabVisibility();
             ShowTopTab(0); // 파츠 탭(0) 먼저
-            StartupAsync().Forget();
+            StartupAsync(saved).Forget();
         }
 
         private void OnDestroy()
@@ -126,23 +133,28 @@ namespace MySecondWorld.UI
                 Addressables.Release(_atlasHandle);
         }
 
-        private async UniTaskVoid StartupAsync()
+        private async UniTaskVoid StartupAsync(CharacterAppearanceData saved)
         {
             _atlasHandle = Addressables.LoadAssetAsync<SpriteAtlas>(_keyTable.ThumbnailAtlas);
             _thumbnailAtlas = await _atlasHandle.ToUniTask();
-            SwitchTab(_currentTab);
+            SwitchTab(_currentTab); // 아틀라스 로드 후 실제 스프라이트로 재렌더
+
+            await _previewCustomizer.ApplyAppearance(saved); // 프리뷰 캐릭터에 저장된 외형 반영
+            SyncIndicesFromCustomizer(); // 상호배제 캐스케이드 결과로 _currentIndices 재동기화
+            UpdateThumbnailSelection();
+            RefreshColorRows(); // 색상 스와치/피커도 저장된 색으로 갱신
+
             gameObject.SetActive(false);
         }
 
         public void OpenForFirstLaunch() => gameObject.SetActive(true);
 
         // 인덱스 초기화
-        private void InitIndices()
+        private void InitIndices(CharacterAppearanceData data)
         {
-            var d = _defaultAppearanceSO.DefaultAppearance;
-
+            // 저장된 외형을 로드해서 인덱스/ 프리뷰에 반영
             foreach (PartType part in System.Enum.GetValues(typeof(PartType)))
-                _currentIndices[part] = d[part];
+                _currentIndices[part] = data[part];
         }
 
         // 버튼 등록
@@ -439,10 +451,14 @@ namespace MySecondWorld.UI
         // 리셋
         private async UniTaskVoid ResetToDefault()
         {
-            InitIndices();
-            await _previewCustomizer.ApplyAppearance(_defaultAppearanceSO.DefaultAppearance); // 인덱스+색상 전부 기본값으로
+            var d = _defaultAppearanceSO.DefaultAppearance;
+            d.Gender = _currentGender; // SO의 Gender(항상 Male)로 덮어쓰지 않고, 지금 커스터마이징 중인 성별 유지
+            InitIndices(d);
+            await _previewCustomizer.ApplyAppearance(d); // 인덱스+색상 전부 기본값으로
             SyncIndicesFromCustomizer(); // 상호배제 캐스케이드 결과로 _currentIndices 재동기화
-            UpdateThumbnailSelection();
+
+            UpdateFacialHairTabVisibility(); // 성별이 바뀌었을 수 있으니 탭 가시성도 갱신
+            UpdateThumbnailSelection(); // 새 성별 기준으로 현재 탭 썸네일 목록 재생성 + 선택 하이라이트
             RefreshColorRows(); // 색상 탭 스와치/피커도 갱신
         }
 
@@ -451,6 +467,7 @@ namespace MySecondWorld.UI
         {
             var data = BuildData();
             _saveService.Save(data);
+            _saveRequestPub.Publish(new CharacterAppearanceSyncRequestedEvent(data)); // 네트워크 동기화 요청
             PlayerPrefs.SetInt(PrefKeyCustomized, 1);
             PlayerPrefs.Save();
         }

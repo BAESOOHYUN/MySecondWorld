@@ -22,6 +22,7 @@ public class PlayerScope : LifetimeScope
         builder.RegisterMessageBroker<PlayerLandedEvent>(options);
         builder.RegisterMessageBroker<PlayerSpeedChangedEvent>(options);
         builder.RegisterMessageBroker<CharacterAppearanceChangedEvent>(options);
+        builder.RegisterMessageBroker<CharacterAppearanceSyncRequestedEvent>(options);
 
         builder.RegisterComponentInHierarchy<MovementController>();
         builder.RegisterComponentInHierarchy<PlayerAnimationController>();
