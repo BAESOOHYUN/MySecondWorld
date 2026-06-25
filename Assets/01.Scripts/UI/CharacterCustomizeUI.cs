@@ -114,18 +114,12 @@ namespace MySecondWorld.UI
 
         private void Start()
         {
-            var saved = _saveService.Load();
-            _currentGender = saved.Gender;
-            InitIndices(saved); // 디폴트 SO 대신 저장된 외형으로 인덱스 캐시 채움
-
             _lastPartsTab = _partsTabEntries.Length > 0 ? _partsTabEntries[0].Part : default;
             _lastAccessoryTab = _accessoryTabEntries.Length > 0 ? _accessoryTabEntries[0].Part : default;
             RegisterButtons();
             InitColorRows();
             _colorPicker.gameObject.SetActive(false);
-            UpdateFacialHairTabVisibility();
-            ShowTopTab(0); // 파츠 탭(0) 먼저
-            StartupAsync(saved).Forget();
+            StartupAsync().Forget();
         }
 
         private void OnDestroy()
@@ -134,21 +128,24 @@ namespace MySecondWorld.UI
                 Addressables.Release(_atlasHandle);
         }
 
-        private async UniTaskVoid StartupAsync(CharacterAppearanceData saved)
+        private async UniTaskVoid StartupAsync()
         {
             _atlasHandle = Addressables.LoadAssetAsync<SpriteAtlas>(_keyTable.ThumbnailAtlas);
             _thumbnailAtlas = await _atlasHandle.ToUniTask();
-            SwitchTab(_currentTab); // 아틀라스 로드 후 실제 스프라이트로 재렌더
-
-            await _previewCustomizer.ApplyAppearance(saved); // 프리뷰 캐릭터에 저장된 외형 반영
-            SyncIndicesFromCustomizer(); // 상호배제 캐스케이드 결과로 _currentIndices 재동기화
-            UpdateThumbnailSelection();
-            RefreshColorRows(); // 색상 스와치/피커도 저장된 색으로 갱신
-
+            await ReloadFromSave();
             gameObject.SetActive(false);
         }
 
         public void OpenForFirstLaunch() => gameObject.SetActive(true);
+
+        // 패널을 열 때마다 호출 — 저장된 외형으로 다시 초기화한다.
+        // (저장 안 하고 닫았다가 다시 열면 편집 중이던 미저장 상태가 그대로 남아있던 버그 수정)
+        public void Open()
+        {
+            gameObject.SetActive(true);
+            ReloadFromSave().Forget();
+        }
+
 
         // 인덱스 초기화
         private void InitIndices(CharacterAppearanceData data)
@@ -479,6 +476,21 @@ namespace MySecondWorld.UI
             _saveRequestPub.Publish(new CharacterAppearanceSyncRequestedEvent(data)); // 네트워크 동기화 요청
             PlayerPrefs.SetInt(PrefKeyCustomized, 1);
             PlayerPrefs.Save();
+        }
+
+        private async UniTask ReloadFromSave()
+        {
+            var saved = _saveService.Load();
+            _currentGender = saved.Gender;
+            InitIndices(saved); // 디폴트 SO 대신 저장된 외형으로 인덱스 캐시 채움
+
+            UpdateFacialHairTabVisibility();
+            ShowTopTab(0); // 파츠 탭(0) 먼저
+
+            await _previewCustomizer.ApplyAppearance(saved); // 프리뷰 캐릭터에 저장된 외형 반영
+            SyncIndicesFromCustomizer(); // 상호배제 캐스케이드 결과로 _currentIndices 재동기화
+            UpdateThumbnailSelection();
+            RefreshColorRows(); // 색상 스와치/피커도 저장된 색으로 갱신
         }
 
         // 유틸

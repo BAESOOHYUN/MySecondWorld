@@ -74,7 +74,7 @@ namespace MySecondWorld.Network
         {
             base.OnStartLocalPlayer();
             if (!PlayerPrefs.HasKey(PrefKeyCustomized))
-                _customizeUI.OpenForFirstLaunch();
+                _customizeUI.Open();
         }
     }
 }

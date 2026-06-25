@@ -1,7 +1,8 @@
-using MySecondWorld.Network;
 using UnityEngine;
 using UnityEngine.UI;
 using VContainer;
+using MySecondWorld.Network;
+using MySecondWorld.UI;
 
 public class MenuUI : MonoBehaviour
 {
@@ -9,10 +10,9 @@ public class MenuUI : MonoBehaviour
     [SerializeField] private Toggle _settingsToggle;
     [SerializeField] private GameObject _settingsPanel;
     [SerializeField] private Button _customizerButton;
-    [SerializeField] private GameObject _characterCustomizePanel;
 
-
-    [Inject] private LoginUI _loginUI;
+    [Inject] private LoginUI _loginUI; 
+    [Inject] private CharacterCustomizeUI _characterCustomizeUI;
 
     private void OnEnable()
     {
@@ -29,7 +29,7 @@ public class MenuUI : MonoBehaviour
         if (_settingsToggle != null)
             _settingsToggle.onValueChanged.AddListener(isOn => _settingsPanel.SetActive(isOn));
         if (_customizerButton != null)
-            _customizerButton.onClick.AddListener(() => _characterCustomizePanel.SetActive(true));
+            _customizerButton.onClick.AddListener(() => _characterCustomizeUI.Open());
     }
 
     private void OnDestroy()
