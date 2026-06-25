@@ -96,6 +96,7 @@ namespace MySecondWorld.UI
         private readonly List<PartThumbnailButton> _spawnedButtons = new();
         private readonly Dictionary<ColorTarget, ColorChannelRow> _colorRows = new();
         private readonly HashSet<PartType> _pendingParts = new();
+        private bool _isOpeningPicker;
 
         [Inject]
         public void Construct(AvatarPartKeyTableSO keyTable,
@@ -194,6 +195,7 @@ namespace MySecondWorld.UI
 
             _colorPicker.onColorChange.AddListener(color =>
             {
+                if (_isOpeningPicker) return;
                 _previewCustomizer.SetColor(_activeColorTarget, color);
                 if (_colorRows.TryGetValue(_activeColorTarget, out var row))
                     row.UpdatePreview(color);
@@ -368,8 +370,13 @@ namespace MySecondWorld.UI
         private void OnColorChannelSelected(ColorTarget target)
         {
             _activeColorTarget = target;
-            _colorPicker.color = GetColorFromAppearance(target);
+            _isOpeningPicker = true;
             _colorPicker.gameObject.SetActive(true);
+            var color = GetColorFromAppearance(target);
+            _colorPicker.color = color;
+            if (_colorRows.TryGetValue(target, out var row))
+                row.UpdatePreview(color);
+            _isOpeningPicker = false;
         }
 
         private Color GetColorFromAppearance(ColorTarget target)
@@ -445,6 +452,8 @@ namespace MySecondWorld.UI
             SyncIndicesFromCustomizer();
             // 현재 탭 썸네일 하이라이트 갱신
             UpdateThumbnailSelection();
+            // 랜덤 색상도 스와치/피커에 반영
+            RefreshColorRows();
         }
 
 
@@ -493,6 +502,7 @@ namespace MySecondWorld.UI
 
         private void Close()
         {
+            _colorPicker.gameObject.SetActive(false); // 닫을 때도 피커를 비활성화해 다음 열릴 때 OnEnable 재오염(빨간색 초기화) 방지
             gameObject.SetActive(false);
         }
     }
