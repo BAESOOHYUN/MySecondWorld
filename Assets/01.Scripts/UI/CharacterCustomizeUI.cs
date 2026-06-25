@@ -8,7 +8,6 @@ using UnityEngine.U2D;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using Random = UnityEngine.Random;
 using VContainer;
-using MessagePipe;
 using MySecondWorld.Customization;
 using MySecondWorld.Save;
 
@@ -66,7 +65,6 @@ namespace MySecondWorld.UI
         private AvatarPartKeyTableSO _keyTable;
         private CharacterAppearanceSO _defaultAppearanceSO;
         private CharacterSaveService _saveService;
-        private IDisposable _subscription;
 
         // ── 아틀라스 ──
         private SpriteAtlas _thumbnailAtlas;
@@ -95,12 +93,12 @@ namespace MySecondWorld.UI
         // ── UI 요소 ──
         private readonly List<PartThumbnailButton> _spawnedButtons = new();
         private readonly Dictionary<ColorTarget, ColorChannelRow> _colorRows = new();
+        private readonly HashSet<PartType> _pendingParts = new();
 
         [Inject]
         public void Construct(AvatarPartKeyTableSO keyTable,
                             CharacterSaveService saveService,
-                            CharacterAppearanceSO defaultAppearanceSO,
-                            ISubscriber<CharacterCustomizeOpenEvent> openSub)
+                            CharacterAppearanceSO defaultAppearanceSO)
         {
             _keyTable = keyTable;
             _saveService = saveService;
@@ -124,7 +122,6 @@ namespace MySecondWorld.UI
 
         private void OnDestroy()
         {
-            _subscription?.Dispose();
             if (_atlasHandle.IsValid())
                 Addressables.Release(_atlasHandle);
         }
@@ -271,9 +268,12 @@ namespace MySecondWorld.UI
         // 썸네일 클릭시 해당 파트, 해당 인덱스로 변경
         private void OnThumbnailClicked(PartType part, int index)
         {
+            // 같은 파츠 처리중이면 무시
+            if (_pendingParts.Contains(part)) return; 
+            
             _currentIndices[part] = index;
             UpdateThumbnailSelection();
-            _previewCustomizer.SetPart(part, index).Forget();
+            ApplyPartChange(part, index).Forget();
         }
 
         private void UpdateThumbnailSelection()
@@ -288,6 +288,18 @@ namespace MySecondWorld.UI
             foreach (var btn in _spawnedButtons)
                 btn.SetSelected(btn.Index == selected);
         }
+
+        // SetPart의 상호배제 연쇄가 끝난 뒤 UI 캐시와 하이라이트를 다시 맞춘다
+        private async UniTaskVoid ApplyPartChange(PartType part, int index)
+        {
+            _pendingParts.Add(part);
+            await _previewCustomizer.SetPart(part, index);
+            _pendingParts.Remove(part);
+
+            SyncIndicesFromCustomizer();
+            UpdateThumbnailSelection();
+        }
+
 
         private void ClearThumbnailContent()
         {
@@ -306,16 +318,17 @@ namespace MySecondWorld.UI
         // Gender
         private void SetGender(Gender gender)
         {
+            if (gender == _currentGender) return; // 같은 성별 재클릭 무시
+
             _currentGender = gender;
+
+            // 마지막 편집 상태를 그대로 새 성별 인덱스 공간으로 이행
+            // 범위 안이면 유지, 범위 밖이면: 후보가 있으면 0번, 후보가 0개면 -1(없음)
             foreach (PartType part in System.Enum.GetValues(typeof(PartType)))
             {
-                var count = _keyTable.GetCount(part, _currentGender);
-
-                // 추출한 count보다 index가 높으면 0
-                // ex) Male → Female로 바꿀 때 성별마다 파츠 개수가 다름
-                // FacialHair 파츠 개수 Male = 20개, Female = 0개
-                if (_currentIndices[part] >= count)
-                    _currentIndices[part] = 0;
+                var count = _keyTable.GetCount(part, gender);
+                var current = _currentIndices[part];
+                _currentIndices[part] = current < count ? current : (count > 0 ? 0 : -1);
             }
 
             UpdateFacialHairTabVisibility();
@@ -379,6 +392,9 @@ namespace MySecondWorld.UI
         private async UniTask ApplyCurrentAppearance()
         {
             await _previewCustomizer.ApplyAppearance(BuildData());
+
+            SyncIndicesFromCustomizer();
+            UpdateThumbnailSelection();
         }
 
         // 랜덤
@@ -387,7 +403,7 @@ namespace MySecondWorld.UI
             foreach (PartType part in System.Enum.GetValues(typeof(PartType)))
             {
                 var count = _keyTable.GetCount(part, _currentGender);
-                _currentIndices[part] = count > 0 ? Random.Range(0, count) : 0;
+                _currentIndices[part] = count > 0 ? Random.Range(0, count) : -1;
             }
             var data = BuildData(); 
             data.PrimaryColor = Random.ColorHSV(0f, 1f, 0f, 1f, 0f, 1f);
@@ -404,7 +420,8 @@ namespace MySecondWorld.UI
             data.EyesColor = Random.ColorHSV(0f, 1f, 0.3f, 0.8f, 0.7f, 1.0f);
             data.BodyArtColor = Random.ColorHSV(0f, 1f, 0f, 1f, 0f, 1f);
             await _previewCustomizer.ApplyAppearance(data);
-
+            // 동기화
+            SyncIndicesFromCustomizer();
             // 현재 탭 썸네일 하이라이트 갱신
             UpdateThumbnailSelection();
         }
@@ -430,10 +447,20 @@ namespace MySecondWorld.UI
         // 유틸
         private CharacterAppearanceData BuildData()
         {
-            var data = new CharacterAppearanceData { Gender = _currentGender };
+            var data = _previewCustomizer.GetCurrentAppearance(); // 현재 색상 유지
+            data.Gender = _currentGender;
             foreach (PartType part in System.Enum.GetValues(typeof(PartType)))
                 data[part] = _currentIndices[part]; //인덱서로 직접 접근
             return data;
+        }
+
+        // BuildData()의 반대 방향(customizer→UI) 동기화 함수
+        // customizer 내부 상호배제 연쇄로 바뀐 인덱스를 UI 캐시에 반영
+        private void SyncIndicesFromCustomizer()
+        {
+            var current = _previewCustomizer.GetCurrentAppearance();
+            foreach (PartType part in System.Enum.GetValues(typeof(PartType)))
+                _currentIndices[part] = current[part];
         }
 
         private void Close()

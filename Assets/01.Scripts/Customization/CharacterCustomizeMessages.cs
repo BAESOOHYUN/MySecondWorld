@@ -9,5 +9,4 @@ namespace MySecondWorld.Customization
         }
     }
     public readonly struct CharacterAppearanceSavedEvent { } // 저장 완료 토스트 신호용
-    public readonly struct CharacterCustomizeOpenEvent { } // 저장 완료 토스트 신호용
 }

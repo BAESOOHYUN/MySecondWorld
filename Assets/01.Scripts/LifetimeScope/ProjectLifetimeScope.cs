@@ -26,7 +26,6 @@ public class ProjectLifetimeScope : LifetimeScope
     {
         var options = builder.RegisterMessagePipe();
         builder.RegisterMessageBroker<AuthStateChangedEvent>(options);
-        builder.RegisterMessageBroker<CharacterCustomizeOpenEvent>(options);
         builder.RegisterMessageBroker<CharacterAppearanceSavedEvent>(options);
 
         builder.Register<SaveManager>(Lifetime.Singleton);

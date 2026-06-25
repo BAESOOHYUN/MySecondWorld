@@ -89,9 +89,9 @@ namespace MySecondWorld.Editor
             var addedCount = 0;
             var thumbByName = BuildThumbnailLookup();
 
+            // 0단계 : rootPath : Male_Parts/Female_Parts/All_Gender_Parts 성별 루트
             foreach (var genderRoot in GenderRootFolders)
             {
-                // rootPath : Male_Parts/Female_Parts/All_Gender_Parts 
                 var rootPath = $"{SourceRoot}/{genderRoot}";
 
                 if(!AssetDatabase.IsValidFolder(rootPath))
@@ -101,25 +101,27 @@ namespace MySecondWorld.Editor
                     continue;
                 }
 
-                // GetSubFolders 직계 자식 폴더들의 경로 배열을 반환 (하위 폴더의 하위 폴더는 포함 안 됨, 1단계만)
+                // 1단계 : categoryFolders : 직계 자식 폴더(GetSubFolders)들의 경로 배열을 반환 (하위 폴더의 하위 폴더는 포함 안 됨, 1단계만)
                 // → Male_Parts의 "직계 자식"들: Male_00_Head, Male_01_Eyebrows, Male_03_Torso...
                 var categoryFolders = AssetDatabase.GetSubFolders(rootPath);
                 foreach (var categoryFolder in categoryFolders)
                 {
                     var folderName = Path.GetFileName(categoryFolder);
                     // categoryFolders 폴더 안의 개별 카테고리 폴더 하나하나가 매칭되는지 체크
+                    // 1단계 폴더명 문자열 → PartType enum 값으로 변환 (폴더 자체는 건드리지 않음)
                     if (!TryResolvePartType(folderName, out var partType))
                     {
                         unmatchedFolders.Add(categoryFolder);
                         continue;
                     }
 
+                    // 1단계 카테고리 폴더 기준, 그 밑에 몇 단계가 더 있든(2단계 하위 폴더 포함) 전부 재귀로 검색
                     // new[] { categoryFolder }  "검색 범위를 이 폴더(들) 안으로 한정하라"
-                    // 그 폴더 밑에 몇 단계가 더 있든 전부 재귀로 찾아냄.
+                    // .OrderBy(...).ToArray() 검색된 프리팹 GUID를 경로 알파벳 순 정렬 
                     var prefabGuids = AssetDatabase.FindAssets("t:Prefab", new[] { categoryFolder })
                                                    .OrderBy(guid => AssetDatabase.GUIDToAssetPath(guid))
                                                    .ToArray();
-
+                    // AssetReferenceGameObject 리스트로 변환
                     var refs = prefabGuids.Select(guid => new AssetReferenceGameObject(guid))
                                           .ToList();
 
@@ -160,6 +162,8 @@ namespace MySecondWorld.Editor
                             : subFolderName;
                     }).ToList();
 
+                    // SO의 Entries에서 해당 PartType 항목을 찾거나 새로 생성하고,
+                    // genderRoot에 맞는 리스트(MaleParts/FemaleParts/AllGenderParts)를 비우고 다시 채움
                     AssignToEntry(partType, genderRoot, refs, thumbs, subTypes);
                     addedCount += refs.Count;
                 }

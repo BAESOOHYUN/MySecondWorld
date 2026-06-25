@@ -31,7 +31,5 @@ namespace MySecondWorld.Save
 
             return JsonUtility.FromJson<CharacterAppearanceData>(PlayerPrefs.GetString(Key));
         }
-
-        public bool IsFirstLogin() => !PlayerPrefs.HasKey(Key);
     }
 }

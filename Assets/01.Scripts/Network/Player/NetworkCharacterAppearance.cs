@@ -41,10 +41,10 @@ namespace MySecondWorld.Network
             foreach (PartType part in System.Enum.GetValues(typeof(PartType)))
             {
                 int count = t.GetCount(part, data.Gender);
-                data[part] = Clamp(data[part], count, _appearance[part]);
+                data[part] = Clamp(data[part], count);
             }
 
-            _appearance = data;
+            _appearance = data; // 여기서 대입하며 [SyncVar] 훅 발동 → OnAppearanceChanged 실행
         }
 
         private void OnAppearanceChanged(CharacterAppearanceData old, CharacterAppearanceData next)
@@ -52,8 +52,8 @@ namespace MySecondWorld.Network
             _customizer.ApplyAppearance(next).Forget();
         }
 
-        private static int Clamp(int value, int count, int fallback)
-            => value >= 0 && value < count ? value : fallback;
+        private static int Clamp(int value, int count)
+            => value >= 0 && value < count ? value : (count > 0 ? 0 : -1);
 
         public override void OnStartLocalPlayer()
         {
@@ -63,3 +63,18 @@ namespace MySecondWorld.Network
         }
     }
 }
+
+//[Client] CharacterCustomizeUI
+//   │  CmdSetAppearance(data)
+//   ▼  [Command] RPC
+//[Server] NetworkCharacterAppearance.CmdSetAppearance(data)
+//   │  Gender 검증 +25개 필드 클램프
+//   │  _appearance = data   (SyncVar 대입)
+//   ▼
+//[Mirror] SyncVar 변경 감지 → 모든 클라이언트에 자동 브로드캐스트
+//   ▼
+//[All Clients] NetworkCharacterAppearance.OnAppearanceChanged(old, next)
+//   │  (SyncVar hook)
+//   ▼
+//   _customizer.ApplyAppearance(next)  → 시각 반영
+

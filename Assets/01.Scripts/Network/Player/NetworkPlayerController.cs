@@ -6,8 +6,6 @@ using MySecondWorld.Save;
 using MySecondWorld.Bundle;
 using VContainer;
 using Cysharp.Threading.Tasks;
-using MessagePipe;
-using MySecondWorld.Customization;
 
 namespace MySecondWorld.Network.Player
 {
@@ -21,18 +19,14 @@ namespace MySecondWorld.Network.Player
         private NetworkCharacterAppearance _networkAppearance;
         private ZoneAddressableLoader _zoneLoader;
 
-        private IPublisher<CharacterCustomizeOpenEvent> _openPublisher;
-
         [Inject]
         public void Construct(CharacterSaveService saveService,
                               NetworkCharacterAppearance networkAppearance,
-                              ZoneAddressableLoader zoneLoader,
-                              IPublisher<CharacterCustomizeOpenEvent> openPublisher)
+                              ZoneAddressableLoader zoneLoader)
         {
             _saveService = saveService;
             _networkAppearance = networkAppearance;
             _zoneLoader = zoneLoader;
-            _openPublisher = openPublisher;
         }
         
         private void Awake()
@@ -75,9 +69,6 @@ namespace MySecondWorld.Network.Player
             // 3. [Command] → 서버로 전송 _appearance = data
             _networkAppearance.CmdSetAppearance(data);
             // 4. [SyncVar hook] → 변경 감지 → OnAppearanceChanged 실행
-
-            if (_saveService.IsFirstLogin())
-                _openPublisher.Publish(new CharacterCustomizeOpenEvent());
         }
     }
 }

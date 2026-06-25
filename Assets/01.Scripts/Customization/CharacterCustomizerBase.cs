@@ -95,6 +95,17 @@ namespace MySecondWorld.Customization
             SetColor(ColorTarget.Eyes, data.EyesColor);
             SetColor(ColorTarget.BodyArt, data.BodyArtColor);
 
+            // ApplyAppearance는 SetPart처럼 끝에서 ApplyMutualExclusion을 호출하지 않으므로 들어온 데이터를 검증 없이 그대로 로드한다.
+            // 성별전환/랜덤/세이브로드는 파츠를 하나씩 따로 정해서 조합하기 때문에,
+            // Head뿐 아니라 HeadCoverings/Hair/Eyebrows/FacialHair/HelmetAttachment 각자의 상호배제 규칙과도 충돌할 수 있어
+            // 트리거가 되는 6개 파츠를 전부 다시 검증한다. 매번 _currentAppearance를 새로 읽어 앞선 검증의 연쇄 결과를 반영한다.
+            await ApplyMutualExclusion(PartType.Head, _currentAppearance.Head, data.Gender);
+            await ApplyMutualExclusion(PartType.HeadCoverings, _currentAppearance.HeadCoverings, data.Gender);
+            await ApplyMutualExclusion(PartType.Hair, _currentAppearance.Hair, data.Gender);
+            await ApplyMutualExclusion(PartType.Eyebrows, _currentAppearance.Eyebrows, data.Gender);
+            await ApplyMutualExclusion(PartType.FacialHair, _currentAppearance.FacialHair, data.Gender);
+            await ApplyMutualExclusion(PartType.HelmetAttachment, _currentAppearance.HelmetAttachment, data.Gender);
+
             OnAppearanceChanged();
         }
 
