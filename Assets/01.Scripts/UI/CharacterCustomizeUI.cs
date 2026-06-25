@@ -388,6 +388,15 @@ namespace MySecondWorld.UI
             };
         }
 
+        private void RefreshColorRows()
+        {
+            foreach (var kvp in _colorRows)
+                kvp.Value.UpdatePreview(GetColorFromAppearance(kvp.Key));
+
+            if (_colorPicker.gameObject.activeSelf)
+                _colorPicker.color = GetColorFromAppearance(_activeColorTarget); // 색상탭 보고 있는 중이면 피커도 갱신
+        }
+
         // 외형 적용
         private async UniTask ApplyCurrentAppearance()
         {
@@ -431,8 +440,10 @@ namespace MySecondWorld.UI
         private async UniTaskVoid ResetToDefault()
         {
             InitIndices();
-            await ApplyCurrentAppearance();
+            await _previewCustomizer.ApplyAppearance(_defaultAppearanceSO.DefaultAppearance); // 인덱스+색상 전부 기본값으로
+            SyncIndicesFromCustomizer(); // 상호배제 캐스케이드 결과로 _currentIndices 재동기화
             UpdateThumbnailSelection();
+            RefreshColorRows(); // 색상 탭 스와치/피커도 갱신
         }
 
         // 저장
