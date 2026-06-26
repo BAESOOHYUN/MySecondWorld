@@ -1,3 +1,48 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:4261374fd74af6afcfe606ae6b5e2fa0f69f20ebbe27e0125364ce52ccd85566
-size 1733
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5d17a21594effb4e9591490b009e7aa, type: 3}
+  m_Name: Remote_Zone_BundledAssetGroupSchema
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.GroupSchemas.BundledAssetGroupSchema
+  m_Group: {fileID: 11400000, guid: d5fe92ea75d418a4b86ed62a2e222007, type: 2}
+  m_InternalBundleIdMode: 1
+  m_Compression: 1
+  m_IncludeAddressInCatalog: 1
+  m_IncludeGUIDInCatalog: 1
+  m_IncludeLabelsInCatalog: 1
+  m_InternalIdNamingMode: 0
+  m_CacheClearBehavior: 0
+  m_IncludeInBuild: 1
+  m_BundledAssetProviderType:
+    m_AssemblyName: Unity.ResourceManager, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+    m_ClassName: UnityEngine.ResourceManagement.ResourceProviders.BundledAssetProvider
+  m_StripDownloadOptions: 0
+  m_ForceUniqueProvider: 0
+  m_UseAssetBundleCache: 1
+  m_UseAssetBundleCrc: 1
+  m_UseAssetBundleCrcForCachedBundles: 1
+  m_UseUWRForLocalBundles: 0
+  m_Timeout: 0
+  m_ChunkedTransfer: 0
+  m_RedirectLimit: -1
+  m_RetryCount: 0
+  m_BuildPath:
+    m_Id: 30c5da4bb9325a649ad9ccb3f30a57e9
+  m_LoadPath:
+    m_Id: 748ff5e913c5ac34196603658119888b
+  m_BundleMode: 1
+  m_AssetBundleProviderType:
+    m_AssemblyName: Unity.ResourceManager, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+    m_ClassName: UnityEngine.ResourceManagement.ResourceProviders.AssetBundleProvider
+  m_UseDefaultSchemaSettings: 1
+  m_SelectedPathPairIndex: 1
+  m_BundleNaming: 0
+  m_AssetLoadMode: 0
