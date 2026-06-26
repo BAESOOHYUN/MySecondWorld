@@ -108,6 +108,7 @@ namespace MySecondWorld.UI
             _saveService = saveService;
             _defaultAppearanceSO = defaultAppearanceSO;
             _saveRequestPub = saveRequestPub;
+
             // 프리뷰 커스터마이저에 수동으로 의존성 전달
             _previewCustomizer.Construct(keyTable, defaultAppearanceSO);
         }

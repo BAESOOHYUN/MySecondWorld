@@ -24,11 +24,22 @@ namespace MySecondWorld.Network
             ObservableCharacterCustomizer customizer,
             AvatarPartKeyTableSO avatarPartKeyTable,
             CharacterCustomizeUI customizeUI,
-            ISubscriber<CharacterAppearanceSyncRequestedEvent> saveRequestSub)
+            IObjectResolver resolver)
         {
             _customizer = customizer;
             _avatarPartKeyTable = avatarPartKeyTable;
             _customizeUI = customizeUI;
+
+            // PlayerScope도 RegisterMessagePipe()를 호출하기 때문에(자기 전용 이벤트용),
+            // MessagePipe의 open-generic MessageBrokerCore<> 폴백(VContainer 1.14+에서
+            // versionDefines로 자동 활성화)이 PlayerScope 로컬 레지스트리에도 생겨서
+            // closed 타입 resolve 요청을 가로채 버린다. 그래서 평범한 [Inject]로
+            // ISubscriber<CharacterAppearanceSyncRequestedEvent>를 받으면 PlayerScope가
+            // 즉석에서 만든, 아무도 발행하지 않는 로컬 인스턴스를 구독하게 된다.
+            // ProjectLifetimeScope가 소유한 진짜 공유 브로커를 받으려면 Root에서 직접 resolve해야 한다.
+            var saveRequestSub = resolver is IScopedObjectResolver scoped
+                ? scoped.Root.Resolve<ISubscriber<CharacterAppearanceSyncRequestedEvent>>()
+                : resolver.Resolve<ISubscriber<CharacterAppearanceSyncRequestedEvent>>();
 
             // isLocalPlayer로 필터링하는 이유:
             // 이 broker는 ProjectLifetimeScope에 등록되어 화면에 보이는
