@@ -1,0 +1,30 @@
+{
+    "name": "MySecondWorld.LifetimeScope",
+    "rootNamespace": "",
+    "references": [
+        "VContainer",
+        "MessagePipe",
+        "MessagePipe.VContainer",
+        "com.whisper.unity",
+        "MySecondWorld.Foundation",
+        "MySecondWorld.AI",
+        "MySecondWorld.UI",
+        "MySecondWorld.Network",
+        "MySecondWorld.Character",
+        "MySecondWorld.Camera",
+        "MySecondWorld.Input",
+        "MySecondWorld.Customization",
+        "MySecondWorld.Bundle",
+        "MySecondWorld.Save",
+        "MySecondWorld.ScriptableObject"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
