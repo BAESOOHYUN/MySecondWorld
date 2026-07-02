@@ -33,7 +33,7 @@ public class ProjectLifetimeScope : LifetimeScope
         builder.Register<SaveManager>(Lifetime.Singleton);
         builder.Register<CharacterSaveService>(Lifetime.Singleton);
 
-        builder.RegisterComponent(_uiManager);
+        builder.RegisterComponent(_uiManager).As<UIManager>().As<IUIManager>();
         builder.RegisterComponentInHierarchy<TouchEventListener>();
         builder.RegisterComponentInHierarchy<GameNetworkManager>();
         builder.RegisterComponentInHierarchy<PlayerAuthenticator>();
