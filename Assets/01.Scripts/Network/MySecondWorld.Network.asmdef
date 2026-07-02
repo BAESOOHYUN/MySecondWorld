@@ -1,0 +1,33 @@
+{
+    "name": "MySecondWorld.Network",
+    "rootNamespace": "",
+    "references": [
+        "Mirror",
+        "UniTask",
+        "UniTask.Addressables",
+        "MessagePipe",
+        "VContainer",
+        "R3.Unity",
+        "Unity.Addressables",
+        "Unity.ResourceManager",
+        "MySecondWorld.Foundation",
+        "MySecondWorld.Bundle",
+        "MySecondWorld.Save",
+        "MySecondWorld.Customization",
+        "MySecondWorld.Character",
+        "MySecondWorld.Camera",
+        "MySecondWorld.ScriptableObject",
+        "Unity.TextMeshPro",
+        "Mirror.Components",
+        "Paroxe.PDFRenderer"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

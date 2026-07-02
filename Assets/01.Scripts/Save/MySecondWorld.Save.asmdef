@@ -1,0 +1,17 @@
+{
+    "name": "MySecondWorld.Save",
+    "rootNamespace": "",
+    "references": [
+        "VContainer",
+        "MySecondWorld.Customization"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

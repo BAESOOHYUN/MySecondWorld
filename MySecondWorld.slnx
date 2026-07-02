@@ -5,7 +5,7 @@
   <Project Path="ZString.csproj" />
   <Project Path="Unity.ShaderGraph.Editor.csproj" />
   <Project Path="Unity.RenderPipelines.Core.Runtime.csproj" />
-  <Project Path="Assembly-CSharp.csproj" />
+  <Project Path="MySecondWorld.UI.csproj" />
   <Project Path="Mirror.csproj" />
   <Project Path="Unity.ScriptableBuildPipeline.Editor.csproj" />
   <Project Path="Unity.Mathematics.csproj" />
@@ -42,6 +42,7 @@
   <Project Path="NativeFilePicker.Runtime.csproj" />
   <Project Path="Unity.UnifiedRayTracing.Runtime.csproj" />
   <Project Path="Unity.Cinemachine.csproj" />
+  <Project Path="Assembly-CSharp.csproj" />
   <Project Path="Unity.Burst.CodeGen.csproj" />
   <Project Path="Unity.Addressables.DocExampleCode.Editor.Tests.csproj" />
   <Project Path="Unity.Splines.Editor.csproj" />
@@ -67,6 +68,7 @@
   <Project Path="NuGetForUnity.csproj" />
   <Project Path="ReactiveInputSystem.csproj" />
   <Project Path="Unity.Multiplayer.Center.Common.csproj" />
+  <Project Path="MySecondWorld.Network.csproj" />
   <Project Path="Unity.XR.Interaction.Toolkit.Analytics.Editor.csproj" />
   <Project Path="MySecondWorld.AI.csproj" />
   <Project Path="SimpleWebTransport.csproj" />
@@ -81,6 +83,7 @@
   <Project Path="Paroxe.PDFRenderer.Editor.csproj" />
   <Project Path="Unity.Addressables.csproj" />
   <Project Path="MessagePipe.VContainer.csproj" />
+  <Project Path="MySecondWorld.Save.csproj" />
   <Project Path="Unity.Mathematics.Editor.csproj" />
   <Project Path="UnityEditor.UI.Analytics.csproj" />
   <Project Path="com.whisper.unity.editor.csproj" />
@@ -99,6 +102,7 @@
   <Project Path="endel.nativewebsocket.csproj" />
   <Project Path="Unity.CollabProxy.Editor.csproj" />
   <Project Path="Unity.RenderPipeline.Universal.ShaderLibrary.csproj" />
+  <Project Path="FlexibleColorPicker.csproj" />
   <Project Path="Cloud.Unum.USearch.csproj" />
   <Project Path="UniTask.Editor.csproj" />
   <Project Path="UnityCliConnector.TestRunner.csproj" />

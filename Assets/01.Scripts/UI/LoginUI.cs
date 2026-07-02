@@ -11,8 +11,8 @@ namespace MySecondWorld.Network
         [SerializeField] private Toggle _hostToggle;
         [SerializeField] private Toggle _clientToggle;
         [SerializeField] private Button _playerPrefsDeleteAll;
-
-        [SerializeField] private GameNetworkManager _networkManager;
+        [SerializeField] private MonoBehaviour _networkManagerRaw;
+        private IGameNetworkManager _networkManager => _networkManagerRaw as IGameNetworkManager;
 
         private void Start()
         {

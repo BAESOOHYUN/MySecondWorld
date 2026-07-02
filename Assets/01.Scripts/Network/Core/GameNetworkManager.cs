@@ -18,7 +18,7 @@ using UnityEditor;
 namespace MySecondWorld.Network
 {
     // Mirror 진입점. 콜백 수신 후 각 서비스에 위임한다.
-    public class GameNetworkManager : NetworkManager
+    public class GameNetworkManager : NetworkManager, IGameNetworkManager
     {
         [Scene] public string defaultSubScene;           // FieldScene (마을) — 기본 스폰 존
         public ZoneDefinitionSO[] zones;                 // 모든 존 정의 (SO 배열). defaultSubScene도 포함.
