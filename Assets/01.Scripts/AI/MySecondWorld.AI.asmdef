@@ -1,0 +1,24 @@
+{
+    "name": "MySecondWorld.AI",
+    "rootNamespace": "",
+    "references": [
+        "UniTask",
+        "ZString",
+        "VContainer",
+        "MessagePipe",
+        "R3.Unity",
+        "undream.llmunity.Runtime",
+        "endel.nativewebsocket",
+        "com.whisper.unity",
+        "MySecondWorld.ScriptableObject"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
