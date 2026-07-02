@@ -95,7 +95,7 @@ namespace MySecondWorld.Customization
                 return null;
             return candidates[index];
         }
-
+#if UNITY_EDITOR
         [ContextMenu("Auto-Populate Thumbnail Names")]
         private void AutoPopulateThumbnailNames()
         {
@@ -118,5 +118,6 @@ namespace MySecondWorld.Customization
             var path = UnityEditor.AssetDatabase.GUIDToAssetPath(r.AssetGUID);
             return System.IO.Path.GetFileNameWithoutExtension(path);
         }
+#endif
     }
 }

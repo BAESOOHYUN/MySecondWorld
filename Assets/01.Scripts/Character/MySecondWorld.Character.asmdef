@@ -1,0 +1,22 @@
+{
+    "name": "MySecondWorld.Character",
+    "rootNamespace": "",
+    "references": [
+        "Unity.Cinemachine",
+        "UniTask",
+        "MessagePipe",
+        "VContainer",
+        "MySecondWorld.Utils",
+        "MySecondWorld.Foundation",
+        "MySecondWorld.Input"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
