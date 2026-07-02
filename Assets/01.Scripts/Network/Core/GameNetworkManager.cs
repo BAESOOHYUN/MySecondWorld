@@ -11,7 +11,6 @@ using MessagePipe;
 using VContainer;
 using MySecondWorld.Save;
 using MySecondWorld.Bundle;
-using MySecondWorld.UI;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -38,14 +37,14 @@ namespace MySecondWorld.Network
         private ClientBundleSyncService _clientBundleService;
         private ZoneAddressableLoader _zoneLoader;
         private SaveManager _saveManager;
-        private UIManager _uiManager;
+        private IUIManager _uiManager;
         private ISubscriber<AddressablesProgressEvent> _progressSub;
 
         [Inject]
         private void Construct(
             ZoneAddressableLoader zoneLoader,
             SaveManager saveManager,
-            UIManager uiManager,
+            IUIManager uiManager,
             ISubscriber<AddressablesProgressEvent> progressSub)
         {
             _zoneLoader = zoneLoader;

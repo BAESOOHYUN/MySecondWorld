@@ -5,7 +5,6 @@ using UnityEngine;
 using MessagePipe;
 using Mirror;
 using MySecondWorld.Bundle;
-using MySecondWorld.UI;
 
 namespace MySecondWorld.Network
 {
@@ -20,12 +19,12 @@ namespace MySecondWorld.Network
         private string _lastFailedLabel;
         private IDisposable _retrySubscription;
         private readonly ZoneAddressableLoader _zoneLoader;
-        private UIManager _uiManager;
+        private IUIManager _uiManager;
 
         public ClientBundleSyncService (
             ZoneAddressableLoader zoneLoader,
             ISubscriber<AddressablesProgressEvent> progressSub,
-            UIManager uiManager)
+            IUIManager uiManager)
         {
             _zoneLoader = zoneLoader;
             _retrySubscription = progressSub.Subscribe(async evt =>

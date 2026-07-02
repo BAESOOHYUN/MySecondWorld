@@ -1,11 +1,10 @@
-using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.AddressableAssets;
-using UnityEngine.U2D;
 using UnityEngine.ResourceManagement.AsyncOperations;
+using UnityEngine.U2D;
 using Random = UnityEngine.Random;
 using VContainer;
 using MessagePipe;
@@ -102,12 +101,14 @@ namespace MySecondWorld.UI
         public void Construct(AvatarPartKeyTableSO keyTable,
                             CharacterSaveService saveService,
                             CharacterAppearanceSO defaultAppearanceSO,
-                            IPublisher<CharacterAppearanceSyncRequestedEvent> saveRequestPub)
+                            IPublisher<CharacterAppearanceSyncRequestedEvent> saveRequestPub,
+                            ISubscriber<RequestOpenCustomizeUIEvent> openUISub)
         {
             _keyTable = keyTable;
             _saveService = saveService;
             _defaultAppearanceSO = defaultAppearanceSO;
             _saveRequestPub = saveRequestPub;
+            openUISub.Subscribe(_ => Open()).AddTo(destroyCancellationToken);
 
             // 프리뷰 커스터마이저에 수동으로 의존성 전달
             _previewCustomizer.Construct(keyTable, defaultAppearanceSO);

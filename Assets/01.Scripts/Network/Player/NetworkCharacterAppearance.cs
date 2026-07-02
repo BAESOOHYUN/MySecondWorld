@@ -4,7 +4,6 @@ using Mirror;
 using VContainer;
 using MessagePipe;
 using MySecondWorld.Customization;
-using MySecondWorld.UI;
 
 namespace MySecondWorld.Network
 {
@@ -16,19 +15,17 @@ namespace MySecondWorld.Network
         private CharacterAppearanceData _appearance;
 
         private ObservableCharacterCustomizer _customizer;
-        private AvatarPartKeyTableSO _avatarPartKeyTable; 
-        private CharacterCustomizeUI _customizeUI;
+        private AvatarPartKeyTableSO _avatarPartKeyTable;
+        private IPublisher<RequestOpenCustomizeUIEvent> _openUIPublisher;
 
         [Inject]
         public void Construct(
             ObservableCharacterCustomizer customizer,
             AvatarPartKeyTableSO avatarPartKeyTable,
-            CharacterCustomizeUI customizeUI,
             IObjectResolver resolver)
         {
             _customizer = customizer;
             _avatarPartKeyTable = avatarPartKeyTable;
-            _customizeUI = customizeUI;
 
             // PlayerScope도 RegisterMessagePipe()를 호출하기 때문에(자기 전용 이벤트용),
             // MessagePipe의 open-generic MessageBrokerCore<> 폴백(VContainer 1.14+에서
@@ -40,6 +37,12 @@ namespace MySecondWorld.Network
             var saveRequestSub = resolver is IScopedObjectResolver scoped
                 ? scoped.Root.Resolve<ISubscriber<CharacterAppearanceSyncRequestedEvent>>()
                 : resolver.Resolve<ISubscriber<CharacterAppearanceSyncRequestedEvent>>();
+
+            var openUISub = resolver is IScopedObjectResolver scoped2
+                ? scoped2.Root.Resolve<IPublisher<RequestOpenCustomizeUIEvent>>()
+                : resolver.Resolve<IPublisher<RequestOpenCustomizeUIEvent>>();
+                
+            _openUIPublisher = openUISub;
 
             // isLocalPlayer로 필터링하는 이유:
             // 이 broker는 ProjectLifetimeScope에 등록되어 화면에 보이는
@@ -85,7 +88,7 @@ namespace MySecondWorld.Network
         {
             base.OnStartLocalPlayer();
             if (!PlayerPrefs.HasKey(PrefKeyCustomized))
-                _customizeUI.Open();
+                _openUIPublisher.Publish(new RequestOpenCustomizeUIEvent());
         }
     }
 }

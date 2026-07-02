@@ -1,12 +1,9 @@
 using System;
 using UnityEngine;
 using UnityEngine.UI;
-using VContainer;
-using MessagePipe;
-using MySecondWorld.Bundle;
 using TMPro;
 
-namespace MySecondWorld.UI
+namespace MySecondWorld.Bundle
 {
     public class AddressablesLoadingUI : MonoBehaviour
     {

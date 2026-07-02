@@ -1,5 +1,4 @@
 using MySecondWorld.Network.Player;
-using MySecondWorld.UI;
 using UnityEngine;
 using VContainer;
 using VContainer.Unity;
@@ -15,7 +14,7 @@ namespace MySecondWorld.Network
         [SerializeField] private GameObject _screenUI;
         private SharedScreenUI _screenUIComponent;
         private SharedScreenController _controller;
-        [Inject] private UIManager _uiManager;
+        [Inject] private IUIManager _uiManager;
 
         private void Awake()
         {

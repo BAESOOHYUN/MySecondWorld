@@ -14,4 +14,6 @@ namespace MySecondWorld.Customization
         public readonly CharacterAppearanceData Data;
         public CharacterAppearanceSyncRequestedEvent(CharacterAppearanceData data) => Data = data;
     }
+
+    public readonly struct RequestOpenCustomizeUIEvent { }
 }

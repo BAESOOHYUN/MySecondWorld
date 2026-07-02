@@ -4,12 +4,10 @@ using UnityEngine;
 using MessagePipe;
 using VContainer;
 using MySecondWorld.Network;
-using MySecondWorld.Bundle;
-using VContainer.Unity;
 
 namespace MySecondWorld.UI
 {
-    public class UIManager : MonoBehaviour
+    public class UIManager : MonoBehaviour, IUIManager
     {
         [Header("상시 캔버스")]
         [SerializeField] private GameObject _menuCanvas;
