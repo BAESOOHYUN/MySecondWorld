@@ -8,7 +8,7 @@
         "Unity.TextMeshPro",
         "Unity.Addressables",
         "Unity.ResourceManager",
-        "MySecondWorld.ScriptableObject"
+        "MySecondWorld.Foundation"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

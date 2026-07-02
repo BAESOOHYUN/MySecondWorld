@@ -19,7 +19,8 @@ namespace MySecondWorld.AI
         [Header("References")]
         [SerializeField] private NPCSystemPromptSO _systemPrompt;
         [SerializeField] private NPCMemorySO _memory;
-        [SerializeField] private NPCServerState _serverState; // 선택적, 없으면 null 허용
+        [SerializeField] private MonoBehaviour _serverStateRaw; // 선택적, 없으면 null 허용
+        private INPCServerState _serverState => _serverStateRaw as INPCServerState;
 
         [ContextMenu("메모리 초기화")]
         private void DebugClearMemory() => ResetMemory();

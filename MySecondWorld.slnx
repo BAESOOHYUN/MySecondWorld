@@ -54,6 +54,7 @@
   <Project Path="VContainer.Editor.csproj" />
   <Project Path="Unity.Rider.Editor.csproj" />
   <Project Path="Assembly-CSharp-Editor.csproj" />
+  <Project Path="MySecondWorld.Foundation.csproj" />
   <Project Path="UnityEditor.UI.csproj" />
   <Project Path="Unity.RenderPipelines.Universal.2D.Editor.Overrides.csproj" />
   <Project Path="undream.llmunity.Runtime.csproj" />
@@ -67,6 +68,7 @@
   <Project Path="ReactiveInputSystem.csproj" />
   <Project Path="Unity.Multiplayer.Center.Common.csproj" />
   <Project Path="Unity.XR.Interaction.Toolkit.Analytics.Editor.csproj" />
+  <Project Path="MySecondWorld.AI.csproj" />
   <Project Path="SimpleWebTransport.csproj" />
   <Project Path="Unity.InputSystem.ForUI.csproj" />
   <Project Path="Unity.XR.Interaction.Toolkit.CodeSamples.Tests.csproj" />

@@ -18,13 +18,6 @@ namespace MySecondWorld.Network
     /// 대화 발생 시 → NPCDialogueSync.OnDialogueRequested?.Invoke(npcName, message)
     ///             → 활성화된 NPC만 수신 → RpcShowDialogue
     /// </summary>
-    
-    public struct NPCDialogueEvent
-    {
-        public string NpcName;
-        public string Message;
-    }
-
     public class NPCDialogueSync : NetworkBehaviour
     {
         [Inject] private ISubscriber<NPCDialogueEvent> _subscriber;

@@ -10,7 +10,7 @@ namespace MySecondWorld.Network
     /// </summary>
     [RequireComponent(typeof(NetworkIdentity))]
     [RequireComponent(typeof(NetworkMatch))]
-    public class NPCServerState : NetworkBehaviour
+    public class NPCServerState : NetworkBehaviour, INPCServerState
     {
         // [ContextMenu]는 [Server] 어트리뷰트를 무시하지 않나 걱정될 수 있지만
         // 에디터에서 호출하면 서버 인스턴스에서 실행되는 거라 문제없음

@@ -10,7 +10,9 @@
         "undream.llmunity.Runtime",
         "endel.nativewebsocket",
         "com.whisper.unity",
-        "MySecondWorld.ScriptableObject"
+        "MySecondWorld.ScriptableObject",
+        "MySecondWorld.Foundation",
+        "MySecondWorld.Input"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
