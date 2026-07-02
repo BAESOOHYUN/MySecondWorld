@@ -48,6 +48,7 @@
   <Project Path="Unity.PerformanceTesting.csproj" />
   <Project Path="Unity.TextMeshPro.csproj" />
   <Project Path="UniTask.Linq.csproj" />
+  <Project Path="MySecondWorld.ScriptableObject.csproj" />
   <Project Path="Unity.TextMeshPro.Editor.csproj" />
   <Project Path="Unity.Burst.Editor.csproj" />
   <Project Path="VContainer.Editor.csproj" />
@@ -91,12 +92,14 @@
   <Project Path="ParrelSync.csproj" />
   <Project Path="Unity.Profiling.Core.csproj" />
   <Project Path="MessagePipe.Editor.csproj" />
+  <Project Path="MySecondWorld.Bundle.csproj" />
   <Project Path="endel.nativewebsocket.csproj" />
   <Project Path="Unity.CollabProxy.Editor.csproj" />
   <Project Path="Unity.RenderPipeline.Universal.ShaderLibrary.csproj" />
   <Project Path="Cloud.Unum.USearch.csproj" />
   <Project Path="UniTask.Editor.csproj" />
   <Project Path="UnityCliConnector.TestRunner.csproj" />
+  <Project Path="MySecondWorld.Input.csproj" />
   <Project Path="Mirror.CompilerSymbols.csproj" />
   <Project Path="undream.llmunity.Editor.csproj" />
   <Project Path="R3.Unity.XRInteractionToolkit.csproj" />
@@ -106,6 +109,8 @@
   <Project Path="Unity.InternalAPIEngineBridge.004.csproj" />
   <Project Path="Unity.2D.Sprite.AIIntegration.Editor.csproj" />
   <Project Path="Unity.RenderPipelines.Core.Editor.Shared.csproj" />
+  <Project Path="MySecondWorld.Utils.csproj" />
+  <Project Path="MySecondWorld.Camera.csproj" />
   <Project Path="Unity.ScriptableBuildPipeline.csproj" />
   <Project Path="Unity.PlasticSCM.Editor.Entities.csproj" />
   <Project Path="Mirror.Authenticators.csproj" />

@@ -1,0 +1,19 @@
+{
+    "name": "MySecondWorld.ScriptableObject",
+    "rootNamespace": "",
+    "references": [
+        "Mirror",
+        "ZString",
+        "Unity.Addressables",
+        "Unity.ResourceManager"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

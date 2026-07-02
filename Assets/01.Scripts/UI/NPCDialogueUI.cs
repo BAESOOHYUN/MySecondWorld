@@ -16,7 +16,7 @@ namespace MySecondWorld.UI
     /// NPC 대화창 UI.
     /// TTS 문장 단위 텍스트 동기화, 입력 필드, ESC/닫기 버튼 지원.
     /// </summary>
-    public class NPCDialogueUI : MonoBehaviour
+    public class NPCDialogueUI : MonoBehaviour, INPCDialogueUI
     {
         [Header("UI References")]
         [SerializeField] private GameObject _canvas;

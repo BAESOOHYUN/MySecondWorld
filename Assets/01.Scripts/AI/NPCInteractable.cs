@@ -5,7 +5,6 @@ using R3;
 using Stateless;
 using MessagePipe;
 using VContainer;
-using MySecondWorld.UI;
 
 namespace MySecondWorld.AI
 {
@@ -75,7 +74,7 @@ namespace MySecondWorld.AI
         [Header("NPC Interaction")]
         [Tooltip("NPC 레이어마스크 — 'NPC' 레이어를 지정하세요")]
         [SerializeField] private LayerMask _npcLayerMask;
-        private NPCDialogueUI _dialogueUI;
+        private INPCDialogueUI _dialogueUI;
         [Inject] private TouchEventListener _touchEventListener;
         // GUID는 NPCBrain → SystemPromptSO에서 읽는다
         private string NpcGuid
@@ -98,7 +97,7 @@ namespace MySecondWorld.AI
         // 해결책: NPCResponseReceivedEvent를 NPCInteractable도 구독한다. 응답이 도착하면 상태 머신을 Talking으로 전이시킨다.
         [Inject]
         private void Construct(
-            NPCDialogueUI dialogueUI,
+            INPCDialogueUI dialogueUI,
             IPublisher<string, PlayerMessageSentEvent> messagePub,
             ISubscriber<NPCResponseReceivedEvent> responseSub
             )
