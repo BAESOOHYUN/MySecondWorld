@@ -89,6 +89,7 @@
   <Project Path="com.whisper.unity.editor.csproj" />
   <Project Path="UniTask.TextMeshPro.csproj" />
   <Project Path="UnityCliConnector.Editor.csproj" />
+  <Project Path="MySecondWorld.LifetimeScope.csproj" />
   <Project Path="SimpleFileBrowser.Runtime.csproj" />
   <Project Path="NativeFilePicker.Editor.csproj" />
   <Project Path="Unity.Settings.Editor.csproj" />

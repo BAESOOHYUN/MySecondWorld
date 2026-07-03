@@ -3807,6 +3807,12 @@ PrefabInstance:
       propertyPath: sceneId
       value: 3010777747
       objectReference: {fileID: 0}
+    - target: {fileID: 3473679581778070130, guid: 301df057ffda16644a17fdacb19192bc,
+        type: 3}
+      propertyPath: _appearanceSO
+      value: 
+      objectReference: {fileID: 11400000, guid: dc54686a7498aa545ad306d289e0c525,
+        type: 2}
     - target: {fileID: 4132230852007117947, guid: 301df057ffda16644a17fdacb19192bc,
         type: 3}
       propertyPath: _systemPrompt
@@ -4967,6 +4973,12 @@ PrefabInstance:
       propertyPath: sceneId
       value: 285974169
       objectReference: {fileID: 0}
+    - target: {fileID: 3473679581778070130, guid: 301df057ffda16644a17fdacb19192bc,
+        type: 3}
+      propertyPath: _appearanceSO
+      value: 
+      objectReference: {fileID: 11400000, guid: cf75fe98708b6d341a2e34759fd9aaa0,
+        type: 2}
     - target: {fileID: 4132230852007117947, guid: 301df057ffda16644a17fdacb19192bc,
         type: 3}
       propertyPath: _systemPrompt

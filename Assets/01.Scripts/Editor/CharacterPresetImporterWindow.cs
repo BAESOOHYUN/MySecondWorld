@@ -352,6 +352,7 @@ namespace MySecondWorld.Editor
 
             List<(PartType part, string leafName)> leaves;
             Gender gender;
+            bool genderAmbiguous;
             Color[] extractedColors; // ColorSlot 선언 순서와 1:1 대응. 프로퍼티를 못 찾은 슬롯은 foundAny=false로만 표시되고
                                       // 배열 값 자체는 default(Color)(0,0,0,0)로 남는다 — nullable을 쓰지 않는다.
             bool colorsFound;
@@ -370,7 +371,7 @@ namespace MySecondWorld.Editor
                     return false;
                 }
 
-                gender = ResolveGender(modularCharacters);
+                gender = ResolveGender(modularCharacters, out genderAmbiguous);
                 leaves = CollectActiveLeaves(modularCharacters);
                 colorsFound = TryExtractColors(modularCharacters, out extractedColors);
             }
@@ -403,6 +404,8 @@ namespace MySecondWorld.Editor
             // 파츠 인덱스 매칭: 프리셋에서 찾은 (부위, 메시이름)을 KeyTable 후보 리스트에서 검색해 인덱스로 치환.
             // 못 찾은 항목(KeyTable populate가 덜 됐거나 이름이 어긋난 경우)은 unmatched로 모아서 경고만 하고 계속 진행.
             var unmatched = new List<string>();
+            if (genderAmbiguous)
+                unmatched.Add("Gender:AMBIGUOUS — 신체 파츠 중 일부가 Female/Male 양쪽에서 활성으로 잡힘, 수동 확인 권장");
             foreach (var (part, leafName) in leaves)
             {
                 if (TryResolveIndex(part, gender, leafName, out var index))
@@ -470,14 +473,44 @@ namespace MySecondWorld.Editor
             return so;
         }
 
-        // Female_Parts/Male_Parts 중 실제로 활성 메시가 있는 쪽을 성별로 판정.
-        // 주의: 두 컨테이너(Female_Parts, Male_Parts) 자체는 프리셋 프리팹에서 항상 activeSelf=true다
-        // (구조상 껍데기라 늘 켜져 있음) — 그래서 컨테이너 이름만으로는 성별을 알 수 없고,
-        // 그 안의 리프(실제 메시)까지 내려가서 "진짜 착용 중인 쪽"을 찾아야 한다.
-        private static Gender ResolveGender(Transform modularCharacters)
+        // 성별을 안정적으로 구분할 수 있는 "신체" 파츠들만 골랐다(얼굴 관련은 전부 제외).
+        // 버그 수정 이력: 원래 Female_Parts 전체(Head 포함)에서 활성 리프가 하나라도 있으면 Female로 판정했는데,
+        // 실제로 Male 프리셋(Chr_FantasyHero_Preset_2)인데도 Female_00_Head 하위에 원인 불명의 활성 잔여물이
+        // 하나 껴 있어서(Torso/Arms/Hips/Legs는 전부 Male_Parts만 활성인데 Head만 예외) 성별이 Female로
+        // 잘못 판정되는 경우를 실측으로 발견했다. Head 하나만 예외였다고 해서 Torso 하나만 믿는 것도
+        // 똑같이 위험한 가정이다(120개 프리셋 전부를 검증한 게 아니므로) — 그래서 슬롯 하나만 보지 않고
+        // 아래 10개를 전부 검사해 다수결로 판정하고, 의견이 갈리면(ambiguous) 배치 로그에 경고를 남겨
+        // 사람이 직접 확인할 수 있게 한다.
+        private static readonly PartType[] GenderCheckParts =
         {
-            var femaleParts = modularCharacters.Find("Female_Parts");
-            return femaleParts != null && HasActiveLeaf(femaleParts) ? Gender.Female : Gender.Male;
+            PartType.Torso, PartType.ArmUpperRight, PartType.ArmUpperLeft,
+            PartType.ArmLowerRight, PartType.ArmLowerLeft, PartType.HandLeft, PartType.HandRight,
+            PartType.Hips, PartType.LegLeft, PartType.LegRight,
+        };
+
+        private static Gender ResolveGender(Transform modularCharacters, out bool ambiguous)
+        {
+            int femaleVotes = CountActiveGenderCheckSlots(modularCharacters, "Female_Parts");
+            int maleVotes = CountActiveGenderCheckSlots(modularCharacters, "Male_Parts");
+            ambiguous = femaleVotes > 0 && maleVotes > 0; // 신체 파츠인데도 양쪽 다 활성 리프가 잡히면 뭔가 이상한 상태
+            return femaleVotes >= maleVotes ? Gender.Female : Gender.Male;
+        }
+
+        // genderRootName("Female_Parts" 또는 "Male_Parts") 바로 아래 슬롯 중 GenderCheckParts에 해당하는 것만
+        // 골라서, 그중 몇 개가 실제로 활성 리프를 갖고 있는지 센다.
+        private static int CountActiveGenderCheckSlots(Transform modularCharacters, string genderRootName)
+        {
+            var genderRoot = modularCharacters.Find(genderRootName);
+            if (genderRoot == null) return 0;
+
+            int count = 0;
+            foreach (Transform slot in genderRoot)
+            {
+                if (!TryResolvePartType(slot.name, out var partType)) continue;
+                if (System.Array.IndexOf(GenderCheckParts, partType) < 0) continue;
+                if (HasActiveLeaf(slot)) count++;
+            }
+            return count;
         }
 
         // node 아래에 activeSelf=true인 리프(자식이 없는 노드)가 하나라도 있는지 재귀 탐색.
@@ -516,21 +549,28 @@ namespace MySecondWorld.Editor
 
         // slot(예: Female_03_Torso) 아래에서 활성 자식을 하나 골라, 그 자식이 리프일 때까지 계속 한 단계씩 내려간다.
         // 중간에 여러 단계 서브그룹(예: Female_00_Head → Female_Head_All_Elements → 실제 메시)이 있을 수 있어서 재귀.
+        // 버그 수정 이력: "활성 자식은 항상 최대 1개"라고 가정하고 첫 번째 활성 자식만 보고 break했었는데,
+        // 실측 결과(unity-cli LoadPrefabContents로 Chr_FantasyHero_Preset_1 직접 확인) HeadCoverings_Base_Hair/
+        // No_FacialHair/No_Hair, Female_Head_All_Elements/No_Elements 같은 서브타입 컨테이너들은 전부
+        // activeSelf=true인 채로 동시에 존재했다 — 진짜 "착용 여부"는 그보다 한 단계 더 아래에서 갈린다.
+        // 그래서 첫 번째 활성 자식 안에 진짜 리프가 없으면(전부 비활성) 그 컨테이너 이름 자체를 리프인 것처럼
+        // 잘못 반환해버렸고(예: "HeadCoverings_Base_Hair"), 그 이름은 실제 프리팹 파일명이 아니라서
+        // KeyTable 매칭에 실패 → 조용히 -1(미착용)로 떨어졌었다(Head는 우연히 첫 분기에 진짜 리프가 있어서 안 걸림).
+        // HasActiveLeaf()가 이미 하던 대로 "활성 자식을 전부 순서대로 시도하고, 안에 진짜 리프가 없으면 다음
+        // 활성 형제로 넘어간다"는 규칙으로 통일해서 고쳤다.
         private static string FindActiveLeafName(Transform node)
         {
-            Transform activeChild = null;
             foreach (Transform child in node)
             {
                 if (!child.gameObject.activeSelf) continue; // 비활성 자식이면 건너뛰고 다음 자식으로
-                activeChild = child; // 여기 도달했다는 건 activeSelf가 true라는 뜻
-                break; // 그 첫 번째 활성 자식만 쓰고 바로 루프 탈출. Synty 규칙상 활성 자식은 항상 최대 1개
-            }
-            if (activeChild == null)
-                return null; // 이 슬롯엔 아무것도 착용 안 됨 (예: 액세서리 미착용 상태)
+                if (child.childCount == 0) return child.name; // 자식 없음 = 실제 메시 리프, 바로 확정
 
-            return activeChild.childCount == 0
-                ? activeChild.name
-                : FindActiveLeafName(activeChild) ?? activeChild.name; // 더 내려갈 활성 자식이 없으면 지금 노드 자체가 리프
+                var deeper = FindActiveLeafName(child);
+                if (deeper != null) return deeper; // 이 분기 안에 진짜 리프가 있었다 → 확정
+
+                // 이 분기는 활성 컨테이너였지만 그 안엔 진짜 착용된 게 없었음(전부 비활성) → 다음 활성 형제로 계속 시도
+            }
+            return null; // 활성 자식이 아예 없거나, 활성 자식들 안 어디에도 진짜 리프가 없음 (미착용 상태)
         }
 
         // "Female_03_Torso" → "Torso", "All_04_Back_Attachment" → "BackAttachment" 처럼
@@ -548,24 +588,35 @@ namespace MySecondWorld.Editor
             return CategoryAliases.TryGetValue(category, out partType);
         }
 
-        // leafName(예: "Chr_Torso_Female_04")과 같은 파일명을 가진 파츠를
-        // GetCandidates(part, gender) 리스트(전용 파츠 + AllGender 파츠를 이어붙인 순서) 안에서 찾아
-        // 그 인덱스를 반환한다. 이 인덱스가 곧 CharacterAppearanceData[part]에 들어갈 값이다
+        // 목표: 프리셋에서 찾은 leafName(예: "Chr_Torso_Female_04")을 받아서
+        // AvatarPartKeyTableSO.GetCandidates(part, gender) 리스트(전용 파츠 + AllGender 파츠를 이어붙인 순서) 안에서 찾아
+        // 몇 번째(index)에 해당하는지 알아내는 것.
+        // 이 인덱스가 곧 CharacterAppearanceData[part]에 들어갈 값이다
         // (런타임에 ObservableCharacterCustomizer가 같은 GetCandidates 순서로 Addressables를 로드하므로 순서가 어긋나면 안 됨).
         private bool TryResolveIndex(PartType part, Gender gender, string leafName, out int index)
         {
             var candidates = _partKeyTable.GetCandidates(part, gender);
             for (int i = 0; i < candidates.Count; i++)
             {
+                // AssetReferenceGameObject(Addressables 타입)는 실제 이름이 아니라 **GUID만 들고 있다**.
+                // candidates[i]가 null일 수도 있고(인스펙터에서 슬롯을 비워둔 경우),
+                // GUID가 비어있을 수도 있으므로 방어적으로 스킵.
                 var guid = candidates[i]?.AssetGUID;
                 if (string.IsNullOrEmpty(guid)) continue;
+
+                // AssetDatabase.GUIDToAssetPath는 에디터 전용 API로,
+                // GUID를 실제 프로젝트 경로(Assets/Addressables/CharacterParts/.../Chr_Torso_Female_04.prefab)로 되돌려줌.
+                // AssetReferenceGameObject 자체는 이름을 모르니 (GUID 만 알고 있음),
+                // GUID → 경로 → 파일명 순서로 "이름"을 역으로 알아내는 것.
                 var path = AssetDatabase.GUIDToAssetPath(guid);
                 if (Path.GetFileNameWithoutExtension(path) == leafName)
                 {
+                    // leafName = GetCandidates 에서 찾은 이름이 똑같을 때 이름으로 매칭
                     index = i;
                     return true;
                 }
             }
+            // 끝까지 못 찾으면 -1. 이건 이 코드베이스 전체에서 "미착용/없음"을 뜻함
             index = -1;
             return false;
         }
