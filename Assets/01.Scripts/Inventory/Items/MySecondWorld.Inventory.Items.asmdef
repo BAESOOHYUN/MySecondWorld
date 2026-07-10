@@ -1,0 +1,20 @@
+{
+    "name": "MySecondWorld.Inventory.Items",
+    "rootNamespace": "",
+    "references": [
+        "MySecondWorld.Inventory",
+        "Cleverous.VaultInventory",
+        "Cleverous.VaultSystem",
+        "NetworkImposter",
+        "Mirror"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
