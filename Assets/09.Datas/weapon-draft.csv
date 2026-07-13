@@ -1,0 +1,224 @@
+﻿PrefabName,Package,KoreanName,ItemType,Category,Tier,RestrictionTitle,Tags,Stat1_Type,Stat1_Mod,Stat1_Value,Stat2_Type,Stat2_Mod,Stat2_Value,Stat3_Type,Stat3_Mod,Stat3_Value,HealAmount,BuffDuration,Note
+SM_Wep_Axe_01,Dungeon,기본 전투도끼,Equipment,Axe,Standard,Weapon,Equipment|Weapon,Attack,Flat,15,,,,,,,,,
+SM_Wep_Axe_Nature_01,Dungeon,자연의 도끼,Equipment,Axe,Nature,Weapon,Equipment|Weapon,Attack,Flat,15,HpRegen,Flat,3,,,,,,
+SM_Wep_Axe_Rune_01,Dungeon,룬각인 도끼,Equipment,Axe,Rune,Weapon,Equipment|Weapon,Attack,Flat,20,MagicAttack,Flat,5,,,,,,
+SM_Wep_Banner_01,Dungeon,전투 군기창 (적색),Equipment,Polearm,Standard,Weapon,Equipment|Weapon,Attack,Flat,18,AttackSpeed,Percent,-8,,,,,,
+SM_Wep_Banner_02,Dungeon,전투 군기창 (청색),Equipment,Polearm,Standard,Weapon,Equipment|Weapon,Attack,Flat,18,AttackSpeed,Percent,-8,,,,,,이름 기반 추정 (Banner_01 대표 이미지로 확인)
+SM_Wep_Banner_03,Dungeon,전투 군기창 (녹색),Equipment,Polearm,Standard,Weapon,Equipment|Weapon,Attack,Flat,18,AttackSpeed,Percent,-8,,,,,,이름 기반 추정 (Banner_01 대표 이미지로 확인)
+SM_Wep_Banner_04,Dungeon,전투 군기창 (황색),Equipment,Polearm,Standard,Weapon,Equipment|Weapon,Attack,Flat,18,AttackSpeed,Percent,-8,,,,,,이름 기반 추정 (Banner_01 대표 이미지로 확인)
+SM_Wep_Banner_05,Dungeon,전투 군기창 (백색),Equipment,Polearm,Standard,Weapon,Equipment|Weapon,Attack,Flat,18,AttackSpeed,Percent,-8,,,,,,이름 기반 추정 (Banner_01 대표 이미지로 확인)
+SM_Wep_Bone_01,Dungeon,거대 뼈몽둥이,Equipment,Blunt,Crude,Weapon,Equipment|Weapon,Attack,Flat,11,,,,,,,,,
+SM_Wep_Bone_02,Dungeon,거대 뼈몽둥이 (변형),Equipment,Blunt,Crude,Weapon,Equipment|Weapon,Attack,Flat,11,,,,,,,,,이름 기반 추정 (Bone_01 대표 이미지로 확인)
+SM_Wep_BrokenSword_01,Dungeon,부러진 검,Equipment,Sword,Broken,Weapon,Equipment|Weapon,Attack,Flat,5,Luck,Flat,-2,,,,,,
+SM_Wep_Crysta_Halberdl_01,Dungeon,수정 할버드,Equipment,Polearm,Crystal,Weapon,Equipment|Weapon,Attack,Flat,23,MagicAttack,Flat,5,,,,,,원본 파일명 오타(Crysta/Halberdl) 유지
+SM_Wep_Crystal_Axe_01,Dungeon,수정 도끼,Equipment,Axe,Crystal,Weapon,Equipment|Weapon,Attack,Flat,20,MagicAttack,Flat,5,,,,,,
+SM_Wep_Crystal_Axe_Large_01,Dungeon,대형 수정 도끼,Equipment,Axe,Crystal,Weapon,Equipment|Weapon,Attack,Flat,31,AttackSpeed,Percent,-15,MagicAttack,Flat,5,,,
+SM_Wep_Crystal_DoubleSword_01,Dungeon,수정 쌍날검,Equipment,Sword,Crystal,Weapon,Equipment|Weapon,Attack,Flat,31,AttackSpeed,Percent,-15,MagicAttack,Flat,5,,,
+SM_Wep_Crystal_Ornate_Straightsword_01,Dungeon,수정 문장 직검,Equipment,Sword,Crystal+Ornate,Weapon,Equipment|Weapon,Attack,Flat,20,MagicAttack,Flat,5,Luck,Flat,3,,,
+SM_Wep_Cutlass_01,Dungeon,커틀러스,Equipment,Sword,Standard,Weapon,Equipment|Weapon,Attack,Flat,9,AttackSpeed,Percent,15,,,,,,
+SM_Wep_Goblin_Axe_01,Dungeon,고블린 도끼,Equipment,Axe,Crude,Weapon,Equipment|Weapon,Attack,Flat,11,,,,,,,,,
+SM_Wep_Goblin_Axe_Large_01,Dungeon,대형 고블린 도끼,Equipment,Axe,Crude,Weapon,Equipment|Weapon,Attack,Flat,18,AttackSpeed,Percent,-15,,,,,,
+SM_Wep_Goblin_Axe_Spikes_01,Dungeon,가시 고블린 도끼,Equipment,Axe,Crude,Weapon,Equipment|Weapon,Attack,Flat,18,AttackSpeed,Percent,-15,,,,,,
+SM_Wep_Goblin_Bone_Axe_01,Dungeon,고블린 뼈도끼,Equipment,Axe,Crude,Weapon,Equipment|Weapon,Attack,Flat,11,,,,,,,,,
+SM_Wep_Goblin_Club_01,Dungeon,고블린 몽둥이,Equipment,Blunt,Crude,Weapon,Equipment|Weapon,Attack,Flat,11,,,,,,,,,
+SM_Wep_Goblin_Gem_Hammer_01,Dungeon,고블린 보석망치,Equipment,Blunt,Crude+Gem,Weapon,Equipment|Weapon,Attack,Flat,18,AttackSpeed,Percent,-15,Luck,Flat,2,,,
+SM_Wep_Goblin_Halberd_01,Dungeon,고블린 할버드,Equipment,Polearm,Crude,Weapon,Equipment|Weapon,Attack,Flat,14,AttackSpeed,Percent,-8,,,,,,
+SM_Wep_Goblin_Mace_01,Dungeon,고블린 메이스,Equipment,Blunt,Crude,Weapon,Equipment|Weapon,Attack,Flat,11,,,,,,,,,
+SM_Wep_Goblin_Machete_01,Dungeon,고블린 마체테,Equipment,Sword,Crude,Weapon,Equipment|Weapon,Attack,Flat,7,AttackSpeed,Percent,15,,,,,,
+SM_Wep_Goblin_Machete_Spikes_01,Dungeon,가시 고블린 마체테,Equipment,Sword,Crude,Weapon,Equipment|Weapon,Attack,Flat,11,,,,,,,,,
+SM_Wep_Goblin_Shiv_Bone_01,Dungeon,고블린 뼈단검,Equipment,Dagger,Crude,Weapon,Equipment|Weapon,Attack,Flat,7,AttackSpeed,Percent,15,,,,,,
+SM_Wep_Goblin_Shiv_Stone_01,Dungeon,고블린 돌단검,Equipment,Dagger,Crude,Weapon,Equipment|Weapon,Attack,Flat,7,AttackSpeed,Percent,15,,,,,,
+SM_Wep_Goblin_Spear_01,Dungeon,고블린 창,Equipment,Polearm,Crude,Weapon,Equipment|Weapon,Attack,Flat,14,AttackSpeed,Percent,-8,,,,,,
+SM_Wep_Goblin_Staff_01,Dungeon,고블린 주술지팡이,Equipment,Staff,Crude,Weapon,Equipment|Weapon,MagicAttack,Flat,15,CastSpeed,Percent,10,,,,,,
+SM_Wep_GreatSword_01,Dungeon,그레이트소드,Equipment,Sword,Standard,Weapon,Equipment|Weapon,Attack,Flat,24,AttackSpeed,Percent,-15,,,,,,
+SM_Wep_Greatsword_Curved_01,Dungeon,곡날 그레이트소드,Equipment,Sword,Standard,Weapon,Equipment|Weapon,Attack,Flat,24,AttackSpeed,Percent,-15,,,,,,
+SM_Wep_Greatsword_Round_01,Dungeon,환두 그레이트소드,Equipment,Sword,Standard,Weapon,Equipment|Weapon,Attack,Flat,24,AttackSpeed,Percent,-15,,,,,,이름 기반 추정 (동일 계열 대표 이미지로 확인)
+SM_Wep_Greatsword_Straight_01,Dungeon,직도 그레이트소드,Equipment,Sword,Standard,Weapon,Equipment|Weapon,Attack,Flat,24,AttackSpeed,Percent,-15,,,,,,
+SM_Wep_Halberd_06,Dungeon,할버드,Equipment,Polearm,Standard,Weapon,Equipment|Weapon,Attack,Flat,18,AttackSpeed,Percent,-8,,,,,,
+SM_Wep_Hammer_Large_Metal_01,Dungeon,대형 철망치,Equipment,Blunt,Standard,Weapon,Equipment|Weapon,Attack,Flat,24,AttackSpeed,Percent,-15,,,,,,
+SM_Wep_Hammer_Large_Metal_010,Dungeon,대형 철망치 (변형),Equipment,Blunt,Standard,Weapon,Equipment|Weapon,Attack,Flat,24,AttackSpeed,Percent,-15,,,,,,이름 기반 추정 (Metal_01 대표 이미지로 확인, 원본 파일명 접미사 그대로 유지)
+SM_Wep_Hammer_Large_Stone_01,Dungeon,대형 돌망치,Equipment,Blunt,Crude,Weapon,Equipment|Weapon,Attack,Flat,18,AttackSpeed,Percent,-15,,,,,,
+SM_Wep_Hammer_Large_Wood_01,Dungeon,대형 목재망치,Equipment,Blunt,Crude,Weapon,Equipment|Weapon,Attack,Flat,18,AttackSpeed,Percent,-15,,,,,,이름 기반 추정 (동일 계열 대표 이미지로 확인)
+SM_Wep_Hammer_Mace_Sphere_01,Dungeon,구체 메이스,Equipment,Blunt,Standard,Weapon,Equipment|Weapon,Attack,Flat,15,,,,,,,,,
+SM_Wep_Hammer_Mace_Spikes_01,Dungeon,가시 메이스,Equipment,Blunt,Standard,Weapon,Equipment|Weapon,Attack,Flat,15,,,,,,,,,이름 기반 추정 (동일 계열 대표 이미지로 확인)
+SM_Wep_Hammer_Mace_Stone_01,Dungeon,돌 메이스,Equipment,Blunt,Crude,Weapon,Equipment|Weapon,Attack,Flat,11,,,,,,,,,이름 기반 추정 (동일 계열 대표 이미지로 확인)
+SM_Wep_Hammer_Small_01,Dungeon,소형 망치,Equipment,Blunt,Standard,Weapon,Equipment|Weapon,Attack,Flat,9,AttackSpeed,Percent,15,,,,,,
+SM_Wep_Hammer_Small_02,Dungeon,소형 망치 (변형),Equipment,Blunt,Standard,Weapon,Equipment|Weapon,Attack,Flat,9,AttackSpeed,Percent,15,,,,,,이름 기반 추정 (Small_01 대표 이미지로 확인)
+SM_Wep_HandAxe_01,Dungeon,손도끼,Equipment,Axe,Standard,Weapon,Equipment|Weapon,Attack,Flat,9,AttackSpeed,Percent,15,,,,,,
+SM_Wep_Handle_Metal_01,Dungeon,철제 몽둥이,Equipment,Blunt,Crude,Weapon,Equipment|Weapon,Attack,Flat,5,AttackSpeed,Percent,15,,,,,,장식 없는 기본/대체 무기
+SM_Wep_Handle_Wood_01,Dungeon,목재 몽둥이,Equipment,Blunt,Crude,Weapon,Equipment|Weapon,Attack,Flat,4,AttackSpeed,Percent,15,,,,,,장식 없는 기본/대체 무기, 이름 기반 추정
+SM_Wep_Mace_Blades_01,Dungeon,칼날 메이스,Equipment,Blunt,Standard,Weapon,Equipment|Weapon,Attack,Flat,15,,,,,,,,,
+SM_Wep_Ornate_Axe_01,Dungeon,문장 도끼,Equipment,Axe,Ornate,Weapon,Equipment|Weapon,Attack,Flat,20,Luck,Flat,3,,,,,,
+SM_Wep_Ornate_Axe_02,Dungeon,문장 도끼 (변형),Equipment,Axe,Ornate,Weapon,Equipment|Weapon,Attack,Flat,20,Luck,Flat,3,,,,,,이름 기반 추정 (Ornate_Axe_01 대표 이미지로 확인)
+SM_Wep_Ornate_GreatAxe_01,Dungeon,문장 대형도끼,Equipment,Axe,Ornate,Weapon,Equipment|Weapon,Attack,Flat,31,AttackSpeed,Percent,-15,Luck,Flat,3,,,
+SM_Wep_Ornate_Spear_01,Dungeon,문장 창,Equipment,Polearm,Ornate,Weapon,Equipment|Weapon,Attack,Flat,23,AttackSpeed,Percent,-8,Luck,Flat,3,,,
+SM_Wep_Ornate_Spikes_01,Dungeon,문장 철퇴,Equipment,Blunt,Ornate,Weapon,Equipment|Weapon,Attack,Flat,20,Luck,Flat,3,,,,,,
+SM_Wep_Ornate_Spikes_Long_01,Dungeon,문장 장병 철퇴,Equipment,Polearm,Ornate,Weapon,Equipment|Weapon,Attack,Flat,23,AttackSpeed,Percent,-8,Luck,Flat,3,,,이름 기반 추정 (Ornate_Spikes_01 대표 이미지로 확인)
+SM_Wep_Ornate_Sword_01,Dungeon,문장검,Equipment,Sword,Ornate,Weapon,Equipment|Weapon,Attack,Flat,20,Luck,Flat,3,,,,,,
+SM_Wep_Ornate_Sword_02,Dungeon,문장검 (변형),Equipment,Sword,Ornate,Weapon,Equipment|Weapon,Attack,Flat,20,Luck,Flat,3,,,,,,이름 기반 추정 (Ornate_Sword_01 대표 이미지로 확인)
+SM_Wep_Shield_Bone_01,Dungeon,뼈방패,Equipment,Shield,Crude,Weapon,Equipment|Weapon,Defense,Flat,14,MoveSpeed,Percent,-5,,,,,,
+SM_Wep_Shield_Chitin_01,Dungeon,키틴 방패,Equipment,Shield,Crude,Weapon,Equipment|Weapon,Defense,Flat,14,MoveSpeed,Percent,-5,,,,,,
+SM_Wep_Shield_Gravestone_01,Dungeon,묘비 방패,Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,
+SM_Wep_Shield_Heater_01,Dungeon,문장 히터 방패,Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,
+SM_Wep_Shield_Heater_02,Dungeon,문장 히터 방패 (변형),Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,이름 기반 추정 (Heater_01 대표 이미지로 확인)
+SM_Wep_Shield_Ornate_01,Dungeon,문장 대형방패,Equipment,Shield,Ornate,Weapon,Equipment|Weapon,Defense,Flat,23,MoveSpeed,Percent,-5,Luck,Flat,2,,,
+SM_Wep_Shield_Ornate_02,Dungeon,문장 대형방패 (변형),Equipment,Shield,Ornate,Weapon,Equipment|Weapon,Defense,Flat,23,MoveSpeed,Percent,-5,Luck,Flat,2,,,이름 기반 추정 (Ornate_01 대표 이미지로 확인)
+SM_Wep_Shield_Plank_01,Dungeon,판자 방패,Equipment,Shield,Crude,Weapon,Equipment|Weapon,Defense,Flat,14,MoveSpeed,Percent,-5,,,,,,
+SM_Wep_Shield_Round_01,Dungeon,원형 방패,Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,
+SM_Wep_Shield_Skull_01,Dungeon,해골 문양 방패,Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,
+SM_Wep_Shield_Spike_01,Dungeon,가시 방패,Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,16,Attack,Flat,4,,,,,,
+SM_Wep_Spear_01,Dungeon,창,Equipment,Polearm,Standard,Weapon,Equipment|Weapon,Attack,Flat,18,AttackSpeed,Percent,-8,,,,,,
+SM_Wep_Spear_02,Dungeon,창 (변형),Equipment,Polearm,Standard,Weapon,Equipment|Weapon,Attack,Flat,18,AttackSpeed,Percent,-8,,,,,,이름 기반 추정 (Spear_01 대표 이미지로 확인)
+SM_Wep_Staff_DoubleBlade_01,Dungeon,쌍날창 지팡이,Equipment,Staff,Hybrid,Weapon,Equipment|Weapon,Attack,Flat,14,MagicAttack,Flat,10,,,,,,
+SM_Wep_Staff_Gem_01,Dungeon,보석 지팡이,Equipment,Staff,Standard,Weapon,Equipment|Weapon,MagicAttack,Flat,20,CastSpeed,Percent,10,,,,,,
+SM_Wep_Straightsword_01,Dungeon,직검,Equipment,Sword,Standard,Weapon,Equipment|Weapon,Attack,Flat,15,,,,,,,,,
+SM_Wep_Axe_01,FantasyHeroCharacters,기사단 도끼,Equipment,Axe,Standard,Weapon,Equipment|Weapon,Attack,Flat,15,,,,,,,,,파일명 Dungeon과 동일하나 폴더가 달라 별개 아이템
+SM_Wep_Dagger_01,FantasyHeroCharacters,기사단 단검,Equipment,Dagger,Standard,Weapon,Equipment|Weapon,Attack,Flat,9,AttackSpeed,Percent,15,,,,,,
+SM_Wep_Joust_01,FantasyHeroCharacters,마상창 (백기사),Equipment,Polearm,Standard,Weapon,Equipment|Weapon,Attack,Flat,20,AttackSpeed,Percent,-10,,,,,,
+SM_Wep_Joust_02,FantasyHeroCharacters,마상창 (녹기사),Equipment,Polearm,Standard,Weapon,Equipment|Weapon,Attack,Flat,20,AttackSpeed,Percent,-10,,,,,,
+SM_Wep_Joust_03,FantasyHeroCharacters,마상창 (문장기사),Equipment,Polearm,Standard,Weapon,Equipment|Weapon,Attack,Flat,20,AttackSpeed,Percent,-10,,,,,,
+SM_Wep_Mace_01,FantasyHeroCharacters,스파이크 메이스,Equipment,Blunt,Standard,Weapon,Equipment|Weapon,Attack,Flat,15,,,,,,,,,
+SM_Wep_Mace_02,FantasyHeroCharacters,기사단 워메이스,Equipment,Blunt,Standard,Weapon,Equipment|Weapon,Attack,Flat,15,,,,,,,,,이름 기반 추정 (Mace_01 대표 이미지로 확인)
+SM_Wep_Shield_01,FantasyHeroCharacters,사자문장 카이트실드,Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,
+SM_Wep_Shield_02,FantasyHeroCharacters,카이트실드 (문양 02),Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,이름 기반 추정 (Shield_01/05/15 대표 이미지로 확인)
+SM_Wep_Shield_03,FantasyHeroCharacters,카이트실드 (문양 03),Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,이름 기반 추정
+SM_Wep_Shield_04,FantasyHeroCharacters,카이트실드 (문양 04),Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,이름 기반 추정
+SM_Wep_Shield_05,FantasyHeroCharacters,십자문장 카이트실드,Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,
+SM_Wep_Shield_06,FantasyHeroCharacters,카이트실드 (문양 06),Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,이름 기반 추정
+SM_Wep_Shield_07,FantasyHeroCharacters,카이트실드 (문양 07),Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,이름 기반 추정
+SM_Wep_Shield_08,FantasyHeroCharacters,카이트실드 (문양 08),Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,이름 기반 추정
+SM_Wep_Shield_09,FantasyHeroCharacters,카이트실드 (문양 09),Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,이름 기반 추정
+SM_Wep_Shield_10,FantasyHeroCharacters,카이트실드 (문양 10),Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,이름 기반 추정
+SM_Wep_Shield_11,FantasyHeroCharacters,카이트실드 (문양 11),Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,이름 기반 추정
+SM_Wep_Shield_12,FantasyHeroCharacters,카이트실드 (문양 12),Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,이름 기반 추정
+SM_Wep_Shield_13,FantasyHeroCharacters,카이트실드 (문양 13),Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,이름 기반 추정
+SM_Wep_Shield_14,FantasyHeroCharacters,카이트실드 (문양 14),Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,이름 기반 추정
+SM_Wep_Shield_15,FantasyHeroCharacters,보석문장 카이트실드,Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,
+SM_Wep_Shield_16,FantasyHeroCharacters,카이트실드 (문양 16),Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,이름 기반 추정
+SM_Wep_Shield_17,FantasyHeroCharacters,카이트실드 (문양 17),Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,이름 기반 추정
+SM_Wep_Shield_18,FantasyHeroCharacters,카이트실드 (문양 18),Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,이름 기반 추정
+SM_Wep_Shield_19,FantasyHeroCharacters,카이트실드 (문양 19),Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,이름 기반 추정
+SM_Wep_Shield_20,FantasyHeroCharacters,카이트실드 (문양 20),Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,이름 기반 추정
+SM_Wep_Shield_Buckler_01,FantasyHeroCharacters,소형 버클러,Equipment,Shield,Light,Weapon,Equipment|Weapon,Defense,Flat,12,MoveSpeed,Percent,-2,,,,,,
+SM_Wep_Shield_Long_01,FantasyHeroCharacters,십자문장 롱쉴드,Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,
+SM_Wep_Shield_Long_02,FantasyHeroCharacters,롱쉴드 (문양 02),Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,이름 기반 추정 (Long_01/08 대표 이미지로 확인)
+SM_Wep_Shield_Long_03,FantasyHeroCharacters,롱쉴드 (문양 03),Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,이름 기반 추정
+SM_Wep_Shield_Long_04,FantasyHeroCharacters,롱쉴드 (문양 04),Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,이름 기반 추정
+SM_Wep_Shield_Long_05,FantasyHeroCharacters,롱쉴드 (문양 05),Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,이름 기반 추정
+SM_Wep_Shield_Long_06,FantasyHeroCharacters,롱쉴드 (문양 06),Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,이름 기반 추정
+SM_Wep_Shield_Long_07,FantasyHeroCharacters,롱쉴드 (문양 07),Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,이름 기반 추정
+SM_Wep_Shield_Long_08,FantasyHeroCharacters,보석문장 롱쉴드,Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,
+SM_Wep_Shield_Long_09,FantasyHeroCharacters,롱쉴드 (문양 09),Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,이름 기반 추정
+SM_Wep_Shield_Long_10,FantasyHeroCharacters,롱쉴드 (문양 10),Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,이름 기반 추정
+SM_Wep_Shield_Long_11,FantasyHeroCharacters,롱쉴드 (문양 11),Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,이름 기반 추정
+SM_Wep_Shield_Long_12,FantasyHeroCharacters,롱쉴드 (문양 12),Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,이름 기반 추정
+SM_Wep_Shield_Long_13,FantasyHeroCharacters,롱쉴드 (문양 13),Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,이름 기반 추정
+SM_Wep_Shield_Long_14,FantasyHeroCharacters,롱쉴드 (문양 14),Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,이름 기반 추정
+SM_Wep_Shield_Long_15,FantasyHeroCharacters,롱쉴드 (문양 15),Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,이름 기반 추정
+SM_Wep_Shield_Long_16,FantasyHeroCharacters,롱쉴드 (문양 16),Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,이름 기반 추정
+SM_Wep_Staff_01,FantasyHeroCharacters,보석 지팡이,Equipment,Staff,Standard,Weapon,Equipment|Weapon,MagicAttack,Flat,20,CastSpeed,Percent,10,,,,,,
+SM_Wep_Staff_02,FantasyHeroCharacters,목재 완드,Equipment,Staff,Light,Weapon,Equipment|Weapon,MagicAttack,Flat,18,CastSpeed,Percent,12,,,,,,
+SM_Wep_Sword_01,FantasyHeroCharacters,기사단 롱소드,Equipment,Sword,Standard,Weapon,Equipment|Weapon,Attack,Flat,15,,,,,,,,,
+SM_Wep_Sword_Cover_01,FantasyHeroCharacters,기사단 롱소드 (검집 포함),Equipment,Sword,Standard,Weapon,Equipment|Weapon,Attack,Flat,15,,,,,,,,,이름 기반 추정 (Sword_01 대표 이미지로 확인), 스탯은 Sword_01과 동일
+SM_Wep_Sword_Large_01,FantasyHeroCharacters,기사단 대검,Equipment,Sword,Standard,Weapon,Equipment|Weapon,Attack,Flat,24,AttackSpeed,Percent,-15,,,,,,
+SM_Wep_Sword_Rapier_01,FantasyHeroCharacters,레이피어,Equipment,Sword,Light,Weapon,Equipment|Weapon,Attack,Flat,10,AttackSpeed,Percent,20,,,,,,
+SM_Wep_Sword_Rapier_Cover_01,FantasyHeroCharacters,레이피어 (검집 포함),Equipment,Sword,Light,Weapon,Equipment|Weapon,Attack,Flat,10,AttackSpeed,Percent,20,,,,,,이름 기반 추정, 스탯은 Rapier_01과 동일
+SM_Wep_Sword_Small_01,FantasyHeroCharacters,숏소드,Equipment,Sword,Light,Weapon,Equipment|Weapon,Attack,Flat,9,AttackSpeed,Percent,15,,,,,,
+SM_Wep_Sword_Small_Cover_01,FantasyHeroCharacters,숏소드 (검집 포함),Equipment,Sword,Light,Weapon,Equipment|Weapon,Attack,Flat,9,AttackSpeed,Percent,15,,,,,,이름 기반 추정, 스탯은 Small_01과 동일
+SM_Wep_ThowingKnife_01,FantasyHeroCharacters,투척단검,Equipment,Dagger,Light,Weapon,Equipment|Weapon,Attack,Flat,7,AttackSpeed,Percent,20,,,,,,원본 파일명 오타(Thowing) 유지
+SM_Wep_Axe_01,FantasyKingdom,금장 이중날 전투도끼,Equipment,Axe,Standard,Weapon,Equipment|Weapon,Attack,Flat,20,AttackSpeed,Percent,-8,,,,,,
+SM_Wep_Axe_02,FantasyKingdom,강철 베어드 도끼,Equipment,Axe,Standard,Weapon,Equipment|Weapon,Attack,Flat,15,,,,,,,,,
+SM_Wep_Axe_03,FantasyKingdom,문장 양날도끼,Equipment,Axe,Ornate,Weapon,Equipment|Weapon,Attack,Flat,20,AttackSpeed,Percent,-8,Luck,Flat,2,,,
+SM_Wep_Axe_04,FantasyKingdom,문장 양날도끼 (변형),Equipment,Axe,Ornate,Weapon,Equipment|Weapon,Attack,Flat,20,AttackSpeed,Percent,-8,Luck,Flat,2,,,이름 기반 추정 (Axe_03과 동일 계열)
+SM_Wep_Axe_05,FantasyKingdom,대형 첨두 양날도끼,Equipment,Axe,Ornate,Weapon,Equipment|Weapon,Attack,Flat,26,AttackSpeed,Percent,-15,Luck,Flat,2,,,
+SM_Wep_Axe_06,FantasyKingdom,목병 양날도끼,Equipment,Axe,Standard,Weapon,Equipment|Weapon,Attack,Flat,18,AttackSpeed,Percent,-8,,,,,,
+SM_Wep_Axe_07,FantasyKingdom,초승달 도끼,Equipment,Axe,Standard,Weapon,Equipment|Weapon,Attack,Flat,18,AttackSpeed,Percent,-8,,,,,,
+SM_Wep_Axe_08,FantasyKingdom,다중날 전투도끼,Equipment,Axe,Ornate,Weapon,Equipment|Weapon,Attack,Flat,22,AttackSpeed,Percent,-10,Luck,Flat,2,,,
+SM_Wep_Axe_09,FantasyKingdom,벌목도끼,Equipment,Axe,Crude,Weapon,Equipment|Weapon,Attack,Flat,11,AttackSpeed,Percent,10,,,,,,
+SM_Wep_Axe_10,FantasyKingdom,갈고리 손도끼,Equipment,Axe,Crude,Weapon,Equipment|Weapon,Attack,Flat,11,AttackSpeed,Percent,10,,,,,,
+SM_Wep_Axe_11,FantasyKingdom,장병 전투도끼,Equipment,Polearm,Heavy,Weapon,Equipment|Weapon,Attack,Flat,25,AttackSpeed,Percent,-15,,,,,,폴암형 도끼(자루 긴 형태), 사용자 확인 후 Polearm으로 재분류
+SM_Wep_Sword_01,FantasyKingdom,금장 롱소드,Equipment,Sword,Ornate,Weapon,Equipment|Weapon,Attack,Flat,20,Luck,Flat,3,,,,,,
+SM_Wep_Sword_02,FantasyKingdom,기사 롱소드,Equipment,Sword,Standard,Weapon,Equipment|Weapon,Attack,Flat,15,,,,,,,,,
+SM_Wep_Sword_03,FantasyKingdom,단조 아밍소드,Equipment,Sword,Standard,Weapon,Equipment|Weapon,Attack,Flat,15,,,,,,,,,
+SM_Wep_Sword_04,FantasyKingdom,흑철 아밍소드,Equipment,Sword,Standard,Weapon,Equipment|Weapon,Attack,Flat,15,,,,,,,,,
+SM_Wep_Sword_05,FantasyKingdom,흑철 아밍소드 (변형),Equipment,Sword,Standard,Weapon,Equipment|Weapon,Attack,Flat,15,,,,,,,,,이름 기반 추정 (Sword_04와 동일 계열)
+SM_Wep_Sword_06,FantasyKingdom,목병 아밍소드,Equipment,Sword,Standard,Weapon,Equipment|Weapon,Attack,Flat,15,,,,,,,,,
+SM_Wep_Sword_07,FantasyKingdom,화염날 플랑베르주,Equipment,Sword,Standard,Weapon,Equipment|Weapon,Attack,Flat,17,,,,,,,,,물결형 블레이드
+SM_Wep_Sword_08,FantasyKingdom,전투 브로드소드,Equipment,Sword,Standard,Weapon,Equipment|Weapon,Attack,Flat,17,,,,,,,,,
+SM_Wep_Sword_09,FantasyKingdom,흑기사 브로드소드,Equipment,Sword,Standard,Weapon,Equipment|Weapon,Attack,Flat,15,,,,,,,,,
+SM_Wep_Sword_10,FantasyKingdom,금장 커틀러스,Equipment,Sword,Light,Weapon,Equipment|Weapon,Attack,Flat,10,AttackSpeed,Percent,20,,,,,,
+SM_Wep_Sword_11,FantasyKingdom,금장 세이버,Equipment,Sword,Light,Weapon,Equipment|Weapon,Attack,Flat,10,AttackSpeed,Percent,20,,,,,,
+SM_Wep_Sword_12,FantasyKingdom,금장 레이피어,Equipment,Sword,Light,Weapon,Equipment|Weapon,Attack,Flat,9,AttackSpeed,Percent,22,,,,,,
+SM_Wep_Sword_13,FantasyKingdom,적병 브로드소드,Equipment,Sword,Standard,Weapon,Equipment|Weapon,Attack,Flat,18,,,,,,,,,
+SM_Wep_Sword_14,FantasyKingdom,진홍마검,Equipment,Sword,Crystal,Weapon,Equipment|Weapon,Attack,Flat,22,MagicAttack,Flat,8,,,,,,
+SM_Wep_Sword_15,FantasyKingdom,흑금마검,Equipment,Sword,Crystal,Weapon,Equipment|Weapon,Attack,Flat,22,MagicAttack,Flat,8,,,,,,
+SM_Wep_Sword_16,FantasyKingdom,화염 균열 대검,Equipment,Sword,Crystal,Weapon,Equipment|Weapon,Attack,Flat,26,AttackSpeed,Percent,-10,MagicAttack,Flat,8,,,
+SM_Wep_Sword_17,FantasyKingdom,적혈 곡도,Equipment,Sword,Light,Weapon,Equipment|Weapon,Attack,Flat,16,AttackSpeed,Percent,10,,,,,,
+SM_Wep_Sword_18,FantasyKingdom,적혈 곡도 (변형),Equipment,Sword,Light,Weapon,Equipment|Weapon,Attack,Flat,16,AttackSpeed,Percent,10,,,,,,이름 기반 추정 (Sword_17과 동일 계열)
+SM_Wep_Spear_01,FantasyKingdom,삼지창,Equipment,Polearm,Standard,Weapon,Equipment|Weapon,Attack,Flat,18,AttackSpeed,Percent,-8,,,,,,트라이던트형
+SM_Wep_Spear_02,FantasyKingdom,전투 미늘도끼창,Equipment,Polearm,Standard,Weapon,Equipment|Weapon,Attack,Flat,20,AttackSpeed,Percent,-10,,,,,,할버드형
+SM_Wep_Spear_03,FantasyKingdom,전투 미늘도끼창 (변형),Equipment,Polearm,Standard,Weapon,Equipment|Weapon,Attack,Flat,20,AttackSpeed,Percent,-10,,,,,,이름 기반 추정 (Spear_02와 동일 계열)
+SM_Wep_Spear_04,FantasyKingdom,양익 미늘창,Equipment,Polearm,Standard,Weapon,Equipment|Weapon,Attack,Flat,20,AttackSpeed,Percent,-10,,,,,,할버드형
+SM_Wep_Spear_05,FantasyKingdom,글레이브,Equipment,Polearm,Standard,Weapon,Equipment|Weapon,Attack,Flat,19,AttackSpeed,Percent,-8,,,,,,곡날 폴암
+SM_Wep_Spear_06,FantasyKingdom,파도날 창,Equipment,Polearm,Standard,Weapon,Equipment|Weapon,Attack,Flat,18,AttackSpeed,Percent,-8,,,,,,
+SM_Wep_Spear_07,FantasyKingdom,전투창,Equipment,Polearm,Standard,Weapon,Equipment|Weapon,Attack,Flat,18,AttackSpeed,Percent,-8,,,,,,
+SM_Wep_Spear_08,FantasyKingdom,전투창 (변형),Equipment,Polearm,Standard,Weapon,Equipment|Weapon,Attack,Flat,18,AttackSpeed,Percent,-8,,,,,,이름 기반 추정 (Spear_07과 동일 계열)
+SM_Wep_Spear_09,FantasyKingdom,투창,Equipment,Polearm,Light,Weapon,Equipment|Weapon,Attack,Flat,14,AttackSpeed,Percent,5,,,,,,가늘고 짧은 창끝
+SM_Wep_Spear_10,FantasyKingdom,전투창 (변형2),Equipment,Polearm,Standard,Weapon,Equipment|Weapon,Attack,Flat,18,AttackSpeed,Percent,-8,,,,,,이름 기반 추정 (Spear_07과 동일 계열)
+SM_Wep_Spear_11,FantasyKingdom,전쟁 낫창,Equipment,Polearm,Standard,Weapon,Equipment|Weapon,Attack,Flat,17,AttackSpeed,Percent,-5,,,,,,빌훅형 곡날
+SM_Wep_Spear_12,FantasyKingdom,금장 전투창,Equipment,Polearm,Ornate,Weapon,Equipment|Weapon,Attack,Flat,20,AttackSpeed,Percent,-8,Luck,Flat,2,,,
+SM_Wep_Dagger_01,FantasyKingdom,흑철 단검,Equipment,Dagger,Standard,Weapon,Equipment|Weapon,Attack,Flat,9,AttackSpeed,Percent,15,,,,,,
+SM_Wep_Dagger_02,FantasyKingdom,기사 단검,Equipment,Dagger,Standard,Weapon,Equipment|Weapon,Attack,Flat,9,AttackSpeed,Percent,15,,,,,,
+SM_Wep_Dagger_03,FantasyKingdom,단조 단검,Equipment,Dagger,Standard,Weapon,Equipment|Weapon,Attack,Flat,9,AttackSpeed,Percent,15,,,,,,
+SM_Wep_Dagger_04,FantasyKingdom,단조 단검 (변형),Equipment,Dagger,Standard,Weapon,Equipment|Weapon,Attack,Flat,9,AttackSpeed,Percent,15,,,,,,이름 기반 추정 (Dagger_03과 동일 계열)
+SM_Wep_Dagger_05,FantasyKingdom,문장 단검,Equipment,Dagger,Ornate,Weapon,Equipment|Weapon,Attack,Flat,10,AttackSpeed,Percent,15,Luck,Flat,2,,,
+SM_Wep_Dagger_06,FantasyKingdom,파랑날 단검,Equipment,Dagger,Standard,Weapon,Equipment|Weapon,Attack,Flat,9,AttackSpeed,Percent,15,,,,,,물결형 블레이드
+SM_Wep_Dagger_07,FantasyKingdom,클리버 나이프,Equipment,Dagger,Standard,Weapon,Equipment|Weapon,Attack,Flat,10,AttackSpeed,Percent,12,,,,,,폭이 넓은 칼날
+SM_Wep_Knife_01,FantasyKingdom,사냥칼,Equipment,Dagger,Standard,Weapon,Equipment|Weapon,Attack,Flat,9,AttackSpeed,Percent,15,,,,,,Dagger/Knife 카테고리 통합
+SM_Wep_Knife_02,FantasyKingdom,정글용 마체테,Equipment,Dagger,Standard,Weapon,Equipment|Weapon,Attack,Flat,10,AttackSpeed,Percent,12,,,,,,Dagger/Knife 카테고리 통합
+SM_Wep_Knife_03,FantasyKingdom,황금 마체테,Equipment,Dagger,Ornate,Weapon,Equipment|Weapon,Attack,Flat,11,AttackSpeed,Percent,12,Luck,Flat,2,,,Dagger/Knife 카테고리 통합
+SM_Wep_Knife_04,FantasyKingdom,백골자루 곡도,Equipment,Dagger,Standard,Weapon,Equipment|Weapon,Attack,Flat,10,AttackSpeed,Percent,14,,,,,,Dagger/Knife 카테고리 통합
+SM_Wep_KnuckleDagger_01,FantasyKingdom,너클 대거,Equipment,Knuckle,Light,Weapon,Equipment|Weapon,Attack,Flat,6,AttackSpeed,Percent,25,,,,,,T자 그립(푸시대거)
+SM_Wep_CorkScrew_01,FantasyKingdom,쌍갈고리 너클,Equipment,Knuckle,Light,Weapon,Equipment|Weapon,Attack,Flat,6,AttackSpeed,Percent,25,,,,,,T자 그립, 이중 훅 블레이드
+SM_Wep_IcePick_02,FantasyKingdom,너클 아이스픽,Equipment,Knuckle,Light,Weapon,Equipment|Weapon,Attack,Flat,6,AttackSpeed,Percent,25,,,,,,T자 그립 (IcePick_01은 일직선 그립이라 미분류/미베이킹)
+SM_Wep_Staff_01,FantasyKingdom,보석 지팡이,Equipment,Staff,Standard,Weapon,Equipment|Weapon,MagicAttack,Flat,20,CastSpeed,Percent,10,,,,,,
+SM_Wep_Staff_02,FantasyKingdom,보석 지팡이 (변형),Equipment,Staff,Standard,Weapon,Equipment|Weapon,MagicAttack,Flat,20,CastSpeed,Percent,10,,,,,,이름 기반 추정 (Staff_01과 동일 계열)
+SM_Wep_Staff_03,FantasyKingdom,빙정구 지팡이,Equipment,Staff,Crystal,Weapon,Equipment|Weapon,MagicAttack,Flat,22,CastSpeed,Percent,8,,,,,,Sceptre_07과 동일 디자인(길이만 다름) — 사용자 확인
+SM_Wep_Staff_04,FantasyKingdom,자연 빙정 지팡이,Equipment,Staff,Crystal,Weapon,Equipment|Weapon,MagicAttack,Flat,20,CastSpeed,Percent,10,HpRegen,Flat,2,,,나뭇가지 손잡이+청빙정
+SM_Wep_Staff_05,FantasyKingdom,주교 지팡이,Equipment,Staff,Holy,Weapon,Equipment|Weapon,MagicAttack,Flat,18,CastSpeed,Percent,10,HpRegen,Flat,3,,,Sceptre_02와 동일 디자인(길이만 다름) — 사용자 확인
+SM_Wep_Staff_06,FantasyKingdom,황금 도토리 지팡이,Equipment,Staff,Holy,Weapon,Equipment|Weapon,MagicAttack,Flat,16,CastSpeed,Percent,12,Luck,Flat,2,,,Sceptre_03과 동일 계열로 추정
+SM_Wep_Staff_07,FantasyKingdom,황금 왕홀 지팡이,Equipment,Staff,Holy,Weapon,Equipment|Weapon,MagicAttack,Flat,20,CastSpeed,Percent,10,Luck,Flat,2,,,Sceptre_04와 동일 계열로 추정
+SM_Wep_Staff_08,FantasyKingdom,황금 왕홀 지팡이 (변형),Equipment,Staff,Holy,Weapon,Equipment|Weapon,MagicAttack,Flat,20,CastSpeed,Percent,10,Luck,Flat,2,,,이름 기반 추정 (Staff_07과 동일 계열)
+SM_Wep_Staff_09,FantasyKingdom,자연의 지팡이,Equipment,Staff,Nature,Weapon,Equipment|Weapon,MagicAttack,Flat,15,HpRegen,Flat,4,,,,,,
+SM_Wep_Staff_10,FantasyKingdom,은구 지팡이,Equipment,Staff,Standard,Weapon,Equipment|Weapon,MagicAttack,Flat,17,CastSpeed,Percent,10,,,,,,Sceptre_06과 동일 디자인(길이만 다름) — 사용자 확인
+SM_Wep_Sceptre_01,FantasyKingdom,빙정 셉터,Equipment,Sceptre,Crystal,Weapon,Equipment|Weapon,MagicAttack,Flat,15,CastSpeed,Percent,15,,,,,,
+SM_Wep_Sceptre_02,FantasyKingdom,주교 셉터,Equipment,Sceptre,Holy,Weapon,Equipment|Weapon,MagicAttack,Flat,13,CastSpeed,Percent,17,HpRegen,Flat,2,,,Staff_05와 동일 디자인(길이만 다름) — 사용자 확인
+SM_Wep_Sceptre_03,FantasyKingdom,황금 도토리 셉터,Equipment,Sceptre,Holy,Weapon,Equipment|Weapon,MagicAttack,Flat,12,CastSpeed,Percent,18,Luck,Flat,2,,,Staff_06과 동일 계열로 추정
+SM_Wep_Sceptre_04,FantasyKingdom,황금 왕홀 셉터,Equipment,Sceptre,Holy,Weapon,Equipment|Weapon,MagicAttack,Flat,14,CastSpeed,Percent,15,Luck,Flat,2,,,Staff_07/08과 동일 계열로 추정
+SM_Wep_Sceptre_05,FantasyKingdom,목병 철구 셉터,Equipment,Sceptre,Crude,Weapon,Equipment|Weapon,MagicAttack,Flat,10,CastSpeed,Percent,12,,,,,,보석 없는 소박한 셉터
+SM_Wep_Sceptre_06,FantasyKingdom,은구 셉터,Equipment,Sceptre,Standard,Weapon,Equipment|Weapon,MagicAttack,Flat,12,CastSpeed,Percent,15,,,,,,Staff_10과 동일 디자인(길이만 다름) — 사용자 확인
+SM_Wep_Sceptre_07,FantasyKingdom,빙정구 셉터,Equipment,Sceptre,Crystal,Weapon,Equipment|Weapon,MagicAttack,Flat,16,CastSpeed,Percent,15,,,,,,Staff_03과 동일 디자인(길이만 다름) — 사용자 확인
+SM_Wep_Sceptre_08,FantasyKingdom,빙정구 셉터 (변형),Equipment,Sceptre,Crystal,Weapon,Equipment|Weapon,MagicAttack,Flat,16,CastSpeed,Percent,15,,,,,,이름 기반 추정 (Sceptre_07과 동일 계열)
+SM_Wep_Sceptre_09,FantasyKingdom,빙정구 셉터 (변형2),Equipment,Sceptre,Crystal,Weapon,Equipment|Weapon,MagicAttack,Flat,16,CastSpeed,Percent,15,,,,,,이름 기반 추정 (Sceptre_07과 동일 계열)
+SM_Wep_Shield_01,FantasyKingdom,십자문장 카이트실드,Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,
+SM_Wep_Shield_02,FantasyKingdom,문장 카이트실드 (적색),Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,
+SM_Wep_Shield_03,FantasyKingdom,수정문장 카이트실드,Equipment,Shield,Ornate,Weapon,Equipment|Weapon,Defense,Flat,19,MoveSpeed,Percent,-5,Luck,Flat,2,,,
+SM_Wep_Shield_04,FantasyKingdom,강철 카이트실드,Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,18,MoveSpeed,Percent,-5,,,,,,
+SM_Wep_Shield_05,FantasyKingdom,가시목재 방패,Equipment,Shield,Crude,Weapon,Equipment|Weapon,Defense,Flat,13,MoveSpeed,Percent,-3,,,,,,
+SM_Wep_Shield_06,FantasyKingdom,원형 목재방패,Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,16,MoveSpeed,Percent,-3,,,,,,
+SM_Wep_Shield_07,FantasyKingdom,원형 목재방패 (변형),Equipment,Shield,Standard,Weapon,Equipment|Weapon,Defense,Flat,16,MoveSpeed,Percent,-3,,,,,,이름 기반 추정 (Shield_06과 동일 계열)
+SM_Wep_Shield_08,FantasyKingdom,문장 원형방패,Equipment,Shield,Ornate,Weapon,Equipment|Weapon,Defense,Flat,17,MoveSpeed,Percent,-3,Luck,Flat,2,,,
+SM_Wep_Shield_09,FantasyKingdom,암석 방패,Equipment,Shield,Heavy,Weapon,Equipment|Weapon,Defense,Flat,22,MoveSpeed,Percent,-8,,,,,,
+SM_Wep_Shield_10,FantasyKingdom,가죽 버클러,Equipment,Shield,Light,Weapon,Equipment|Weapon,Defense,Flat,12,MoveSpeed,Percent,-2,,,,,,
+SM_Wep_Hammer_01,FantasyKingdom,대형 강철망치,Equipment,Hammer,Standard,Weapon,Equipment|Weapon,Attack,Flat,24,AttackSpeed,Percent,-15,,,,,,
+SM_Wep_Hammer_02,FantasyKingdom,전쟁 곡괭이,Equipment,Hammer,Standard,Weapon,Equipment|Weapon,Attack,Flat,20,AttackSpeed,Percent,-10,,,,,,워픽(대못+망치머리)
+SM_Wep_Hammer_03,FantasyKingdom,대형 흑철망치,Equipment,Hammer,Standard,Weapon,Equipment|Weapon,Attack,Flat,24,AttackSpeed,Percent,-15,,,,,,
+SM_Wep_Hammer_04,FantasyKingdom,대형 석재망치,Equipment,Hammer,Crude,Weapon,Equipment|Weapon,Attack,Flat,20,AttackSpeed,Percent,-15,,,,,,
+SM_Wep_Hammer_05,FantasyKingdom,대형 강철망치 (적색그립),Equipment,Hammer,Standard,Weapon,Equipment|Weapon,Attack,Flat,24,AttackSpeed,Percent,-15,,,,,,이름 기반 추정 (Hammer_01과 동일 계열)
+SM_Wep_Hammer_06,FantasyKingdom,전쟁 곡괭이 (변형),Equipment,Hammer,Standard,Weapon,Equipment|Weapon,Attack,Flat,21,AttackSpeed,Percent,-10,,,,,,이름 기반 추정 (Hammer_02와 동일 계열)
+SM_Wep_Mace_01,FantasyKingdom,가시 철퇴,Equipment,Mace,Standard,Weapon,Equipment|Weapon,Attack,Flat,15,,,,,,,,,
+SM_Wep_Mace_02,FantasyKingdom,구체 워메이스,Equipment,Mace,Standard,Weapon,Equipment|Weapon,Attack,Flat,15,,,,,,,,,
+SM_Wep_Mace_03,FantasyKingdom,가시 목재 몽둥이,Equipment,Mace,Crude,Weapon,Equipment|Weapon,Attack,Flat,12,,,,,,,,,
+SM_Wep_Mace_04,FantasyKingdom,첨두 철퇴,Equipment,Mace,Standard,Weapon,Equipment|Weapon,Attack,Flat,16,,,,,,,,,
+SM_Wep_Mace_05,FantasyKingdom,적그립 철퇴,Equipment,Mace,Standard,Weapon,Equipment|Weapon,Attack,Flat,15,,,,,,,,,이름 기반 추정 (Mace_04와 동일 계열)
+SM_Wep_Mace_06,FantasyKingdom,대못 몽둥이,Equipment,Mace,Crude,Weapon,Equipment|Weapon,Attack,Flat,10,Luck,Flat,-1,,,,,,조악한 즉석무기, 못이 박힌 나무 몽둥이
