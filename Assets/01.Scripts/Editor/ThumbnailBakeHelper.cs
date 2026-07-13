@@ -353,7 +353,7 @@ namespace MySecondWorld.Editor
             }
 
             var categoryFolder = _staticPrefabFolder.TrimEnd('/').Split('/').Last();
-            var destFolder = CreateFolderRecursive($"{_itemThumbnailRoot}/{categoryFolder}");
+            var destFolder = CreateFolderRecursive($"{_itemThumbnailRoot}/{categoryFolder}Thumbnails");
 
             var moved = 0;
             foreach (var guid in AssetDatabase.FindAssets("t:Texture2D", new[] { BakedIconsFolder }))
