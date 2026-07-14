@@ -6,6 +6,7 @@ using UnityEngine;
 using MySecondWorld.Inventory;
 using MySecondWorld.Inventory.Items;
 using Cleverous.VaultInventory;
+using UnityEngine.AddressableAssets;
 
 namespace MySecondWorld.Editor
 {
@@ -13,7 +14,6 @@ namespace MySecondWorld.Editor
     {
         private const string AssetOutputFolder = "Assets/06.ScriptableObject/Inventory";
         private const string RestrictionSearchFolder = "Assets/06.ScriptableObject/Inventory";
-        private const int ColumnCount = 20; // Note에 콤마가 있어도 마지막 칸으로 몰아넣기 위해 Split 개수 고정
 
         private static readonly Dictionary<string, string> PackageIconRoots = new()
         {
@@ -21,13 +21,23 @@ namespace MySecondWorld.Editor
             { "Dungeon", "Assets/07.Textures/DungeonWeaponThumbnails" },
             { "FantasyHeroCharacters", "Assets/07.Textures/FantasyHeroCharactersWeaponThumbnails" },
             { "FantasyKingdom", "Assets/07.Textures/FantasyKingdomWeaponThumbnails" },
+            { "DungeonItems", "Assets/07.Textures/DungeonItemsThumbnails" },
+            { "FantasyKingdomItems", "Assets/07.Textures/FantasyKingdomItemsThumbnails" },
         };
 
         private static readonly Dictionary<string, string> PackagePrefabRoots = new()
         {
-            { "Dungeon", "Assets/Addressables/DungeonWeapons" },
-            { "FantasyHeroCharacters", "Assets/Addressables/FantasyHeroCharactersWeapons" },
-            { "FantasyKingdom", "Assets/Addressables/FantasyKingdomWeapons" },
+            { "Dungeon", "Assets/Models/PolygonDungeon/Prefabs/Weapons" },
+            { "FantasyHeroCharacters", "Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons" },
+            { "FantasyKingdom", "Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons" },
+            { "DungeonItems", "Assets/Models/PolygonDungeon/Prefabs/Items" },
+            { "FantasyKingdomItems", "Assets/Models/PolygonFantasyKingdom/Prefabs/Items" },
+        };
+
+        private static readonly Dictionary<string, string> PackageModelRoots = new()
+        {
+            { "DungeonItems", "Assets/Models/PolygonDungeon/Models" },
+            { "FantasyKingdomItems", "Assets/Models/PolygonFantasyKingdom/Models" },
         };
 
         private static readonly Dictionary<string, string> ItemTypeSubfolders = new()
@@ -38,11 +48,16 @@ namespace MySecondWorld.Editor
         };
 
         private string _csvPath = "";
+        private bool _useRemotePrefab = true;
+        private bool _overwrite = false;
 
         [MenuItem("Tools/Inventory/Generate Weapon Item from CSV")]
         private static void Open() => GetWindow<ItemAssetBakeHelper>("Item Baker");
+
+
         private void OnGUI()
         {
+            EditorGUIUtility.labelWidth = 220f;
             GUILayout.Label("CSV 경로", EditorStyles.boldLabel);
 
             // 윈도우로 csv 경로 탐색
@@ -59,21 +74,41 @@ namespace MySecondWorld.Editor
             }
             EditorGUILayout.EndHorizontal();
 
+            _useRemotePrefab = EditorGUILayout.Toggle("원격(RemoteArtPrefab) 사용", _useRemotePrefab);
+            EditorGUILayout.HelpBox(
+                "ON: RemoteArtPrefab만 채우고 ArtPrefab은 비워둡니다. " +
+                "무기처럼 Addressable로 원격 배포할 아이템을 구울 때 켜세요." +
+                "\r\nOFF: ArtPrefab만 채우고 RemoteArtPrefab은 비워둡니다. " +
+                "포션/재료처럼 로컬 프리팹을 그대로 쓰는 아이템을 구울 때 끄세요.",
+                MessageType.Info);
+
+            _overwrite = EditorGUILayout.Toggle("기존 에셋 덮어쓰기", _overwrite);
+            EditorGUILayout.HelpBox(
+                "OFF(기본): 이미 존재하는 에셋은 건너뜁니다 — 수동으로 고친 값이 보존됩니다." +
+                "\r\nON: 이미 존재하는 에셋도 CSV 값으로 필드를 다시 채웁니다(같은 GUID 유지). " +
+                "CSV 컬럼이 추가/변경돼 기존 에셋 전체를 일괄 갱신해야 할 때만 켜세요.",
+                MessageType.Warning);
+
             // 경로가 있으면 버튼 생성
             GUI.enabled = !string.IsNullOrEmpty(_csvPath) && File.Exists(_csvPath);
             if (GUILayout.Button("아이템 생성"))
-                GenerateFromCsv(_csvPath);
+                GenerateFromCsv(_csvPath, _useRemotePrefab, _overwrite);
+            if (GUILayout.Button("누락 프리팹 모델에서 생성"))
+                GenerateMissingPrefabsFromModels(_csvPath);
             GUI.enabled = true;
         }
 
-        private static void GenerateFromCsv(string csvPath)
+        private static void GenerateFromCsv(string csvPath, bool useRemotePrefab, bool overwrite)
         {
             var lines = File.ReadAllLines(csvPath);
+            var header = BuildHeaderIndex(lines[0]);
+            int columnCount = header.Count;
             var iconCache = new Dictionary<string, Sprite>();
             var prefabCache = new Dictionary<string, GameObject>();
+            var prefabRefCache = new Dictionary<string, AssetReferenceGameObject>();
             var restrictionCache = new Dictionary<string, SlotRestriction>();
 
-            int created = 0, skipped = 0, missingIcon = 0, missingPrefab = 0;
+            int created = 0, updated = 0, skipped = 0, missingIcon = 0, missingArtPrefab = 0, missingRemotePrefab = 0;
 
             // StartAssetEditing 배치 중에는 방금 만든 폴더가 IsValidFolder에 바로 안 잡히는 문제가 있어서,
             // 필요한 폴더를 배치 시작 전에 전부 미리 만들어둔다.
@@ -81,16 +116,16 @@ namespace MySecondWorld.Editor
                 CreateFolderRecursive($"{AssetOutputFolder}/{subfolder}");
 
             AssetDatabase.StartAssetEditing();
-            try 
+            try
             {
                 for (int i = 1; i < lines.Length; i++)
                 {
                     var line = lines[i];
                     if (string.IsNullOrWhiteSpace(line)) continue;
 
-                    var cols = line.Split(new[] { ',' }, ColumnCount);
+                    var cols = line.Split(new[] { ',' }, columnCount);
                     // CSV 한 줄이 예상보다 컬럼이 적게 파싱됐을 때 조용히 오류 데이터를 만들지 않고 걸러내는 방어 코드
-                    if (cols.Length < ColumnCount)
+                    if (cols.Length < columnCount)
                     {
                         // Row {i + 1} 헤더가 1번 줄을 이미 차지하고 있음. 엑셀에서 보이는 실제 행 번호
                         Debug.LogWarning($"[ItemAssetBakeHelper] Row {i + 1}: 컬럼 수 부족 ({cols.Length}) — 건너뜀");
@@ -98,12 +133,15 @@ namespace MySecondWorld.Editor
                         continue;
                     }
 
-                    string prefabName = cols[0];
-                    string package = cols[1];
-                    string koreanName = cols[2];
-                    string itemType = cols[3];
-                    string restrictionTitle = cols[6];
-                    string tags = cols[7];
+                    string prefabName = cols[header["PrefabName"]];
+                    string package = cols[header["Package"]];
+                    string koreanName = cols[header["KoreanName"]];
+                    string itemType = cols[header["ItemType"]];
+                    bool hasPrefab = !header.TryGetValue("HasPrefab", out var hasPrefabIdx)
+                        || !string.Equals(cols[hasPrefabIdx].Trim(), "FALSE", StringComparison.OrdinalIgnoreCase);
+                    string restrictionTitle = cols[header["RestrictionTitle"]];
+                    string tags = cols[header["Tags"]];
+                    string description = cols[header["Description"]];
 
                     if (!ItemTypeSubfolders.TryGetValue(itemType, out var subfolder))
                     {
@@ -115,19 +153,36 @@ namespace MySecondWorld.Editor
                     // Item SO 경로 찾기
                     var folder = $"{AssetOutputFolder}/{subfolder}";
                     var assetPath = $"{folder}/{package}_{prefabName}.asset";
-                    if (File.Exists(assetPath))
+                    bool exists = File.Exists(assetPath);
+                    if (exists && !overwrite)
                     {
                         skipped++;
                         continue;
                     }
 
-                    RootItem item = itemType switch
+                    RootItem item;
+                    if (exists)
                     {
-                        "Equipment" => ScriptableObject.CreateInstance<EquipmentItem>(),
-                        "Consumable" => ScriptableObject.CreateInstance<ConsumableItem>(),
-                        "Generic" => ScriptableObject.CreateInstance<GenericItem>(),
-                        _ => null,
-                    };
+                        // 기존 에셋을 그대로 로드해서 필드만 갱신 — GUID(참조) 유지
+                        item = AssetDatabase.LoadAssetAtPath<RootItem>(assetPath);
+                        if (item == null)
+                        {
+                            Debug.LogWarning($"[ItemAssetBakeHelper] Row {i + 1}: 기존 에셋 로드 실패 — {assetPath}");
+                            skipped++;
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        // 기존 에셋이 없으면 새로 생성
+                        item = itemType switch
+                        {
+                            "Equipment" => ScriptableObject.CreateInstance<EquipmentItem>(),
+                            "Consumable" => ScriptableObject.CreateInstance<ConsumableItem>(),
+                            "Generic" => ScriptableObject.CreateInstance<GenericItem>(),
+                            _ => null,
+                        };
+                    }
 
                     if (item == null) 
                     {
@@ -137,6 +192,7 @@ namespace MySecondWorld.Editor
                     
                     // 해당 Item SO에 csv 데이터 대입
                     item.Title = koreanName;
+                    item.Description = description;
                     item.Restriction = string.IsNullOrWhiteSpace(restrictionTitle)
                         ? null
                         : FindSlotRestriction(restrictionTitle, restrictionCache);
@@ -148,42 +204,75 @@ namespace MySecondWorld.Editor
                     else                
                         missingIcon++;
 
-                    var artPrefab = FindPrefab(package, prefabName, prefabCache);
-                    if (artPrefab != null)
-                        item.ArtPrefab = artPrefab;
+                    if (!hasPrefab)
+                    {
+                        // Currency/Document 등 원래 3D 모델이 없는 아이템 — 조회 자체를 건너뜀, 카운트 안 함
+                        item.ArtPrefab = null;
+                        item.RemoteArtPrefab = null;
+                    }
+                    else if (useRemotePrefab)
+                    {
+                        var remoteArtPrefab = FindPrefabReference(package, prefabName, prefabRefCache);
+                        if (remoteArtPrefab != null)
+                            item.RemoteArtPrefab = remoteArtPrefab;
+                        else
+                            missingRemotePrefab++;
+
+                        item.ArtPrefab = null;
+                    }
                     else
-                        missingPrefab++;
+                    {
+                        var artPrefab = FindPrefab(package, prefabName, prefabCache);
+                        if (artPrefab != null)
+                            item.ArtPrefab = artPrefab;
+                        else
+                            missingArtPrefab++;
+
+                        item.RemoteArtPrefab = null;
+                    }
+
                     item.MaxStackSize = itemType == "Equipment" ? 1 : 99;
 
                     switch (item)
                     {
                         case EquipmentItem equipment:
                             {
-                                equipment.Stats = ParseStats(cols);
+                                equipment.Stats = ParseStats(cols, header);
                                 break;
                             }
                         case ConsumableItem consumable:
                             {
-                                consumable.BuffStats = ParseStats(cols);
-                                if (float.TryParse(cols[17], out var heal))
+                                consumable.BuffStats = ParseStats(cols, header);
+                                if (float.TryParse(cols[header["HealAmount"]], out var heal))
                                     consumable.HealAmount = heal;
-                                if (float.TryParse(cols[18], out var duration))
+                                if (float.TryParse(cols[header["BuffDuration"]], out var duration))
                                     consumable.BuffDuration = duration;
                                 break;
                             }
                     }
 
-                    AssetDatabase.CreateAsset(item, assetPath);
-                    created++;
+                    if (exists) // 덮어 씌우기
+                    {
+                        EditorUtility.SetDirty(item);
+                        updated++;
+                    }
+                    else
+                    {
+                        AssetDatabase.CreateAsset(item, assetPath);
+                        created++;
+                    }
                 }
             }
             finally
             {
                 AssetDatabase.StopAssetEditing();
+                AssetDatabase.SaveAssets();
                 AssetDatabase.Refresh();
             }
 
-            Debug.Log($"생성 {created}개 / 건너뜀(기존 존재) {skipped}개 / 아이콘 없음 {missingIcon}개 / 프리팹 없음 {missingPrefab}개 → {AssetOutputFolder}");
+            Debug.Log(
+                $"생성 {created}개 / 갱신 {updated}개 / 건너뜀 {skipped}개 / 아이콘 없음 {missingIcon}개 / " +
+                $"로컬 프리팹 없음 {missingArtPrefab}개 / 원격 프리팹 없음 {missingRemotePrefab}개 → {AssetOutputFolder}");
         }
 
         private static ItemCategory ParseTags(string raw)
@@ -206,15 +295,12 @@ namespace MySecondWorld.Editor
             return result;
         }
 
-        private static List<StatModifier> ParseStats(string[] cols)
+        private static List<StatModifier> ParseStats(string[] cols, Dictionary<string, int> header)
         {
             var stats = new List<StatModifier>();
-            AddStatIfPresent(stats, cols[8], cols[9], cols[10]);    // Stat1_Type	Stat1_Mod	Stat1_Value
-                                                                    // Attack	    Flat	    15
-            AddStatIfPresent(stats, cols[11], cols[12], cols[13]);  // Stat2_Type	Stat2_Mod	Stat2_Value
-                                                                    // HpRegen	    Flat    	3
-            AddStatIfPresent(stats, cols[14], cols[15], cols[16]);  // Stat3_Type	Stat3_Mod	Stat3_Value
-                                                                    // MagicAttack	Flat	    5
+            AddStatIfPresent(stats, cols[header["Stat1_Type"]], cols[header["Stat1_Mod"]], cols[header["Stat1_Value"]]);
+            AddStatIfPresent(stats, cols[header["Stat2_Type"]], cols[header["Stat2_Mod"]], cols[header["Stat2_Value"]]);
+            AddStatIfPresent(stats, cols[header["Stat3_Type"]], cols[header["Stat3_Mod"]], cols[header["Stat3_Value"]]);
 
             return stats;
         }
@@ -262,6 +348,26 @@ namespace MySecondWorld.Editor
             return prefab;
         }
 
+        private static AssetReferenceGameObject FindPrefabReference(string package, string prefabName, Dictionary<string, AssetReferenceGameObject> cache)
+        {
+            if (!PackagePrefabRoots.TryGetValue(package, out var root)) return null;
+            string path = $"{root}/{prefabName}.prefab";
+
+            if (cache.TryGetValue(path, out var cached)) return cached;
+            var guid = AssetDatabase.AssetPathToGUID(path, AssetPathToGUIDOptions.OnlyExistingAssets);
+
+            if (string.IsNullOrEmpty(guid))
+            {
+                Debug.LogWarning($"[ItemAssetBakeHelper] 프리팹 없음: {path}");
+                cache[path] = null;
+                return null;
+            }
+
+            var prefab = new AssetReferenceGameObject(guid);
+            cache[path] = prefab;
+            return prefab;
+        }
+
         private static SlotRestriction FindSlotRestriction(string title, Dictionary<string, SlotRestriction> cache)
         {
             if (cache.TryGetValue(title, out var cached)) return cached;
@@ -296,6 +402,97 @@ namespace MySecondWorld.Editor
                 current = next;
             }
         }
-    };
 
+        private static void GenerateMissingPrefabsFromModels(string csvPath)
+        {
+            var lines = File.ReadAllLines(csvPath);
+            var header = BuildHeaderIndex(lines[0]);
+            int columnCount = header.Count;
+            var modelIndexCache = new Dictionary<string, Dictionary<string, string>>(); // modelRoot → {파일명: fbx경로}
+            int created = 0, alreadyExists = 0, noModel = 0, skipped = 0;
+
+            AssetDatabase.StartAssetEditing();
+            try
+            {
+                for (int i = 1; i < lines.Length; i++)
+                {
+                    var line = lines[i];
+                    if (string.IsNullOrWhiteSpace(line)) continue;
+
+                    var cols = line.Split(new[] { ',' }, columnCount);
+                    if (cols.Length < columnCount)
+                    {
+                        Debug.LogWarning($"[ItemAssetBakeHelper] Row {i + 1}: 컬럼 수 부족 ({cols.Length}) — 건너뜀");
+                        skipped++;
+                        continue;
+                    }
+
+                    string prefabName = cols[header["PrefabName"]];
+                    string package = cols[header["Package"]];
+                    bool hasPrefab = !header.TryGetValue("HasPrefab", out var hasPrefabIdx)
+                        || !string.Equals(cols[hasPrefabIdx].Trim(), "FALSE", StringComparison.OrdinalIgnoreCase);
+
+                    if (!hasPrefab) { skipped++; continue; }
+                    if (!PackagePrefabRoots.TryGetValue(package, out var prefabRoot)) continue;
+                    if (!PackageModelRoots.TryGetValue(package, out var modelRoot)) continue;
+
+                    var prefabPath = $"{prefabRoot}/{prefabName}.prefab";
+                    if (File.Exists(prefabPath))
+                    {
+                        alreadyExists++;
+                        continue;
+                    }
+
+                    var modelIndex = GetOrBuildModelIndex(modelRoot, modelIndexCache);
+                    if (!modelIndex.TryGetValue(prefabName, out var fbxPath))
+                    {
+                        Debug.LogWarning($"[ItemAssetBakeHelper] 모델 자체 없음: {package}/{prefabName}");
+                        noModel++;
+                        continue;
+                    }
+
+                    var fbxAsset = AssetDatabase.LoadAssetAtPath<GameObject>(fbxPath);
+                    var instance = (GameObject)PrefabUtility.InstantiatePrefab(fbxAsset);
+                    PrefabUtility.SaveAsPrefabAsset(instance, prefabPath);
+                    DestroyImmediate(instance);
+                    created++;
+                }
+            }
+            finally
+            {
+                AssetDatabase.StopAssetEditing();
+                AssetDatabase.SaveAssets();
+                AssetDatabase.Refresh();
+            }
+
+            Debug.Log(
+                $"[ItemAssetBakeHelper] 프리팹 생성 {created}개 / 이미 있음 {alreadyExists}개 / " +
+                $"모델 자체 없음 {noModel}개 / 건너뜀 {skipped}개 (경로: {csvPath})");
+        }
+
+        private static Dictionary<string, int> BuildHeaderIndex(string headerLine)
+        {
+            // 컬럼 이름 → 위치. CSV에 컬럼이 추가/이동돼도 cols[고정숫자] 하드코딩 없이 이름으로 찾도록 함
+            var headers = headerLine.Split(',');
+            var index = new Dictionary<string, int>();
+            for (int i = 0; i < headers.Length; i++)
+                index[headers[i].Trim()] = i;
+            return index;
+        }
+
+        private static Dictionary<string, string> GetOrBuildModelIndex(string modelRoot, Dictionary<string, Dictionary<string, string>> cache)
+        {
+            if (cache.TryGetValue(modelRoot, out var index)) return index;
+
+            index = new Dictionary<string, string>();
+            foreach (var guid in AssetDatabase.FindAssets("t:Model", new[] { modelRoot }))
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                index[Path.GetFileNameWithoutExtension(path)] = path;
+            }
+
+            cache[modelRoot] = index;
+            return index;
+        }
+    }
 }
