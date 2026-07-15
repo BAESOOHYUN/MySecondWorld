@@ -1,286 +1,282 @@
-PrefabName,Package,KoreanName,ItemType,Category,Tier,RestrictionTitle,Tags,Stat1_Type,Stat1_Mod,Stat1_Value,Stat2_Type,Stat2_Mod,Stat2_Value,Stat3_Type,Stat3_Mod,Stat3_Value,HealAmount,BuffDuration,Note
-SM_Arrow_01,DungeonItems,화살,Generic,Misc,Crude,,Material,,,,,,,,,,,,
-SM_Item_Bag_Large,DungeonItems,대형 자루,Generic,Misc,Common,,Material,,,,,,,,,,,,
-SM_Item_Bags,DungeonItems,낡은 자루,Generic,Misc,Common,,Material,,,,,,,,,,,,이름 기반 추정
-SM_Item_Bones,DungeonItems,뼈 무더기,Generic,Nature,Crude,,Material,,,,,,,,,,,,
-SM_Item_BookPile_01,DungeonItems,책 더미,Generic,Document,Common,,Quest,,,,,,,,,,,,
-SM_Item_Book_01,DungeonItems,낡은 책,Generic,Document,Common,,Quest,,,,,,,,,,,,
-SM_Item_Coins_01,DungeonItems,동전 더미,Generic,Currency,Common,,Currency,,,,,,,,,,,,
-SM_Item_Coins_02,DungeonItems,동전 더미 2,Generic,Currency,Common,,Currency,,,,,,,,,,,,
-SM_Item_Coins_03,DungeonItems,동전 더미 3,Generic,Currency,Common,,Currency,,,,,,,,,,,,
-SM_Item_Coins_04,DungeonItems,동전 더미 4,Generic,Currency,Common,,Currency,,,,,,,,,,,,
-SM_Item_Horn,DungeonItems,뿔피리,Generic,Misc,Common,,Material,,,,,,,,,,,,
-SM_Item_Inkwell_01,DungeonItems,잉크병,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Jar_01,DungeonItems,도자기 항아리,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Jar_02,DungeonItems,도자기 항아리 2,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Potion_01,DungeonItems,물약,Consumable,Potion,Common,,Consumable,,,,,,,,,,25,,
-SM_Item_Potion_02,DungeonItems,물약 2,Consumable,Potion,Common,,Consumable,,,,,,,,,,25,,
-SM_Item_Potion_03,DungeonItems,물약 3,Consumable,Potion,Common,,Consumable,,,,,,,,,,25,,
-SM_Item_Potion_04,DungeonItems,물약 4,Consumable,Potion,Common,,Consumable,,,,,,,,,,25,,
-SM_Item_Potion_05,DungeonItems,물약 5,Consumable,Potion,Common,,Consumable,,,,,,,,,,25,,
-SM_Item_Potion_06,DungeonItems,물약 6,Consumable,Potion,Common,,Consumable,,,,,,,,,,25,,
-SM_Item_Potion_07,DungeonItems,물약 7,Consumable,Potion,Common,,Consumable,,,,,,,,,,25,,
-SM_Item_Potion_08,DungeonItems,물약 8,Consumable,Potion,Common,,Consumable,,,,,,,,,,25,,
-SM_Item_Potion_09,DungeonItems,물약 9,Consumable,Potion,Common,,Consumable,,,,,,,,,,25,,
-SM_Item_Potion_Pole_01,DungeonItems,포션 거치대,Generic,Misc,Common,,Material,,,,,,,,,,,,이름 기반 추정
-SM_Item_Scale_01,DungeonItems,저울,Generic,Tool,Common,,Material,,,,,,,,,,,,
-SM_Item_Shrooms,DungeonItems,야생 버섯,Consumable,Food,Common,,Consumable|Material,,,,,,,,,,12,,
-SM_Item_Shrunken_Head,DungeonItems,수축머리,Generic,Document,Common,,Quest,,,,,,,,,,,,이름 기반 추정
-SM_Item_Vial_01,DungeonItems,소형 물약병,Consumable,Potion,Common,,Consumable,,,,,,,,,,20,,
-SM_Item_Vial_02,DungeonItems,소형 물약병 2,Consumable,Potion,Common,,Consumable,,,,,,,,,,20,,
-SM_Item_Vial_03,DungeonItems,소형 물약병 3,Consumable,Potion,Common,,Consumable,,,,,,,,,,20,,
-SM_Item_Beetle_01,FantasyKingdomItems,딱정벌레,Generic,Nature,Common,,Material,,,,,,,,,,,,
-SM_Item_Billy_01,FantasyKingdomItems,빌리 인형,Generic,Misc,Common,,Material,,,,,,,,,,,,이름 기반 추정 - 원본 명칭 불명확
-SM_Item_Bird_Skull_01,FantasyKingdomItems,새 두개골,Generic,Nature,Common,,Material,,,,,,,,,,,,
-SM_Item_Book_01,FantasyKingdomItems,낡은 책,Generic,Document,Common,,Quest,,,,,,,,,,,,
-SM_Item_Book_02,FantasyKingdomItems,낡은 책 2,Generic,Document,Common,,Quest,,,,,,,,,,,,
-SM_Item_Book_03,FantasyKingdomItems,낡은 책 3,Generic,Document,Common,,Quest,,,,,,,,,,,,
-SM_Item_Book_04,FantasyKingdomItems,낡은 책 4,Generic,Document,Common,,Quest,,,,,,,,,,,,
-SM_Item_Book_05,FantasyKingdomItems,낡은 책 5,Generic,Document,Common,,Quest,,,,,,,,,,,,
-SM_Item_Bottle_01,FantasyKingdomItems,유리병,Consumable,Potion,Common,,Consumable,,,,,,,,,,15,,
-SM_Item_Bottle_02,FantasyKingdomItems,유리병 2,Consumable,Potion,Common,,Consumable,,,,,,,,,,15,,
-SM_Item_Bottle_03,FantasyKingdomItems,유리병 3,Consumable,Potion,Common,,Consumable,,,,,,,,,,15,,
-SM_Item_Bottle_04,FantasyKingdomItems,유리병 4,Consumable,Potion,Common,,Consumable,,,,,,,,,,15,,
-SM_Item_Bottle_05,FantasyKingdomItems,유리병 5,Consumable,Potion,Common,,Consumable,,,,,,,,,,15,,
-SM_Item_Bottle_06,FantasyKingdomItems,유리병 6,Consumable,Potion,Common,,Consumable,,,,,,,,,,15,,
-SM_Item_Bottle_07,FantasyKingdomItems,유리병 7,Consumable,Potion,Common,,Consumable,,,,,,,,,,15,,
-SM_Item_Bottle_08,FantasyKingdomItems,유리병 8,Consumable,Potion,Common,,Consumable,,,,,,,,,,15,,
-SM_Item_Bottle_09,FantasyKingdomItems,유리병 9,Consumable,Potion,Common,,Consumable,,,,,,,,,,15,,
-SM_Item_Bottle_10,FantasyKingdomItems,유리병 10,Consumable,Potion,Common,,Consumable,,,,,,,,,,15,,
-SM_Item_Bottle_11,FantasyKingdomItems,유리병 11,Consumable,Potion,Common,,Consumable,,,,,,,,,,15,,
-SM_Item_Bottle_12,FantasyKingdomItems,유리병 12,Consumable,Potion,Common,,Consumable,,,,,,,,,,15,,
-SM_Item_Bottle_13,FantasyKingdomItems,유리병 13,Consumable,Potion,Common,,Consumable,,,,,,,,,,15,,
-SM_Item_Bottle_14,FantasyKingdomItems,유리병 14,Consumable,Potion,Common,,Consumable,,,,,,,,,,15,,
-SM_Item_Bottle_15,FantasyKingdomItems,유리병 15,Consumable,Potion,Common,,Consumable,,,,,,,,,,15,,
-SM_Item_Bottle_16,FantasyKingdomItems,유리병 16,Consumable,Potion,Common,,Consumable,,,,,,,,,,15,,
-SM_Item_Bottle_Clear_01,FantasyKingdomItems,투명 유리병,Consumable,Potion,Common,,Consumable,,,,,,,,,,10,,
-SM_Item_Bottle_Clear_02,FantasyKingdomItems,투명 유리병 2,Consumable,Potion,Common,,Consumable,,,,,,,,,,10,,
-SM_Item_Bottle_Clear_03,FantasyKingdomItems,투명 유리병 3,Consumable,Potion,Common,,Consumable,,,,,,,,,,10,,
-SM_Item_Bottle_Clear_Labelled_01,FantasyKingdomItems,라벨 물약병,Consumable,Potion,Fine,,Consumable,,,,,,,,,,30,,
-SM_Item_Bottle_Clear_Labelled_02,FantasyKingdomItems,라벨 물약병 2,Consumable,Potion,Fine,,Consumable,,,,,,,,,,30,,
-SM_Item_Bottle_Clear_Labelled_03,FantasyKingdomItems,라벨 물약병 3,Consumable,Potion,Fine,,Consumable,,,,,,,,,,30,,
-SM_Item_Bottle_Clear_Labelled_04,FantasyKingdomItems,라벨 물약병 4,Consumable,Potion,Fine,,Consumable,,,,,,,,,,30,,
-SM_Item_Bottle_Clear_Labelled_05,FantasyKingdomItems,라벨 물약병 5,Consumable,Potion,Fine,,Consumable,,,,,,,,,,30,,
-SM_Item_Bottle_Clear_Labelled_06,FantasyKingdomItems,라벨 물약병 6,Consumable,Potion,Fine,,Consumable,,,,,,,,,,30,,
-SM_Item_Bowl_01,FantasyKingdomItems,나무 대접,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Bracelet_01,FantasyKingdomItems,팔찌,Generic,Jewelry,Fine,,Material,,,,,,,,,,,,
-SM_Item_Bracelet_02,FantasyKingdomItems,팔찌 2,Generic,Jewelry,Fine,,Material,,,,,,,,,,,,
-SM_Item_Bracelet_03,FantasyKingdomItems,팔찌 3,Generic,Jewelry,Fine,,Material,,,,,,,,,,,,
-SM_Item_Bracelet_04,FantasyKingdomItems,팔찌 4,Generic,Jewelry,Fine,,Material,,,,,,,,,,,,
-SM_Item_Bracelet_05,FantasyKingdomItems,팔찌 5,Generic,Jewelry,Fine,,Material,,,,,,,,,,,,
-SM_Item_Bracelet_06,FantasyKingdomItems,팔찌 6,Generic,Jewelry,Fine,,Material,,,,,,,,,,,,
-SM_Item_Bread_01,FantasyKingdomItems,빵,Consumable,Food,Common,,Consumable,,,,,,,,,,15,,
-SM_Item_Bread_02,FantasyKingdomItems,빵 2,Consumable,Food,Common,,Consumable,,,,,,,,,,15,,
-SM_Item_Bread_03,FantasyKingdomItems,빵 3,Consumable,Food,Common,,Consumable,,,,,,,,,,15,,
-SM_Item_Broom_01,FantasyKingdomItems,빗자루,Generic,Tool,Crude,,Material,,,,,,,,,,,,
-SM_Item_Broom_02,FantasyKingdomItems,빗자루 2,Generic,Tool,Crude,,Material,,,,,,,,,,,,
-SM_Item_Broom_03,FantasyKingdomItems,빗자루 3,Generic,Tool,Crude,,Material,,,,,,,,,,,,
-SM_Item_Bucket_01,FantasyKingdomItems,양동이,Generic,Tool,Crude,,Material,,,,,,,,,,,,
-SM_Item_Butterfly_01,FantasyKingdomItems,나비,Generic,Nature,Common,,Material,,,,,,,,,,,,
-SM_Item_Butterfly_Wing_01,FantasyKingdomItems,나비 날개,Generic,Nature,Common,,Material,,,,,,,,,,,,
-SM_Item_Candlestick_01,FantasyKingdomItems,촛대,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Candlestick_02,FantasyKingdomItems,촛대 2,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Candlestick_03,FantasyKingdomItems,촛대 3,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Candlestick_04,FantasyKingdomItems,촛대 4,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Candlestick_05,FantasyKingdomItems,촛대 5,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Candlestick_06,FantasyKingdomItems,촛대 6,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Cauldron_01,FantasyKingdomItems,가마솥,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Cauldron_02,FantasyKingdomItems,가마솥 2,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Cheese_Slice_01,FantasyKingdomItems,치즈 조각,Consumable,Food,Common,,Consumable,,,,,,,,,,10,,
-SM_Item_Cheese_Slice_02,FantasyKingdomItems,치즈 조각 2,Consumable,Food,Common,,Consumable,,,,,,,,,,10,,
-SM_Item_Cheese_Wheel_01,FantasyKingdomItems,치즈 덩어리,Consumable,Food,Fine,,Consumable,,,,,,,,,,18,,
-SM_Item_Cheese_Wheel_02,FantasyKingdomItems,치즈 덩어리 2,Consumable,Food,Fine,,Consumable,,,,,,,,,,18,,
-SM_Item_Cheese_Wheel_03,FantasyKingdomItems,치즈 덩어리 3,Consumable,Food,Fine,,Consumable,,,,,,,,,,18,,
-SM_Item_Cheese_Wheel_04,FantasyKingdomItems,치즈 덩어리 4,Consumable,Food,Fine,,Consumable,,,,,,,,,,18,,
-SM_Item_Coach_Horn_01,FantasyKingdomItems,마차 나팔,Generic,Misc,Common,,Material,,,,,,,,,,,,이름 기반 추정
-SM_Item_Coat_Hanger_01,FantasyKingdomItems,옷걸이,Generic,Tool,Common,,Material,,,,,,,,,,,,
-SM_Item_Coat_Hanger_02,FantasyKingdomItems,옷걸이 2,Generic,Tool,Common,,Material,,,,,,,,,,,,
-SM_Item_Compass_01,FantasyKingdomItems,나침반,Generic,Document,Fine,,Quest,,,,,,,,,,,,
-SM_Item_Crate_01,FantasyKingdomItems,나무 상자,Generic,Misc,Common,,Material,,,,,,,,,,,,
-SM_Item_Crystal_01,FantasyKingdomItems,수정 원석,Generic,Ore,Rare,,Material,,,,,,,,,,,,
-SM_Item_Crystal_02,FantasyKingdomItems,수정 원석 2,Generic,Ore,Rare,,Material,,,,,,,,,,,,
-SM_Item_Crystal_03,FantasyKingdomItems,수정 원석 3,Generic,Ore,Rare,,Material,,,,,,,,,,,,
-SM_Item_Crystal_04,FantasyKingdomItems,수정 원석 4,Generic,Ore,Rare,,Material,,,,,,,,,,,,
-SM_Item_Crystal_05,FantasyKingdomItems,수정 원석 5,Generic,Ore,Rare,,Material,,,,,,,,,,,,
-SM_Item_Cup_01,FantasyKingdomItems,컵,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Cup_02,FantasyKingdomItems,컵 2,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Cutlery_Fork_01,FantasyKingdomItems,포크,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Cutlery_Knife_01,FantasyKingdomItems,나이프,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Cutlery_Spoon_01,FantasyKingdomItems,숟가락,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Dish_01,FantasyKingdomItems,접시,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Dish_02,FantasyKingdomItems,접시 2,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Dish_03,FantasyKingdomItems,접시 3,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Dish_04,FantasyKingdomItems,접시 4,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Dish_05,FantasyKingdomItems,접시 5,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Dish_06,FantasyKingdomItems,접시 6,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Dish_07,FantasyKingdomItems,접시 7,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Envelope_01,FantasyKingdomItems,편지 봉투,Generic,Document,Common,,Quest,,,,,,,,,,,,
-SM_Item_Eye_01,FantasyKingdomItems,유리 눈알,Generic,Nature,Common,,Material,,,,,,,,,,,,이름 기반 추정
-SM_Item_Eye_Straight_01,FantasyKingdomItems,곧은 유리 눈알,Generic,Nature,Common,,Material,,,,,,,,,,,,이름 기반 추정
-SM_Item_Feather_01,FantasyKingdomItems,깃털,Generic,Nature,Common,,Material,,,,,,,,,,,,
-SM_Item_Feather_02,FantasyKingdomItems,깃털 2,Generic,Nature,Common,,Material,,,,,,,,,,,,
-SM_Item_Feather_Pen_01,FantasyKingdomItems,깃펜,Generic,Document,Common,,Quest,,,,,,,,,,,,
-SM_Item_Feather_Pen_02,FantasyKingdomItems,깃펜 2,Generic,Document,Common,,Quest,,,,,,,,,,,,
-SM_Item_File_01,FantasyKingdomItems,서류철,Generic,Document,Common,,Quest,,,,,,,,,,,,
-SM_Item_Food_Bowl_01,FantasyKingdomItems,먹이 그릇,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Food_Bowl_02,FantasyKingdomItems,먹이 그릇 2,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Gem_01,FantasyKingdomItems,보석,Generic,Ore,Rare,,Material,,,,,,,,,,,,
-SM_Item_Gem_02,FantasyKingdomItems,보석 2,Generic,Ore,Rare,,Material,,,,,,,,,,,,
-SM_Item_Gem_03,FantasyKingdomItems,보석 3,Generic,Ore,Rare,,Material,,,,,,,,,,,,
-SM_Item_Gem_04,FantasyKingdomItems,보석 4,Generic,Ore,Rare,,Material,,,,,,,,,,,,
-SM_Item_Gem_05,FantasyKingdomItems,보석 5,Generic,Ore,Rare,,Material,,,,,,,,,,,,
-SM_Item_Goblet_01,FantasyKingdomItems,잔,Generic,Tableware,Fine,,Material,,,,,,,,,,,,
-SM_Item_Goblet_02,FantasyKingdomItems,잔 2,Generic,Tableware,Fine,,Material,,,,,,,,,,,,
-SM_Item_Goblet_03,FantasyKingdomItems,잔 3,Generic,Tableware,Fine,,Material,,,,,,,,,,,,
-SM_Item_Hammer_01,FantasyKingdomItems,작업용 망치,Generic,Tool,Common,,Material,,,,,,,,,,,,
-SM_Item_Hammer_02,FantasyKingdomItems,작업용 망치 2,Generic,Tool,Common,,Material,,,,,,,,,,,,
-SM_Item_Hammer_03,FantasyKingdomItems,작업용 망치 3,Generic,Tool,Common,,Material,,,,,,,,,,,,
-SM_Item_Hammer_04,FantasyKingdomItems,작업용 망치 4,Generic,Tool,Common,,Material,,,,,,,,,,,,
-SM_Item_Hammer_05,FantasyKingdomItems,작업용 망치 5,Generic,Tool,Common,,Material,,,,,,,,,,,,
-SM_Item_Hammer_06,FantasyKingdomItems,작업용 망치 6,Generic,Tool,Common,,Material,,,,,,,,,,,,
-SM_Item_Hammer_07,FantasyKingdomItems,작업용 망치 7,Generic,Tool,Common,,Material,,,,,,,,,,,,
-SM_Item_HoneyJar_01,FantasyKingdomItems,꿀단지,Consumable,Food,Common,,Consumable|Material,,,,,,,,,,8,,
-SM_Item_Horn_01,FantasyKingdomItems,뿔피리,Generic,Misc,Common,,Material,,,,,,,,,,,,
-SM_Item_Horseshoe_01,FantasyKingdomItems,편자,Generic,Nature,Common,,Material,,,,,,,,,,,,
-SM_Item_Ingot_Gold_01,FantasyKingdomItems,금괴,Generic,Ore,Fine,,Material,,,,,,,,,,,,
-SM_Item_Ingot_Iron_01,FantasyKingdomItems,철괴,Generic,Ore,Common,,Material,,,,,,,,,,,,
-SM_Item_Ink_Well_01,FantasyKingdomItems,잉크병,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Jar_01,FantasyKingdomItems,도자기 항아리,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Jar_02,FantasyKingdomItems,도자기 항아리 2,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Jar_03,FantasyKingdomItems,도자기 항아리 3,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Jar_04,FantasyKingdomItems,도자기 항아리 4,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Jar_05,FantasyKingdomItems,도자기 항아리 5,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Jug_01,FantasyKingdomItems,물주전자,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Jug_02,FantasyKingdomItems,물주전자 2,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Jug_03,FantasyKingdomItems,물주전자 3,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Jug_04,FantasyKingdomItems,물주전자 4,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Jug_05,FantasyKingdomItems,물주전자 5,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Jug_06,FantasyKingdomItems,물주전자 6,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Kettle_01,FantasyKingdomItems,주전자,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Key_01,FantasyKingdomItems,열쇠,Generic,Document,Common,,Quest,,,,,,,,,,,,
-SM_Item_Key_02,FantasyKingdomItems,열쇠 2,Generic,Document,Common,,Quest,,,,,,,,,,,,
-SM_Item_Key_03,FantasyKingdomItems,열쇠 3,Generic,Document,Common,,Quest,,,,,,,,,,,,
-SM_Item_Key_04,FantasyKingdomItems,열쇠 4,Generic,Document,Common,,Quest,,,,,,,,,,,,
-SM_Item_Key_05,FantasyKingdomItems,열쇠 5,Generic,Document,Common,,Quest,,,,,,,,,,,,
-SM_Item_Key_06,FantasyKingdomItems,열쇠 6,Generic,Document,Common,,Quest,,,,,,,,,,,,
-SM_Item_Ladle_01,FantasyKingdomItems,국자,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Ladle_02,FantasyKingdomItems,국자 2,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Ladle_03,FantasyKingdomItems,국자 3,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Lockpick_01,FantasyKingdomItems,자물쇠따개,Generic,Document,Common,,Quest,,,,,,,,,,,,
-SM_Item_Lockpick_Chain_01,FantasyKingdomItems,사슬 자물쇠따개,Generic,Document,Common,,Quest,,,,,,,,,,,,
-SM_Item_Magnifying_Glass_01,FantasyKingdomItems,돋보기,Generic,Document,Fine,,Quest,,,,,,,,,,,,
-SM_Item_Meat_01,FantasyKingdomItems,고기 덩어리,Generic,RawMeat,Crude,,Material,,,,,,,,,,,,
-SM_Item_Meat_02,FantasyKingdomItems,고기 덩어리 2,Generic,RawMeat,Crude,,Material,,,,,,,,,,,,
-SM_Item_Meat_Chicken_Cooked_01,FantasyKingdomItems,구운 닭고기,Consumable,Food,Common,,Consumable,,,,,,,,,,20,,
-SM_Item_Meat_Chicken_Raw_01,FantasyKingdomItems,생 닭고기,Generic,RawMeat,Crude,,Material,,,,,,,,,,,,
-SM_Item_Meat_Cleaver_01,FantasyKingdomItems,정육용 칼,Generic,Tool,Common,,Material,,,,,,,,,,,,
-SM_Item_Meat_Fish_01,FantasyKingdomItems,생선,Generic,RawMeat,Crude,,Material,,,,,,,,,,,,
-SM_Item_Meat_Fish_02,FantasyKingdomItems,생선 2,Generic,RawMeat,Crude,,Material,,,,,,,,,,,,
-SM_Item_Meat_Fish_03,FantasyKingdomItems,생선 3,Generic,RawMeat,Crude,,Material,,,,,,,,,,,,
-SM_Item_Meat_Fish_04,FantasyKingdomItems,생선 4,Generic,RawMeat,Crude,,Material,,,,,,,,,,,,
-SM_Item_Meat_Fish_05,FantasyKingdomItems,생선 5,Generic,RawMeat,Crude,,Material,,,,,,,,,,,,
-SM_Item_Meat_Fish_06,FantasyKingdomItems,생선 6,Generic,RawMeat,Crude,,Material,,,,,,,,,,,,
-SM_Item_Meat_Fish_07,FantasyKingdomItems,생선 7,Generic,RawMeat,Crude,,Material,,,,,,,,,,,,
-SM_Item_Meat_Ham_01,FantasyKingdomItems,햄,Consumable,Food,Common,,Consumable,,,,,,,,,,15,,
-SM_Item_Meat_Hook_01,FantasyKingdomItems,고기 갈고리,Generic,Tool,Common,,Material,,,,,,,,,,,,
-SM_Item_Meat_Hook_02,FantasyKingdomItems,고기 갈고리 2,Generic,Tool,Common,,Material,,,,,,,,,,,,
-SM_Item_Meat_Pork_Trotter_01,FantasyKingdomItems,족발,Generic,RawMeat,Crude,,Material,,,,,,,,,,,,
-SM_Item_Meat_Ribs_01,FantasyKingdomItems,갈비,Generic,RawMeat,Crude,,Material,,,,,,,,,,,,
-SM_Item_Meat_Salami_01,FantasyKingdomItems,살라미,Consumable,Food,Common,,Consumable,,,,,,,,,,15,,
-SM_Item_Meat_Salami_02,FantasyKingdomItems,살라미 2,Consumable,Food,Common,,Consumable,,,,,,,,,,15,,
-SM_Item_Meat_Steak_Cooked_01,FantasyKingdomItems,구운 스테이크,Consumable,Food,Fine,,Consumable,,,,,,,,,,25,,
-SM_Item_Meat_Steak_Raw_01,FantasyKingdomItems,생 스테이크,Generic,RawMeat,Crude,,Material,,,,,,,,,,,,
-SM_Item_Meat_Turkey_Cooked_01,FantasyKingdomItems,구운 칠면조,Consumable,Food,Common,,Consumable,,,,,,,,,,20,,
-SM_Item_Meat_Turkey_Raw_01,FantasyKingdomItems,생 칠면조,Generic,RawMeat,Crude,,Material,,,,,,,,,,,,
-SM_Item_Mortar_01,FantasyKingdomItems,절구,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Mortar_Pestle_01,FantasyKingdomItems,절구공이,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Mug_Tankard_01,FantasyKingdomItems,맥주잔,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Mushroom_01,FantasyKingdomItems,버섯,Consumable,Food,Common,,Consumable|Material,,,,,,,,,,8,,
-SM_Item_Mushroom_02,FantasyKingdomItems,버섯 2,Consumable,Food,Common,,Consumable|Material,,,,,,,,,,8,,
-SM_Item_Mushroom_03,FantasyKingdomItems,버섯 3,Consumable,Food,Common,,Consumable|Material,,,,,,,,,,8,,
-SM_Item_Nail_01,FantasyKingdomItems,못,Generic,Ore,Crude,,Material,,,,,,,,,,,,
-SM_Item_Necklace_Flat_01,FantasyKingdomItems,목걸이,Generic,Jewelry,Fine,,Material,,,,,,,,,,,,
-SM_Item_Necklace_Flat_02,FantasyKingdomItems,목걸이 2,Generic,Jewelry,Fine,,Material,,,,,,,,,,,,
-SM_Item_Necklace_Flat_03,FantasyKingdomItems,목걸이 3,Generic,Jewelry,Fine,,Material,,,,,,,,,,,,
-SM_Item_Necklace_Flat_04,FantasyKingdomItems,목걸이 4,Generic,Jewelry,Fine,,Material,,,,,,,,,,,,
-SM_Item_Necklace_Flat_05,FantasyKingdomItems,목걸이 5,Generic,Jewelry,Fine,,Material,,,,,,,,,,,,
-SM_Item_Necklace_Hanging_01,FantasyKingdomItems,늘어뜨린 목걸이,Generic,Jewelry,Fine,,Material,,,,,,,,,,,,
-SM_Item_Necklace_Hanging_02,FantasyKingdomItems,늘어뜨린 목걸이 2,Generic,Jewelry,Fine,,Material,,,,,,,,,,,,
-SM_Item_Necklace_Hanging_03,FantasyKingdomItems,늘어뜨린 목걸이 3,Generic,Jewelry,Fine,,Material,,,,,,,,,,,,
-SM_Item_Necklace_Hanging_04,FantasyKingdomItems,늘어뜨린 목걸이 4,Generic,Jewelry,Fine,,Material,,,,,,,,,,,,
-SM_Item_Necklace_Hanging_05,FantasyKingdomItems,늘어뜨린 목걸이 5,Generic,Jewelry,Fine,,Material,,,,,,,,,,,,
-SM_Item_Pan_01,FantasyKingdomItems,프라이팬,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Parchment_01,FantasyKingdomItems,양피지,Generic,Document,Common,,Quest,,,,,,,,,,,,
-SM_Item_Parchment_02,FantasyKingdomItems,양피지 2,Generic,Document,Common,,Quest,,,,,,,,,,,,
-SM_Item_Parchment_03,FantasyKingdomItems,양피지 3,Generic,Document,Common,,Quest,,,,,,,,,,,,
-SM_Item_Parchment_04,FantasyKingdomItems,양피지 4,Generic,Document,Common,,Quest,,,,,,,,,,,,
-SM_Item_Pickaxe_01,FantasyKingdomItems,곡괭이,Generic,Tool,Common,,Material,,,,,,,,,,,,
-SM_Item_Pie_01,FantasyKingdomItems,파이,Consumable,Food,Common,,Consumable,,,,,,,,,,20,,
-SM_Item_Pie_02,FantasyKingdomItems,파이 2,Consumable,Food,Common,,Consumable,,,,,,,,,,20,,
-SM_Item_Pie_03,FantasyKingdomItems,파이 3,Consumable,Food,Common,,Consumable,,,,,,,,,,20,,
-SM_Item_Pie_04,FantasyKingdomItems,파이 4,Consumable,Food,Common,,Consumable,,,,,,,,,,20,,
-SM_Item_Pie_Bowl_01,FantasyKingdomItems,파이 그릇,Consumable,Food,Common,,Consumable,,,,,,,,,,20,,이름 기반 추정
-SM_Item_Pipe_01,FantasyKingdomItems,파이프,Generic,Tool,Common,,Material,,,,,,,,,,,,
-SM_Item_Pipe_02,FantasyKingdomItems,파이프 2,Generic,Tool,Common,,Material,,,,,,,,,,,,
-SM_Item_Pitchfork_01,FantasyKingdomItems,쇠스랑,Generic,Tool,Common,,Material,,,,,,,,,,,,
-SM_Item_Pitchfork_02,FantasyKingdomItems,쇠스랑 2,Generic,Tool,Common,,Material,,,,,,,,,,,,
-SM_Item_Plant_01,FantasyKingdomItems,화분,Generic,Nature,Common,,Material,,,,,,,,,,,,
-SM_Item_Pot_01,FantasyKingdomItems,냄비,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Pot_02,FantasyKingdomItems,냄비 2,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Potato_01,FantasyKingdomItems,감자,Consumable,Food,Common,,Consumable|Material,,,,,,,,,,6,,
-SM_Item_Potato_02,FantasyKingdomItems,감자 2,Consumable,Food,Common,,Consumable|Material,,,,,,,,,,6,,
-SM_Item_Potion_01,FantasyKingdomItems,물약,Consumable,Potion,Common,,Consumable,,,,,,,,,,25,,
-SM_Item_Potion_02,FantasyKingdomItems,물약 2,Consumable,Potion,Common,,Consumable,,,,,,,,,,25,,
-SM_Item_Potion_03,FantasyKingdomItems,물약 3,Consumable,Potion,Common,,Consumable,,,,,,,,,,25,,
-SM_Item_Pouch_01,FantasyKingdomItems,주머니,Generic,Misc,Common,,Material,,,,,,,,,,,,
-SM_Item_Pouch_02,FantasyKingdomItems,주머니 2,Generic,Misc,Common,,Material,,,,,,,,,,,,
-SM_Item_Powder_01,FantasyKingdomItems,가루,Generic,Ore,Common,,Material,,,,,,,,,,,,
-SM_Item_Pretzel_01,FantasyKingdomItems,프레첼,Consumable,Food,Common,,Consumable,,,,,,,,,,10,,
-SM_Item_Ring_01,FantasyKingdomItems,반지,Generic,Jewelry,Fine,,Material,,,,,,,,,,,,
-SM_Item_Ring_02,FantasyKingdomItems,반지 2,Generic,Jewelry,Fine,,Material,,,,,,,,,,,,
-SM_Item_Ring_03,FantasyKingdomItems,반지 3,Generic,Jewelry,Fine,,Material,,,,,,,,,,,,
-SM_Item_Ring_04,FantasyKingdomItems,반지 4,Generic,Jewelry,Fine,,Material,,,,,,,,,,,,
-SM_Item_Ring_05,FantasyKingdomItems,반지 5,Generic,Jewelry,Fine,,Material,,,,,,,,,,,,
-SM_Item_Ring_06,FantasyKingdomItems,반지 6,Generic,Jewelry,Fine,,Material,,,,,,,,,,,,
-SM_Item_Ring_07,FantasyKingdomItems,반지 7,Generic,Jewelry,Fine,,Material,,,,,,,,,,,,
-SM_Item_Ring_08,FantasyKingdomItems,반지 8,Generic,Jewelry,Fine,,Material,,,,,,,,,,,,
-SM_Item_Ring_09,FantasyKingdomItems,반지 9,Generic,Jewelry,Fine,,Material,,,,,,,,,,,,
-SM_Item_Ring_10,FantasyKingdomItems,반지 10,Generic,Jewelry,Fine,,Material,,,,,,,,,,,,
-SM_Item_Roast_Fish_01,FantasyKingdomItems,구운 생선,Consumable,Food,Fine,,Consumable,,,,,,,,,,25,,
-SM_Item_Roast_Turkey_01,FantasyKingdomItems,구운 칠면조 통구이,Consumable,Food,Fine,,Consumable,,,,,,,,,,30,,
-SM_Item_Rock_01,FantasyKingdomItems,돌멩이,Generic,Ore,Crude,,Material,,,,,,,,,,,,
-SM_Item_Rolling_Pin_01,FantasyKingdomItems,밀대,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Root_01,FantasyKingdomItems,뿌리,Generic,Nature,Common,,Material,,,,,,,,,,,,
-SM_Item_Salt_Pepper_Grinder_01,FantasyKingdomItems,후추 그라인더,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Saw_01,FantasyKingdomItems,톱,Generic,Tool,Common,,Material,,,,,,,,,,,,
-SM_Item_Shovel_01,FantasyKingdomItems,삽,Generic,Tool,Common,,Material,,,,,,,,,,,,
-SM_Item_Stirring_Stick_01,FantasyKingdomItems,젓는 막대,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Tea_Pot_01,FantasyKingdomItems,찻주전자,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Tongs_01,FantasyKingdomItems,집게,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Tongs_02,FantasyKingdomItems,집게 2,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Tongs_03,FantasyKingdomItems,집게 3,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Tongs_04,FantasyKingdomItems,집게 4,Generic,Tableware,Common,,Material,,,,,,,,,,,,
-SM_Item_Wargames_Piece_01,FantasyKingdomItems,전쟁게임 말,Generic,Misc,Common,,Material,,,,,,,,,,,,
-SM_Item_Wargames_Piece_02,FantasyKingdomItems,전쟁게임 말 2,Generic,Misc,Common,,Material,,,,,,,,,,,,
-SM_Item_Wargames_Piece_03,FantasyKingdomItems,전쟁게임 말 3,Generic,Misc,Common,,Material,,,,,,,,,,,,
-SM_Item_Wargames_Piece_04,FantasyKingdomItems,전쟁게임 말 4,Generic,Misc,Common,,Material,,,,,,,,,,,,
-SM_Item_Wargames_Piece_05,FantasyKingdomItems,전쟁게임 말 5,Generic,Misc,Common,,Material,,,,,,,,,,,,
-SM_Item_Wargames_Piece_06,FantasyKingdomItems,전쟁게임 말 6,Generic,Misc,Common,,Material,,,,,,,,,,,,
-SM_Item_Wargames_Piece_07,FantasyKingdomItems,전쟁게임 말 7,Generic,Misc,Common,,Material,,,,,,,,,,,,
-SM_Item_Wargames_Piece_08,FantasyKingdomItems,전쟁게임 말 8,Generic,Misc,Common,,Material,,,,,,,,,,,,
-SM_Item_Wargames_Piece_09,FantasyKingdomItems,전쟁게임 말 9,Generic,Misc,Common,,Material,,,,,,,,,,,,
-SM_Item_Wargames_Piece_10,FantasyKingdomItems,전쟁게임 말 10,Generic,Misc,Common,,Material,,,,,,,,,,,,
-SM_Item_Wargames_Piece_11,FantasyKingdomItems,전쟁게임 말 11,Generic,Misc,Common,,Material,,,,,,,,,,,,
-SM_Item_Wargames_Piece_12,FantasyKingdomItems,전쟁게임 말 12,Generic,Misc,Common,,Material,,,,,,,,,,,,
-SM_Item_Wargames_Piece_13,FantasyKingdomItems,전쟁게임 말 13,Generic,Misc,Common,,Material,,,,,,,,,,,,
-SM_Item_Wargames_Piece_14,FantasyKingdomItems,전쟁게임 말 14,Generic,Misc,Common,,Material,,,,,,,,,,,,
-SM_Item_Wargames_Piece_15,FantasyKingdomItems,전쟁게임 말 15,Generic,Misc,Common,,Material,,,,,,,,,,,,
-SM_Item_Wargames_Plotting_Rod_01,FantasyKingdomItems,전쟁게임 측정봉,Generic,Misc,Common,,Material,,,,,,,,,,,,
-SM_Item_Wargames_Plotting_Rod_02,FantasyKingdomItems,전쟁게임 측정봉 2,Generic,Misc,Common,,Material,,,,,,,,,,,,
-SM_Item_Wash_Bucket_01,FantasyKingdomItems,세탁 대야,Generic,Tool,Crude,,Material,,,,,,,,,,,,
-SM_Item_Watering_Can_01,FantasyKingdomItems,물뿌리개,Generic,Tool,Common,,Material,,,,,,,,,,,,
-SM_Item_Wire_Brush_01,FantasyKingdomItems,철솔,Generic,Tool,Common,,Material,,,,,,,,,,,,
-SM_Item_Wood_01,FantasyKingdomItems,장작,Generic,Nature,Crude,,Material,,,,,,,,,,,,
-SM_Item_Wood_02,FantasyKingdomItems,장작 2,Generic,Nature,Crude,,Material,,,,,,,,,,,,
-SM_Item_Yarn_01,FantasyKingdomItems,실타래,Generic,Nature,Common,,Material,,,,,,,,,,,,
-SM_Prop_Beehive_01,FantasyKingdomItems,벌집,Generic,Nature,Common,,Material,,,,,,,,,,,,
+﻿PrefabName,Package,KoreanName,ItemType,Category,Tier,RestrictionTitle,Tags,Stat1_Type,Stat1_Mod,Stat1_Value,Stat2_Type,Stat2_Mod,Stat2_Value,Stat3_Type,Stat3_Mod,Stat3_Value,HealAmount,BuffDuration,Description,Note,HasPrefab
+SM_Arrow_01,DungeonItems,화살,Generic,Misc,Crude,,Material,,,,,,,,,,,,화살. 조악한 잡화.,,TRUE
+SM_Item_Bag_Large,DungeonItems,대형 자루,Generic,Misc,Common,,Material,,,,,,,,,,,,대형 자루. 흔한 잡화.,,TRUE
+SM_Item_Bags,DungeonItems,낡은 자루,Generic,Misc,Common,,Material,,,,,,,,,,,,낡은 자루. 흔한 잡화.,이름 기반 추정,TRUE
+SM_Item_Bones,DungeonItems,뼈 무더기,Generic,Nature,Crude,,Material,,,,,,,,,,,,뼈 무더기. 조악한 자연 소재.,,TRUE
+SM_Item_BookPile_01,DungeonItems,책 더미,Generic,Document,Common,,Quest,,,,,,,,,,,,책 더미. 흔한 문서.,,TRUE
+SM_Item_Book_01,DungeonItems,낡은 책,Generic,Document,Common,,Quest,,,,,,,,,,,,낡은 책. 흔한 문서.,,TRUE
+SM_Item_Coins_01,DungeonItems,동전 더미,Generic,Currency,Common,,Currency,,,,,,,,,,,,동전 더미. 흔한 화폐.,,TRUE
+SM_Item_Coins_02,DungeonItems,동전 더미 2,Generic,Currency,Common,,Currency,,,,,,,,,,,,동전 더미 2. 흔한 화폐.,,TRUE
+SM_Item_Coins_03,DungeonItems,동전 더미 3,Generic,Currency,Common,,Currency,,,,,,,,,,,,동전 더미 3. 흔한 화폐.,,TRUE
+SM_Item_Coins_04,DungeonItems,동전 더미 4,Generic,Currency,Common,,Currency,,,,,,,,,,,,동전 더미 4. 흔한 화폐.,,TRUE
+SM_Item_Horn,DungeonItems,뿔피리,Generic,Misc,Common,,Material,,,,,,,,,,,,뿔피리. 흔한 잡화.,,TRUE
+SM_Item_Inkwell_01,DungeonItems,잉크병,Generic,Tableware,Common,,Material,,,,,,,,,,,,잉크병. 흔한 식기.,,TRUE
+SM_Item_Jar_01,DungeonItems,도자기 항아리,Generic,Tableware,Common,,Material,,,,,,,,,,,,도자기 항아리. 흔한 식기.,,TRUE
+SM_Item_Jar_02,DungeonItems,도자기 항아리 2,Generic,Tableware,Common,,Material,,,,,,,,,,,,도자기 항아리 2. 흔한 식기.,,TRUE
+SM_Item_Potion_01,DungeonItems,물약,Consumable,Potion,Common,,Consumable,,,,,,,,,,25,,물약. 흔한 물약. 체력을 25 회복시켜준다.,,TRUE
+SM_Item_Potion_02,DungeonItems,물약 2,Consumable,Potion,Common,,Consumable,,,,,,,,,,25,,물약 2. 흔한 물약. 체력을 25 회복시켜준다.,,TRUE
+SM_Item_Potion_03,DungeonItems,물약 3,Consumable,Potion,Common,,Consumable,,,,,,,,,,25,,물약 3. 흔한 물약. 체력을 25 회복시켜준다.,,TRUE
+SM_Item_Potion_04,DungeonItems,물약 4,Consumable,Potion,Common,,Consumable,,,,,,,,,,25,,물약 4. 흔한 물약. 체력을 25 회복시켜준다.,,TRUE
+SM_Item_Potion_05,DungeonItems,물약 5,Consumable,Potion,Common,,Consumable,,,,,,,,,,25,,물약 5. 흔한 물약. 체력을 25 회복시켜준다.,,TRUE
+SM_Item_Potion_06,DungeonItems,물약 6,Consumable,Potion,Common,,Consumable,,,,,,,,,,25,,물약 6. 흔한 물약. 체력을 25 회복시켜준다.,,TRUE
+SM_Item_Potion_07,DungeonItems,물약 7,Consumable,Potion,Common,,Consumable,,,,,,,,,,25,,물약 7. 흔한 물약. 체력을 25 회복시켜준다.,,TRUE
+SM_Item_Potion_08,DungeonItems,물약 8,Consumable,Potion,Common,,Consumable,,,,,,,,,,25,,물약 8. 흔한 물약. 체력을 25 회복시켜준다.,,TRUE
+SM_Item_Potion_09,DungeonItems,물약 9,Consumable,Potion,Common,,Consumable,,,,,,,,,,25,,물약 9. 흔한 물약. 체력을 25 회복시켜준다.,,TRUE
+SM_Item_Potion_Pole_01,DungeonItems,포션 거치대,Generic,Misc,Common,,Material,,,,,,,,,,,,포션 거치대. 흔한 잡화.,이름 기반 추정,TRUE
+SM_Item_Scale_01,DungeonItems,저울,Generic,Tool,Common,,Material,,,,,,,,,,,,저울. 흔한 도구.,,TRUE
+SM_Item_Shrooms,DungeonItems,야생 버섯,Consumable,Food,Common,,Consumable|Material,,,,,,,,,,12,,야생 버섯. 흔한 식품. 체력을 12 회복시켜준다.,,TRUE
+SM_Item_Shrunken_Head,DungeonItems,수축머리,Generic,Document,Common,,Quest,,,,,,,,,,,,수축머리. 흔한 문서.,이름 기반 추정,TRUE
+SM_Item_Vial_01,DungeonItems,소형 물약병,Consumable,Potion,Common,,Consumable,,,,,,,,,,20,,소형 물약병. 흔한 물약. 체력을 20 회복시켜준다.,,TRUE
+SM_Item_Vial_02,DungeonItems,소형 물약병 2,Consumable,Potion,Common,,Consumable,,,,,,,,,,20,,소형 물약병 2. 흔한 물약. 체력을 20 회복시켜준다.,,TRUE
+SM_Item_Vial_03,DungeonItems,소형 물약병 3,Consumable,Potion,Common,,Consumable,,,,,,,,,,20,,소형 물약병 3. 흔한 물약. 체력을 20 회복시켜준다.,,TRUE
+SM_Item_Beetle_01,FantasyKingdomItems,딱정벌레,Generic,Misc,Common,,Material,,,,,,,,,,,,딱정벌레.,,FALSE
+SM_Item_Billy_01,FantasyKingdomItems,빌리 인형,Generic,Misc,Common,,Material,,,,,,,,,,,,빌리 인형.,이름 기반 추정 - 원본 명칭 불명확,FALSE
+SM_Item_Bird_Skull_01,FantasyKingdomItems,새 두개골,Generic,Misc,Common,,Material,,,,,,,,,,,,새 두개골.,,FALSE
+SM_Item_Book_01,FantasyKingdomItems,책,Generic,Misc,Common,,Material,,,,,,,,,,,,책.,,FALSE
+SM_Item_Book_02,FantasyKingdomItems,책 2,Generic,Misc,Common,,Material,,,,,,,,,,,,책 2.,,FALSE
+SM_Item_Book_03,FantasyKingdomItems,책 3,Generic,Misc,Common,,Material,,,,,,,,,,,,책 3.,,FALSE
+SM_Item_Book_04,FantasyKingdomItems,책 4,Generic,Misc,Common,,Material,,,,,,,,,,,,책 4.,,FALSE
+SM_Item_Book_05,FantasyKingdomItems,책 5,Generic,Misc,Common,,Material,,,,,,,,,,,,책 5.,,FALSE
+SM_Item_Bottle_01,FantasyKingdomItems,초록 물약,Consumable,Potion,Common,,Consumable,,,,,,,,,,,,초록 물약. 흔한 물약.,,TRUE
+SM_Item_Bottle_02,FantasyKingdomItems,남색 물약,Consumable,Potion,Common,,Consumable,,,,,,,,,,,,남색 물약. 흔한 물약.,,TRUE
+SM_Item_Bottle_03,FantasyKingdomItems,올리브 물약,Consumable,Potion,Common,,Consumable,,,,,,,,,,,,올리브 물약. 흔한 물약.,,TRUE
+SM_Item_Bottle_04,FantasyKingdomItems,서리 물약,Consumable,Potion,Common,,Consumable,,,,,,,,,,,,서리 물약. 흔한 물약.,,TRUE
+SM_Item_Bottle_05,FantasyKingdomItems,호박색 물약,Consumable,Potion,Common,,Consumable,,,,,,,,,,,,호박색 물약. 흔한 물약.,,TRUE
+SM_Item_Bottle_06,FantasyKingdomItems,파란 물약,Consumable,Potion,Common,,Consumable,,,,,,,,,,,,파란 물약. 흔한 물약.,,TRUE
+SM_Item_Bottle_07,FantasyKingdomItems,주황 물약,Consumable,Potion,Common,,Consumable,,,,,,,,,,,,주황 물약. 흔한 물약.,,TRUE
+SM_Item_Bottle_08,FantasyKingdomItems,민트 물약,Consumable,Potion,Common,,Consumable,,,,,,,,,,,,민트 물약. 흔한 물약.,,TRUE
+SM_Item_Bottle_09,FantasyKingdomItems,라벤더 물약,Consumable,Potion,Common,,Consumable,,,,,,,,,,,,라벤더 물약. 흔한 물약.,,TRUE
+SM_Item_Bottle_10,FantasyKingdomItems,하늘색 물약,Consumable,Potion,Common,,Consumable,,,,,,,,,,,,하늘색 물약. 흔한 물약.,,TRUE
+SM_Item_Bottle_11,FantasyKingdomItems,빨간 물약,Consumable,Potion,Common,,Consumable,,,,,,,,,,,,빨간 물약. 흔한 물약.,,TRUE
+SM_Item_Bottle_12,FantasyKingdomItems,이끼색 물약,Consumable,Potion,Common,,Consumable,,,,,,,,,,,,이끼색 물약. 흔한 물약.,,TRUE
+SM_Item_Bottle_13,FantasyKingdomItems,연두 물약,Consumable,Potion,Common,,Consumable,,,,,,,,,,,,연두 물약. 흔한 물약.,,TRUE
+SM_Item_Bottle_14,FantasyKingdomItems,주홍 물약,Consumable,Potion,Common,,Consumable,,,,,,,,,,,,주홍 물약. 흔한 물약.,,TRUE
+SM_Item_Bottle_15,FantasyKingdomItems,황금 물약,Consumable,Potion,Common,,Consumable,,,,,,,,,,,,황금 물약. 흔한 물약.,,TRUE
+SM_Item_Bottle_16,FantasyKingdomItems,보라 물약,Consumable,Potion,Common,,Consumable,,,,,,,,,,,,보라 물약. 흔한 물약.,,TRUE
+SM_Item_Bottle_Clear_01,FantasyKingdomItems,표식 물약,Consumable,Potion,Common,,Consumable,,,,,,,,,,,,표식 물약. 흔한 물약.,,TRUE
+SM_Item_Bottle_Clear_02,FantasyKingdomItems,표식 물약 2,Consumable,Potion,Common,,Consumable,,,,,,,,,,,,표식 물약 2. 흔한 물약.,,TRUE
+SM_Item_Bottle_Clear_03,FantasyKingdomItems,표식 물약 3,Consumable,Potion,Common,,Consumable,,,,,,,,,,,,표식 물약 3. 흔한 물약.,,TRUE
+SM_Item_Bottle_Clear_Labelled_01,FantasyKingdomItems,분홍 물약,Consumable,Potion,Common,,Consumable,,,,,,,,,,,,분홍 물약. 흔한 물약.,,TRUE
+SM_Item_Bottle_Clear_Labelled_02,FantasyKingdomItems,분홍 물약 2,Consumable,Potion,Common,,Consumable,,,,,,,,,,,,분홍 물약 2. 흔한 물약.,,TRUE
+SM_Item_Bottle_Clear_Labelled_03,FantasyKingdomItems,분홍 물약 3,Consumable,Potion,Common,,Consumable,,,,,,,,,,,,분홍 물약 3. 흔한 물약.,,TRUE
+SM_Item_Bottle_Clear_Labelled_04,FantasyKingdomItems,분홍 물약 4,Consumable,Potion,Common,,Consumable,,,,,,,,,,,,분홍 물약 4. 흔한 물약.,,TRUE
+SM_Item_Bottle_Clear_Labelled_05,FantasyKingdomItems,분홍 물약 5,Consumable,Potion,Common,,Consumable,,,,,,,,,,,,분홍 물약 5. 흔한 물약.,,TRUE
+SM_Item_Bottle_Clear_Labelled_06,FantasyKingdomItems,분홍 물약 6,Consumable,Potion,Common,,Consumable,,,,,,,,,,,,분홍 물약 6. 흔한 물약.,,TRUE
+SM_Item_Bowl_01,FantasyKingdomItems,나무 그릇,Generic,Misc,Common,,Material,,,,,,,,,,,,나무 그릇.,,FALSE
+SM_Item_Bracelet_01,FantasyKingdomItems,팔찌,Equipment,Jewelry,Common,,Accessory,,,,,,,,,,,,팔찌. 흔한 장신구.,,TRUE
+SM_Item_Bracelet_02,FantasyKingdomItems,팔찌 2,Equipment,Jewelry,Common,,Accessory,,,,,,,,,,,,팔찌 2. 흔한 장신구.,,TRUE
+SM_Item_Bracelet_03,FantasyKingdomItems,팔찌 3,Equipment,Jewelry,Common,,Accessory,,,,,,,,,,,,팔찌 3. 흔한 장신구.,,TRUE
+SM_Item_Bracelet_04,FantasyKingdomItems,팔찌 4,Equipment,Jewelry,Common,,Accessory,,,,,,,,,,,,팔찌 4. 흔한 장신구.,,TRUE
+SM_Item_Bracelet_05,FantasyKingdomItems,팔찌 5,Equipment,Jewelry,Common,,Accessory,,,,,,,,,,,,팔찌 5. 흔한 장신구.,,TRUE
+SM_Item_Bracelet_06,FantasyKingdomItems,팔찌 6,Equipment,Jewelry,Common,,Accessory,,,,,,,,,,,,팔찌 6. 흔한 장신구.,,TRUE
+SM_Item_Bread_01,FantasyKingdomItems,빵,Consumable,Food,Common,,Consumable,,,,,,,,,,,,빵. 흔한 요리.,,TRUE
+SM_Item_Bread_02,FantasyKingdomItems,빵 2,Consumable,Food,Common,,Consumable,,,,,,,,,,,,빵 2. 흔한 요리.,,TRUE
+SM_Item_Bread_03,FantasyKingdomItems,빵 3,Consumable,Food,Common,,Consumable,,,,,,,,,,,,빵 3. 흔한 요리.,,TRUE
+SM_Item_Broom_01,FantasyKingdomItems,빗자루,Generic,Tool,Common,,Tool,,,,,,,,,,,,빗자루. 흔한 도구.,,TRUE
+SM_Item_Broom_02,FantasyKingdomItems,빗자루 2,Generic,Tool,Common,,Tool,,,,,,,,,,,,빗자루 2. 흔한 도구.,,TRUE
+SM_Item_Broom_03,FantasyKingdomItems,빗자루 3,Generic,Tool,Common,,Tool,,,,,,,,,,,,빗자루 3. 흔한 도구.,,TRUE
+SM_Item_Bucket_01,FantasyKingdomItems,양동이,Generic,Misc,Common,,Material,,,,,,,,,,,,양동이.,,FALSE
+SM_Item_Butterfly_01,FantasyKingdomItems,나비,Generic,Misc,Common,,Material,,,,,,,,,,,,나비.,,FALSE
+SM_Item_Butterfly_Wing_01,FantasyKingdomItems,나비 날개,Generic,Misc,Common,,Material,,,,,,,,,,,,나비 날개.,,FALSE
+SM_Item_Candlestick_01,FantasyKingdomItems,촛대,Generic,Misc,Common,,Material,,,,,,,,,,,,촛대.,,FALSE
+SM_Item_Candlestick_02,FantasyKingdomItems,촛대 2,Generic,Misc,Common,,Material,,,,,,,,,,,,촛대 2.,,FALSE
+SM_Item_Candlestick_03,FantasyKingdomItems,촛대 3,Generic,Misc,Common,,Material,,,,,,,,,,,,촛대 3.,,FALSE
+SM_Item_Candlestick_04,FantasyKingdomItems,촛대 4,Generic,Misc,Common,,Material,,,,,,,,,,,,촛대 4.,,FALSE
+SM_Item_Candlestick_05,FantasyKingdomItems,촛대 5,Generic,Misc,Common,,Material,,,,,,,,,,,,촛대 5.,,FALSE
+SM_Item_Candlestick_06,FantasyKingdomItems,촛대 6,Generic,Misc,Common,,Material,,,,,,,,,,,,촛대 6.,,FALSE
+SM_Item_Cauldron_01,FantasyKingdomItems,가마솥,Generic,Tool,Common,,Tool,,,,,,,,,,,,가마솥. 흔한 도구.,,TRUE
+SM_Item_Cauldron_02,FantasyKingdomItems,가마솥 2,Generic,Tool,Common,,Tool,,,,,,,,,,,,가마솥 2. 흔한 도구.,,TRUE
+SM_Item_Cheese_Slice_01,FantasyKingdomItems,치즈 조각,Generic,Ingredient,Common,,Material,,,,,,,,,,,,치즈 조각. 흔한 식재료.,,TRUE
+SM_Item_Cheese_Slice_02,FantasyKingdomItems,치즈 조각 2,Generic,Ingredient,Common,,Material,,,,,,,,,,,,치즈 조각 2. 흔한 식재료.,,TRUE
+SM_Item_Cheese_Wheel_01,FantasyKingdomItems,치즈 덩어리,Generic,Ingredient,Common,,Material,,,,,,,,,,,,치즈 덩어리. 흔한 식재료.,,TRUE
+SM_Item_Cheese_Wheel_02,FantasyKingdomItems,치즈 덩어리 2,Generic,Ingredient,Common,,Material,,,,,,,,,,,,치즈 덩어리 2. 흔한 식재료.,,TRUE
+SM_Item_Cheese_Wheel_03,FantasyKingdomItems,치즈 덩어리 3,Generic,Ingredient,Common,,Material,,,,,,,,,,,,치즈 덩어리 3. 흔한 식재료.,,TRUE
+SM_Item_Cheese_Wheel_04,FantasyKingdomItems,치즈 덩어리 4,Generic,Ingredient,Common,,Material,,,,,,,,,,,,치즈 덩어리 4. 흔한 식재료.,,TRUE
+SM_Item_Coach_Horn_01,FantasyKingdomItems,마차 나팔,Generic,Misc,Common,,Material,,,,,,,,,,,,마차 나팔.,,FALSE
+SM_Item_Coat_Hanger_01,FantasyKingdomItems,옷걸이,Generic,Misc,Common,,Material,,,,,,,,,,,,옷걸이.,,FALSE
+SM_Item_Coat_Hanger_02,FantasyKingdomItems,옷걸이 2,Generic,Misc,Common,,Material,,,,,,,,,,,,옷걸이 2.,,FALSE
+SM_Item_Compass_01,FantasyKingdomItems,나침반,Generic,Tool,Common,,Tool,,,,,,,,,,,,나침반. 흔한 도구.,,TRUE
+SM_Item_Crate_01,FantasyKingdomItems,나무 상자,Generic,Misc,Common,,Material,,,,,,,,,,,,나무 상자.,,FALSE
+SM_Item_Crystal_01,FantasyKingdomItems,수정,Generic,Gem,Common,,Material,,,,,,,,,,,,수정. 흔한 보석.,,TRUE
+SM_Item_Crystal_02,FantasyKingdomItems,수정 2,Generic,Gem,Common,,Material,,,,,,,,,,,,수정 2. 흔한 보석.,,TRUE
+SM_Item_Crystal_03,FantasyKingdomItems,수정 3,Generic,Gem,Common,,Material,,,,,,,,,,,,수정 3. 흔한 보석.,,TRUE
+SM_Item_Crystal_04,FantasyKingdomItems,수정 4,Generic,Gem,Common,,Material,,,,,,,,,,,,수정 4. 흔한 보석.,,TRUE
+SM_Item_Crystal_05,FantasyKingdomItems,수정 5,Generic,Gem,Common,,Material,,,,,,,,,,,,수정 5. 흔한 보석.,,TRUE
+SM_Item_Cup_01,FantasyKingdomItems,돌잔,Generic,Misc,Common,,Material,,,,,,,,,,,,돌잔.,,FALSE
+SM_Item_Cup_02,FantasyKingdomItems,돌잔 2,Generic,Misc,Common,,Material,,,,,,,,,,,,돌잔 2.,,FALSE
+SM_Item_Cutlery_Fork_01,FantasyKingdomItems,포크,Generic,Misc,Common,,Material,,,,,,,,,,,,포크.,,FALSE
+SM_Item_Cutlery_Knife_01,FantasyKingdomItems,나이프,Generic,Misc,Common,,Material,,,,,,,,,,,,나이프.,,FALSE
+SM_Item_Cutlery_Spoon_01,FantasyKingdomItems,숟가락,Generic,Misc,Common,,Material,,,,,,,,,,,,숟가락.,,FALSE
+SM_Item_Dish_01,FantasyKingdomItems,접시,Generic,Misc,Common,,Material,,,,,,,,,,,,접시.,,FALSE
+SM_Item_Dish_02,FantasyKingdomItems,접시 2,Generic,Misc,Common,,Material,,,,,,,,,,,,접시 2.,,FALSE
+SM_Item_Dish_03,FantasyKingdomItems,접시 3,Generic,Misc,Common,,Material,,,,,,,,,,,,접시 3.,,FALSE
+SM_Item_Dish_04,FantasyKingdomItems,접시 4,Generic,Misc,Common,,Material,,,,,,,,,,,,접시 4.,,FALSE
+SM_Item_Dish_05,FantasyKingdomItems,접시 5,Generic,Misc,Common,,Material,,,,,,,,,,,,접시 5.,,FALSE
+SM_Item_Dish_06,FantasyKingdomItems,접시 6,Generic,Misc,Common,,Material,,,,,,,,,,,,접시 6.,,FALSE
+SM_Item_Dish_07,FantasyKingdomItems,접시 7,Generic,Misc,Common,,Material,,,,,,,,,,,,접시 7.,,FALSE
+SM_Item_Envelope_01,FantasyKingdomItems,편지 봉투,Generic,Misc,Common,,Material,,,,,,,,,,,,편지 봉투.,,FALSE
+SM_Item_Eye_01,FantasyKingdomItems,마법의 눈,Generic,Misc,Common,,Material,,,,,,,,,,,,마법의 눈.,,FALSE
+SM_Item_Eye_Straight_01,FantasyKingdomItems,눈 지팡이,Generic,Misc,Common,,Material,,,,,,,,,,,,눈 지팡이.,,FALSE
+SM_Item_Feather_01,FantasyKingdomItems,깃털,Generic,Misc,Common,,Material,,,,,,,,,,,,깃털.,,FALSE
+SM_Item_Feather_02,FantasyKingdomItems,깃털 2,Generic,Misc,Common,,Material,,,,,,,,,,,,깃털 2.,,FALSE
+SM_Item_Feather_Pen_01,FantasyKingdomItems,깃털 펜,Generic,Misc,Common,,Material,,,,,,,,,,,,깃털 펜.,,FALSE
+SM_Item_Feather_Pen_02,FantasyKingdomItems,깃털 펜 2,Generic,Misc,Common,,Material,,,,,,,,,,,,깃털 펜 2.,,FALSE
+SM_Item_File_01,FantasyKingdomItems,줄,Generic,Tool,Common,,Tool,,,,,,,,,,,,줄. 흔한 도구.,,TRUE
+SM_Item_Food_Bowl_01,FantasyKingdomItems,음식 그릇,Consumable,Food,Common,,Consumable,,,,,,,,,,,,음식 그릇. 흔한 요리.,,TRUE
+SM_Item_Food_Bowl_02,FantasyKingdomItems,음식 그릇 2,Consumable,Food,Common,,Consumable,,,,,,,,,,,,음식 그릇 2. 흔한 요리.,,TRUE
+SM_Item_Gem_01,FantasyKingdomItems,보석,Generic,Gem,Common,,Material,,,,,,,,,,,,보석. 흔한 보석.,,TRUE
+SM_Item_Gem_02,FantasyKingdomItems,보석 2,Generic,Gem,Common,,Material,,,,,,,,,,,,보석 2. 흔한 보석.,,TRUE
+SM_Item_Gem_03,FantasyKingdomItems,보석 3,Generic,Gem,Common,,Material,,,,,,,,,,,,보석 3. 흔한 보석.,,TRUE
+SM_Item_Gem_04,FantasyKingdomItems,보석 4,Generic,Gem,Common,,Material,,,,,,,,,,,,보석 4. 흔한 보석.,,TRUE
+SM_Item_Gem_05,FantasyKingdomItems,보석 5,Generic,Gem,Common,,Material,,,,,,,,,,,,보석 5. 흔한 보석.,,TRUE
+SM_Item_Goblet_01,FantasyKingdomItems,성배잔,Generic,Misc,Common,,Material,,,,,,,,,,,,성배잔.,,FALSE
+SM_Item_Goblet_02,FantasyKingdomItems,성배잔 2,Generic,Misc,Common,,Material,,,,,,,,,,,,성배잔 2.,,FALSE
+SM_Item_Goblet_03,FantasyKingdomItems,성배잔 3,Generic,Misc,Common,,Material,,,,,,,,,,,,성배잔 3.,,FALSE
+SM_Item_Hammer_01,FantasyKingdomItems,망치,Generic,Tool,Common,,Tool,,,,,,,,,,,,망치. 흔한 도구.,,TRUE
+SM_Item_Hammer_02,FantasyKingdomItems,망치 2,Generic,Tool,Common,,Tool,,,,,,,,,,,,망치 2. 흔한 도구.,,TRUE
+SM_Item_Hammer_03,FantasyKingdomItems,망치 3,Generic,Tool,Common,,Tool,,,,,,,,,,,,망치 3. 흔한 도구.,,TRUE
+SM_Item_Hammer_04,FantasyKingdomItems,망치 4,Generic,Tool,Common,,Tool,,,,,,,,,,,,망치 4. 흔한 도구.,,TRUE
+SM_Item_Hammer_05,FantasyKingdomItems,망치 5,Generic,Tool,Common,,Tool,,,,,,,,,,,,망치 5. 흔한 도구.,,TRUE
+SM_Item_Hammer_06,FantasyKingdomItems,망치 6,Generic,Tool,Common,,Tool,,,,,,,,,,,,망치 6. 흔한 도구.,,TRUE
+SM_Item_Hammer_07,FantasyKingdomItems,망치 7,Generic,Tool,Common,,Tool,,,,,,,,,,,,망치 7. 흔한 도구.,,TRUE
+SM_Item_HoneyJar_01,FantasyKingdomItems,꿀단지,Generic,Ingredient,Common,,Material,,,,,,,,,,,,꿀단지. 흔한 식재료.,,TRUE
+SM_Item_Horn_01,FantasyKingdomItems,뿔,Generic,Misc,Common,,Material,,,,,,,,,,,,뿔.,,FALSE
+SM_Item_Horseshoe_01,FantasyKingdomItems,편자,Generic,Misc,Common,,Material,,,,,,,,,,,,편자.,,FALSE
+SM_Item_Ingot_Gold_01,FantasyKingdomItems,금괴,Generic,Misc,Common,,Material,,,,,,,,,,,,금괴.,,FALSE
+SM_Item_Ingot_Iron_01,FantasyKingdomItems,철괴,Generic,Misc,Common,,Material,,,,,,,,,,,,철괴.,,FALSE
+SM_Item_Ink_Well_01,FantasyKingdomItems,잉크병,Generic,Misc,Common,,Material,,,,,,,,,,,,잉크병.,,FALSE
+SM_Item_Jar_01,FantasyKingdomItems,항아리,Generic,Misc,Common,,Material,,,,,,,,,,,,항아리.,,FALSE
+SM_Item_Jar_02,FantasyKingdomItems,항아리 2,Generic,Misc,Common,,Material,,,,,,,,,,,,항아리 2.,,FALSE
+SM_Item_Jar_03,FantasyKingdomItems,항아리 3,Generic,Misc,Common,,Material,,,,,,,,,,,,항아리 3.,,FALSE
+SM_Item_Jar_04,FantasyKingdomItems,항아리 4,Generic,Misc,Common,,Material,,,,,,,,,,,,항아리 4.,,FALSE
+SM_Item_Jar_05,FantasyKingdomItems,항아리 5,Generic,Misc,Common,,Material,,,,,,,,,,,,항아리 5.,,FALSE
+SM_Item_Jug_01,FantasyKingdomItems,물주전자,Generic,Misc,Common,,Material,,,,,,,,,,,,물주전자.,,FALSE
+SM_Item_Jug_02,FantasyKingdomItems,물주전자 2,Generic,Misc,Common,,Material,,,,,,,,,,,,물주전자 2.,,FALSE
+SM_Item_Jug_03,FantasyKingdomItems,물주전자 3,Generic,Misc,Common,,Material,,,,,,,,,,,,물주전자 3.,,FALSE
+SM_Item_Jug_04,FantasyKingdomItems,물주전자 4,Generic,Misc,Common,,Material,,,,,,,,,,,,물주전자 4.,,FALSE
+SM_Item_Jug_05,FantasyKingdomItems,물주전자 5,Generic,Misc,Common,,Material,,,,,,,,,,,,물주전자 5.,,FALSE
+SM_Item_Jug_06,FantasyKingdomItems,물주전자 6,Generic,Misc,Common,,Material,,,,,,,,,,,,물주전자 6.,,FALSE
+SM_Item_Kettle_01,FantasyKingdomItems,주전자,Generic,Tool,Common,,Tool,,,,,,,,,,,,주전자. 흔한 도구.,,TRUE
+SM_Item_Key_01,FantasyKingdomItems,열쇠,Generic,Misc,Common,,Material,,,,,,,,,,,,열쇠.,,FALSE
+SM_Item_Key_02,FantasyKingdomItems,열쇠 2,Generic,Misc,Common,,Material,,,,,,,,,,,,열쇠 2.,,FALSE
+SM_Item_Key_03,FantasyKingdomItems,열쇠 3,Generic,Misc,Common,,Material,,,,,,,,,,,,열쇠 3.,,FALSE
+SM_Item_Key_04,FantasyKingdomItems,열쇠 4,Generic,Misc,Common,,Material,,,,,,,,,,,,열쇠 4.,,FALSE
+SM_Item_Key_05,FantasyKingdomItems,열쇠 5,Generic,Misc,Common,,Material,,,,,,,,,,,,열쇠 5.,,FALSE
+SM_Item_Key_06,FantasyKingdomItems,열쇠 6,Generic,Misc,Common,,Material,,,,,,,,,,,,열쇠 6.,,FALSE
+SM_Item_Ladle_01,FantasyKingdomItems,국자,Generic,Tool,Common,,Tool,,,,,,,,,,,,국자. 흔한 도구.,,TRUE
+SM_Item_Ladle_02,FantasyKingdomItems,국자 2,Generic,Tool,Common,,Tool,,,,,,,,,,,,국자 2. 흔한 도구.,,TRUE
+SM_Item_Ladle_03,FantasyKingdomItems,국자 3,Generic,Tool,Common,,Tool,,,,,,,,,,,,국자 3. 흔한 도구.,,TRUE
+SM_Item_Lockpick_01,FantasyKingdomItems,자물쇠따개,Generic,Tool,Common,,Tool,,,,,,,,,,,,자물쇠따개. 흔한 도구.,,TRUE
+SM_Item_Lockpick_Chain_01,FantasyKingdomItems,자물쇠따개 세트,Generic,Tool,Common,,Tool,,,,,,,,,,,,자물쇠따개 세트. 흔한 도구.,,TRUE
+SM_Item_Magnifying_Glass_01,FantasyKingdomItems,돋보기,Generic,Tool,Common,,Tool,,,,,,,,,,,,돋보기. 흔한 도구.,,TRUE
+SM_Item_Meat_01,FantasyKingdomItems,고기,Generic,Ingredient,Common,,Material,,,,,,,,,,,,고기. 흔한 식재료.,,TRUE
+SM_Item_Meat_02,FantasyKingdomItems,고기 2,Generic,Ingredient,Common,,Material,,,,,,,,,,,,고기 2. 흔한 식재료.,,TRUE
+SM_Item_Meat_Chicken_Cooked_01,FantasyKingdomItems,구운 닭고기,Consumable,Food,Common,,Consumable,,,,,,,,,,,,구운 닭고기. 흔한 요리.,,TRUE
+SM_Item_Meat_Chicken_Raw_01,FantasyKingdomItems,생 닭고기,Generic,Ingredient,Common,,Material,,,,,,,,,,,,생 닭고기. 흔한 식재료.,,TRUE
+SM_Item_Meat_Cleaver_01,FantasyKingdomItems,정육도,Generic,Tool,Common,,Tool,,,,,,,,,,,,정육도. 흔한 도구.,,TRUE
+SM_Item_Meat_Fish_01,FantasyKingdomItems,생선,Generic,Ingredient,Common,,Material,,,,,,,,,,,,생선. 흔한 식재료.,,TRUE
+SM_Item_Meat_Fish_02,FantasyKingdomItems,생선 2,Generic,Ingredient,Common,,Material,,,,,,,,,,,,생선 2. 흔한 식재료.,,TRUE
+SM_Item_Meat_Fish_03,FantasyKingdomItems,생선 3,Generic,Ingredient,Common,,Material,,,,,,,,,,,,생선 3. 흔한 식재료.,,TRUE
+SM_Item_Meat_Fish_04,FantasyKingdomItems,생선 4,Generic,Ingredient,Common,,Material,,,,,,,,,,,,생선 4. 흔한 식재료.,,TRUE
+SM_Item_Meat_Fish_05,FantasyKingdomItems,생선 5,Generic,Ingredient,Common,,Material,,,,,,,,,,,,생선 5. 흔한 식재료.,,TRUE
+SM_Item_Meat_Fish_06,FantasyKingdomItems,생선 6,Generic,Ingredient,Common,,Material,,,,,,,,,,,,생선 6. 흔한 식재료.,,TRUE
+SM_Item_Meat_Fish_07,FantasyKingdomItems,생선 7,Generic,Ingredient,Common,,Material,,,,,,,,,,,,생선 7. 흔한 식재료.,,TRUE
+SM_Item_Meat_Ham_01,FantasyKingdomItems,햄,Generic,Ingredient,Common,,Material,,,,,,,,,,,,햄. 흔한 식재료.,,TRUE
+SM_Item_Meat_Hook_01,FantasyKingdomItems,정육 고리,Generic,Misc,Common,,Material,,,,,,,,,,,,정육 고리.,,FALSE
+SM_Item_Meat_Hook_02,FantasyKingdomItems,정육 고리 2,Generic,Misc,Common,,Material,,,,,,,,,,,,정육 고리 2.,,FALSE
+SM_Item_Meat_Pork_Trotter_01,FantasyKingdomItems,족발,Generic,Ingredient,Common,,Material,,,,,,,,,,,,족발. 흔한 식재료.,,TRUE
+SM_Item_Meat_Ribs_01,FantasyKingdomItems,갈비,Generic,Ingredient,Common,,Material,,,,,,,,,,,,갈비. 흔한 식재료.,,TRUE
+SM_Item_Meat_Salami_01,FantasyKingdomItems,살라미,Generic,Ingredient,Common,,Material,,,,,,,,,,,,살라미. 흔한 식재료.,,TRUE
+SM_Item_Meat_Salami_02,FantasyKingdomItems,살라미 2,Generic,Ingredient,Common,,Material,,,,,,,,,,,,살라미 2. 흔한 식재료.,,TRUE
+SM_Item_Meat_Steak_Cooked_01,FantasyKingdomItems,구운 스테이크,Consumable,Food,Common,,Consumable,,,,,,,,,,,,구운 스테이크. 흔한 요리.,,TRUE
+SM_Item_Meat_Steak_Raw_01,FantasyKingdomItems,생 스테이크,Generic,Ingredient,Common,,Material,,,,,,,,,,,,생 스테이크. 흔한 식재료.,,TRUE
+SM_Item_Meat_Turkey_Cooked_01,FantasyKingdomItems,구운 칠면조,Consumable,Food,Common,,Consumable,,,,,,,,,,,,구운 칠면조. 흔한 요리.,,TRUE
+SM_Item_Meat_Turkey_Raw_01,FantasyKingdomItems,생 칠면조,Generic,Ingredient,Common,,Material,,,,,,,,,,,,생 칠면조. 흔한 식재료.,,TRUE
+SM_Item_Mortar_01,FantasyKingdomItems,절구,Generic,Tool,Common,,Tool,,,,,,,,,,,,절구. 흔한 도구.,,TRUE
+SM_Item_Mortar_Pestle_01,FantasyKingdomItems,절구공이,Generic,Tool,Common,,Tool,,,,,,,,,,,,절구공이. 흔한 도구.,,TRUE
+SM_Item_Mug_Tankard_01,FantasyKingdomItems,맥주잔,Generic,Misc,Common,,Material,,,,,,,,,,,,맥주잔.,,FALSE
+SM_Item_Mushroom_01,FantasyKingdomItems,버섯,Generic,Ingredient,Common,,Material,,,,,,,,,,,,버섯. 흔한 식재료.,,TRUE
+SM_Item_Mushroom_02,FantasyKingdomItems,버섯 2,Generic,Ingredient,Common,,Material,,,,,,,,,,,,버섯 2. 흔한 식재료.,,TRUE
+SM_Item_Mushroom_03,FantasyKingdomItems,버섯 3,Generic,Ingredient,Common,,Material,,,,,,,,,,,,버섯 3. 흔한 식재료.,,TRUE
+SM_Item_Nail_01,FantasyKingdomItems,못,Generic,Misc,Common,,Material,,,,,,,,,,,,못.,,FALSE
+SM_Item_Necklace_Flat_01,FantasyKingdomItems,목걸이,Equipment,Jewelry,Common,,Accessory,,,,,,,,,,,,목걸이. 흔한 장신구.,,TRUE
+SM_Item_Necklace_Flat_02,FantasyKingdomItems,목걸이 2,Equipment,Jewelry,Common,,Accessory,,,,,,,,,,,,목걸이 2. 흔한 장신구.,,TRUE
+SM_Item_Necklace_Flat_03,FantasyKingdomItems,목걸이 3,Equipment,Jewelry,Common,,Accessory,,,,,,,,,,,,목걸이 3. 흔한 장신구.,,TRUE
+SM_Item_Necklace_Flat_04,FantasyKingdomItems,목걸이 4,Equipment,Jewelry,Common,,Accessory,,,,,,,,,,,,목걸이 4. 흔한 장신구.,,TRUE
+SM_Item_Necklace_Flat_05,FantasyKingdomItems,목걸이 5,Equipment,Jewelry,Common,,Accessory,,,,,,,,,,,,목걸이 5. 흔한 장신구.,,TRUE
+SM_Item_Necklace_Hanging_01,FantasyKingdomItems,펜던트 목걸이,Equipment,Jewelry,Common,,Accessory,,,,,,,,,,,,펜던트 목걸이. 흔한 장신구.,,TRUE
+SM_Item_Necklace_Hanging_02,FantasyKingdomItems,펜던트 목걸이 2,Equipment,Jewelry,Common,,Accessory,,,,,,,,,,,,펜던트 목걸이 2. 흔한 장신구.,,TRUE
+SM_Item_Necklace_Hanging_03,FantasyKingdomItems,펜던트 목걸이 3,Equipment,Jewelry,Common,,Accessory,,,,,,,,,,,,펜던트 목걸이 3. 흔한 장신구.,,TRUE
+SM_Item_Necklace_Hanging_04,FantasyKingdomItems,펜던트 목걸이 4,Equipment,Jewelry,Common,,Accessory,,,,,,,,,,,,펜던트 목걸이 4. 흔한 장신구.,,TRUE
+SM_Item_Necklace_Hanging_05,FantasyKingdomItems,펜던트 목걸이 5,Equipment,Jewelry,Common,,Accessory,,,,,,,,,,,,펜던트 목걸이 5. 흔한 장신구.,,TRUE
+SM_Item_Pan_01,FantasyKingdomItems,프라이팬,Generic,Misc,Common,,Material,,,,,,,,,,,,프라이팬.,,FALSE
+SM_Item_Parchment_01,FantasyKingdomItems,양피지,Generic,Misc,Common,,Material,,,,,,,,,,,,양피지.,,FALSE
+SM_Item_Parchment_02,FantasyKingdomItems,양피지 2,Generic,Misc,Common,,Material,,,,,,,,,,,,양피지 2.,,FALSE
+SM_Item_Parchment_03,FantasyKingdomItems,양피지 3,Generic,Misc,Common,,Material,,,,,,,,,,,,양피지 3.,,FALSE
+SM_Item_Parchment_04,FantasyKingdomItems,양피지 4,Generic,Misc,Common,,Material,,,,,,,,,,,,양피지 4.,,FALSE
+SM_Item_Pickaxe_01,FantasyKingdomItems,곡괭이,Generic,Tool,Common,,Tool,,,,,,,,,,,,곡괭이. 흔한 도구.,,TRUE
+SM_Item_Pie_01,FantasyKingdomItems,파이,Consumable,Food,Common,,Consumable,,,,,,,,,,,,파이. 흔한 요리.,,TRUE
+SM_Item_Pie_02,FantasyKingdomItems,파이 2,Consumable,Food,Common,,Consumable,,,,,,,,,,,,파이 2. 흔한 요리.,,TRUE
+SM_Item_Pie_03,FantasyKingdomItems,파이 3,Consumable,Food,Common,,Consumable,,,,,,,,,,,,파이 3. 흔한 요리.,,TRUE
+SM_Item_Pie_04,FantasyKingdomItems,파이 4,Consumable,Food,Common,,Consumable,,,,,,,,,,,,파이 4. 흔한 요리.,,TRUE
+SM_Item_Pie_Bowl_01,FantasyKingdomItems,파이 그릇,Consumable,Food,Common,,Consumable,,,,,,,,,,,,파이 그릇. 흔한 요리.,,TRUE
+SM_Item_Pipe_01,FantasyKingdomItems,파이프,Generic,Misc,Common,,Material,,,,,,,,,,,,파이프.,,FALSE
+SM_Item_Pipe_02,FantasyKingdomItems,파이프 2,Generic,Misc,Common,,Material,,,,,,,,,,,,파이프 2.,,FALSE
+SM_Item_Pitchfork_01,FantasyKingdomItems,쇠스랑,Generic,Tool,Common,,Tool,,,,,,,,,,,,쇠스랑. 흔한 도구.,,TRUE
+SM_Item_Pitchfork_02,FantasyKingdomItems,쇠스랑 2,Generic,Tool,Common,,Tool,,,,,,,,,,,,쇠스랑 2. 흔한 도구.,,TRUE
+SM_Item_Plant_01,FantasyKingdomItems,식물,Generic,Misc,Common,,Material,,,,,,,,,,,,식물.,,FALSE
+SM_Item_Pot_01,FantasyKingdomItems,냄비,Generic,Misc,Common,,Material,,,,,,,,,,,,냄비.,,FALSE
+SM_Item_Pot_02,FantasyKingdomItems,냄비 2,Generic,Misc,Common,,Material,,,,,,,,,,,,냄비 2.,,FALSE
+SM_Item_Potato_01,FantasyKingdomItems,감자,Generic,Ingredient,Common,,Material,,,,,,,,,,,,감자. 흔한 식재료.,,TRUE
+SM_Item_Potato_02,FantasyKingdomItems,감자 2,Generic,Ingredient,Common,,Material,,,,,,,,,,,,감자 2. 흔한 식재료.,,TRUE
+SM_Item_Pouch_01,FantasyKingdomItems,주머니,Generic,Misc,Common,,Material,,,,,,,,,,,,주머니.,,FALSE
+SM_Item_Pouch_02,FantasyKingdomItems,주머니 2,Generic,Misc,Common,,Material,,,,,,,,,,,,주머니 2.,,FALSE
+SM_Item_Powder_01,FantasyKingdomItems,가루,Generic,Misc,Common,,Material,,,,,,,,,,,,가루.,,FALSE
+SM_Item_Pretzel_01,FantasyKingdomItems,프레첼,Consumable,Food,Common,,Consumable,,,,,,,,,,,,프레첼. 흔한 요리.,,TRUE
+SM_Item_Ring_01,FantasyKingdomItems,반지,Equipment,Jewelry,Common,,Accessory,,,,,,,,,,,,반지. 흔한 장신구.,,TRUE
+SM_Item_Ring_02,FantasyKingdomItems,반지 2,Equipment,Jewelry,Common,,Accessory,,,,,,,,,,,,반지 2. 흔한 장신구.,,TRUE
+SM_Item_Ring_03,FantasyKingdomItems,반지 3,Equipment,Jewelry,Common,,Accessory,,,,,,,,,,,,반지 3. 흔한 장신구.,,TRUE
+SM_Item_Ring_04,FantasyKingdomItems,반지 4,Equipment,Jewelry,Common,,Accessory,,,,,,,,,,,,반지 4. 흔한 장신구.,,TRUE
+SM_Item_Ring_05,FantasyKingdomItems,반지 5,Equipment,Jewelry,Common,,Accessory,,,,,,,,,,,,반지 5. 흔한 장신구.,,TRUE
+SM_Item_Ring_06,FantasyKingdomItems,반지 6,Equipment,Jewelry,Common,,Accessory,,,,,,,,,,,,반지 6. 흔한 장신구.,,TRUE
+SM_Item_Ring_07,FantasyKingdomItems,반지 7,Equipment,Jewelry,Common,,Accessory,,,,,,,,,,,,반지 7. 흔한 장신구.,,TRUE
+SM_Item_Ring_08,FantasyKingdomItems,반지 8,Equipment,Jewelry,Common,,Accessory,,,,,,,,,,,,반지 8. 흔한 장신구.,,TRUE
+SM_Item_Ring_09,FantasyKingdomItems,반지 9,Equipment,Jewelry,Common,,Accessory,,,,,,,,,,,,반지 9. 흔한 장신구.,,TRUE
+SM_Item_Ring_10,FantasyKingdomItems,반지 10,Equipment,Jewelry,Common,,Accessory,,,,,,,,,,,,반지 10. 흔한 장신구.,,TRUE
+SM_Item_Roast_Fish_01,FantasyKingdomItems,Roast_Fish,Consumable,Food,Common,,Consumable,,,,,,,,,,,,Roast_Fish. 흔한 요리.,,TRUE
+SM_Item_Roast_Turkey_01,FantasyKingdomItems,Roast_Turkey,Consumable,Food,Common,,Consumable,,,,,,,,,,,,Roast_Turkey. 흔한 요리.,,TRUE
+SM_Item_Rock_01,FantasyKingdomItems,돌,Generic,Misc,Common,,Material,,,,,,,,,,,,돌.,,FALSE
+SM_Item_Rolling_Pin_01,FantasyKingdomItems,밀대,Generic,Tool,Common,,Tool,,,,,,,,,,,,밀대. 흔한 도구.,,TRUE
+SM_Item_Root_01,FantasyKingdomItems,뿌리,Generic,Ingredient,Common,,Material,,,,,,,,,,,,뿌리. 흔한 식재료.,,TRUE
+SM_Item_Salt_Pepper_Grinder_01,FantasyKingdomItems,후추 그라인더,Generic,Tool,Common,,Tool,,,,,,,,,,,,후추 그라인더. 흔한 도구.,,TRUE
+SM_Item_Saw_01,FantasyKingdomItems,톱,Generic,Tool,Common,,Tool,,,,,,,,,,,,톱. 흔한 도구.,,TRUE
+SM_Item_Shovel_01,FantasyKingdomItems,삽,Generic,Tool,Common,,Tool,,,,,,,,,,,,삽. 흔한 도구.,,TRUE
+SM_Item_Stirring_Stick_01,FantasyKingdomItems,젓는 막대,Generic,Tool,Common,,Tool,,,,,,,,,,,,젓는 막대. 흔한 도구.,,TRUE
+SM_Item_Tea_Pot_01,FantasyKingdomItems,찻주전자,Generic,Misc,Common,,Material,,,,,,,,,,,,찻주전자.,,FALSE
+SM_Item_Tongs_01,FantasyKingdomItems,집게,Generic,Tool,Common,,Tool,,,,,,,,,,,,집게. 흔한 도구.,,TRUE
+SM_Item_Tongs_02,FantasyKingdomItems,집게 2,Generic,Tool,Common,,Tool,,,,,,,,,,,,집게 2. 흔한 도구.,,TRUE
+SM_Item_Tongs_03,FantasyKingdomItems,집게 3,Generic,Tool,Common,,Tool,,,,,,,,,,,,집게 3. 흔한 도구.,,TRUE
+SM_Item_Tongs_04,FantasyKingdomItems,집게 4,Generic,Tool,Common,,Tool,,,,,,,,,,,,집게 4. 흔한 도구.,,TRUE
+SM_Item_Wargames_Piece_01,FantasyKingdomItems,전략게임 말,Generic,Misc,Common,,Material,,,,,,,,,,,,전략게임 말.,,FALSE
+SM_Item_Wargames_Piece_02,FantasyKingdomItems,전략게임 말 2,Generic,Misc,Common,,Material,,,,,,,,,,,,전략게임 말 2.,,FALSE
+SM_Item_Wargames_Piece_03,FantasyKingdomItems,전략게임 말 3,Generic,Misc,Common,,Material,,,,,,,,,,,,전략게임 말 3.,,FALSE
+SM_Item_Wargames_Piece_04,FantasyKingdomItems,전략게임 말 4,Generic,Misc,Common,,Material,,,,,,,,,,,,전략게임 말 4.,,FALSE
+SM_Item_Wargames_Piece_05,FantasyKingdomItems,전략게임 말 5,Generic,Misc,Common,,Material,,,,,,,,,,,,전략게임 말 5.,,FALSE
+SM_Item_Wargames_Piece_06,FantasyKingdomItems,전략게임 말 6,Generic,Misc,Common,,Material,,,,,,,,,,,,전략게임 말 6.,,FALSE
+SM_Item_Wargames_Piece_07,FantasyKingdomItems,전략게임 말 7,Generic,Misc,Common,,Material,,,,,,,,,,,,전략게임 말 7.,,FALSE
+SM_Item_Wargames_Piece_08,FantasyKingdomItems,전략게임 말 8,Generic,Misc,Common,,Material,,,,,,,,,,,,전략게임 말 8.,,FALSE
+SM_Item_Wargames_Piece_09,FantasyKingdomItems,전략게임 말 9,Generic,Misc,Common,,Material,,,,,,,,,,,,전략게임 말 9.,,FALSE
+SM_Item_Wargames_Piece_10,FantasyKingdomItems,전략게임 말 10,Generic,Misc,Common,,Material,,,,,,,,,,,,전략게임 말 10.,,FALSE
+SM_Item_Wargames_Piece_11,FantasyKingdomItems,전략게임 말 11,Generic,Misc,Common,,Material,,,,,,,,,,,,전략게임 말 11.,,FALSE
+SM_Item_Wargames_Piece_12,FantasyKingdomItems,전략게임 말 12,Generic,Misc,Common,,Material,,,,,,,,,,,,전략게임 말 12.,,FALSE
+SM_Item_Wargames_Piece_13,FantasyKingdomItems,전략게임 말 13,Generic,Misc,Common,,Material,,,,,,,,,,,,전략게임 말 13.,,FALSE
+SM_Item_Wargames_Piece_14,FantasyKingdomItems,전략게임 말 14,Generic,Misc,Common,,Material,,,,,,,,,,,,전략게임 말 14.,,FALSE
+SM_Item_Wargames_Piece_15,FantasyKingdomItems,전략게임 말 15,Generic,Misc,Common,,Material,,,,,,,,,,,,전략게임 말 15.,,FALSE
+SM_Item_Wargames_Plotting_Rod_01,FantasyKingdomItems,전략게임 측정봉,Generic,Misc,Common,,Material,,,,,,,,,,,,전략게임 측정봉.,,FALSE
+SM_Item_Wargames_Plotting_Rod_02,FantasyKingdomItems,전략게임 측정봉 2,Generic,Misc,Common,,Material,,,,,,,,,,,,전략게임 측정봉 2.,,FALSE
+SM_Item_Wash_Bucket_01,FantasyKingdomItems,세탁통,Generic,Misc,Common,,Material,,,,,,,,,,,,세탁통.,,FALSE
+SM_Item_Watering_Can_01,FantasyKingdomItems,물뿌리개,Generic,Tool,Common,,Tool,,,,,,,,,,,,물뿌리개. 흔한 도구.,,TRUE
+SM_Item_Wire_Brush_01,FantasyKingdomItems,철솔,Generic,Tool,Common,,Tool,,,,,,,,,,,,철솔. 흔한 도구.,,TRUE
+SM_Item_Wood_01,FantasyKingdomItems,나무토막,Generic,Misc,Common,,Material,,,,,,,,,,,,나무토막.,,FALSE
+SM_Item_Wood_02,FantasyKingdomItems,나무토막 2,Generic,Misc,Common,,Material,,,,,,,,,,,,나무토막 2.,,FALSE
+SM_Item_Yarn_01,FantasyKingdomItems,실타래,Generic,Misc,Common,,Material,,,,,,,,,,,,실타래.,,FALSE
