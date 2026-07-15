@@ -93,8 +93,8 @@ namespace MySecondWorld.Editor
             GUI.enabled = !string.IsNullOrEmpty(_csvPath) && File.Exists(_csvPath);
             if (GUILayout.Button("아이템 생성"))
                 GenerateFromCsv(_csvPath, _useRemotePrefab, _overwrite);
-            if (GUILayout.Button("누락 프리팹 모델에서 생성"))
-                GenerateMissingPrefabsFromModels(_csvPath);
+            //if (GUILayout.Button("누락 프리팹 모델에서 생성"))
+            //    GenerateMissingPrefabsFromModels(_csvPath);
             GUI.enabled = true;
         }
 
@@ -107,6 +107,7 @@ namespace MySecondWorld.Editor
             var prefabCache = new Dictionary<string, GameObject>();
             var prefabRefCache = new Dictionary<string, AssetReferenceGameObject>();
             var restrictionCache = new Dictionary<string, SlotRestriction>();
+            var modelPathCacheByRoot = new Dictionary<string, Dictionary<string, string>>();
 
             int created = 0, updated = 0, skipped = 0, missingIcon = 0, missingArtPrefab = 0, missingRemotePrefab = 0;
 
@@ -137,11 +138,12 @@ namespace MySecondWorld.Editor
                     string package = cols[header["Package"]];
                     string koreanName = cols[header["KoreanName"]];
                     string itemType = cols[header["ItemType"]];
-                    bool hasPrefab = !header.TryGetValue("HasPrefab", out var hasPrefabIdx)
-                        || !string.Equals(cols[hasPrefabIdx].Trim(), "FALSE", StringComparison.OrdinalIgnoreCase);
                     string restrictionTitle = cols[header["RestrictionTitle"]];
                     string tags = cols[header["Tags"]];
                     string description = cols[header["Description"]];
+                    bool hasPrefab = !header.TryGetValue("HasPrefab", out var hasPrefabIdx)
+                        || !string.Equals(cols[hasPrefabIdx].Trim(), "FALSE", StringComparison.OrdinalIgnoreCase);
+
 
                     if (!ItemTypeSubfolders.TryGetValue(itemType, out var subfolder))
                     {
@@ -153,6 +155,21 @@ namespace MySecondWorld.Editor
                     // Item SO 경로 찾기
                     var folder = $"{AssetOutputFolder}/{subfolder}";
                     var assetPath = $"{folder}/{package}_{prefabName}.asset";
+                    
+                    // 고아 SO 자동 삭제 코드 :
+                    // ItemType이 바뀌어 폴더가 달라진 경우 — 예전 폴더에 남은 동명 SO를 찾아 삭제
+                    var assetFileName = $"{package}_{prefabName}.asset";
+                    foreach (var otherSubfolder in ItemTypeSubfolders.Values)
+                    {
+                        if (otherSubfolder == subfolder) continue; //현재 폴더면 패스, 나머지 폴더 이어서 검색
+                        var otherPath = $"{AssetOutputFolder}/{otherSubfolder}/{assetFileName}"; //다른 폴더에 동명SO 있으면 삭제
+                        if (File.Exists(otherPath))
+                        {
+                            AssetDatabase.DeleteAsset(otherPath);
+                            Debug.LogWarning($"[ItemAssetBakeHelper] Row {i + 1}: ItemType 변경 감지 — 이전 폴더의 SO 삭제 ({otherPath})");
+                        }
+                    }
+
                     bool exists = File.Exists(assetPath);
                     if (exists && !overwrite)
                     {
@@ -212,7 +229,7 @@ namespace MySecondWorld.Editor
                     }
                     else if (useRemotePrefab)
                     {
-                        var remoteArtPrefab = FindPrefabReference(package, prefabName, prefabRefCache);
+                        var remoteArtPrefab = FindPrefabReference(package, prefabName, prefabRefCache, modelPathCacheByRoot);
                         if (remoteArtPrefab != null)
                             item.RemoteArtPrefab = remoteArtPrefab;
                         else
@@ -222,7 +239,7 @@ namespace MySecondWorld.Editor
                     }
                     else
                     {
-                        var artPrefab = FindPrefab(package, prefabName, prefabCache);
+                        var artPrefab = FindPrefab(package, prefabName, prefabCache, modelPathCacheByRoot);
                         if (artPrefab != null)
                             item.ArtPrefab = artPrefab;
                         else
@@ -333,7 +350,10 @@ namespace MySecondWorld.Editor
             return sprite;
         }
 
-        private static GameObject FindPrefab(string package, string prefabName, Dictionary<string, GameObject> cache)
+        private static GameObject FindPrefab(
+            string package, string prefabName,
+            Dictionary<string, GameObject> cache,
+            Dictionary<string, Dictionary<string, string>> modelPathCacheByRoot)
         {
             if (!PackagePrefabRoots.TryGetValue(package, out var root)) return null;
             string path = $"{root}/{prefabName}.prefab";
@@ -341,6 +361,15 @@ namespace MySecondWorld.Editor
             if (cache.TryGetValue(path, out var cached)) return cached;
 
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+
+            // 커스텀 프리팹이 없으면 원본 FBX를 직접 참조 — 불필요한 프리팹 파일을 새로 만들지 않는다
+            if (prefab == null && PackageModelRoots.TryGetValue(package, out var modelRoot))
+            {
+                var modelIndex = GetOrBuildModelPathsByName(modelRoot, modelPathCacheByRoot);
+                if (modelIndex.TryGetValue(prefabName, out var modelPath))
+                    prefab = AssetDatabase.LoadAssetAtPath<GameObject>(modelPath);
+            }
+
             cache[path] = prefab;
 
             if (prefab == null)
@@ -348,13 +377,27 @@ namespace MySecondWorld.Editor
             return prefab;
         }
 
-        private static AssetReferenceGameObject FindPrefabReference(string package, string prefabName, Dictionary<string, AssetReferenceGameObject> cache)
+        private static AssetReferenceGameObject FindPrefabReference(
+            string package, string prefabName,
+            Dictionary<string, AssetReferenceGameObject> cache,
+            Dictionary<string, Dictionary<string, string>> modelPathCacheByRoot)
+        // <modelRoot(폴더 경로)               : "Assets/Models/PolygonFantasyKingdom/Models" -> "어느 폴더를 이미 스캔했는지"를 기억하는 캐시
+        // <string  (FBX파일이름(확장자제외))   : "SM_Item_Ring_01" -> "그 폴더 안에 이름이 뭔 FBX가 어디 있는지"를 담은 검색용 맵"
+        // string>> (그 FBX의 실제 에셋 경로)   : "Assets/Models/PolygonFantasyKingdom/Models/SM_Item_Ring_01.fbx"
         {
             if (!PackagePrefabRoots.TryGetValue(package, out var root)) return null;
             string path = $"{root}/{prefabName}.prefab";
 
             if (cache.TryGetValue(path, out var cached)) return cached;
             var guid = AssetDatabase.AssetPathToGUID(path, AssetPathToGUIDOptions.OnlyExistingAssets);
+
+            // 커스텀 프리팹이 없으면 원본 FBX를 직접 참조
+            if (string.IsNullOrEmpty(guid) && PackageModelRoots.TryGetValue(package, out var modelRoot))
+            {
+                var modelIndex = GetOrBuildModelPathsByName(modelRoot, modelPathCacheByRoot);
+                if (modelIndex.TryGetValue(prefabName, out var modelPath))
+                    guid = AssetDatabase.AssetPathToGUID(modelPath, AssetPathToGUIDOptions.OnlyExistingAssets);
+            }
 
             if (string.IsNullOrEmpty(guid))
             {
@@ -408,7 +451,7 @@ namespace MySecondWorld.Editor
             var lines = File.ReadAllLines(csvPath);
             var header = BuildHeaderIndex(lines[0]);
             int columnCount = header.Count;
-            var modelIndexCache = new Dictionary<string, Dictionary<string, string>>(); // modelRoot → {파일명: fbx경로}
+            var modelPathCacheByRoot = new Dictionary<string, Dictionary<string, string>>(); // modelRoot → {파일명: fbx경로}
             int created = 0, alreadyExists = 0, noModel = 0, skipped = 0;
 
             AssetDatabase.StartAssetEditing();
@@ -443,7 +486,7 @@ namespace MySecondWorld.Editor
                         continue;
                     }
 
-                    var modelIndex = GetOrBuildModelIndex(modelRoot, modelIndexCache);
+                    var modelIndex = GetOrBuildModelPathsByName(modelRoot, modelPathCacheByRoot);
                     if (!modelIndex.TryGetValue(prefabName, out var fbxPath))
                     {
                         Debug.LogWarning($"[ItemAssetBakeHelper] 모델 자체 없음: {package}/{prefabName}");
@@ -482,19 +525,21 @@ namespace MySecondWorld.Editor
                             // header["Package"]가 1이라는 숫자로 바뀌고, 결국 cols[1]을 읽는 것과 완전히 동일한 결과가 나온다.
         }
 
-        private static Dictionary<string, string> GetOrBuildModelIndex(string modelRoot, Dictionary<string, Dictionary<string, string>> cache)
+        private static Dictionary<string, string> GetOrBuildModelPathsByName(string modelRoot, Dictionary<string, Dictionary<string, string>> cache)
         {
-            if (cache.TryGetValue(modelRoot, out var index)) return index;
+            // 이미 만든 인덱스면 재사용
+            if (cache.TryGetValue(modelRoot, out var pathsByName)) return pathsByName;
 
-            index = new Dictionary<string, string>();
+            pathsByName = new Dictionary<string, string>();
             foreach (var guid in AssetDatabase.FindAssets("t:Model", new[] { modelRoot }))
             {
                 var path = AssetDatabase.GUIDToAssetPath(guid);
-                index[Path.GetFileNameWithoutExtension(path)] = path;
+                pathsByName[Path.GetFileNameWithoutExtension(path)] = path; 
+                //           └─ 키(Name) "SM_Item_Ring_01" ← └─ 값(Path) "Assets/.../SM_Item_Ring_01.fbx"
             }
 
-            cache[modelRoot] = index;
-            return index;
+            cache[modelRoot] = pathsByName;
+            return pathsByName;
         }
     }
 }
