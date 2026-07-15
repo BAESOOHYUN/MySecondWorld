@@ -477,7 +477,9 @@ namespace MySecondWorld.Editor
             var index = new Dictionary<string, int>();
             for (int i = 0; i < headers.Length; i++)
                 index[headers[i].Trim()] = i;
-            return index;
+            return index;   // 키(key) = 헤더의 컬럼 이름 문자열 ("PrefabName", "Package", "HasPrefab" ...)
+                            // 값(value) = 그 컬럼이 몇 번째 위치(인덱스)인지(0, 1, ... 21)
+                            // header["Package"]가 1이라는 숫자로 바뀌고, 결국 cols[1]을 읽는 것과 완전히 동일한 결과가 나온다.
         }
 
         private static Dictionary<string, string> GetOrBuildModelIndex(string modelRoot, Dictionary<string, Dictionary<string, string>> cache)
