@@ -18,10 +18,10 @@ namespace MySecondWorld.Network
         private int _expectedSceneLoads;  // 클라이언트: 로드해야 할 씬 수
         private int _completedSceneLoads; // 클라이언트: 로드 완료된 씬 수
         private readonly GameNetworkManager _manager;
-        private readonly ZoneAddressableLoader _zoneLoader;
+        private readonly AddressableLabelLoader _zoneLoader;
         private readonly Dictionary<string, AsyncOperationHandle<SceneInstance>> _sceneHandles = new();
 
-        public ClientSceneSyncService(GameNetworkManager manager, ZoneAddressableLoader zoneLoader)
+        public ClientSceneSyncService(GameNetworkManager manager, AddressableLabelLoader zoneLoader)
         {
             _manager = manager;
             _zoneLoader = zoneLoader;
@@ -89,10 +89,10 @@ namespace MySecondWorld.Network
                 .Where(z => z.ZoneAssetLabel?.labelString == label) // 같은 레이블인 것만 필터
                 .Any(z => _sceneHandles.ContainsKey(z.sceneName));  // 그 중 _sceneHandles에 있는 게 하나라도 있나?
 
-            // 3 - Yes : ReleaseZone 호출 안 함 (아직 다른 씬 있음)
-            // 3 - No  : ReleaseZone 호출 (모두 언로드됨)
+            // 3 - Yes : ReleaseLabel 호출 안 함 (아직 다른 씬 있음)
+            // 3 - No  : ReleaseLabel 호출 (모두 언로드됨)
             if (!string.IsNullOrEmpty(label) && !anyRemaining)
-                _zoneLoader.ReleaseZone(label);
+                _zoneLoader.ReleaseLabel(label);
         }
 
         // [C3] 서버가 보낸 기대 씬 수 저장

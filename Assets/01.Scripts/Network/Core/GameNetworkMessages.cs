@@ -29,7 +29,7 @@ namespace MySecondWorld.Network
 
     //서버: 플레이어 Zone 진입 감지
     //  └→ BundleRequiredMessage 전송(어떤 번들 받아야 하는지)
-    //       └→ 클라이언트: 번들 다운로드(ZoneAddressableLoader)
+    //       └→ 클라이언트: 번들 다운로드(AddressableLabelLoader)
     //            └→ BundleReadyMessage 전송(다운로드 완료 ACK)
     //                 └→ 서버: spawn 허용
 

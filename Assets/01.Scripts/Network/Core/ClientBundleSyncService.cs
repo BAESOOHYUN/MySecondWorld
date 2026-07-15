@@ -10,7 +10,7 @@ namespace MySecondWorld.Network
 {
     /// <summary>
     /// 서버에서 BundleRequiredMessage가 오면:
-    /// ZoneAddressableLoader.LoadZoneAsync() 호출 → 번들 다운로드
+    /// AddressableLabelLoader.LoadLabelAsync() 호출 → 번들 다운로드
     /// 진행률 AddressablesProgressEvent로 발행 → UI가 받아서 표시
     /// 완료되면 BundleReadyMessage를 서버에 ACK
     /// </summary>
@@ -18,11 +18,11 @@ namespace MySecondWorld.Network
     {
         private string _lastFailedLabel;
         private IDisposable _retrySubscription;
-        private readonly ZoneAddressableLoader _zoneLoader;
+        private readonly AddressableLabelLoader _zoneLoader;
         private IUIManager _uiManager;
 
         public ClientBundleSyncService (
-            ZoneAddressableLoader zoneLoader,
+            AddressableLabelLoader zoneLoader,
             ISubscriber<AddressablesProgressEvent> progressSub,
             IUIManager uiManager)
         {
@@ -56,7 +56,7 @@ namespace MySecondWorld.Network
             // try-catch는 번들 다운로드 실패 시 재시도 기능을 위한 것
             try
             {
-                await _zoneLoader.LoadZoneAsync(msg.zoneLabel, ct); //번들 다운로드
+                await _zoneLoader.LoadLabelAsync(msg.zoneLabel, ct); //번들 다운로드
                 addressableUI?.UpdateProgress(1f);
                 NetworkClient.Send(new BundleReadyMessage { zoneLabel = msg.zoneLabel }); // > GameNetworkManager.OnStartServer
             }
@@ -86,7 +86,7 @@ namespace MySecondWorld.Network
 
 //OnBundleRequired (try-catch)
 //
-//LoadZoneAsync 실패(CDN 연결 실패, 파일 없음 등)
+//LoadLabelAsync 실패(CDN 연결 실패, 파일 없음 등)
 //  └→ catch
 //       └→ _lastFailedLabel 저장
 //       └→ IsError = true 발행

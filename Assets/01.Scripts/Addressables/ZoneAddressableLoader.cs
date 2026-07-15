@@ -8,14 +8,14 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 namespace MySecondWorld.Bundle
 {
     /// <summary>
-    /// "Zone 번들 하나 로드/언로드" 담당
+    /// "라벨 번들 하나 로드/언로드" 담당
     /// </summary>
-    public class ZoneAddressableLoader
+    public class AddressableLabelLoader
     {
         private Dictionary<string, AsyncOperationHandle> _handles = new();
         private Dictionary<string, int> _refCounts = new();
 
-        public async UniTask LoadZoneAsync(string label, CancellationToken ct)
+        public async UniTask LoadLabelAsync(string label, CancellationToken ct)
         {
             // label = "zone_dungeon_1"
             // label = "character_parts"
@@ -50,7 +50,7 @@ namespace MySecondWorld.Bundle
             Debug.Log($"[Bundle] '{label}' 로드 완료");
         }
 
-        public void ReleaseZone(string label)
+        public void ReleaseLabel(string label)
         {
             _refCounts[label]--;
             Debug.Log($"[Bundle] '{label}' refCount={_refCounts[label]}");
@@ -68,20 +68,20 @@ namespace MySecondWorld.Bundle
 
 // 에셋번들 로드 시나리오
 
-//[플레이어A 진입] LoadZoneAsync("zone_dungeon_1")
+//[플레이어A 진입] LoadLabelAsync("zone_dungeon_1")
 //  └→ _refCounts["zone_dungeon_1"] = 0 → 1 (처음이라 0 초기화 후 증가)
 //  └→ _handles에 없음 → 번들 다운로드 시작
 //  └→ _handles["zone_dungeon_1"] = handle 저장
 //  └→ await (다운로드 완료 대기)
 
-//[플레이어B 진입] LoadZoneAsync("zone_dungeon_1")
+//[플레이어B 진입] LoadLabelAsync("zone_dungeon_1")
 //  └→ _refCounts["zone_dungeon_1"] = 1 → 2 (카운트 증가)
-//  └→ _handles에 이미 있음 → return ← 다운로드 안 함![플레이어A 진입] LoadZoneAsync("zone_dungeon_1")
+//  └→ _handles에 이미 있음 → return ← 다운로드 안 함![플레이어A 진입] LoadLabelAsync("zone_dungeon_1")
 //  └→ _refCounts["zone_dungeon_1"] = 0 → 1 (처음이라 0 초기화 후 증가)
 //  └→ _handles에 없음 → 번들 다운로드 시작
 //  └→ _handles["zone_dungeon_1"] = handle 저장
 //  └→ await (다운로드 완료 대기)
 
-//[플레이어B 진입] LoadZoneAsync("zone_dungeon_1")
+//[플레이어B 진입] LoadLabelAsync("zone_dungeon_1")
 //  └→ _refCounts["zone_dungeon_1"] = 1 → 2 (카운트 증가)
 //  └→ _handles에 이미 있음 → return ← 다운로드 안 함!

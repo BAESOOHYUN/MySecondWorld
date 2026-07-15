@@ -35,14 +35,14 @@ namespace MySecondWorld.Network
         private ServerZoneService _zoneService;
         private ClientSceneSyncService _clientSyncService;
         private ClientBundleSyncService _clientBundleService;
-        private ZoneAddressableLoader _zoneLoader;
+        private AddressableLabelLoader _zoneLoader;
         private SaveManager _saveManager;
         private IUIManager _uiManager;
         private ISubscriber<AddressablesProgressEvent> _progressSub;
 
         [Inject]
         private void Construct(
-            ZoneAddressableLoader zoneLoader,
+            AddressableLabelLoader zoneLoader,
             SaveManager saveManager,
             IUIManager uiManager,
             ISubscriber<AddressablesProgressEvent> progressSub)

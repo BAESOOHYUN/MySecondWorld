@@ -49,4 +49,4 @@ namespace MySecondWorld.Bundle
 //  └→ ClientBundleSyncService: 실패한 레이블 저장 + IsError 발행
 //RetryButton 클릭
 //  └→ NeedsRetry 발행
-//       └→ ClientBundleSyncService: 저장해둔 레이블로 LoadZoneAsync 재시도
+//       └→ ClientBundleSyncService: 저장해둔 레이블로 LoadLabelAsync 재시도
