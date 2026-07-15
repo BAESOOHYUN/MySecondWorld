@@ -15,15 +15,22 @@ namespace MySecondWorld.Editor
     public class ThumbnailBakeHelper : EditorWindow
     {
         // ── 공통 상수 ──────────────────────────────────
+        // EditorPrefs 키 (같은 이름의 인스턴스 필드 값을 에디터 세션 간 저장/복원)
+        private const string SourcePrefKey = "ThumbnailBaker.SourceFolder"; // _staticPrefabFolder
+        private const string ItemThumbnailRootPrefKey = "ThumbnailBaker.ItemThumbnailRoot"; // _itemThumbnailRoot
+        private const string ExcludeSubfolderPrefKey = "ThumbnailBaker.ExcludeSubfolder"; // _excludeSubfolder
+        private const string NameFilterPrefKey = "ThumbnailBaker.NameFilter"; // _nameFilter
+        private const string ThumbnailCategoryPrefKey = "ThumbnailBaker.ThumbnailCategoryName"; // _thumbnailCategoryName
+
+        // 위 PrefKey들의 기본값 (EditorPrefs에 저장된 값이 없을 때 사용)
         private const string DefaultStaticFolder = "Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Characters_ModularParts_Static";
-        private const string SourcePrefKey = "ThumbnailBaker.SourceFolder";
-        private const string ThumbnailCategoryPrefKey = "ThumbnailBaker.ThumbnailCategoryName";
-        private const string BakedIconsFolder = "Assets/Saved/Icons";   // ItemPopulate.CreateIcons 고정 출력 경로
-        private const string ThumbnailRoot = "Assets/07.Textures/CharacterPartThumbnails";
-        private const string PresetThumbnailRoot = "Assets/07.Textures/CharacterPresetThumbnails";
-        private const string ItemThumbnailRootPrefKey = "ThumbnailBaker.ItemThumbnailRoot";
         private const string DefaultItemThumbnailRoot = "Assets/07.Textures";
-        private const string ExcludeSubfolderPrefKey = "ThumbnailBaker.ExcludeSubfolder";
+
+        // 워크플로별 고정 출력 경로 (사용자가 바꿀 수 없음, 필드 아님)
+        private const string BakedIconsFolder = "Assets/Saved/Icons";   // ItemPopulate.CreateIcons 고정 출력 경로
+        private const string ThumbnailRoot = "Assets/07.Textures/CharacterPartThumbnails"; // 캐릭터 파트 썸네일 폴더
+        private const string PresetThumbnailRoot = "Assets/07.Textures/CharacterPresetThumbnails"; // 캐릭터 프리셋 썸네일 폴더
+
         private const int PresetBatchSize = 20;
 
         // "Chr_Head_No_Elements_Male_02_Static" → cat=Head_No_Elements, gender=Male, num=02
@@ -40,8 +47,9 @@ namespace MySecondWorld.Editor
         // ── 필드 ──────────────────────────────────
         private string _staticPrefabFolder;
         private string _itemThumbnailRoot;
-        private string _excludeSubfolder;
-        private string _thumbnailCategoryName;
+        private string _excludeSubfolder; // 제외할 폴더 필터
+        private string _nameFilter; // 포함할 이름 필터
+        private string _thumbnailCategoryName; // 사용자 지정 폴더 이름
         private ItemPopulate _populate; // Synty 확장팩 스크립트
 
         private List<string> _groupKeys = new();
@@ -60,14 +68,17 @@ namespace MySecondWorld.Editor
             _staticPrefabFolder = EditorPrefs.GetString(SourcePrefKey, DefaultStaticFolder);
             _itemThumbnailRoot = EditorPrefs.GetString(ItemThumbnailRootPrefKey, DefaultItemThumbnailRoot);
             _excludeSubfolder = EditorPrefs.GetString(ExcludeSubfolderPrefKey, "");
+            _nameFilter = EditorPrefs.GetString(NameFilterPrefKey, "");
             _thumbnailCategoryName = EditorPrefs.GetString(ThumbnailCategoryPrefKey, "");
         }
 
         private void OnDisable()
         {
+            // 툴 꺼도 기억
             EditorPrefs.SetString(SourcePrefKey, _staticPrefabFolder);
             EditorPrefs.SetString(ItemThumbnailRootPrefKey, _itemThumbnailRoot);
             EditorPrefs.SetString(ExcludeSubfolderPrefKey, _excludeSubfolder);
+            EditorPrefs.SetString(NameFilterPrefKey, _nameFilter);
             EditorPrefs.SetString(ThumbnailCategoryPrefKey, _thumbnailCategoryName);
         }
 
@@ -84,6 +95,7 @@ namespace MySecondWorld.Editor
 
             _staticPrefabFolder = DrawFolderField("Source Folder", _staticPrefabFolder, "소스 폴더 선택");
             _excludeSubfolder = EditorGUILayout.TextField("  ㄴ 제외 하위 폴더명 (선택, 아이템 워크플로 전용)", _excludeSubfolder);
+            _nameFilter = EditorGUILayout.TextField("  ㄴ 이름 포함 필터 (선택, 아이템 워크플로 전용)", _nameFilter);
 
             _populate = (ItemPopulate)EditorGUILayout.ObjectField(
                 "ItemPopulate (씬)", _populate, typeof(ItemPopulate), true);
@@ -166,7 +178,8 @@ namespace MySecondWorld.Editor
             EditorGUILayout.HelpBox(
                 "Source Folder(맨 위)에 원하는 프리팹 폴더를 넣고 bake한 뒤 아래 버튼을 누르면, " +
                 "그 폴더명 그대로 저장 루트 밑에 하위 폴더가 생성됩니다. 예: .../Prefabs/Weapons → <저장 루트>/Weapons/\n" +
-                "제외 하위 폴더명을 입력하면 그 이름의 하위 폴더(및 그 안의 프리팹)는 스캔에서 제외됩니다. 예: Modular",
+                "제외 하위 폴더명을 입력하면 그 이름의 하위 폴더(및 그 안의 프리팹)는 스캔에서 제외됩니다. 예: Modular\n" +
+                "이름 포함 필터를 입력하면 프리팹/FBX 파일명에 그 문자열이 포함된 것만 채웁니다. 비워두면 전체 포함.",
                 MessageType.None);
             if (GUILayout.Button("I2) bake된 PNG를 Source Folder명으로 정렬"))
                 SortItemIcons();
@@ -323,7 +336,7 @@ namespace MySecondWorld.Editor
         }
 
         // ── 아이템 (임의 프리팹 폴더) ──────────────────────────────────
-        // Static/Preset과 달리 이름 패턴 매칭이 필요 없음 — 폴더 안 프리팹을 전부 그대로 채운다.
+        // Static/Preset과 달리 이름 패턴 매칭이 필요 없음 — 폴더 안 프리팹/FBX를 '이름 필터로 골라' 채운다.
         private void LoadFolderIntoPopulate(string folder)
         {
             // Source Folder 바로 밑의 하위 폴더일 때만 제외 (더 깊은 곳의 동명 폴더는 영향 없음)
@@ -331,9 +344,16 @@ namespace MySecondWorld.Editor
                 ? null
                 : $"{folder.TrimEnd('/')}/{_excludeSubfolder}/";
 
-            var prefabs = AssetDatabase.FindAssets("t:Prefab", new[] { folder })
+            // t:Prefab만이 아니라 t:Model(.fbx 원본)도 같이 검색 대상에 포함
+            var prefabs = AssetDatabase.FindAssets("t:Prefab t:Model", new[] { folder })
                 .Select(AssetDatabase.GUIDToAssetPath)
                 .Where(path => excludePath == null || !path.StartsWith(excludePath))
+                .Where(path => string.IsNullOrEmpty(_nameFilter) ||
+                Path.GetFileNameWithoutExtension(path).ToLowerInvariant().Contains(_nameFilter.ToLowerInvariant()))
+                // step1 = 경로에서 확장자 뗀 파일명만 추출 "SM_Item_Ring_01"
+                // step2 = 그 파일명을 소문자로 통일 "sm_item_ring_01"
+                // step3 = 필터 문자열도 똑같이 소문자로 통일 "item"
+                // step4 = "sm_item_ring_01".Contains("item") → true
                 .Select(AssetDatabase.LoadAssetAtPath<GameObject>)
                 .OrderBy(go => go.name)
                 .ToList();
@@ -345,7 +365,9 @@ namespace MySecondWorld.Editor
                 _populate.RegenerateIcons();
 
             var excludeMsg = string.IsNullOrEmpty(_excludeSubfolder) ? "" : $" ('{_excludeSubfolder}' 하위 폴더 제외)";
-            Debug.Log($"'{folder}' {prefabs.Count}개 프리팹을 ItemPopulate에 채움{excludeMsg}. ▶Play로 bake하세요.");
+            var filterMsg = string.IsNullOrEmpty(_nameFilter) ? "" : $" (이름에 '{_nameFilter}' 포함된 것만)";
+
+            Debug.Log($"'{folder}' {prefabs.Count}개 프리팹/모델을 ItemPopulate에 채움{excludeMsg}{filterMsg}. ▶Play로 bake하세요.");
         }
 
         // Source Folder 경로의 마지막 폴더명을 그대로 목적지 하위 폴더로 사용 — 카테고리 추가 시 코드 수정 불필요.
