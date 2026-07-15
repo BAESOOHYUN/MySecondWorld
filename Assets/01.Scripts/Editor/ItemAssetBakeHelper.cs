@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 using MySecondWorld.Inventory;
 using MySecondWorld.Inventory.Items;
 using Cleverous.VaultInventory;
-using UnityEngine.AddressableAssets;
 
 namespace MySecondWorld.Editor
 {
