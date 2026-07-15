@@ -14,7 +14,7 @@ namespace MySecondWorld.Editor
     public class AvatarPartKeyTablePopulator : EditorWindow
     {
         private AvatarPartKeyTableSO _target;
-        private const string SourceRoot = "Assets/Addressables/CharacterParts";
+        private const string SourceRoot = "Assets/03.Prefab/CharacterParts";
         private const string ThumbnailRoot = "Assets/07.Textures/CharacterPartThumbnails";
 
         private static readonly string[] GenderRootFolders =

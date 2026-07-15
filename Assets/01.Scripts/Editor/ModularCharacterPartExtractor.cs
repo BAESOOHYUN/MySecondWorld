@@ -9,8 +9,8 @@ namespace MySecondWorld.Editor
     public static class ModularCharacterPartExtractor
     {
         // 통합 모델 프리팹 (Modular_Characters 하위 파츠 + Root 스켈레톤)
-        private const string SourcePrefabPath = "Assets/03.Prefab/Avatar/ModularCharacters.prefab";
-        private const string OutputFolder = "Assets/Addressables/CharacterParts";
+        private const string SourcePrefabPath = "Assets/Models/PolygonFantasyHeroCharacters/Prefabs/ModularCharacters.prefab";
+        private const string OutputFolder = "Assets/03.Prefab/CharacterParts";
 
         [MenuItem("Tools/Customization/Extract Modular Character Parts")]
         public static void Extract()
