@@ -4,6 +4,7 @@ using Mirror;
 using VContainer;
 using MessagePipe;
 using MySecondWorld.Customization;
+using Cleverous.VaultInventory;
 
 namespace MySecondWorld.Network
 {
@@ -16,6 +17,7 @@ namespace MySecondWorld.Network
 
         private ObservableCharacterCustomizer _customizer;
         private AvatarPartKeyTableSO _avatarPartKeyTable;
+        private Cleverous.VaultInventory.Inventory _inventory;
         private IPublisher<RequestOpenCustomizeUIEvent> _openUIPublisher;
 
         [Inject]
@@ -27,35 +29,29 @@ namespace MySecondWorld.Network
             _customizer = customizer;
             _avatarPartKeyTable = avatarPartKeyTable;
 
-            // PlayerScope도 RegisterMessagePipe()를 호출하기 때문에(자기 전용 이벤트용),
-            // MessagePipe의 open-generic MessageBrokerCore<> 폴백(VContainer 1.14+에서
-            // versionDefines로 자동 활성화)이 PlayerScope 로컬 레지스트리에도 생겨서
-            // closed 타입 resolve 요청을 가로채 버린다. 그래서 평범한 [Inject]로
-            // ISubscriber<CharacterAppearanceSyncRequestedEvent>를 받으면 PlayerScope가
-            // 즉석에서 만든, 아무도 발행하지 않는 로컬 인스턴스를 구독하게 된다.
-            // ProjectLifetimeScope가 소유한 진짜 공유 브로커를 받으려면 Root에서 직접 resolve해야 한다.
-            var saveRequestSub = resolver is IScopedObjectResolver scoped
-                ? scoped.Root.Resolve<ISubscriber<CharacterAppearanceSyncRequestedEvent>>()
-                : resolver.Resolve<ISubscriber<CharacterAppearanceSyncRequestedEvent>>();
-
-            var openUISub = resolver is IScopedObjectResolver scoped2
-                ? scoped2.Root.Resolve<IPublisher<RequestOpenCustomizeUIEvent>>()
-                : resolver.Resolve<IPublisher<RequestOpenCustomizeUIEvent>>();
-                
+            // Root.Resolve를 쓰는 이유 :
+            // PlayerScope의 MessagePipe 로컬 등록이 이 이벤트 타입을 가로채서,
+            // 평범하게[Inject] 받으면 아무도 발행 안 하는 텅 빈 가짜 구독 대상을 받게 돼서, 이벤트가 와도 영원히 안 들린다.
+            // 진짜 ProjectLifetimeScope가 소유한 진짜 공유 브로커를 받으려면 Root에서 직접 resolve해야 한다.
+            var scoped = (IScopedObjectResolver)resolver;
+            var saveRequestSub = scoped.Root.Resolve<ISubscriber<CharacterAppearanceSyncRequestedEvent>>();
+            var openUISub = scoped.Root.Resolve<IPublisher<RequestOpenCustomizeUIEvent>>();
             _openUIPublisher = openUISub;
 
             // isLocalPlayer로 필터링하는 이유:
-            // 이 broker는 ProjectLifetimeScope에 등록되어 화면에 보이는
-            // 모든 NetworkCharacterAppearance 인스턴스(다른 플레이어 캐릭터 포함)가 함께 구독한다.
-            // Mirror가 권한 없는 CmdSetAppearance 호출을 내부적으로 막아주므로(SendCommandInternal)
-            // isLocalPlayer 필터링 없이도 잘못된 동기화는 안 생기지만,
-            // 보이는 플레이어 수만큼 "without authority" 경고 로그 + 헛호출이 매번 발생한다.
+            // 이 broker는 화면에 보이는 모든 캐릭터가 같이 구독한다.
+            // isLocalPlayer 체크 없이 두면 다른 플레이어 캐릭터도 반응해서 권한 없는 CmdSetAppearance 호출 경고가 매번 찍힌다.
             // 그걸 막기 위해 로컬 플레이어 본인 객체일 때만 호출한다.
             saveRequestSub.Subscribe(evt =>
             {
-                if (!isLocalPlayer) return;
+                if (!isLocalPlayer) return; // "그거 내 캐릭터일 때만 반응해"
                 CmdSetAppearance(evt.Data);
             }).AddTo(destroyCancellationToken);
+        }
+
+        private void Awake()
+        {
+            _inventory = GetComponent<Cleverous.VaultInventory.Inventory>();
         }
 
         [Command]
@@ -71,8 +67,17 @@ namespace MySecondWorld.Network
             {
                 int count = t.GetCount(part, data.Gender);
                 data[part] = Clamp(data[part], count);
-            }
 
+                // 그룹 A/B/C를 구분하지 않고 그냥 "맨몸(0)이 아닌 인덱스를 요청했나"
+                if (data[part] != 0)
+                {
+                    // 그룹 A 파츠는 RequiredItems가 비어있어 requiredItem이 항상 null → 아래 체크가 자동으로 스킵된다.
+                    var requiredItem = t.GetRequiredItem(part, data.Gender, data[part]);
+                    if (requiredItem != null && 
+                        !(_inventory?.Contains(requiredItem, 1) ?? false))
+                        data[part] = _appearance[part]; // 미소유 → 이전 값으로 되돌림
+                }
+            }
             _appearance = data; // 여기서 대입하며 [SyncVar] 훅 발동 → OnAppearanceChanged 실행
         }
 

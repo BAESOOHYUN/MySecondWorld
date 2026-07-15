@@ -4,6 +4,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.U2D;
+using MySecondWorld.Inventory.Items;
 
 namespace MySecondWorld.Customization
 {
@@ -26,22 +27,33 @@ namespace MySecondWorld.Customization
             // 성별 무관 공용 후보 목록 (액세서리류)
             public List<AssetReferenceGameObject> AllGenderParts = new();
 
-            // 파츠 리스트와 "동일 인덱스"의 썸네일. Populator가 같은 패스에서 이름 매칭으로 채움.
-            public List<string> MaleThumbnailNames = new();
-            public List<string> FemaleThumbnailNames = new();
-            public List<string> AllGenderThumbnailNames = new();
-
             // 파츠 리스트와 "동일 인덱스" 대응. Populator가 서브폴더 이름에서 채움.
             // ex) Head: "All_Elements" / "No_Elements", HeadCoverings: "Base_Hair" / "No_FacialHair" / "No_Hair"
             public List<string> MalePartSubTypes = new();
             public List<string> FemalePartSubTypes = new();
             public List<string> AllGenderPartSubTypes = new();
+
+            // 파츠 리스트와 "동일 인덱스"의 썸네일. Populator가 같은 패스에서 이름 매칭으로 채움.
+            public List<string> MaleThumbnailNames = new();
+            public List<string> FemaleThumbnailNames = new();
+            public List<string> AllGenderThumbnailNames = new();
+
+            // 인벤토리 > 아이템 장착 관련
+            // 파츠 리스트와 "동일 인덱스" 대응. null이면 "요구 아이템 없음"
+            // "Torso 파츠 후보 중 3번(MaleParts[3])을 입으려면, 인벤토리에 이 EquipmentItem을 갖고 있어야 한다"는 자격 조건을 가리킴
+            // ex) 그룹 A 파츠는 전부 비워둠, 그룹 B/C PartType(Hand, Arm, Torso, Legs 등) 안에서도 index 0은 "맨몸/기본 상태"라 무료
+            public List<EquipmentItem> MaleRequiredItems = new();
+            public List<EquipmentItem> FemaleRequiredItems = new();
+            public List<EquipmentItem> AllGenderRequiredItems = new();
         }
 
         [Header("썸네일 아틀라스")]
         public AssetReferenceT<SpriteAtlas> ThumbnailAtlas;
 
         public List<PartEntry> Entries = new();
+
+
+        // ─────── 리스트 통째로 가져오기 (UI가 후보 목록 쭉 훑을 때 씀) ─────── 
 
         // Gender에 맞는 전용 리스트 + 공용 리스트를 합쳐서 반환
         // 순서를 고정해야 인덱스가 클라이언트/서버 양쪽에서 항상 같은 의미를 가짐
@@ -71,6 +83,21 @@ namespace MySecondWorld.Customization
 
         public int GetCount(PartType part, Gender gender) => GetCandidates(part, gender).Count;
 
+
+        // ─────── 인덱스 하나로 콕 집어 조회하기 (실제 장착/적용 시점에 씀) ─────── 
+
+        // 프리팹을 가리키는 실제 키
+        // data.Head == 3 이라면
+        // → GetCandidates(PartType.Head, data.Gender) 리스트의 인덱스 3번 원소
+        // → 그게 가리키는 AssetReferenceGameObject로 Addressables.InstantiateAsync() 호출
+        public AssetReferenceGameObject GetAssetReference(PartType part, Gender gender, int index)
+        {
+            var candidates = GetCandidates(part, gender);
+            if (index < 0 || index >= candidates.Count)
+                return null;
+            return candidates[index];
+        }
+
         // GetCandidates/GetThumbnailNames와 동일 순서(전용 + AllGender)로 서브타입 반환
         public string GetSubType(PartType part, Gender gender, int index)
         {
@@ -84,17 +111,19 @@ namespace MySecondWorld.Customization
             return (index >= 0 && index < combined.Count) ? combined[index] : string.Empty;
         }
 
-        // 프리팹을 가리키는 실제 키
-        // data.Head == 3 이라면
-        // → GetCandidates(PartType.Head, data.Gender) 리스트의 인덱스 3번 원소
-        // → 그게 가리키는 AssetReferenceGameObject로 Addressables.InstantiateAsync() 호출
-        public AssetReferenceGameObject GetAssetReference(PartType part, Gender gender, int index)
+        // GetCandidates/GetAssetReference와 동일 순서(전용 + AllGender)로 요구 아이템 반환
+        // null이면 해당 인덱스는 무료 착용(요구 아이템 없음)
+        public EquipmentItem GetRequiredItem(PartType part, Gender gender, int index)
         {
-            var candidates = GetCandidates(part, gender);
-            if (index < 0 || index >= candidates.Count)
+            var entry = Entries.Find(e => e.PartType == part);
+            if (entry == null)
                 return null;
-            return candidates[index];
+            var genderList = gender == Gender.Male ?
+                entry.MaleRequiredItems : entry.FemaleRequiredItems;
+            var combined = genderList.Concat(entry.AllGenderRequiredItems).ToList();
+            return (index >= 0 && index < combined.Count) ? combined[index] : null;
         }
+
 #if UNITY_EDITOR
         [ContextMenu("Auto-Populate Thumbnail Names")]
         private void AutoPopulateThumbnailNames()

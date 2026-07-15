@@ -19,7 +19,10 @@
         "MySecondWorld.ScriptableObject",
         "Unity.TextMeshPro",
         "Mirror.Components",
-        "Paroxe.PDFRenderer"
+        "Paroxe.PDFRenderer",
+        "Cleverous.VaultInventory",
+        "MySecondWorld.Inventory.Items",
+        "Cleverous.VaultSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
