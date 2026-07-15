@@ -16,7 +16,7 @@ MonoBehaviour:
   m_GUID: c945ea4baf23e2f4ebae9b0c7efc1159
   m_SerializeEntries:
   - m_GUID: e830c7a0cf923504c8b4696ddeac79c3
-    m_Address: Assets/Addressables/CharacterParts
+    m_Address: Assets/03.Prefab/CharacterParts
     m_ReadOnly: 0
     m_SerializedLabels:
     - character_parts
