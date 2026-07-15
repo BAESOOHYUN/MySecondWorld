@@ -17,11 +17,12 @@ namespace MySecondWorld.Editor
         // ── 공통 상수 ──────────────────────────────────
         private const string DefaultStaticFolder = "Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Characters_ModularParts_Static";
         private const string SourcePrefKey = "ThumbnailBaker.SourceFolder";
+        private const string ThumbnailCategoryPrefKey = "ThumbnailBaker.ThumbnailCategoryName";
         private const string BakedIconsFolder = "Assets/Saved/Icons";   // ItemPopulate.CreateIcons 고정 출력 경로
         private const string ThumbnailRoot = "Assets/07.Textures/CharacterPartThumbnails";
         private const string PresetThumbnailRoot = "Assets/07.Textures/CharacterPresetThumbnails";
         private const string ItemThumbnailRootPrefKey = "ThumbnailBaker.ItemThumbnailRoot";
-        private const string DefaultItemThumbnailRoot = "Assets/Addressables/ItemThumbnails";
+        private const string DefaultItemThumbnailRoot = "Assets/07.Textures";
         private const string ExcludeSubfolderPrefKey = "ThumbnailBaker.ExcludeSubfolder";
         private const int PresetBatchSize = 20;
 
@@ -40,6 +41,7 @@ namespace MySecondWorld.Editor
         private string _staticPrefabFolder;
         private string _itemThumbnailRoot;
         private string _excludeSubfolder;
+        private string _thumbnailCategoryName;
         private ItemPopulate _populate; // Synty 확장팩 스크립트
 
         private List<string> _groupKeys = new();
@@ -50,7 +52,7 @@ namespace MySecondWorld.Editor
         private int _presetBatchIndex;
 
         // ── Unity 라이프사이클 ──────────────────────────────────
-        [MenuItem("Tools/Customization/Bake Character Part Thumbnails")]
+        [MenuItem("Tools/Customization/Thumbnail Bake Helper")]
         private static void Open() => GetWindow<ThumbnailBakeHelper>("Thumbnail Bake Helper");
 
         private void OnEnable()
@@ -58,6 +60,7 @@ namespace MySecondWorld.Editor
             _staticPrefabFolder = EditorPrefs.GetString(SourcePrefKey, DefaultStaticFolder);
             _itemThumbnailRoot = EditorPrefs.GetString(ItemThumbnailRootPrefKey, DefaultItemThumbnailRoot);
             _excludeSubfolder = EditorPrefs.GetString(ExcludeSubfolderPrefKey, "");
+            _thumbnailCategoryName = EditorPrefs.GetString(ThumbnailCategoryPrefKey, "");
         }
 
         private void OnDisable()
@@ -65,6 +68,7 @@ namespace MySecondWorld.Editor
             EditorPrefs.SetString(SourcePrefKey, _staticPrefabFolder);
             EditorPrefs.SetString(ItemThumbnailRootPrefKey, _itemThumbnailRoot);
             EditorPrefs.SetString(ExcludeSubfolderPrefKey, _excludeSubfolder);
+            EditorPrefs.SetString(ThumbnailCategoryPrefKey, _thumbnailCategoryName);
         }
 
         private void OnGUI()
@@ -93,6 +97,9 @@ namespace MySecondWorld.Editor
         // ── GUI 섹션 ──────────────────────────────────
         private void DrawStaticPartsSection()
         {
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("캐릭터 파츠 썸네일 (Characters_Parts)", EditorStyles.boldLabel);
+
             if (GUILayout.Button("1) Static 프리팹 스캔 → 그룹화"))
                 ScanGroups();
 
@@ -118,7 +125,7 @@ namespace MySecondWorld.Editor
         private void DrawPresetSection()
         {
             EditorGUILayout.Space();
-            EditorGUILayout.LabelField("프리셋 썸네일 (Characters_Presets)", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("캐릭터 프리셋 썸네일 (Characters_Presets)", EditorStyles.boldLabel);
 
             if (GUILayout.Button("P1) 프리셋 스캔 → 배치 분할"))
                 ScanPresetBatches();
@@ -148,10 +155,11 @@ namespace MySecondWorld.Editor
             EditorGUILayout.LabelField("아이템 썸네일 (Source Folder 기준, 임의 카테고리)", EditorStyles.boldLabel);
 
             _itemThumbnailRoot = DrawFolderField("저장 루트", _itemThumbnailRoot, "저장 루트 폴더 선택");
+            _thumbnailCategoryName = EditorGUILayout.TextField("  ㄴ 썸네일 폴더명 (예: DungeonItems)", _thumbnailCategoryName);
 
             using (new EditorGUI.DisabledScope(_populate == null))
             {
-                if (GUILayout.Button("W1) Source Folder 프리팹 전체를 ItemPopulate에 채우기"))
+                if (GUILayout.Button("I1) Source Folder 프리팹 전체를 ItemPopulate에 채우기"))
                     LoadFolderIntoPopulate(_staticPrefabFolder);
             }
 
@@ -160,7 +168,7 @@ namespace MySecondWorld.Editor
                 "그 폴더명 그대로 저장 루트 밑에 하위 폴더가 생성됩니다. 예: .../Prefabs/Weapons → <저장 루트>/Weapons/\n" +
                 "제외 하위 폴더명을 입력하면 그 이름의 하위 폴더(및 그 안의 프리팹)는 스캔에서 제외됩니다. 예: Modular",
                 MessageType.None);
-            if (GUILayout.Button("I) bake된 PNG를 Source Folder명으로 정렬"))
+            if (GUILayout.Button("I2) bake된 PNG를 Source Folder명으로 정렬"))
                 SortItemIcons();
         }
 
@@ -352,8 +360,12 @@ namespace MySecondWorld.Editor
                 return;
             }
 
-            var categoryFolder = _staticPrefabFolder.TrimEnd('/').Split('/').Last();
-            var destFolder = CreateFolderRecursive($"{_itemThumbnailRoot}/{categoryFolder}Thumbnails");
+            if (string.IsNullOrEmpty(_thumbnailCategoryName))
+            {
+                Debug.LogWarning("[ThumbnailBakeHelper] 썸네일 폴더명을 입력하세요 (예: DungeonItems). 경로 자동 추론은 폴더명이 겹칠 수 있어 제거됨.");
+                return;
+            }
+            var destFolder = CreateFolderRecursive($"{_itemThumbnailRoot}/{_thumbnailCategoryName}Thumbnails");
 
             var moved = 0;
             foreach (var guid in AssetDatabase.FindAssets("t:Texture2D", new[] { BakedIconsFolder }))
