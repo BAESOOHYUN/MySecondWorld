@@ -216,7 +216,8 @@ namespace MySecondWorld.Customization
         private async UniTask InstantiatePart(PartType part, int index, Gender gender)
         {
             var candidates = _avatarPartKeyTable.GetCandidates(part, gender);
-            if (index < 0 || index >= candidates.Count) return;
+            if (index < 0 || index >= candidates.Count) return; // "인덱스가 리스트 안에 있냐"만 봄. 리스트 안의 항목이 빈 항목인지는 구분 못함
+            if (!candidates[index].RuntimeKeyIsValid()) return; // "인덱스는 유효하지만 내용물이 빈 참조"인 경우를 걸러냄
 
             var instance = await Addressables.InstantiateAsync(candidates[index], _partRoot).ToUniTask();
             _activePartInstances[part] = instance;

@@ -42,6 +42,17 @@ namespace MySecondWorld.Editor
             { "Extra", PartType.Ear },                                 // All_12_Extra 안엔 Elf_Ear만 존재
         };
 
+        // 그룹 C(부착형 악세서리) — 원본 폴더가 _01부터 시작해 "미착용" 후보가 없음.
+        // 이 PartType들은 스캔 결과 리스트 맨 앞에 빈 슬롯(인덱스 0)을 코드로 삽입해준다.
+        private static readonly HashSet<PartType> GroupCAccessoryParts = new()
+        {
+            PartType.HeadCoverings, PartType.BackAttachment,
+            PartType.ShoulderAttachLeft, PartType.ShoulderAttachRight,
+            PartType.ElbowAttachLeft, PartType.ElbowAttachRight,
+            PartType.KneeAttachLeft, PartType.KneeAttachRight,
+            PartType.HelmetAttachment, PartType.HipsAttachment
+        };
+
         // 썸네일 이름→참조 사전 만드는 메서드
         // 썸네일 이름에서 "_Static"을 뗀 게 곧 파츠 프리팹 이름.
         // 예: 썸네일 "Chr_BackAttachment_01_Static" → 키 "Chr_BackAttachment_01"
@@ -161,6 +172,14 @@ namespace MySecondWorld.Editor
                             ? subFolderName.Substring(partTypePrefix.Length)
                             : subFolderName;
                     }).ToList();
+
+                    // 그룹 C 한정: 인덱스 0에 "미착용" 빈 슬롯 삽입 (실제 프리팹 에셋 없이 코드로만 처리)
+                    if (GroupCAccessoryParts.Contains(partType))
+                    {
+                        refs.Insert(0, new AssetReferenceGameObject(string.Empty));
+                        thumbs.Insert(0, string.Empty);
+                        subTypes.Insert(0, string.Empty);
+                    }
 
                     // SO의 Entries에서 해당 PartType 항목을 찾거나 새로 생성하고,
                     // genderRoot에 맞는 리스트(MaleParts/FemaleParts/AllGenderParts)를 비우고 다시 채움
