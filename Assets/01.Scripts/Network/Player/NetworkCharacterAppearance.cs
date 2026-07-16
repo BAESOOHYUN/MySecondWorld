@@ -5,10 +5,11 @@ using VContainer;
 using MessagePipe;
 using MySecondWorld.Customization;
 using Cleverous.VaultInventory;
+using MySecondWorld.Inventory.Items;
 
 namespace MySecondWorld.Network
 {
-    public class NetworkCharacterAppearance : NetworkBehaviour
+    public class NetworkCharacterAppearance : NetworkBehaviour, IUseInventory
     {
         private const string PrefKeyCustomized = "CharacterCustomized";
 
@@ -18,6 +19,18 @@ namespace MySecondWorld.Network
         private ObservableCharacterCustomizer _customizer;
         private AvatarPartKeyTableSO _avatarPartKeyTable;
         private Cleverous.VaultInventory.Inventory _inventory;
+
+        // IUseInventory 구현 — Inventory 컴포넌트가 "누가 이 인벤토리의 주인인지" 알아야 해서 필요
+        Cleverous.VaultInventory.Inventory IUseInventory.Inventory
+        {
+            get => _inventory;
+            set => _inventory = value;
+        }
+
+        // (아이템 드롭, 상호작용 거리 체크)에 쓰이는 값
+        public Transform MyTransform => transform;
+
+
         private IPublisher<RequestOpenCustomizeUIEvent> _openUIPublisher;
 
         [Inject]
@@ -54,6 +67,15 @@ namespace MySecondWorld.Network
             _inventory = GetComponent<Cleverous.VaultInventory.Inventory>();
         }
 
+        public override void OnStartServer()
+        {
+            // ault의 Inventory 컴포넌트는 Configuration만 Inspector에 연결해준다고 자동으로 동작하는 게 아니라,
+            // 코드에서 Initialize(owner, resetContent: true)를 명시적으로 한 번 호출해줘야
+            // IsInitialized = true가 되고 슬롯(Content)이 실제로 만들어진다.
+            base.OnStartServer();
+            _inventory.Initialize(this, resetContent: true);
+        }
+
         [Command]
         public void CmdSetAppearance(CharacterAppearanceData data)
         {
@@ -87,7 +109,10 @@ namespace MySecondWorld.Network
         }
 
         private static int Clamp(int value, int count)
-            => value >= 0 && value < count ? value : (count > 0 ? 0 : -1);
+        {
+            if (value == -1) return -1; // "없음"은 유효한 상태 — 그대로 유지
+            return value >= 0 && value < count ? value : (count > 0 ? 0 : -1);
+        }
 
         public override void OnStartLocalPlayer()
         {
