@@ -222,3 +222,9 @@ SM_Wep_Mace_03,FantasyKingdom,가시 목재 몽둥이,Equipment,Mace,Crude,Weapo
 SM_Wep_Mace_04,FantasyKingdom,첨두 철퇴,Equipment,Mace,Standard,Weapon,Equipment|Weapon,Attack,Flat,16,,,,,,,,,첨두 철퇴. 표준 규격의 메이스 계열 무기 — 공격력 +16.,,TRUE
 SM_Wep_Mace_05,FantasyKingdom,적그립 철퇴,Equipment,Mace,Standard,Weapon,Equipment|Weapon,Attack,Flat,15,,,,,,,,,적그립 철퇴. 표준 규격의 메이스 계열 무기 — 공격력 +15.,이름 기반 추정 (Mace_04와 동일 계열),TRUE
 SM_Wep_Mace_06,FantasyKingdom,대못 몽둥이,Equipment,Mace,Crude,Weapon,Equipment|Weapon,Attack,Flat,10,Luck,Flat,-1,,,,,,대못 몽둥이. 투박하게 제작된 메이스 계열 무기 — 공격력 +10 / 행운 -1.,조악한 즉석무기, 못이 박힌 나무 몽둥이,TRUE
+SM_Prop_Bow_01,FantasyKingdom,단궁,Equipment,Bow,Standard,Weapon,Equipment|Weapon,Attack,Flat,12,AttackSpeed,Percent,12,,,,,,단궁. 표준 규격의 활 계열 무기 — 공격력 +12 / 공격속도 +12%.,신규 카탈로그(2026-07-16) — SM_Prop_ 접두사 파이프라인 누락분 보강,TRUE
+SM_Prop_Bow_02,FantasyKingdom,장궁,Equipment,Bow,Ornate,Weapon,Equipment|Weapon,Attack,Flat,16,AttackSpeed,Percent,10,Luck,Flat,2,,,장궁. 화려하게 장식된 활 계열 무기 — 공격력 +16 / 공격속도 +10% / 행운 +2.,신규 카탈로그(2026-07-16) — SM_Prop_ 접두사 파이프라인 누락분 보강,TRUE
+SM_Prop_Bow_Rigged_01,FantasyKingdom,단궁 (리깅),Equipment,Bow,Standard,Weapon,Equipment|Weapon,Attack,Flat,12,AttackSpeed,Percent,12,,,,,,단궁 (리깅). Bow_01과 동일 계열 — 활시위 애니메이션 리깅 모델.,Bow_01과 동일 스탯(이름 기반 추정) — 시위 당김 애니메이션용 리깅 변형,TRUE
+SM_Prop_Bow_Rigged_02,FantasyKingdom,장궁 (리깅),Equipment,Bow,Ornate,Weapon,Equipment|Weapon,Attack,Flat,16,AttackSpeed,Percent,10,Luck,Flat,2,,,장궁 (리깅). Bow_02와 동일 계열 — 활시위 애니메이션 리깅 모델.,Bow_02와 동일 스탯(이름 기반 추정) — 시위 당김 애니메이션용 리깅 변형,TRUE
+SM_Prop_Quiver_01,FantasyKingdom,가죽 화살통,Equipment,Quiver,Standard,Weapon,Equipment|Weapon,AttackSpeed,Percent,5,,,,,,,,,가죽 화살통. 표준 규격의 화살통 — 공격속도 +5%.,신규 카탈로그(2026-07-16) — 장비형 액세서리 슬롯/PartType 배치는 Phase 1에서 결정,TRUE
+SM_Prop_Quiver_02,FantasyKingdom,문장 화살통,Equipment,Quiver,Ornate,Weapon,Equipment|Weapon,AttackSpeed,Percent,5,Luck,Flat,1,,,,,,문장 화살통. 화려하게 장식된 화살통 — 공격속도 +5% / 행운 +1.,신규 카탈로그(2026-07-16) — 장비형 액세서리 슬롯/PartType 배치는 Phase 1에서 결정,TRUE

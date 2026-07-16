@@ -280,3 +280,5 @@ SM_Item_Wire_Brush_01,FantasyKingdomItems,철솔,Generic,Tool,Common,,Tool,,,,,,
 SM_Item_Wood_01,FantasyKingdomItems,나무토막,Generic,Misc,Common,,Material,,,,,,,,,,,,나무토막.,,FALSE
 SM_Item_Wood_02,FantasyKingdomItems,나무토막 2,Generic,Misc,Common,,Material,,,,,,,,,,,,나무토막 2.,,FALSE
 SM_Item_Yarn_01,FantasyKingdomItems,실타래,Generic,Misc,Common,,Material,,,,,,,,,,,,실타래.,,FALSE
+SM_Prop_Arrow_01,FantasyKingdomItems,화살 (프랍),Generic,Misc,Standard,,Material,,,,,,,,,,,,화살 (프랍). PolygonFantasyKingdom 궁술 프랍 화살 — 소모품.,신규 카탈로그(2026-07-16) — 기존 SM_Arrow_01(DungeonItems)과 별도 유지: 궁수 화살통/시각 연동용 프랍,TRUE
+SM_Prop_Arrow_02,FantasyKingdomItems,화살 (프랍) (변형),Generic,Misc,Standard,,Material,,,,,,,,,,,,화살 (프랍) (변형). PolygonFantasyKingdom 궁술 프랍 화살 — 소모품.,신규 카탈로그(2026-07-16) — Arrow_01과 동일 계열(이름 기반 추정): 궁수 화살통/시각 연동용 프랍,TRUE
