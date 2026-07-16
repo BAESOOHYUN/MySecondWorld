@@ -41,6 +41,11 @@ namespace MySecondWorld.Customization
             ApplyAppearance(_defaultAppearanceSO.DefaultAppearance).Forget();
         }
 
+        protected virtual void OnDestroy()
+        {
+            _appearanceLock.Dispose();
+        }
+
         // ── 공개 API ──
         // 전체 외형 교체 (로그인 시 / 랜덤 / 불러오기)
         public async UniTask ApplyAppearance(CharacterAppearanceData data)

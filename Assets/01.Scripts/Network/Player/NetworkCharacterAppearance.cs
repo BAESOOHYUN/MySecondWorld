@@ -5,10 +5,10 @@ using VContainer;
 using MessagePipe;
 using MySecondWorld.Customization;
 using Cleverous.VaultInventory;
-using MySecondWorld.Inventory.Items;
 
 namespace MySecondWorld.Network
 {
+    [RequireComponent(typeof(Cleverous.VaultInventory.Inventory))]
     public class NetworkCharacterAppearance : NetworkBehaviour, IUseInventory
     {
         private const string PrefKeyCustomized = "CharacterCustomized";
