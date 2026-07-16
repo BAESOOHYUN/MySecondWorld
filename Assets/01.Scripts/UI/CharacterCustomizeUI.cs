@@ -96,6 +96,7 @@ namespace MySecondWorld.UI
         private readonly Dictionary<ColorTarget, ColorChannelRow> _colorRows = new();
         private readonly HashSet<PartType> _pendingParts = new();
         private bool _isOpeningPicker;
+        private bool _openedDuringStartup;
 
         [Inject]
         public void Construct(AvatarPartKeyTableSO keyTable,
@@ -135,7 +136,8 @@ namespace MySecondWorld.UI
             _atlasHandle = Addressables.LoadAssetAsync<SpriteAtlas>(_keyTable.ThumbnailAtlas);
             _thumbnailAtlas = await _atlasHandle.ToUniTask();
             await ReloadFromSave();
-            gameObject.SetActive(false);
+            if (!_openedDuringStartup)
+                gameObject.SetActive(false);
         }
 
         public void OpenForFirstLaunch() => gameObject.SetActive(true);
@@ -144,6 +146,7 @@ namespace MySecondWorld.UI
         // (저장 안 하고 닫았다가 다시 열면 편집 중이던 미저장 상태가 그대로 남아있던 버그 수정)
         public void Open()
         {
+            _openedDuringStartup = true;
             gameObject.SetActive(true);
             ReloadFromSave().Forget();
         }
