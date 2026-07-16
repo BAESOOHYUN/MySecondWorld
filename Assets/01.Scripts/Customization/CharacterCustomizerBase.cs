@@ -48,7 +48,6 @@ namespace MySecondWorld.Customization
             await _appearanceLock.WaitAsync(); //레이스컨디션을 막음
             try
             {
-
                 _currentAppearance = data;
 
                 // 기존 인스턴스 전부 해제
@@ -89,24 +88,27 @@ namespace MySecondWorld.Customization
                 );
 
                 ReapplyColors();
-
-                // ApplyAppearance는 SetPart처럼 끝에서 ApplyMutualExclusion을 호출하지 않으므로 들어온 데이터를 검증 없이 그대로 로드한다.
-                // 성별전환/랜덤/세이브로드는 파츠를 하나씩 따로 정해서 조합하기 때문에,
-                // Head뿐 아니라 HeadCoverings/Hair/Eyebrows/FacialHair/HelmetAttachment 각자의 상호배제 규칙과도 충돌할 수 있어
-                // 트리거가 되는 6개 파츠를 전부 다시 검증한다. 매번 _currentAppearance를 새로 읽어 앞선 검증의 연쇄 결과를 반영한다.
-                await ApplyMutualExclusion(PartType.Head, _currentAppearance.Head, data.Gender);
-                await ApplyMutualExclusion(PartType.HeadCoverings, _currentAppearance.HeadCoverings, data.Gender);
-                await ApplyMutualExclusion(PartType.Hair, _currentAppearance.Hair, data.Gender);
-                await ApplyMutualExclusion(PartType.Eyebrows, _currentAppearance.Eyebrows, data.Gender);
-                await ApplyMutualExclusion(PartType.FacialHair, _currentAppearance.FacialHair, data.Gender);
-                await ApplyMutualExclusion(PartType.HelmetAttachment, _currentAppearance.HelmetAttachment, data.Gender);
-
                 OnAppearanceChanged();
             }
             finally
             {
                 _appearanceLock.Release();
             }
+
+            // ApplyAppearance는 SetPart처럼 끝에서 ApplyMutualExclusion을 호출하지 않으므로 들어온 데이터를 검증 없이 그대로 로드한다.
+            // 성별전환/랜덤/세이브로드는 파츠를 하나씩 따로 정해서 조합하기 때문에,
+            // Head뿐 아니라 HeadCoverings/Hair/Eyebrows/FacialHair/HelmetAttachment 각자의 상호배제 규칙과도 충돌할 수 있어
+            // 트리거가 되는 6개 파츠를 전부 다시 검증한다. 매번 _currentAppearance를 새로 읽어 앞선 검증의 연쇄 결과를 반영한다.
+
+            // ※ 락을 반드시 놓은 뒤에 호출해야 한다 — 내부에서 SetPart를 호출할 수 있는데, SetPart도 같은
+            //   _appearanceLock을 기다리므로 락을 쥔 채로 부르면 자기 자신을 영원히 기다리는 데드락이 된다.
+            await ApplyMutualExclusion(PartType.Head, _currentAppearance.Head, data.Gender);
+            await ApplyMutualExclusion(PartType.HeadCoverings, _currentAppearance.HeadCoverings, data.Gender);
+            await ApplyMutualExclusion(PartType.Hair, _currentAppearance.Hair, data.Gender);
+            await ApplyMutualExclusion(PartType.Eyebrows, _currentAppearance.Eyebrows, data.Gender);
+            await ApplyMutualExclusion(PartType.FacialHair, _currentAppearance.FacialHair, data.Gender);
+            await ApplyMutualExclusion(PartType.HelmetAttachment, _currentAppearance.HelmetAttachment, data.Gender);
+
         }
 
         // 단일 파츠 변경 (UI 버튼에서 호출). 연타 방지 필요

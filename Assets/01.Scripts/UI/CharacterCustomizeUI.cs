@@ -309,8 +309,14 @@ namespace MySecondWorld.UI
         private async UniTaskVoid ApplyPartChange(PartType part, int index)
         {
             _pendingParts.Add(part);
-            await _previewCustomizer.SetPart(part, index);
-            _pendingParts.Remove(part);
+            try
+            {
+                await _previewCustomizer.SetPart(part, index);
+            }
+            finally
+            {
+                _pendingParts.Remove(part);
+            }
 
             SyncIndicesFromCustomizer();
             UpdateThumbnailSelection();
