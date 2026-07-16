@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -18,6 +19,7 @@ namespace MySecondWorld.Customization
         private readonly Dictionary<PartType, GameObject> _activePartInstances = new();
         private readonly Dictionary<string, Transform> _boneMap = new();
         private readonly HashSet<PartType> _loadingParts = new(); //연타방지
+        private readonly SemaphoreSlim _appearanceLock = new(1, 1); //동시에 ApplyAppearance/SetPart가 겹쳐 돌지 못하게 세마포어로 직렬화
 
         // ── 초기화 ──
         [Inject]
@@ -43,71 +45,68 @@ namespace MySecondWorld.Customization
         // 전체 외형 교체 (로그인 시 / 랜덤 / 불러오기)
         public async UniTask ApplyAppearance(CharacterAppearanceData data)
         {
-            _currentAppearance = data;
+            await _appearanceLock.WaitAsync(); //레이스컨디션을 막음
+            try
+            {
 
-            // 기존 인스턴스 전부 해제
-            foreach (var key in new List<PartType>(_activePartInstances.Keys))
-                ReleasePartInstance(key);
+                _currentAppearance = data;
 
-            // 본 맵을 병렬(25개 파츠를 동시에) 로드 전에 1회 구성 (race condition 방지)
-            // _boneMap은 이미 완성된 상태라 읽기만 하면 됨.
-            EnsureBoneMap();
+                // 기존 인스턴스 전부 해제
+                foreach (var key in new List<PartType>(_activePartInstances.Keys))
+                    ReleasePartInstance(key);
 
-            // WhenAll로 동시 로드
-            await UniTask.WhenAll(
-                InstantiatePart(PartType.Hair, data.Hair, data.Gender),
-                InstantiatePart(PartType.Head, data.Head, data.Gender),
-                InstantiatePart(PartType.Eyebrows, data.Eyebrows, data.Gender),
-                InstantiatePart(PartType.FacialHair, data.FacialHair, data.Gender),
-                InstantiatePart(PartType.Torso, data.Torso, data.Gender),
-                InstantiatePart(PartType.ArmUpperRight, data.ArmUpperRight, data.Gender),
-                InstantiatePart(PartType.ArmUpperLeft, data.ArmUpperLeft, data.Gender),
-                InstantiatePart(PartType.ArmLowerRight, data.ArmLowerRight, data.Gender),
-                InstantiatePart(PartType.ArmLowerLeft, data.ArmLowerLeft, data.Gender),
-                InstantiatePart(PartType.HandRight, data.HandRight, data.Gender),
-                InstantiatePart(PartType.HandLeft, data.HandLeft, data.Gender),
-                InstantiatePart(PartType.Hips, data.Hips, data.Gender),
-                InstantiatePart(PartType.LegRight, data.LegRight, data.Gender),
-                InstantiatePart(PartType.LegLeft, data.LegLeft, data.Gender),
-                InstantiatePart(PartType.HeadCoverings, data.HeadCoverings, data.Gender),
-                InstantiatePart(PartType.Ear, data.Ear, data.Gender),
-                InstantiatePart(PartType.HelmetAttachment, data.HelmetAttachment, data.Gender),
-                InstantiatePart(PartType.BackAttachment, data.BackAttachment, data.Gender),
-                InstantiatePart(PartType.ShoulderAttachRight, data.ShoulderAttachRight, data.Gender),
-                InstantiatePart(PartType.ShoulderAttachLeft, data.ShoulderAttachLeft, data.Gender),
-                InstantiatePart(PartType.ElbowAttachRight, data.ElbowAttachRight, data.Gender),
-                InstantiatePart(PartType.ElbowAttachLeft, data.ElbowAttachLeft, data.Gender),
-                InstantiatePart(PartType.KneeAttachRight, data.KneeAttachRight, data.Gender),
-                InstantiatePart(PartType.KneeAttachLeft, data.KneeAttachLeft, data.Gender),
-                InstantiatePart(PartType.HipsAttachment, data.HipsAttachment, data.Gender)
-            );
+                // 본 맵을 병렬(25개 파츠를 동시에) 로드 전에 1회 구성 (race condition 방지)
+                // _boneMap은 이미 완성된 상태라 읽기만 하면 됨.
+                EnsureBoneMap();
 
-            SetColor(ColorTarget.Primary, data.PrimaryColor);
-            SetColor(ColorTarget.Secondary, data.SecondaryColor);
-            SetColor(ColorTarget.LeatherPrimary, data.LeatherPrimaryColor);
-            SetColor(ColorTarget.LeatherSecondary, data.LeatherSecondaryColor);
-            SetColor(ColorTarget.MetalPrimary, data.MetalPrimaryColor);
-            SetColor(ColorTarget.MetalSecondary, data.MetalSecondaryColor);
-            SetColor(ColorTarget.MetalDark, data.MetalDarkColor);
-            SetColor(ColorTarget.Hair, data.HairColor);
-            SetColor(ColorTarget.Skin, data.SkinColor);
-            SetColor(ColorTarget.Stubble, data.StubbleColor);
-            SetColor(ColorTarget.Scar, data.ScarColor);
-            SetColor(ColorTarget.Eyes, data.EyesColor);
-            SetColor(ColorTarget.BodyArt, data.BodyArtColor);
+                // WhenAll로 동시 로드
+                await UniTask.WhenAll(
+                    InstantiatePart(PartType.Hair, data.Hair, data.Gender),
+                    InstantiatePart(PartType.Head, data.Head, data.Gender),
+                    InstantiatePart(PartType.Eyebrows, data.Eyebrows, data.Gender),
+                    InstantiatePart(PartType.FacialHair, data.FacialHair, data.Gender),
+                    InstantiatePart(PartType.Torso, data.Torso, data.Gender),
+                    InstantiatePart(PartType.ArmUpperRight, data.ArmUpperRight, data.Gender),
+                    InstantiatePart(PartType.ArmUpperLeft, data.ArmUpperLeft, data.Gender),
+                    InstantiatePart(PartType.ArmLowerRight, data.ArmLowerRight, data.Gender),
+                    InstantiatePart(PartType.ArmLowerLeft, data.ArmLowerLeft, data.Gender),
+                    InstantiatePart(PartType.HandRight, data.HandRight, data.Gender),
+                    InstantiatePart(PartType.HandLeft, data.HandLeft, data.Gender),
+                    InstantiatePart(PartType.Hips, data.Hips, data.Gender),
+                    InstantiatePart(PartType.LegRight, data.LegRight, data.Gender),
+                    InstantiatePart(PartType.LegLeft, data.LegLeft, data.Gender),
+                    InstantiatePart(PartType.HeadCoverings, data.HeadCoverings, data.Gender),
+                    InstantiatePart(PartType.Ear, data.Ear, data.Gender),
+                    InstantiatePart(PartType.HelmetAttachment, data.HelmetAttachment, data.Gender),
+                    InstantiatePart(PartType.BackAttachment, data.BackAttachment, data.Gender),
+                    InstantiatePart(PartType.ShoulderAttachRight, data.ShoulderAttachRight, data.Gender),
+                    InstantiatePart(PartType.ShoulderAttachLeft, data.ShoulderAttachLeft, data.Gender),
+                    InstantiatePart(PartType.ElbowAttachRight, data.ElbowAttachRight, data.Gender),
+                    InstantiatePart(PartType.ElbowAttachLeft, data.ElbowAttachLeft, data.Gender),
+                    InstantiatePart(PartType.KneeAttachRight, data.KneeAttachRight, data.Gender),
+                    InstantiatePart(PartType.KneeAttachLeft, data.KneeAttachLeft, data.Gender),
+                    InstantiatePart(PartType.HipsAttachment, data.HipsAttachment, data.Gender)
+                );
 
-            // ApplyAppearance는 SetPart처럼 끝에서 ApplyMutualExclusion을 호출하지 않으므로 들어온 데이터를 검증 없이 그대로 로드한다.
-            // 성별전환/랜덤/세이브로드는 파츠를 하나씩 따로 정해서 조합하기 때문에,
-            // Head뿐 아니라 HeadCoverings/Hair/Eyebrows/FacialHair/HelmetAttachment 각자의 상호배제 규칙과도 충돌할 수 있어
-            // 트리거가 되는 6개 파츠를 전부 다시 검증한다. 매번 _currentAppearance를 새로 읽어 앞선 검증의 연쇄 결과를 반영한다.
-            await ApplyMutualExclusion(PartType.Head, _currentAppearance.Head, data.Gender);
-            await ApplyMutualExclusion(PartType.HeadCoverings, _currentAppearance.HeadCoverings, data.Gender);
-            await ApplyMutualExclusion(PartType.Hair, _currentAppearance.Hair, data.Gender);
-            await ApplyMutualExclusion(PartType.Eyebrows, _currentAppearance.Eyebrows, data.Gender);
-            await ApplyMutualExclusion(PartType.FacialHair, _currentAppearance.FacialHair, data.Gender);
-            await ApplyMutualExclusion(PartType.HelmetAttachment, _currentAppearance.HelmetAttachment, data.Gender);
+                ReapplyColors();
 
-            OnAppearanceChanged();
+                // ApplyAppearance는 SetPart처럼 끝에서 ApplyMutualExclusion을 호출하지 않으므로 들어온 데이터를 검증 없이 그대로 로드한다.
+                // 성별전환/랜덤/세이브로드는 파츠를 하나씩 따로 정해서 조합하기 때문에,
+                // Head뿐 아니라 HeadCoverings/Hair/Eyebrows/FacialHair/HelmetAttachment 각자의 상호배제 규칙과도 충돌할 수 있어
+                // 트리거가 되는 6개 파츠를 전부 다시 검증한다. 매번 _currentAppearance를 새로 읽어 앞선 검증의 연쇄 결과를 반영한다.
+                await ApplyMutualExclusion(PartType.Head, _currentAppearance.Head, data.Gender);
+                await ApplyMutualExclusion(PartType.HeadCoverings, _currentAppearance.HeadCoverings, data.Gender);
+                await ApplyMutualExclusion(PartType.Hair, _currentAppearance.Hair, data.Gender);
+                await ApplyMutualExclusion(PartType.Eyebrows, _currentAppearance.Eyebrows, data.Gender);
+                await ApplyMutualExclusion(PartType.FacialHair, _currentAppearance.FacialHair, data.Gender);
+                await ApplyMutualExclusion(PartType.HelmetAttachment, _currentAppearance.HelmetAttachment, data.Gender);
+
+                OnAppearanceChanged();
+            }
+            finally
+            {
+                _appearanceLock.Release();
+            }
         }
 
         // 단일 파츠 변경 (UI 버튼에서 호출). 연타 방지 필요
@@ -115,11 +114,20 @@ namespace MySecondWorld.Customization
         {
             if (_loadingParts.Contains(part)) return;
             _loadingParts.Add(part);
-            ReleasePartInstance(part);  // 자기 자신의 이전 인스턴스 해제
-            SetCurrentIndex(part, index);
-            await InstantiatePart(part, index, _currentAppearance.Gender);
-            OnAppearanceChanged();
-            _loadingParts.Remove(part);
+            await _appearanceLock.WaitAsync();
+            try
+            {
+                ReleasePartInstance(part);  // 자기 자신의 이전 인스턴스 해제
+                SetCurrentIndex(part, index);
+                await InstantiatePart(part, index, _currentAppearance.Gender);
+                ReapplyColors(); // 새로 생성된 파츠에 기존 색상 재적용 — 없으면 프리팹 기본 색(예: 금발)이 노출됨
+                OnAppearanceChanged();
+            }
+            finally
+            {
+                _appearanceLock.Release();
+                _loadingParts.Remove(part);
+            }
             await ApplyMutualExclusion(part, index, _currentAppearance.Gender);
         }
 
@@ -172,6 +180,23 @@ namespace MySecondWorld.Customization
                 if (smr != null)
                     smr.material.SetColor(prop, color);
             }
+        }
+
+        private void ReapplyColors()
+        {
+            SetColor(ColorTarget.Primary, _currentAppearance.PrimaryColor);
+            SetColor(ColorTarget.Secondary, _currentAppearance.SecondaryColor);
+            SetColor(ColorTarget.LeatherPrimary, _currentAppearance.LeatherPrimaryColor);
+            SetColor(ColorTarget.LeatherSecondary, _currentAppearance.LeatherSecondaryColor);
+            SetColor(ColorTarget.MetalPrimary, _currentAppearance.MetalPrimaryColor);
+            SetColor(ColorTarget.MetalSecondary, _currentAppearance.MetalSecondaryColor);
+            SetColor(ColorTarget.MetalDark, _currentAppearance.MetalDarkColor);
+            SetColor(ColorTarget.Hair, _currentAppearance.HairColor);
+            SetColor(ColorTarget.Skin, _currentAppearance.SkinColor);
+            SetColor(ColorTarget.Stubble, _currentAppearance.StubbleColor);
+            SetColor(ColorTarget.Scar, _currentAppearance.ScarColor);
+            SetColor(ColorTarget.Eyes, _currentAppearance.EyesColor);
+            SetColor(ColorTarget.BodyArt, _currentAppearance.BodyArtColor);
         }
 
         public CharacterAppearanceData GetCurrentAppearance() => _currentAppearance;
