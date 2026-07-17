@@ -1,17 +1,20 @@
+using Cleverous.VaultInventory;
+using MySecondWorld.Customization;
+using MySecondWorld.Inventory;
+using MySecondWorld.Inventory.Items;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
-using MySecondWorld.Inventory;
-using MySecondWorld.Inventory.Items;
-using Cleverous.VaultInventory;
 
 namespace MySecondWorld.Editor
 {
     public class ItemAssetBakeHelper : EditorWindow
     {
+        #region 상수 · 설정 테이블
+
         // 1개 아이템 생성 시 서브폴더 붙여서 쓰는 "쓰기 목적지" 베이스
         // 예: $"{AssetOutputFolder}/{subfolder}"  → .../Inventory/Equipment, .../Inventory/Consumables 등
         private const string AssetOutputFolder = "Assets/06.ScriptableObject/Inventory";
@@ -19,6 +22,7 @@ namespace MySecondWorld.Editor
         // SlotRestriction 찾을 때 서브폴더 없이 통째로 쓰는 "검색 범위"
         // FindSlotRestriction()에서 그대로 단독 사용
         private const string RestrictionSearchFolder = "Assets/06.ScriptableObject/Inventory/SlotRestrictions";
+        private const string WearablesOutputFolder = "Assets/06.ScriptableObject/Inventory/Equipment/Wearables";
 
         private static readonly Dictionary<string, string> PackageIconRoots = new()
         {
@@ -52,11 +56,114 @@ namespace MySecondWorld.Editor
             { "Generic", "Generic" },
         };
 
+        private static readonly PartType[] GroupBPartTypes =
+        {
+            PartType.Torso, PartType.ArmUpperLeft, PartType.ArmUpperRight,
+            PartType.ArmLowerLeft, PartType.ArmLowerRight,
+            PartType.HandLeft, PartType.HandRight,
+            PartType.Hips, PartType.LegLeft, PartType.LegRight,
+        };
+
+        private static readonly PartType[] GroupCPartTypes =
+        {
+            PartType.HeadCoverings, PartType.BackAttachment,
+            PartType.ShoulderAttachLeft, PartType.ShoulderAttachRight,
+            PartType.ElbowAttachLeft, PartType.ElbowAttachRight,
+            PartType.KneeAttachLeft, PartType.KneeAttachRight,
+            PartType.HelmetAttachment, PartType.HipsAttachment,
+        };
+
+        private static readonly Dictionary<PartType, string> PartTypeKoreanNames = new()
+        {
+            { PartType.Torso, "상의" },
+            { PartType.ArmUpperLeft, "왼쪽 상완 보호구" },
+            { PartType.ArmUpperRight, "오른쪽 상완 보호구" },
+            { PartType.ArmLowerLeft, "왼쪽 하완 보호구" },
+            { PartType.ArmLowerRight, "오른쪽 하완 보호구" },
+            { PartType.HandLeft, "왼손 장갑" },
+            { PartType.HandRight, "오른손 장갑" },
+            { PartType.Hips, "하의" },
+            { PartType.LegLeft, "왼쪽 다리 보호구" },
+            { PartType.LegRight, "오른쪽 다리 보호구" },
+            { PartType.HeadCoverings, "머리 장식" },
+            { PartType.BackAttachment, "등 장식" },
+            { PartType.ShoulderAttachLeft, "왼쪽 어깨 장식" },
+            { PartType.ShoulderAttachRight, "오른쪽 어깨 장식" },
+            { PartType.ElbowAttachLeft, "왼쪽 팔꿈치 보호구" },
+            { PartType.ElbowAttachRight, "오른쪽 팔꿈치 보호구" },
+            { PartType.KneeAttachLeft, "왼쪽 무릎 보호구" },
+            { PartType.KneeAttachRight, "오른쪽 무릎 보호구" },
+            { PartType.HelmetAttachment, "투구 장식" },
+            { PartType.HipsAttachment, "허리 장식" },
+        };
+
+        private static readonly Dictionary<string, string> SubTypeKoreanNames =
+            new(StringComparer.OrdinalIgnoreCase)
+        {
+            { "Leather", "가죽" }, { "Plate", "판금" }, { "Chainmail", "사슬" },
+            { "Cloth", "천" }, { "Fur", "모피" }, { "Metal", "금속" },
+            { "Wood", "나무" }, { "Bone", "뼈" }, { "Iron", "철" },
+            { "Gold", "금" }, { "Silver", "은" }, { "Bronze", "청동" },
+            { "Steel", "강철" },
+        };
+
+        // 서브타입이 실제 재질이 아니라 '없음'을 뜻하는 더미값일 때 감지용
+        private static readonly HashSet<string> PlaceHolderSubTypeTokens =
+            new(StringComparer.OrdinalIgnoreCase)
+        {
+            "No_Elements", "None", "Default", "NA", ""
+        };
+
+        #endregion
+
+        #region 공용 헬퍼 (무기/아이템 · Wearable 베이킹 양쪽에서 사용)
+
+        private static SlotRestriction FindSlotRestriction(string title, Dictionary<string, SlotRestriction> cache)
+        {
+            if (cache.TryGetValue(title, out var cached)) return cached;
+
+            var guids = AssetDatabase.FindAssets("t:SlotRestriction", new[] { RestrictionSearchFolder });
+            foreach (var guid in guids)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);       // GUID → 파일 경로
+                var restriction = AssetDatabase.LoadAssetAtPath<SlotRestriction>(path); // 파일 경로 → 실제 오브젝트 로드후 <SlotRestriction> 타입으로 캐스팅
+                if (restriction != null && restriction.Title == title)
+                {
+                    cache[title] = restriction;
+                    return restriction;         // Title 문자열로 최종 매칭
+                }
+            }
+            Debug.LogWarning($"[ItemAssetBakeHelper] SlotRestriction '{title}' 못 찾음");
+            cache[title] = null;
+            return null;
+        }
+
+        private static void CreateFolderRecursive(string fullPath)
+        {
+            if (AssetDatabase.IsValidFolder(fullPath)) return;
+
+            var parts = fullPath.Split('/'); // parts = ["Assets", "06.ScriptableObject", "Inventory"]
+            var current = parts[0]; // "Assets"
+            for (int i = 1; i < parts.Length; i++)
+            {
+                var next = $"{current}/{parts[i]}";
+                if (!AssetDatabase.IsValidFolder(next))
+                    AssetDatabase.CreateFolder(current, parts[i]); // "Equipment"폴더 생성
+                current = next;
+            }
+        }
+
+        #endregion
+
+        #region 에디터 창 (메뉴 · GUI)
+
+        private AvatarPartKeyTableSO _partTable;
+
         private string _csvPath = "";
         private bool _useRemotePrefab = true;
         private bool _overwrite = false;
 
-        [MenuItem("Tools/Inventory/Generate Weapon Item from CSV")]
+        [MenuItem("Tools/Inventory/Item Baker")]
         private static void Open() => GetWindow<ItemAssetBakeHelper>("Item Baker");
 
         [MenuItem("Tools/Inventory/Ensure Slot Restrictions")]
@@ -87,7 +194,7 @@ namespace MySecondWorld.Editor
                     existingTitles.Add(restriction.Title);
             }
 
-            // 
+            //
             AssetDatabase.StartAssetEditing();
             int created = 0;
             try
@@ -112,7 +219,6 @@ namespace MySecondWorld.Editor
 
             Debug.Log($"[ItemAssetBakeHelper] SlotRestriction {created}개 생성 완료 (기존 존재로 건너뜀: {partTypeNames.Length - created}개)");
         }
-
 
         private void OnGUI()
         {
@@ -155,7 +261,25 @@ namespace MySecondWorld.Editor
             //if (GUILayout.Button("누락 프리팹 모델에서 생성"))
             //    GenerateMissingPrefabsFromModels(_csvPath);
             GUI.enabled = true;
+
+            // 커스터마이징 파츠 (그룹 B,C 아이템)
+            EditorGUILayout.Space();
+            GUILayout.Label("그룹 B/C 파츠 장비 (SO 직접 베이킹)", EditorStyles.boldLabel);
+            _partTable = (AvatarPartKeyTableSO)EditorGUILayout.ObjectField(
+                "AvatarPartKeyTableSO", _partTable, typeof(AvatarPartKeyTableSO), false);
+            GUI.enabled = _partTable != null;
+
+            if (GUILayout.Button("그룹 B/C 장비 아이템 생성"))
+            {
+                GenerateEquipmentItemsFromTable(_partTable, _overwrite);
+            }
+            GUI.enabled = true;
+
         }
+
+        #endregion
+
+        #region 무기 · 아이템 CSV 베이킹
 
         private static void GenerateFromCsv(string csvPath, bool useRemotePrefab, bool overwrite)
         {
@@ -214,7 +338,7 @@ namespace MySecondWorld.Editor
                     // Item SO 경로 찾기
                     var folder = $"{AssetOutputFolder}/{subfolder}";
                     var assetPath = $"{folder}/{package}_{prefabName}.asset";
-                    
+
                     // 고아 SO 자동 삭제 코드 :
                     // ItemType이 바뀌어 폴더가 달라진 경우 — 예전 폴더에 남은 동명 SO를 찾아 삭제
                     var assetFileName = $"{package}_{prefabName}.asset";
@@ -260,12 +384,12 @@ namespace MySecondWorld.Editor
                         };
                     }
 
-                    if (item == null) 
+                    if (item == null)
                     {
                         skipped++;
-                        continue; 
+                        continue;
                     }
-                    
+
                     // 해당 Item SO에 csv 데이터 대입
                     item.Title = koreanName;
                     item.Description = description;
@@ -273,11 +397,11 @@ namespace MySecondWorld.Editor
                         ? null
                         : FindSlotRestriction(restrictionTitle, restrictionCache);
                     item.Tags = ParseTags(tags);
-                    
+
                     var uiIcon = FindIcon(package, prefabName, iconCache);
-                    if (uiIcon != null) 
+                    if (uiIcon != null)
                         item.UiIcon = uiIcon;
-                    else                
+                    else
                         missingIcon++;
 
                     if (!hasPrefab)
@@ -349,6 +473,73 @@ namespace MySecondWorld.Editor
             Debug.Log(
                 $"생성 {created}개 / 갱신 {updated}개 / 건너뜀 {skipped}개 / 아이콘 없음 {missingIcon}개 / " +
                 $"로컬 프리팹 없음 {missingArtPrefab}개 / 원격 프리팹 없음 {missingRemotePrefab}개 → {AssetOutputFolder}");
+        }
+
+        private static void GenerateMissingPrefabsFromModels(string csvPath)
+        {
+            var lines = File.ReadAllLines(csvPath);
+            var header = BuildHeaderIndex(lines[0]);
+            int columnCount = header.Count;
+            var modelPathCacheByRoot = new Dictionary<string, Dictionary<string, string>>(); // modelRoot → {파일명: fbx경로}
+            int created = 0, alreadyExists = 0, noModel = 0, skipped = 0;
+
+            AssetDatabase.StartAssetEditing();
+            try
+            {
+                for (int i = 1; i < lines.Length; i++)
+                {
+                    var line = lines[i];
+                    if (string.IsNullOrWhiteSpace(line)) continue;
+
+                    var cols = line.Split(new[] { ',' }, columnCount);
+                    if (cols.Length < columnCount)
+                    {
+                        Debug.LogWarning($"[ItemAssetBakeHelper] Row {i + 1}: 컬럼 수 부족 ({cols.Length}) — 건너뜀");
+                        skipped++;
+                        continue;
+                    }
+
+                    string prefabName = cols[header["PrefabName"]];
+                    string package = cols[header["Package"]];
+                    bool hasPrefab = !header.TryGetValue("HasPrefab", out var hasPrefabIdx)
+                        || !string.Equals(cols[hasPrefabIdx].Trim(), "FALSE", StringComparison.OrdinalIgnoreCase);
+
+                    if (!hasPrefab) { skipped++; continue; }
+                    if (!PackagePrefabRoots.TryGetValue(package, out var prefabRoot)) continue;
+                    if (!PackageModelRoots.TryGetValue(package, out var modelRoot)) continue;
+
+                    var prefabPath = $"{prefabRoot}/{prefabName}.prefab";
+                    if (File.Exists(prefabPath))
+                    {
+                        alreadyExists++;
+                        continue;
+                    }
+
+                    var modelIndex = GetOrBuildModelPathsByName(modelRoot, modelPathCacheByRoot);
+                    if (!modelIndex.TryGetValue(prefabName, out var fbxPath))
+                    {
+                        Debug.LogWarning($"[ItemAssetBakeHelper] 모델 자체 없음: {package}/{prefabName}");
+                        noModel++;
+                        continue;
+                    }
+
+                    var fbxAsset = AssetDatabase.LoadAssetAtPath<GameObject>(fbxPath);
+                    var instance = (GameObject)PrefabUtility.InstantiatePrefab(fbxAsset);
+                    PrefabUtility.SaveAsPrefabAsset(instance, prefabPath);
+                    DestroyImmediate(instance);
+                    created++;
+                }
+            }
+            finally
+            {
+                AssetDatabase.StopAssetEditing();
+                AssetDatabase.SaveAssets();
+                AssetDatabase.Refresh();
+            }
+
+            Debug.Log(
+                $"[ItemAssetBakeHelper] 프리팹 생성 {created}개 / 이미 있음 {alreadyExists}개 / " +
+                $"모델 자체 없음 {noModel}개 / 건너뜀 {skipped}개 (경로: {csvPath})");
         }
 
         private static ItemCategory ParseTags(string raw)
@@ -470,108 +661,6 @@ namespace MySecondWorld.Editor
             return prefab;
         }
 
-        private static SlotRestriction FindSlotRestriction(string title, Dictionary<string, SlotRestriction> cache)
-        {
-            if (cache.TryGetValue(title, out var cached)) return cached;
-
-            var guids = AssetDatabase.FindAssets("t:SlotRestriction", new[] { RestrictionSearchFolder });
-            foreach (var guid in guids)
-            {
-                string path = AssetDatabase.GUIDToAssetPath(guid);       // GUID → 파일 경로
-                var restriction = AssetDatabase.LoadAssetAtPath<SlotRestriction>(path); // 파일 경로 → 실제 오브젝트 로드후 <SlotRestriction> 타입으로 캐스팅
-                if (restriction != null && restriction.Title == title)
-                {
-                    cache[title] = restriction;
-                    return restriction;         // Title 문자열로 최종 매칭
-                }
-            }
-            Debug.LogWarning($"[ItemAssetBakeHelper] SlotRestriction '{title}' 못 찾음");
-            cache[title] = null;
-            return null;
-        }
-
-        private static void CreateFolderRecursive(string fullPath)
-        {
-            if (AssetDatabase.IsValidFolder(fullPath)) return;
-
-            var parts = fullPath.Split('/'); // parts = ["Assets", "06.ScriptableObject", "Inventory"]
-            var current = parts[0]; // "Assets"
-            for (int i = 1; i < parts.Length; i++)
-            {
-                var next = $"{current}/{parts[i]}";
-                if (!AssetDatabase.IsValidFolder(next))
-                    AssetDatabase.CreateFolder(current, parts[i]); // "Equipment"폴더 생성
-                current = next;
-            }
-        }
-
-        private static void GenerateMissingPrefabsFromModels(string csvPath)
-        {
-            var lines = File.ReadAllLines(csvPath);
-            var header = BuildHeaderIndex(lines[0]);
-            int columnCount = header.Count;
-            var modelPathCacheByRoot = new Dictionary<string, Dictionary<string, string>>(); // modelRoot → {파일명: fbx경로}
-            int created = 0, alreadyExists = 0, noModel = 0, skipped = 0;
-
-            AssetDatabase.StartAssetEditing();
-            try
-            {
-                for (int i = 1; i < lines.Length; i++)
-                {
-                    var line = lines[i];
-                    if (string.IsNullOrWhiteSpace(line)) continue;
-
-                    var cols = line.Split(new[] { ',' }, columnCount);
-                    if (cols.Length < columnCount)
-                    {
-                        Debug.LogWarning($"[ItemAssetBakeHelper] Row {i + 1}: 컬럼 수 부족 ({cols.Length}) — 건너뜀");
-                        skipped++;
-                        continue;
-                    }
-
-                    string prefabName = cols[header["PrefabName"]];
-                    string package = cols[header["Package"]];
-                    bool hasPrefab = !header.TryGetValue("HasPrefab", out var hasPrefabIdx)
-                        || !string.Equals(cols[hasPrefabIdx].Trim(), "FALSE", StringComparison.OrdinalIgnoreCase);
-
-                    if (!hasPrefab) { skipped++; continue; }
-                    if (!PackagePrefabRoots.TryGetValue(package, out var prefabRoot)) continue;
-                    if (!PackageModelRoots.TryGetValue(package, out var modelRoot)) continue;
-
-                    var prefabPath = $"{prefabRoot}/{prefabName}.prefab";
-                    if (File.Exists(prefabPath))
-                    {
-                        alreadyExists++;
-                        continue;
-                    }
-
-                    var modelIndex = GetOrBuildModelPathsByName(modelRoot, modelPathCacheByRoot);
-                    if (!modelIndex.TryGetValue(prefabName, out var fbxPath))
-                    {
-                        Debug.LogWarning($"[ItemAssetBakeHelper] 모델 자체 없음: {package}/{prefabName}");
-                        noModel++;
-                        continue;
-                    }
-
-                    var fbxAsset = AssetDatabase.LoadAssetAtPath<GameObject>(fbxPath);
-                    var instance = (GameObject)PrefabUtility.InstantiatePrefab(fbxAsset);
-                    PrefabUtility.SaveAsPrefabAsset(instance, prefabPath);
-                    DestroyImmediate(instance);
-                    created++;
-                }
-            }
-            finally
-            {
-                AssetDatabase.StopAssetEditing();
-                AssetDatabase.SaveAssets();
-                AssetDatabase.Refresh();
-            }
-
-            Debug.Log(
-                $"[ItemAssetBakeHelper] 프리팹 생성 {created}개 / 이미 있음 {alreadyExists}개 / " +
-                $"모델 자체 없음 {noModel}개 / 건너뜀 {skipped}개 (경로: {csvPath})");
-        }
-
         private static Dictionary<string, int> BuildHeaderIndex(string headerLine)
         {
             // 컬럼 이름 → 위치. CSV에 컬럼이 추가/이동돼도 cols[고정숫자] 하드코딩 없이 이름으로 찾도록 함
@@ -593,12 +682,208 @@ namespace MySecondWorld.Editor
             foreach (var guid in AssetDatabase.FindAssets("t:Model", new[] { modelRoot }))
             {
                 var path = AssetDatabase.GUIDToAssetPath(guid);
-                pathsByName[Path.GetFileNameWithoutExtension(path)] = path; 
+                pathsByName[Path.GetFileNameWithoutExtension(path)] = path;
                 //           └─ 키(Name) "SM_Item_Ring_01" ← └─ 값(Path) "Assets/.../SM_Item_Ring_01.fbx"
             }
 
             cache[modelRoot] = pathsByName;
             return pathsByName;
         }
+
+        #endregion
+
+        #region 파츠 장비(Wearable, 그룹 B/C) SO 직접 베이킹
+
+        private static void GenerateEquipmentItemsFromTable(AvatarPartKeyTableSO table, bool overwrite)
+        {
+            var restrictionCache = new Dictionary<string, SlotRestriction>();
+            var iconCache = new Dictionary<string, Sprite>();
+            int created = 0, updated = 0, skipped = 0, missingIcon = 0, missingRestriction = 0;
+
+            // StartAssetEditing 배치 중에는 방금 만든 폴더가 IsValidFolder에 바로 안 잡히는 문제가
+            // 있어서(GenerateFromCsv와 동일 이유), 배치 시작 전에 미리 만들어둔다.
+            CreateFolderRecursive(WearablesOutputFolder);
+
+            AssetDatabase.StartAssetEditing();
+            try
+            {
+                foreach (var partType in GroupBPartTypes)
+                {
+                    foreach (var gender in new[] { Gender.Male, Gender.Female })
+                    {
+                        BakeEquipmentItemsForPart(
+                            table, partType, gender, isGroupC: false, overwrite, restrictionCache, iconCache,
+                            ref created, ref updated, ref skipped, ref missingIcon, ref missingRestriction);
+                    }
+                }
+
+                foreach (var partType in GroupCPartTypes)
+                {
+                    // AllGenderParts만 쓰는 그룹이라 Male/Female 어느 쪽으로 조회해도 결과가 같음 — 중복 방지 위해 한 번만 호출
+                    BakeEquipmentItemsForPart(
+                                table, partType, Gender.Male, isGroupC: true, overwrite, restrictionCache, iconCache,
+                                ref created, ref updated, ref skipped, ref missingIcon, ref missingRestriction);
+                }
+            }
+            finally
+            {
+                AssetDatabase.StopAssetEditing();
+                AssetDatabase.SaveAssets();
+                AssetDatabase.Refresh();
+                EditorUtility.SetDirty(table);
+            }
+
+            Debug.Log(
+                $"[ItemAssetBakeHelper] 파츠 장비 생성 {created}개 / 갱신 {updated}개 / 건너뜀 {skipped}개 / " +
+                $"아이콘 없음 {missingIcon}개 / SlotRestriction 없음 {missingRestriction}개 → {WearablesOutputFolder}");
+        }
+
+        private static void BakeEquipmentItemsForPart(
+            AvatarPartKeyTableSO table, PartType partType, Gender gender, bool isGroupC, bool overwrite,
+            Dictionary<string, SlotRestriction> restrictionCache, Dictionary<string, Sprite> iconCache,
+            ref int created, ref int updated, ref int skipped, ref int missingIcon, ref int missingRestriction)
+        {
+            var candidates = table.GetCandidates(partType, gender);
+            var thumbnails = table.GetThumbnailNames(partType, gender);
+            string genderTag = isGroupC ? "All" : gender.ToString();
+
+            // 인덱스 0은 그룹 B(맨몸)/그룹 C(장착 안함) 둘 다 무료 슬롯이라 CSV 대상에서 제외
+            for (int index = 1; index < candidates.Count; index++)
+            {
+                string subType = table.GetSubType(partType, gender, index);
+                string thumbnailName = index < thumbnails.Count ? thumbnails[index] : string.Empty;
+                string title = BuildTitle(partType, genderTag, subType, index, isGroupC);
+                string assetPath = $"{WearablesOutputFolder}/{partType}_{genderTag}_{index:00}.asset";
+
+                bool exists = File.Exists(assetPath);
+                if (exists && !overwrite) // ItemSO 경로가 있지만 overwrite 하지 않을때 패스
+                {
+                    skipped++;
+                    continue;
+                }
+
+                EquipmentItem item;
+                if (exists)
+                {
+                    item = AssetDatabase.LoadAssetAtPath<EquipmentItem>(assetPath);
+                    if (item == null)  // ItemSO 경로가 있고 실제 아이템이 없을때
+                    {
+                        Debug.LogWarning($"[ItemAssetBakeHelper] 기존 에셋 로드 실패 — {assetPath}");
+                        skipped++;
+                        continue;
+                    }
+                }
+                else // 경로가 없으면 새로 생성 (순수 RAM 상의 임시 객체)
+                {
+                    item = ScriptableObject.CreateInstance<EquipmentItem>();
+                }
+
+                item.Title = title;
+                item.Stats = new List<StatModifier>();
+                item.MaxStackSize = 1;
+                item.ArtPrefab = null;
+                item.RemoteArtPrefab = null;
+
+                var restriction = FindSlotRestriction(partType.ToString(), restrictionCache);
+                if (restriction != null)
+                    item.Restriction = restriction;
+                else
+                    missingRestriction++;
+
+                var icon = FindThumbnailSprite(table, thumbnailName, iconCache);
+                if (icon != null)
+                    item.UiIcon = icon;
+                else
+                    missingIcon++;
+
+                if (exists) // 덮어 씌우기
+                {
+                    EditorUtility.SetDirty(item);
+                    updated++;
+                }
+                else // 진짜 에셋"으로 등록
+                {
+                    // ScriptableObject.CreateInstance → (필드 채우기) → AssetDatabase.CreateAsset인 이유 :
+                    // 메모리에서 먼저 다 채워놓고, 마지막에 딱 한 번 진짜로 디스크에 쓰는 것
+                    AssetDatabase.CreateAsset(item, assetPath);
+                    created++;
+                }
+
+                SetRequiredItem(table, partType, genderTag, index, item);
+            }
+        }
+
+        private static string BuildTitle(PartType partType, string genderTag, string subType, int index, bool isGourpC)
+        {
+            string koreanName = PartTypeKoreanNames.TryGetValue(partType, out var name) ? name : partType.ToString();
+            string subTypeSegment = ResolveSubtypeSegment(subType);
+            string indexSegment = $"{index:00}호";
+            var segments = new List<string>();
+            if (!isGourpC)
+                segments.Add(genderTag == "Male" ? "남성" : "여성");
+            segments.Add(koreanName);
+            if (!string.IsNullOrEmpty(subTypeSegment))
+                segments.Add(subTypeSegment);
+            segments.Add(indexSegment);
+
+            return string.Join(" ", segments);
+        }
+
+        //  더미값 판정/번역/폴백 로직. BuildTitle 쪽 코드를 깔끔하게 유지해주는 역할
+        private static string ResolveSubtypeSegment(string subType)
+        {
+            // ubType이 "No_Elements"/"None"/"" 같은 "서브타입 없음"을 뜻하는 값이면
+            // 세그먼트를 아예 비워서 BuildTitle이 그 세그먼트를 통째로 생략
+            if (PlaceHolderSubTypeTokens.Contains(subType ?? string.Empty))
+                return string.Empty;
+            // Leather" → "가죽"처럼 SubTypeKoreanNames에 등록된 값이면 번역된 한국어를 돌려줌
+            // 번역 사전에 없는 낯선 영문 서브타입이면(누락됐거나 새로 추가된 재질), 번역 못 했다고 세그먼트를 비우거나 에러 내지 않고 원본 영문을 그대로 씀
+            return SubTypeKoreanNames.TryGetValue(subType, out var translated) ? translated : subType;
+        }
+
+        private static Sprite FindThumbnailSprite(AvatarPartKeyTableSO table, string thumbnailName, Dictionary<string, Sprite> cache)
+        {
+            if (string.IsNullOrEmpty(thumbnailName))
+                return null;
+            if (cache.TryGetValue(thumbnailName, out var cached))
+                return cached;
+
+            const string root = "Assets/07.Textures/CharacterPartThumbnails";
+            Sprite found = null;
+            foreach (var guid in AssetDatabase.FindAssets($"{thumbnailName} t:Sprite", new[] { root }))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                // FindAssets는 부분 일치라, 파일명이 정확히 같은 것만 채택
+                if (Path.GetFileNameWithoutExtension(path) != thumbnailName)
+                    continue;
+                found = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+                break;
+            }
+
+            cache[thumbnailName] = found;
+            return found;
+        }
+
+        // 마지막에 생성된 item을 table의 PartEntry.MaleRequiredItems/FemaleRequiredItems/AllGenderRequiredItems에 인덱스 맞춰 되꽂는 헬퍼
+        private static void SetRequiredItem(AvatarPartKeyTableSO table, PartType partType, string genderTag, int index, EquipmentItem item)
+        {
+            var entry = table.Entries.Find(e => e.PartType == partType);
+            if (entry == null)
+                return;
+
+            var list = genderTag switch
+            {
+                "Male" => entry.MaleRequiredItems,
+                "Female" => entry.FemaleRequiredItems,
+                _ => entry.AllGenderRequiredItems,
+            };
+
+            while (list.Count <= index)
+                list.Add(null); // 인덱스가 리스트 길이보다 크면 null로 패딩 후 채움 — 인덱스 밀림 방지
+
+            list[index] = item;
+        }
+
+        #endregion
     }
 }
