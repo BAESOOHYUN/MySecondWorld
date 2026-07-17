@@ -22,7 +22,9 @@
         "MySecondWorld.Save",
         "Paroxe.PDFRenderer",
         "FlexibleColorPicker",
-        "MySecondWorld.Inventory.Items"
+        "MySecondWorld.Inventory.Items",
+        "Cleverous.VaultInventory",
+        "Cleverous.VaultSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

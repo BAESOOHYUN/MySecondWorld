@@ -481,18 +481,53 @@ namespace MySecondWorld.UI
         }
 
         // 저장
+
+        // 미소유 파츠를 fallback 값으로 되돌린 사본을 반환.
+        // fallback 지정 시: 그 값(보통 "직전 저장값")으로 되돌림 — 서버 CmdSetAppearance와 동일하게
+        //   "거부하고 이전 상태 유지" 의미. fallback의 그 값마저 미소유면(예: 그사이 아이템 상실) 맨몸(0)까지 떨어뜨림.
+        // fallback 생략 시: 곧바로 맨몸(0)으로 되돌림 — 되돌아갈 "직전"이 없는 자기 자신 검증(로드 시 자가 정화)용.
+        private CharacterAppearanceData ValidateOwnership(CharacterAppearanceData data, CharacterAppearanceData? fallback = null)
+        {
+            foreach (PartType part in System.Enum.GetValues(typeof(PartType)))
+            {
+                if (data[part] <= 0) continue; // 맨몸(0)/없음(-1)은 항상 무료라 검증 불필요
+                if (IsPartOwned(part, data.Gender, data[part])) continue; // 이미 정당하게 소유한 아이템이면 검증 불필요.
+
+                int fallbackIndex = fallback.HasValue ? fallback.Value[part] : 0; // fallback 값이 있으면 fallback으로 되돌림. 없으면 0
+                if (fallbackIndex > 0 && !IsPartOwned(part, fallback.Value.Gender, fallbackIndex)) //fallback 값이 있는데 허용된 아이템이 아닌 경우. ex) lock된 아이템
+                    fallbackIndex = 0; // fallback 값조차 지금은 미소유면 더 물러날 곳이 없어 맨몸으로 되돌림
+
+                data[part] = fallbackIndex;
+            }
+
+            return data;
+        }
+
+        private bool IsPartOwned(PartType part, Gender gender, int index)
+        {
+            var requiredItem = _keyTable.GetRequiredItem(part, gender, index);
+            return requiredItem == null || _inventoryProvider.IsOwned(requiredItem);
+        }
+
         private void OnSaveClicked()
         {
-            var data = BuildData();
+            var previouslySaved = _saveService.Load(); // 검증 실패 파츠는 이 값(직전 저장 상태)으로 되돌림
+            var data = ValidateOwnership(BuildData(), previouslySaved);
+
             _saveService.Save(data);
             _saveRequestPub.Publish(new CharacterAppearanceSyncRequestedEvent(data)); // 네트워크 동기화 요청
             PlayerPrefs.SetInt(PrefKeyCustomized, 1);
             PlayerPrefs.Save();
+
+            // 검증 후 되돌려진 인덱스가 있으면 UI/미리보기도 즉시 그 모습으로 맞춘다
+            InitIndices(data);
+            _previewCustomizer.ApplyAppearance(data).Forget();
+            UpdateThumbnailSelection();
         }
 
         private async UniTask ReloadFromSave()
         {
-            var saved = _saveService.Load();
+            var saved = ValidateOwnership(_saveService.Load()); // fallback 없음(이미 저장된 값 자체가 오염된 경우) → 자기 자신 정화, 실패 시 맨몸(0)
             _currentGender = saved.Gender;
             InitIndices(saved); // 디폴트 SO 대신 저장된 외형으로 인덱스 캐시 채움
 
