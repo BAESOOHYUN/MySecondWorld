@@ -12,8 +12,13 @@ namespace MySecondWorld.Editor
 {
     public class ItemAssetBakeHelper : EditorWindow
     {
+        // 1개 아이템 생성 시 서브폴더 붙여서 쓰는 "쓰기 목적지" 베이스
+        // 예: $"{AssetOutputFolder}/{subfolder}"  → .../Inventory/Equipment, .../Inventory/Consumables 등
         private const string AssetOutputFolder = "Assets/06.ScriptableObject/Inventory";
-        private const string RestrictionSearchFolder = "Assets/06.ScriptableObject/Inventory";
+
+        // SlotRestriction 찾을 때 서브폴더 없이 통째로 쓰는 "검색 범위"
+        // FindSlotRestriction()에서 그대로 단독 사용
+        private const string RestrictionSearchFolder = "Assets/06.ScriptableObject/Inventory/SlotRestrictions";
 
         private static readonly Dictionary<string, string> PackageIconRoots = new()
         {
@@ -53,6 +58,60 @@ namespace MySecondWorld.Editor
 
         [MenuItem("Tools/Inventory/Generate Weapon Item from CSV")]
         private static void Open() => GetWindow<ItemAssetBakeHelper>("Item Baker");
+
+        [MenuItem("Tools/Inventory/Ensure Slot Restrictions")]
+        private static void EnsureSlotRestrictions()
+        {
+            string[] partTypeNames =
+            {
+                // 그룹 A(머리,헤어,눈썹 등 신체 파트 아이템) 제외
+                // 그룹 B([0]번이 기본 몸체인 아이템) 10개
+                "Torso", "ArmUpperRight", "ArmUpperLeft", "ArmLowerRight", "ArmLowerLeft",
+                "HandLeft", "HandRight", "Hips", "LegLeft", "LegRight",
+                // 그룹 C(악세사리류) 10개
+                "HeadCoverings", "BackAttachment",
+                "ShoulderAttachLeft", "ShoulderAttachRight",
+                "ElbowAttachLeft", "ElbowAttachRight",
+                "KneeAttachLeft", "KneeAttachRight",
+                "HelmetAttachment", "HipsAttachment",
+            };
+
+            CreateFolderRecursive(RestrictionSearchFolder);
+            // RestrictionSearchFolder 안에서 타입이 SlotRestriction인 에셋을 전부 찾음
+            //  "지금 폴더에 뭐가 있는지" 스냅샷을 뜨는 것
+            var existingTitles = new HashSet<string>();
+            foreach (var guid in AssetDatabase.FindAssets("t:SlotRestriction", new[] { RestrictionSearchFolder }))
+            {
+                var restriction = AssetDatabase.LoadAssetAtPath<SlotRestriction>(AssetDatabase.GUIDToAssetPath(guid));
+                if (restriction != null)
+                    existingTitles.Add(restriction.Title);
+            }
+
+            // 
+            AssetDatabase.StartAssetEditing();
+            int created = 0;
+            try
+            {
+                foreach (var name in partTypeNames)
+                {
+                    if (existingTitles.Contains(name)) continue;
+
+                    var restriction = ScriptableObject.CreateInstance<SlotRestriction>();
+                    restriction.Title = name;
+                    string assetPath = $"{RestrictionSearchFolder}/Data-SlotRestriction-{name}.asset";
+                    AssetDatabase.CreateAsset(restriction, assetPath);
+                    created++;
+                }
+            }
+            finally
+            {
+                AssetDatabase.StartAssetEditing();
+            }
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+
+            Debug.Log($"[ItemAssetBakeHelper] SlotRestriction {created}개 생성 완료 (기존 존재로 건너뜀: {partTypeNames.Length - created}개)");
+        }
 
 
         private void OnGUI()
