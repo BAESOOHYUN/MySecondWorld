@@ -82,13 +82,7 @@ namespace MySecondWorld.UI
         private readonly Dictionary<PartType, int> _currentIndices = new();
         private static readonly HashSet<PartType> _optionalParts = new() // 필수가 아닌 파츠. -1로 세팅하여 빈칸 썸네일 생성
         {
-            PartType.Hair, PartType.FacialHair, PartType.Eyebrows,
-            PartType.HeadCoverings, PartType.HelmetAttachment,
-            PartType.Ear, PartType.BackAttachment,
-            PartType.ShoulderAttachRight, PartType.ShoulderAttachLeft,
-            PartType.ElbowAttachRight, PartType.ElbowAttachLeft,
-            PartType.KneeAttachRight, PartType.KneeAttachLeft,
-            PartType.HipsAttachment,
+            PartType.Hair, PartType.FacialHair, PartType.Eyebrows, PartType.Ear
         };
 
         // ── UI 요소 ──
