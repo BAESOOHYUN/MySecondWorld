@@ -21,6 +21,18 @@ namespace MySecondWorld.Customization
         private readonly HashSet<PartType> _loadingParts = new(); //연타방지
         private readonly SemaphoreSlim _appearanceLock = new(1, 1); //동시에 ApplyAppearance/SetPart가 겹쳐 돌지 못하게 세마포어로 직렬화
 
+        // 헬멧 장착 캐스케이드로 지워지는 Head/Hair/Eyebrows/FacialHair/HeadCoverings 복원용 스냅샷
+        private int? _preHelmetHead;
+        private int? _preHelmetHair;
+        private int? _preHelmetEyebrows;
+        private int? _preHelmetFacialHair;
+        private int? _preHelmetHeadCoverings;
+
+        // HeadCoverings/HelmetAttachment는 그룹 C라 인덱스 0이 "착용 안 함"이다.
+        // (Hair/Eyebrows/FacialHair 같은 그룹 A는 -1이 "없음"이라 규약이 다르다 — 혼동 방지용 상수)
+        private const int HeadCoveringsNoneIndex = 0;
+        private const int HelmetAttachmentNoneIndex = 0;
+
         // ── 초기화 ──
         [Inject]
         public void Construct(
@@ -47,13 +59,18 @@ namespace MySecondWorld.Customization
         }
 
         // ── 공개 API ──
-        // 전체 외형 교체 (로그인 시 / 랜덤 / 불러오기)
+        // 전체 외형 "통째로 다시" 교체 (로그인 시 / 랜덤 / 불러오기)
         public async UniTask ApplyAppearance(CharacterAppearanceData data)
         {
             await _appearanceLock.WaitAsync(); //레이스컨디션을 막음
             try
             {
                 _currentAppearance = data;
+
+                // 스냅샷 무효화
+                // 완전 재적용이 일어나면 이번 세션에서 쌓아둔 헬멧 스냅샷 기억은 더 이상 유효하지 않으니 리셋한다
+                // ex) 사용자는 랜덤을 눌렀는데 화면엔 랜덤 결과가 아니라 뜬금없이 예전 헬멧 쓰기 전 모습이 섞여 나오는 버그
+                _preHelmetHead = _preHelmetHair = _preHelmetEyebrows = _preHelmetFacialHair = _preHelmetHeadCoverings = null;
 
                 // 기존 인스턴스 전부 해제
                 foreach (var key in new List<PartType>(_activePartInstances.Keys))
@@ -276,26 +293,27 @@ namespace MySecondWorld.Customization
         // ── 상호배제 매트릭스 (Synty ModularCharacters 규칙) ──────────────────────────────
         // 선택 파츠                  │ 조건                      │ 결과
         // ───────────────────────────┼───────────────────────────┼─────────────────────────
-        // HeadCoverings  (index ≥ 0) │ subtype = No_Hair          │ Hair              → -1
-        // HeadCoverings  (index ≥ 0) │ subtype = No_FacialHair    │ FacialHair        → -1
-        // HeadCoverings  (index ≥ 0) │ 현재 Head = No_Elements    │ Head → 첫 All_Elements
-        // Hair           (index ≥ 0) │ 현재 HC   = No_Hair        │ HeadCoverings     → -1
+        // HeadCoverings  (index > 0) │ subtype = No_Hair          │ Hair              → -1
+        // HeadCoverings  (index > 0) │ subtype = No_FacialHair    │ FacialHair        → -1
+        // HeadCoverings  (index > 0) │ 현재 Head = No_Elements    │ Head → 첫 All_Elements
+        // Hair           (index ≥ 0) │ 현재 HC   = No_Hair        │ HeadCoverings     → 0
         // Hair           (index ≥ 0) │ 현재 Head = No_Elements    │ Head → 첫 All_Elements
         // Eyebrows       (index ≥ 0) │ 현재 Head = No_Elements    │ Head → 첫 All_Elements
-        // FacialHair     (index ≥ 0) │ 현재 HC   = No_FacialHair  │ HeadCoverings     → -1
+        // FacialHair     (index ≥ 0) │ 현재 HC   = No_FacialHair  │ HeadCoverings     → 0
         // FacialHair     (index ≥ 0) │ 현재 Head = No_Elements    │ Head → 첫 All_Elements
-        // Head           (index ≥ 0) │ subtype   = All_Elements   │ HelmetAttachment  → -1
-        // Head           (index ≥ 0) │ subtype   = No_Elements    │ Hair, Eyebrows, FacialHair, HeadCoverings → -1
-        // HelmetAttachment(index ≥ 0)│ 현재 Head = All_Elements   │ Head → 첫 No_Elements
+        // Head           (index ≥ 0) │ subtype   = All_Elements   │ HelmetAttachment  → 0
+        // Head           (index ≥ 0) │ subtype   = No_Elements    │ Hair, Eyebrows, FacialHair → -1 / HeadCoverings → 0
+        // HelmetAttachment(index > 0)│ 현재 Head = All_Elements   │ Head → 첫 No_Elements (씌우기 직전 상태 스냅샷 저장)
+        // HelmetAttachment(index = 0)│ 스냅샷 있음                │ Head/Hair/Eyebrows/FacialHair/HeadCoverings 스냅샷 복원
         // ───────────────────────────┼───────────────────────────┼─────────────────────────
-        // ※ index < 0 (없음 슬롯) 는 추가 배제 없음
+        // ※ HeadCoverings/HelmetAttachment는 그룹 C라 index==0이 "없음 슬롯" — 그룹 A(-1)와 규약이 다름
         private async UniTask ApplyMutualExclusion(PartType changedPart, int newIndex, Gender gender)
         {
             var subtype = _avatarPartKeyTable.GetSubType(changedPart, gender, newIndex);
 
             switch (changedPart)
             {
-                case PartType.HeadCoverings when newIndex >= 0:
+                case PartType.HeadCoverings when newIndex > 0: // 0 = 착용 안 함, 상호배제 대상 아님
                     {
                         // 헤드커버 선택 → No_Hair면 머리카락, No_FacialHair면 수염 해제
                         if (subtype == "No_Hair")
@@ -313,7 +331,7 @@ namespace MySecondWorld.Customization
                     {
                         // 머리카락 선택 → No_Hair 헤드커버와 충돌 → 헤드커버 해제
                         if (_avatarPartKeyTable.GetSubType(PartType.HeadCoverings, gender, _currentAppearance.HeadCoverings) == "No_Hair")
-                            await SetPart(PartType.HeadCoverings, -1);
+                            await SetPart(PartType.HeadCoverings, HeadCoveringsNoneIndex);
 
                         // No_Elements 헤드와도 충돌 → All_Elements로 교체
                         if (_avatarPartKeyTable.GetSubType(PartType.Head, gender, _currentAppearance.Head) == "No_Elements")
@@ -333,7 +351,7 @@ namespace MySecondWorld.Customization
                     {
                         // 수염 선택 → No_FacialHair 헤드커버와 충돌 → 헤드커버 해제
                         if (_avatarPartKeyTable.GetSubType(PartType.HeadCoverings, gender, _currentAppearance.HeadCoverings) == "No_FacialHair")
-                            await SetPart(PartType.HeadCoverings, -1);
+                            await SetPart(PartType.HeadCoverings, HeadCoveringsNoneIndex);
 
                         // No_Elements 헤드와도 충돌 → All_Elements로 교체
                         if (_avatarPartKeyTable.GetSubType(PartType.Head, gender, _currentAppearance.Head) == "No_Elements")
@@ -345,25 +363,70 @@ namespace MySecondWorld.Customization
                     {
                         // 헤드 선택
                         // All_Elements(얼굴판 있음) → 헬멧과 충돌 → 헬멧 해제
+                        //   이미 0(착용 안 함)이면 다시 안 부름 — HelmetAttachment 복원 캐스케이드가
+                        //   Head를 All_Elements로 되돌릴 때 이 case가 재진입하는데, 그때 불필요한
+                        //   재귀 SetPart 호출을 막기 위한 가드다.
                         // No_Elements(빈 얼굴판) → 머리카락·눈썹·수염·헤드커버 전부 충돌 → 일괄 해제
                         if (subtype == "All_Elements")
-                            await SetPart(PartType.HelmetAttachment, -1);
+                        {
+                            if (_currentAppearance.HelmetAttachment != HelmetAttachmentNoneIndex)
+                                await SetPart(PartType.HelmetAttachment, HelmetAttachmentNoneIndex);
+                        }
                         else if (subtype == "No_Elements")
                         {
                             await SetPart(PartType.Hair, -1);
                             await SetPart(PartType.Eyebrows, -1);
                             await SetPart(PartType.FacialHair, -1);
-                            await SetPart(PartType.HeadCoverings, -1);
+                            await SetPart(PartType.HeadCoverings, HeadCoveringsNoneIndex);
                         }
                         break;
                     }
 
-                case PartType.HelmetAttachment when newIndex >= 0:
+                case PartType.HelmetAttachment when newIndex > 0: // 인덱스 0은 "착용 안 함" 슬롯 — 상호배제 대상 아님
                     {
-                        // 헬멧 선택 → All_Elements 헤드와 충돌 (헬멧이 얼굴판을 뚫고 나옴)
-                        // → No_Elements 헤드 중 첫 번째로 자동 교체
                         if (_avatarPartKeyTable.GetSubType(PartType.Head, gender, _currentAppearance.Head) == "All_Elements")
+                        {
+                            // 헬멧을 처음 씌우는 순간에만 직전 상태를 스냅샷 — 이미 헬멧을 쓴 채로
+                            // 다른 헬멧으로 갈아 끼우는 경우는 스냅샷을 덮어쓰지 않고 유지한다.
+                            if (_preHelmetHead == null)
+                            {
+                                _preHelmetHead = _currentAppearance.Head;
+                                _preHelmetHair = _currentAppearance.Hair;
+                                _preHelmetEyebrows = _currentAppearance.Eyebrows;
+                                _preHelmetFacialHair = _currentAppearance.FacialHair;
+                                _preHelmetHeadCoverings = _currentAppearance.HeadCoverings;
+                            }
                             await SwitchHeadTo("No_Elements", gender);
+                        }
+                        break;
+                    }
+                case PartType.HelmetAttachment when newIndex == 0: // 헬멧을 벗음 → 스냅샷 있으면 복원
+                    {
+                        // _preHelmetHead가 null일 수 있음 — 이번 세션에서 UI로 직접 헬멧을 씌운 적이
+                        // 없다는 뜻(예: 세이브 로드/랜덤 결과가 처음부터 헬멧+맨헤드 조합)이라 되돌아갈
+                        // "씌우기 전" 상태를 애초에 모른다. 이 경우 복원 없이 그냥 벗은 채로 둔다.
+                        if (_preHelmetHead.HasValue)
+                        {
+                            int restoreHead = _preHelmetHead.Value;
+                            int restoreHair = _preHelmetHair.Value;
+                            int restoreEyebrows = _preHelmetEyebrows.Value;
+                            int restoreFacialHair = _preHelmetFacialHair.Value;
+                            int restoreHeadCoverings = _preHelmetHeadCoverings.Value;
+
+                            // 복원용 SetPart(Head, ...)가 내부적으로 "HelmetAttachment → 0" 캐스케이드를
+                            // 다시 태울 수 있어(All_Elements 복귀 시), 재진입 시 조용히 빠지도록 먼저 비운다.
+                            _preHelmetHead = null;
+                            _preHelmetHair = null;
+                            _preHelmetEyebrows = null;
+                            _preHelmetFacialHair = null;
+                            _preHelmetHeadCoverings = null;
+
+                            await SetPart(PartType.Head, restoreHead);
+                            await SetPart(PartType.Hair, restoreHair);
+                            await SetPart(PartType.Eyebrows, restoreEyebrows);
+                            await SetPart(PartType.FacialHair, restoreFacialHair);
+                            await SetPart(PartType.HeadCoverings, restoreHeadCoverings);
+                        }
                         break;
                     }
             }
