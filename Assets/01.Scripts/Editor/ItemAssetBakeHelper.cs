@@ -14,6 +14,7 @@ namespace MySecondWorld.Editor
     public class ItemAssetBakeHelper : EditorWindow
     {
         #region 상수 · 설정 테이블
+        private const string DefaultPartKeyTablePath = "Assets/06.ScriptableObject/AvatarPartKeyTableSO.asset";
 
         // 1개 아이템 생성 시 서브폴더 붙여서 쓰는 "쓰기 목적지" 베이스
         // 예: $"{AssetOutputFolder}/{subfolder}"  → .../Inventory/Equipment, .../Inventory/Consumables 등
@@ -192,8 +193,12 @@ namespace MySecondWorld.Editor
             // 커스터마이징 파츠 (그룹 B,C 아이템)
             EditorGUILayout.Space();
             GUILayout.Label("그룹 B/C 파츠 장비 (SO 직접 베이킹)", EditorStyles.boldLabel);
-            _partTable = (AvatarPartKeyTableSO)EditorGUILayout.ObjectField(
-                "AvatarPartKeyTableSO", _partTable, typeof(AvatarPartKeyTableSO), false);
+            //_partTable = (AvatarPartKeyTableSO)EditorGUILayout.ObjectField(
+            //    "AvatarPartKeyTableSO", _partTable, typeof(AvatarPartKeyTableSO), false);
+
+
+            if (_partTable == null)
+                _partTable = AssetDatabase.LoadAssetAtPath<AvatarPartKeyTableSO>(DefaultPartKeyTablePath);
             GUI.enabled = _partTable != null;
 
             if (GUILayout.Button("그룹 B/C 장비 아이템 생성"))
