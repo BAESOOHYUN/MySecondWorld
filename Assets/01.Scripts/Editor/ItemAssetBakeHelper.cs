@@ -779,6 +779,7 @@ namespace MySecondWorld.Editor
                 }
 
                 item.Title = title;
+                item.Tags = ItemCategory.Equipment;
                 item.Stats = new List<StatModifier>();
                 item.MaxStackSize = 1;
                 item.ArtPrefab = null;
