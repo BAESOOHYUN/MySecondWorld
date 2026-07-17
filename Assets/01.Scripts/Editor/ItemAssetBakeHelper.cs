@@ -195,8 +195,7 @@ namespace MySecondWorld.Editor
             //    "AvatarPartKeyTableSO", _partTable, typeof(AvatarPartKeyTableSO), false);
 
 
-            if (_partTable == null)
-                _partTable = EditorAssetDefaults.DrawWithDefault("Target SO", _partTable, EditorAssetDefaults.AvatarPartKeyTablePath);
+            _partTable = EditorAssetDefaults.DrawWithDefault("Target SO", _partTable, EditorAssetDefaults.AvatarPartKeyTablePath);
             GUI.enabled = _partTable != null;
 
             if (GUILayout.Button("그룹 B/C 장비 아이템 생성"))
