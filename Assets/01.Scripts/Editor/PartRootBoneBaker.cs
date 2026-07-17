@@ -6,12 +6,12 @@ using MySecondWorld.Customization;
 
 // Extractor가 이미 추출 시점에 BoneNames+RootBoneName을 모두 채우므로,
 // 이 Baker는 "원본 프리팹이 바뀌었을 때 기존 파츠를 일괄 재동기화"하는 유지보수 도구다.
-public class PartBoneBakerWindow : EditorWindow
+public class PartRootBoneBaker : EditorWindow
 {
     private GameObject _sourcePrefab;
 
     [MenuItem("Tools/Customization/Bake Part Bone Data")]
-    static void Open() => GetWindow<PartBoneBakerWindow>("Part Bone Baker");
+    static void Open() => GetWindow<PartRootBoneBaker>("Part Bone Baker");
 
     void OnGUI()
     {

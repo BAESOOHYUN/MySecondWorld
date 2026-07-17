@@ -425,17 +425,7 @@ namespace MySecondWorld.Editor
         // 임의의 전체 경로를 한 단계씩 생성 (이미 있으면 스킵)하고 그대로 반환
         private static string CreateFolderRecursive(string fullPath)
         {
-            if (AssetDatabase.IsValidFolder(fullPath)) return fullPath;
-
-            var parts = fullPath.Split('/');
-            var cur = parts[0]; // "Assets"
-            for (int i = 1; i < parts.Length; i++)
-            {
-                var next = $"{cur}/{parts[i]}";
-                if (!AssetDatabase.IsValidFolder(next))
-                    AssetDatabase.CreateFolder(cur, parts[i]);
-                cur = next;
-            }
+            EditorFolderUtils.EnsureFolder(fullPath);
             return fullPath;
         }
 

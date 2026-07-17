@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using UnityEditor;
 using MySecondWorld.Customization;
 
 namespace MySecondWorld.Editor
@@ -8,7 +7,7 @@ namespace MySecondWorld.Editor
     // 그룹 B/C 파츠 순회 대상 + GeneratedTitle 조합 로직.
     // ItemAssetBakeHelper(SO 직접 베이킹)와 PartEquipmentCsvGenerator(감사용 CSV 내보내기)가 공유.
 
-    public class PartEquipmentCatalog : EditorWindow
+    public class PartEquipmentCatalog
     {
 
         #region 상수 · 설정 테이블

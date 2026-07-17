@@ -22,7 +22,7 @@ namespace MySecondWorld.Editor
                 return;
             }
 
-            EnsureFolder(OutputFolder);
+            EditorFolderUtils.EnsureFolder(OutputFolder);
 
             // PrefabUtility.LoadPrefabContents = 프리팹을 임시 씬에 풀어서 편집 가능한 상태로 로드
             // (Instantiate와 달리 원본 에셋을 건드리지 않고, 끝나면 반드시 UnloadPrefabContents 호출 필요)
@@ -64,7 +64,7 @@ namespace MySecondWorld.Editor
                 return false;
 
             var folderPath = BuildGroupFolderPath(modularCharactersRoot, source.transform.parent);
-            EnsureFolder(folderPath);
+            EditorFolderUtils.EnsureFolder(folderPath);
             var partName = source.gameObject.name;
             var assetPath = $"{folderPath}/{partName}.prefab";
             var tempGo = new GameObject(partName);
@@ -94,24 +94,6 @@ namespace MySecondWorld.Editor
                 // Object.DestroyImmediate는 프리팹으로 저장한 직후 즉시 지우는 용도
                 Object.DestroyImmediate(tempGo);
             }
-        }
-
-        // 재귀함수로 폴더경로 검색 후 없으면 생성
-        private static void EnsureFolder(string path)
-        {
-            // System.IO.Directory.CreateDirectory()로 직접 만들면 메타파일이 없는 "고스트 폴더"가 생겨서 문제가 됨.
-            // Unity는 .meta 파일과 GUID로 에셋을 추적하기 때문에 AssetDatabase를 통해 만들어야 GUID가 정상 생성
-            if (AssetDatabase.IsValidFolder(path))
-                return;
-
-            // GetDirectoryName이 윈도우에서는 백슬래시(\)를 쓰는 경로를 반환할 수 있어서 .Replace("\\", "/")로 Unity가 쓰는 슬래시 형식으로 통일
-            var parent = System.IO.Path.GetDirectoryName(path).Replace("\\", "/");
-            // GetFileName "경로의 마지막 세그먼트"를 반환하는 함수
-            var folderName = System.IO.Path.GetFileName(path);
-            if (!AssetDatabase.IsValidFolder(parent))
-                EnsureFolder(parent);
-
-            AssetDatabase.CreateFolder(parent, folderName);
         }
 
         // 파츠가 매달린 가장 아래(partParent)에서 시작해 parent를 타고 위로 올라가며 Modular_Characters에 도달할 때까지 반복

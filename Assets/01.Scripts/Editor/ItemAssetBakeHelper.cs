@@ -79,22 +79,6 @@ namespace MySecondWorld.Editor
             cache[title] = null;
             return null;
         }
-
-        private static void CreateFolderRecursive(string fullPath)
-        {
-            if (AssetDatabase.IsValidFolder(fullPath)) return;
-
-            var parts = fullPath.Split('/'); // parts = ["Assets", "06.ScriptableObject", "Inventory"]
-            var current = parts[0]; // "Assets"
-            for (int i = 1; i < parts.Length; i++)
-            {
-                var next = $"{current}/{parts[i]}";
-                if (!AssetDatabase.IsValidFolder(next))
-                    AssetDatabase.CreateFolder(current, parts[i]); // "Equipment"폴더 생성
-                current = next;
-            }
-        }
-
         #endregion
 
         #region 에디터 창 (메뉴 · GUI)
@@ -125,7 +109,8 @@ namespace MySecondWorld.Editor
                 "HelmetAttachment", "HipsAttachment",
             };
 
-            CreateFolderRecursive(RestrictionSearchFolder);
+            EditorFolderUtils.EnsureFolder(RestrictionSearchFolder);
+
             // RestrictionSearchFolder 안에서 타입이 SlotRestriction인 에셋을 전부 찾음
             //  "지금 폴더에 뭐가 있는지" 스냅샷을 뜨는 것
             var existingTitles = new HashSet<string>();
@@ -239,7 +224,7 @@ namespace MySecondWorld.Editor
             // StartAssetEditing 배치 중에는 방금 만든 폴더가 IsValidFolder에 바로 안 잡히는 문제가 있어서,
             // 필요한 폴더를 배치 시작 전에 전부 미리 만들어둔다.
             foreach (var subfolder in ItemTypeSubfolders.Values)
-                CreateFolderRecursive($"{AssetOutputFolder}/{subfolder}");
+                EditorFolderUtils.EnsureFolder($"{AssetOutputFolder}/{subfolder}");
 
             AssetDatabase.StartAssetEditing();
             try
@@ -644,7 +629,7 @@ namespace MySecondWorld.Editor
 
             // StartAssetEditing 배치 중에는 방금 만든 폴더가 IsValidFolder에 바로 안 잡히는 문제가
             // 있어서(GenerateFromCsv와 동일 이유), 배치 시작 전에 미리 만들어둔다.
-            CreateFolderRecursive(WearablesOutputFolder);
+            EditorFolderUtils.EnsureFolder(WearablesOutputFolder);
 
             AssetDatabase.StartAssetEditing();
             try

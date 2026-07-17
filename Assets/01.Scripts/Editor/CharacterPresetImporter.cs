@@ -23,10 +23,8 @@ namespace MySecondWorld.Editor
     // "이름이 같은 것을 찾는다"는 원칙만 지키면 깨지지 않는다.
     //
     // ── 파츠 슬롯 이름 → PartType 매칭 규칙 ──
-    // AvatarPartKeyTablePopulator.TryResolvePartType과 완전히 동일한 규칙(정규식 + CategoryAliases)을
-    // 그대로 복제해서 쓴다. 두 도구가 서로 다른 매칭 규칙을 쓰면 KeyTable에 등록된 인덱스와
-    // 프리셋에서 읽은 인덱스가 어긋날 수 있으므로, 이 두 파일 중 하나를 고치면 반드시 다른 하나도 같이 고칠 것.
-    public class CharacterPresetImporterWindow : EditorWindow
+    // PartTypeResolve.cs 참고
+    public class CharacterPresetImporter : EditorWindow
     {
         // 프로젝트에 AvatarPartKeyTableSO는 이 경로 하나만 존재하고 앞으로도 여러 개 둘 계획이 없으므로
         // (unity-cli exec로 FindAssets 확인 결과 1개뿐이었음), 매번 드래그하지 않도록 OnEnable에서 기본값을
@@ -75,20 +73,6 @@ namespace MySecondWorld.Editor
         // readonly 안 붙이는 이유: Unity 직렬화는 readonly 필드를 아예 지원하지 않는다(공식 문서에 명시된 제약).
         private List<BatchEntry> _batchEntries = new();
         private Vector2 _batchScroll;
-
-        private static readonly Regex CategoryPattern = new(@"^(?:Female_|Male_|All_)?\d+_(.+)$");
-
-        private static readonly Dictionary<string, PartType> CategoryAliases = new()
-        {
-            { "Head_Attachment", PartType.HelmetAttachment },
-            { "Shoulder_Attachment_Right", PartType.ShoulderAttachRight },
-            { "Shoulder_Attachment_Left", PartType.ShoulderAttachLeft },
-            { "Elbow_Attachment_Right", PartType.ElbowAttachRight },
-            { "Elbow_Attachment_Left", PartType.ElbowAttachLeft },
-            { "Knee_Attachement_Right", PartType.KneeAttachRight }, // 폴더명 오타(Attachement) 그대로 키로 사용
-            { "Knee_Attachement_Left", PartType.KneeAttachLeft },
-            { "Extra", PartType.Ear }, // All_12_Extra 안엔 Elf_Ear만 존재
-        };
 
         // 런타임 흐름(CharacterCustomizerBase.cs:127 SetColor)은 "데이터 → 머티리얼" 방향으로 색을 적용한다:
         // CharacterAppearanceData의 색 값을 읽어서 material.SetColor(prop, color)로 셰이더에 써넣는다.
@@ -147,7 +131,7 @@ namespace MySecondWorld.Editor
         [MenuItem("Tools/Customization/Import Character Preset")]
         private static void Open()
         {
-            GetWindow<CharacterPresetImporterWindow>("Character Preset Importer");
+            GetWindow<CharacterPresetImporter>("Character Preset Importer");
         }
 
         // 창을 새로 열 때(도메인 리로드 후 포함) 고정 자산 경로에서 기본값을 채워 넣는다.
@@ -354,7 +338,7 @@ namespace MySecondWorld.Editor
             Gender gender;
             bool genderAmbiguous;
             Color[] extractedColors; // ColorSlot 선언 순서와 1:1 대응. 프로퍼티를 못 찾은 슬롯은 foundAny=false로만 표시되고
-                                      // 배열 값 자체는 default(Color)(0,0,0,0)로 남는다 — nullable을 쓰지 않는다.
+                                     // 배열 값 자체는 default(Color)(0,0,0,0)로 남는다 — nullable을 쓰지 않는다.
             bool colorsFound;
 
             // LoadPrefabContents = 프리팹을 임시 씬에 풀어서 activeSelf 등 실제 계층 상태를 읽을 수 있게 해준다.
@@ -445,7 +429,7 @@ namespace MySecondWorld.Editor
         // "Populate(덮어쓰기)" 관례와 동일한 사고방식.
         private static CharacterAppearanceSO ResolveOrCreateSO(string folder, string fileNameNoExt)
         {
-            EnsureFolder(folder);
+            EditorFolderUtils.EnsureFolder(folder);
             var path = $"{folder}/{fileNameNoExt}.asset";
             var existing = AssetDatabase.LoadAssetAtPath<CharacterAppearanceSO>(path);
             if (existing != null)
@@ -506,7 +490,7 @@ namespace MySecondWorld.Editor
             int count = 0;
             foreach (Transform slot in genderRoot)
             {
-                if (!TryResolvePartType(slot.name, out var partType)) continue;
+                if (!PartTypeResolver.TryResolvePartType(slot.name, out var partType)) continue;
                 if (System.Array.IndexOf(GenderCheckParts, partType) < 0) continue;
                 if (HasActiveLeaf(slot)) count++;
             }
@@ -536,7 +520,7 @@ namespace MySecondWorld.Editor
             {
                 foreach (Transform slot in genderRoot)
                 {
-                    if (!TryResolvePartType(slot.name, out var partType))
+                    if (!PartTypeResolver.TryResolvePartType(slot.name, out var partType))
                         continue; // 이름 매칭 실패 = 아직 다루지 않는 슬롯(예: Chest_Attachment) → 조용히 스킵
 
                     var leaf = FindActiveLeafName(slot);
@@ -560,32 +544,24 @@ namespace MySecondWorld.Editor
         // 활성 형제로 넘어간다"는 규칙으로 통일해서 고쳤다.
         private static string FindActiveLeafName(Transform node)
         {
+            string directLeaf = null; // 자식 없는 활성 리프를 발견해도 바로 반환하지 않고 보류만 해둔다
+
             foreach (Transform child in node)
             {
                 if (!child.gameObject.activeSelf) continue; // 비활성 자식이면 건너뛰고 다음 자식으로
-                if (child.childCount == 0) return child.name; // 자식 없음 = 실제 메시 리프, 바로 확정
+                if (child.childCount == 0)
+                {
+                    directLeaf ??= child.name; // 자식 없음 = 리프 후보. 하지만 형제 컨테이너 안에 진짜 리프가
+                    continue;                  // 있을 수 있으므로(예: Head_Attachment의 "Hair" 더미) 계속 탐색.
+                }
 
                 var deeper = FindActiveLeafName(child);
-                if (deeper != null) return deeper; // 이 분기 안에 진짜 리프가 있었다 → 확정
+                if (deeper != null) return deeper; // 컨테이너 안에서 진짜 리프를 찾았다 → 더미 리프보다 우선
 
                 // 이 분기는 활성 컨테이너였지만 그 안엔 진짜 착용된 게 없었음(전부 비활성) → 다음 활성 형제로 계속 시도
             }
-            return null; // 활성 자식이 아예 없거나, 활성 자식들 안 어디에도 진짜 리프가 없음 (미착용 상태)
-        }
 
-        // "Female_03_Torso" → "Torso", "All_04_Back_Attachment" → "BackAttachment" 처럼
-        // (성별_)번호_ 접두사를 떼고 언더스코어를 지운 뒤 PartType enum 이름과 대소문자 무시 비교.
-        // 1차 시도가 실패하면(Synty 원본 폴더명이 enum과 다르거나 오타가 있는 경우) CategoryAliases로 2차 시도.
-        // AvatarPartKeyTablePopulator.TryResolvePartType과 반드시 동일 규칙을 유지해야 함(주석 상단 참고).
-        private static bool TryResolvePartType(string folderName, out PartType partType)
-        {
-            var match = CategoryPattern.Match(folderName);
-            var category = match.Success ? match.Groups[1].Value : folderName;
-            var normalized = category.Replace("_", "");
-
-            if (System.Enum.TryParse(normalized, true, out partType))
-                return true;
-            return CategoryAliases.TryGetValue(category, out partType);
+            return directLeaf; // 형제 컨테이너 어디에도 진짜 리프가 없었으면 보류해둔 직접 리프(또는 null)를 반환
         }
 
         // 목표: 프리셋에서 찾은 leafName(예: "Chr_Torso_Female_04")을 받아서
@@ -609,7 +585,7 @@ namespace MySecondWorld.Editor
                 // AssetReferenceGameObject 자체는 이름을 모르니 (GUID 만 알고 있음),
                 // GUID → 경로 → 파일명 순서로 "이름"을 역으로 알아내는 것.
                 var path = AssetDatabase.GUIDToAssetPath(guid);
-                if (Path.GetFileNameWithoutExtension(path) == leafName)
+                if (LeafNameMatches(leafName, Path.GetFileNameWithoutExtension(path)))
                 {
                     // leafName = GetCandidates 에서 찾은 이름이 똑같을 때 이름으로 매칭
                     index = i;
@@ -679,18 +655,28 @@ namespace MySecondWorld.Editor
             data.BodyArtColor = colors[(int)ColorSlot.BodyArt];
         }
 
-        // 폴더가 없으면 재귀적으로 상위부터 만든다 (ModularCharacterPartExtractor.EnsureFolder와 동일 패턴).
-        // System.IO.Directory.CreateDirectory를 안 쓰는 이유: 그렇게 만들면 .meta가 없는 "고스트 폴더"가 생겨서
-        // Unity의 GUID 추적에서 벗어난다. 반드시 AssetDatabase.CreateFolder로 만들어야 한다.
-        private static void EnsureFolder(string path)
+
+        // Synty 프리셋 리프 이름과 KeyTable 프리팹 파일명이 토큰 순서만 다른 경우가 있다
+        // (예: KeyTable "Chr_Eyebrow_Female_01" vs 프리셋 리프 "Chr_Female_Eyebrow_01" — Category/Gender 순서만 바뀜).
+        // 완전 일치를 먼저 시도하고, 실패하면 '_'로 쪼갠 토큰을 정렬해서 비교한다.
+        private static bool LeafNameMatches(string leafName, string candidateFileName)
         {
-            if (string.IsNullOrEmpty(path) || AssetDatabase.IsValidFolder(path))
-                return;
-            var parent = Path.GetDirectoryName(path)?.Replace("\\", "/");
-            var folderName = Path.GetFileName(path);
-            if (!string.IsNullOrEmpty(parent) && !AssetDatabase.IsValidFolder(parent))
-                EnsureFolder(parent);
-            AssetDatabase.CreateFolder(parent, folderName);
+            if(leafName == candidateFileName)
+                return true;
+            
+            var a = leafName.Split('_');
+            var b = candidateFileName.Split('_');
+            if (a.Length != b.Length)
+                return false;
+
+            System.Array.Sort(a, System.StringComparer.OrdinalIgnoreCase);
+            System.Array.Sort(b, System.StringComparer.OrdinalIgnoreCase);
+            for (int i = 0; i < a.Length; i++)
+            {
+                if (!string.Equals(a[i], b[i], System.StringComparison.OrdinalIgnoreCase))
+                    return false;
+            }
+            return true;
         }
     }
 }

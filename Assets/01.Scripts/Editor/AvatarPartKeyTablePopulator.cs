@@ -23,24 +23,6 @@ namespace MySecondWorld.Editor
             "Female_Parts",
             "All_Gender_Parts"
         };
-        
-        // "Female_00_Head" / "Male_04_Arm_Upper_Right" / "00_Ear" 등에서
-        // 정규식으로 앞의 (성별_)번호_ 부분을 떼고 카테고리 이름만 뽑아냄
-        private static readonly Regex CategoryPattern = new(@"^(?:Female_|Male_|All_)?\d+_(.+)$");
-
-        // "Female_00_Head" / "Male_04_Arm_Upper_Right" / "00_Ear" 등에서
-        // 앞의 (성별_)번호_ 부분을 떼고 카테고리 이름만 뽑아냄
-        private static readonly Dictionary<string, PartType> CategoryAliases = new()
-        {
-            { "Head_Attachment", PartType.HelmetAttachment },
-            { "Shoulder_Attachment_Right", PartType.ShoulderAttachRight },
-            { "Shoulder_Attachment_Left", PartType.ShoulderAttachLeft },
-            { "Elbow_Attachment_Right", PartType.ElbowAttachRight },
-            { "Elbow_Attachment_Left", PartType.ElbowAttachLeft },
-            { "Knee_Attachement_Right", PartType.KneeAttachRight },   // 폴더명 오타(Attachement) 그대로 키로 사용
-            { "Knee_Attachement_Left", PartType.KneeAttachLeft },
-            { "Extra", PartType.Ear },                                 // All_12_Extra 안엔 Elf_Ear만 존재
-        };
 
         // 그룹 C(부착형 악세서리) — 원본 폴더가 _01부터 시작해 "미착용" 후보가 없음.
         // 이 PartType들은 스캔 결과 리스트 맨 앞에 빈 슬롯(인덱스 0)을 코드로 삽입해준다.
@@ -120,7 +102,7 @@ namespace MySecondWorld.Editor
                     var folderName = Path.GetFileName(categoryFolder);
                     // categoryFolders 폴더 안의 개별 카테고리 폴더 하나하나가 매칭되는지 체크
                     // 1단계 폴더명 문자열 → PartType enum 값으로 변환 (폴더 자체는 건드리지 않음)
-                    if (!TryResolvePartType(folderName, out var partType))
+                    if (!PartTypeResolver.TryResolvePartType(folderName, out var partType))
                     {
                         unmatchedFolders.Add(categoryFolder);
                         continue;
@@ -205,25 +187,6 @@ namespace MySecondWorld.Editor
                     $"썸네일 매칭 실패 {missingThumbs.Count}개:\n" +
                     string.Join("\n", missingThumbs));
             }
-        }
-
-        private static bool TryResolvePartType(string folderName, out PartType partType)
-        {
-            var match = CategoryPattern.Match(folderName);
-            var category = match.Success ? match.Groups[1].Value : folderName;
-            var normalized = category.Replace("_", "");
-
-            // CategoryPattern 정규식으로 접두사·번호를 먼저 떼어낸 카테고리 문자열을 비교 대상으로 바꾼 뒤에야 제대로 동작
-            if (Enum.TryParse(normalized, true, out partType)) 
-                return true;
-            // 1차 시도(Enum.TryParse)가 실패했을 때
-            // 2차로 CategoryAliases 사전에 등록된 별칭으로 한 번 더 시도
-
-            // Dictionary의 TryGetValue는 표준 패턴
-            // 폴더 이름이 PartType enum 이름과 글자 그대로 똑같지 않을 때를 위한 "이름 변환 사전"
-            // Synty가 만든 실제 폴더명이 우리 enum과 정확히 안 맞을 가능성에 대한 대비용 빈 사전
-            // 키가 사전에 있으면 true + 값 채움, 없으면 false + partType은 기본값
-            return CategoryAliases.TryGetValue(category, out partType);
         }
 
         private void AssignToEntry(PartType partType, 
