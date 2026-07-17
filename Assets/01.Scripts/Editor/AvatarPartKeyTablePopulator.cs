@@ -61,9 +61,7 @@ namespace MySecondWorld.Editor
 
         public void OnGUI()
         {
-            // Object 타입 값을 AvatarPartKeyTableSO 타입 변수에 그냥 대입하면 컴파일 에러남. (AvatarPartKeyTableSO)로 명시적 다운캐스트를 해줘야 대입이 가능
-            // (typeof(AvatarPartKeyTableSO))는 Unity가 Inspector UI를 그릴 때 "이 칸에는 AvatarPartKeyTableSO 타입만 드래그 가능하게 필터링해라"라고 알려주는 용도
-            _target = (AvatarPartKeyTableSO)EditorGUILayout.ObjectField("Target SO", _target, typeof(AvatarPartKeyTableSO), false);
+            _target = EditorAssetDefaults.DrawWithDefault("Target SO", _target, EditorAssetDefaults.AvatarPartKeyTablePath);
 
             EditorGUILayout.Space();
             EditorGUILayout.HelpBox($"스캔 경로 : {SourceRoot}", MessageType.Info);

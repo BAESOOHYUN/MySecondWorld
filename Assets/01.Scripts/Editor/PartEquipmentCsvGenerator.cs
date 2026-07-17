@@ -21,8 +21,7 @@ namespace MySecondWorld.Editor
 
         private void OnGUI()
         {
-            _target = (AvatarPartKeyTableSO)EditorGUILayout.ObjectField(
-                "TargetSO", _target, typeof(AvatarPartKeyTableSO), false);
+            _target = EditorAssetDefaults.DrawWithDefault("TargetSO", _target, EditorAssetDefaults.AvatarPartKeyTablePath);
 
             // PartType/Gender/Index/SourcePrefabName/SubType/ThumbnailName
             // 전부 이미 AvatarPartKeyTableSO.Entries에 존재하는 데이터이므로

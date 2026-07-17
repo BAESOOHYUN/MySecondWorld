@@ -26,12 +26,6 @@ namespace MySecondWorld.Editor
     // PartTypeResolve.cs 참고
     public class CharacterPresetImporter : EditorWindow
     {
-        // 프로젝트에 AvatarPartKeyTableSO는 이 경로 하나만 존재하고 앞으로도 여러 개 둘 계획이 없으므로
-        // (unity-cli exec로 FindAssets 확인 결과 1개뿐이었음), 매번 드래그하지 않도록 OnEnable에서 기본값을
-        // 자동으로 채워 넣는다. 그래도 필드 자체는 계속 노출해서, 혹시 다른 테이블로 바꿔 테스트하고 싶을 때는
-        // 직접 드래그해서 덮어쓸 수 있게 열어둔다.
-        private const string DefaultPartKeyTablePath = "Assets/06.ScriptableObject/AvatarPartKeyTableSO.asset";
-
         // 배치 임포트 기본 대상 폴더. Characters_Presets 전체를 한 번에 돌리는 게 제일 흔한 시나리오라 기본값으로 지정.
         private const string DefaultBatchFolder =
             "Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Characters_Presets";
@@ -138,8 +132,6 @@ namespace MySecondWorld.Editor
         // 이미 값이 들어있으면(레이아웃 복원 등으로) 덮어쓰지 않는다.
         private void OnEnable()
         {
-            if (_partKeyTable == null)
-                _partKeyTable = AssetDatabase.LoadAssetAtPath<AvatarPartKeyTableSO>(DefaultPartKeyTablePath);
             if (_batchFolder == null)
                 _batchFolder = AssetDatabase.LoadAssetAtPath<DefaultAsset>(DefaultBatchFolder);
             if (_batchEntries.Count == 0)
@@ -148,9 +140,7 @@ namespace MySecondWorld.Editor
 
         public void OnGUI()
         {
-            _partKeyTable = (AvatarPartKeyTableSO)EditorGUILayout.ObjectField(
-                new GUIContent("Avatar Part Key Table", "프로젝트에 하나뿐인 고정 자산이라 기본값이 자동으로 채워진다. 다른 테이블로 테스트하고 싶을 때만 바꿀 것."),
-                _partKeyTable, typeof(AvatarPartKeyTableSO), false);
+            _partKeyTable = EditorAssetDefaults.DrawWithDefault("Target SO", _partKeyTable, EditorAssetDefaults.AvatarPartKeyTablePath);
 
             _targetFolder = EditorGUILayout.TextField(
                 new GUIContent("New Asset Folder", "새로 만드는 CharacterAppearanceSO가 저장될 폴더. 단일/배치 임포트가 공유한다."),
