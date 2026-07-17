@@ -261,6 +261,7 @@ namespace MySecondWorld.UI
                 var noneBtn = Instantiate(_thumbnailButtonPrefab, _thumbnailContent);
                 noneBtn.Setup(part, -1, null, OnThumbnailClicked);  // sprite null
                 noneBtn.SetSelected(selectedIndex == -1);
+                noneBtn.SetLocked(false); // "착용 안 함"은 항상 무료
                 _spawnedButtons.Add(noneBtn);
             }
 
