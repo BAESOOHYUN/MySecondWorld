@@ -18,6 +18,7 @@ namespace MySecondWorld.Network
 
         private ObservableCharacterCustomizer _customizer;
         private AvatarPartKeyTableSO _avatarPartKeyTable;
+        private LocalPlayerInventoryProvider _localInventoryProvider;
         private Cleverous.VaultInventory.Inventory _inventory;
 
         // IUseInventory 구현 — Inventory 컴포넌트가 "누가 이 인벤토리의 주인인지" 알아야 해서 필요
@@ -30,17 +31,19 @@ namespace MySecondWorld.Network
         // (아이템 드롭, 상호작용 거리 체크)에 쓰이는 값
         public Transform MyTransform => transform;
 
-
+        
         private IPublisher<RequestOpenCustomizeUIEvent> _openUIPublisher;
 
         [Inject]
         public void Construct(
             ObservableCharacterCustomizer customizer,
             AvatarPartKeyTableSO avatarPartKeyTable,
+            LocalPlayerInventoryProvider localInventoryProvider,
             IObjectResolver resolver)
         {
             _customizer = customizer;
             _avatarPartKeyTable = avatarPartKeyTable;
+            _localInventoryProvider = localInventoryProvider;
 
             // Root.Resolve를 쓰는 이유 :
             // PlayerScope의 MessagePipe 로컬 등록이 이 이벤트 타입을 가로채서,
@@ -117,6 +120,8 @@ namespace MySecondWorld.Network
         public override void OnStartLocalPlayer()
         {
             base.OnStartLocalPlayer();
+
+            _localInventoryProvider.SetLocal(_inventory);
             if (!PlayerPrefs.HasKey(PrefKeyCustomized))
                 _openUIPublisher.Publish(new RequestOpenCustomizeUIEvent());
         }

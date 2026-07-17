@@ -65,6 +65,7 @@ namespace MySecondWorld.UI
         private AvatarPartKeyTableSO _keyTable;
         private CharacterAppearanceSO _defaultAppearanceSO;
         private CharacterSaveService _saveService;
+        private LocalPlayerInventoryProvider _inventoryProvider;
         private IPublisher<CharacterAppearanceSyncRequestedEvent> _saveRequestPub;
 
         // ── 아틀라스 ──
@@ -96,12 +97,14 @@ namespace MySecondWorld.UI
         public void Construct(AvatarPartKeyTableSO keyTable,
                             CharacterSaveService saveService,
                             CharacterAppearanceSO defaultAppearanceSO,
+                            LocalPlayerInventoryProvider inventoryProvider,
                             IPublisher<CharacterAppearanceSyncRequestedEvent> saveRequestPub,
                             ISubscriber<RequestOpenCustomizeUIEvent> openUISub)
         {
             _keyTable = keyTable;
             _saveService = saveService;
             _defaultAppearanceSO = defaultAppearanceSO;
+            _inventoryProvider = inventoryProvider;
             _saveRequestPub = saveRequestPub;
             openUISub.Subscribe(_ => Open()).AddTo(destroyCancellationToken);
 
@@ -271,6 +274,9 @@ namespace MySecondWorld.UI
                 int capturedIndex = i;
                 btn.Setup(part, capturedIndex, sprite, OnThumbnailClicked);
                 btn.SetSelected(capturedIndex == selectedIndex);
+                // 잠금 체크
+                var requiredItem = _keyTable.GetRequiredItem(part, _currentGender, capturedIndex);
+                btn.SetLocked(!_inventoryProvider.IsOwned(requiredItem));
                 _spawnedButtons.Add(btn);
             }
         }

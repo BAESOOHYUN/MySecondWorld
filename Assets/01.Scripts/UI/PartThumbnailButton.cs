@@ -12,6 +12,7 @@ namespace MySecondWorld.UI
         [SerializeField] private GameObject _selectedFrame; // 선택 강조 테두리 (껐다 켬)
         [SerializeField] private Button _button;
         [SerializeField] private Sprite _noneSprite;
+        [SerializeField] private GameObject _lockIcon; // 미소유 표시 오버레이
 
         public PartType Part { get; private set; }
 
@@ -31,6 +32,12 @@ namespace MySecondWorld.UI
         {
             if (_selectedFrame != null)
                 _selectedFrame.SetActive(selected);
+        }
+
+        public void SetLocked(bool locked)
+        {
+            if (_lockIcon != null)
+                _lockIcon.SetActive(locked);
         }
     }
 }

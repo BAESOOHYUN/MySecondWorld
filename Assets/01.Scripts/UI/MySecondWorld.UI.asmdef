@@ -21,7 +21,8 @@
         "MySecondWorld.Customization",
         "MySecondWorld.Save",
         "Paroxe.PDFRenderer",
-        "FlexibleColorPicker"
+        "FlexibleColorPicker",
+        "MySecondWorld.Inventory.Items"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

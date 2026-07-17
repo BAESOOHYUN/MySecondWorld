@@ -8,7 +8,10 @@
         "UniTask.Addressables",
         "VContainer",
         "MessagePipe",
-        "MySecondWorld.Inventory.Items"
+        "MySecondWorld.Inventory.Items",
+        "Cleverous.VaultInventory",
+        "Mirror",
+        "Cleverous.VaultSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
