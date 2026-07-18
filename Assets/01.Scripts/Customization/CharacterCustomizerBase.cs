@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
@@ -9,31 +10,31 @@ namespace MySecondWorld.Customization
 {
     public abstract class CharacterCustomizerBase : MonoBehaviour
     {
-        // ── DI ──
+        #region DI
         [SerializeField] Transform _partRoot; // Modular_Characters
         private AvatarPartKeyTableSO _avatarPartKeyTable;
         private CharacterAppearanceSO _defaultAppearanceSO;
+        #endregion
 
-        // ── 상태 ──
-        protected CharacterAppearanceData _currentAppearance;
+        #region 상태
+        protected CharacterAppearanceData _currentAppearance;   // desired — 사용자가 마지막으로 "직접 고른" 값
+        private CharacterAppearanceData _lastAppliedVisible;    // visible — 직전에 실제로 렌더링(인스턴스화)한 값
         private readonly Dictionary<PartType, GameObject> _activePartInstances = new();
         private readonly Dictionary<string, Transform> _boneMap = new();
         private readonly HashSet<PartType> _loadingParts = new(); //연타방지
         private readonly SemaphoreSlim _appearanceLock = new(1, 1); //동시에 ApplyAppearance/SetPart가 겹쳐 돌지 못하게 세마포어로 직렬화
 
-        // 헬멧 장착 캐스케이드로 지워지는 Head/Hair/Eyebrows/FacialHair/HeadCoverings 복원용 스냅샷
-        private int? _preHelmetHead;
-        private int? _preHelmetHair;
-        private int? _preHelmetEyebrows;
-        private int? _preHelmetFacialHair;
-        private int? _preHelmetHeadCoverings;
+        // 파츠별 subtype 후보가 여러 개일 때, 사용자가 마지막으로 직접 고른 인덱스를 기억 —
+        // FindSubtypeIndex가 무조건 첫 후보를 고르는 대신 "사용자의 최근 선택을 우선"하게 함
+        private readonly Dictionary<(PartType part, string subtype), int> _lastSelectedIndexByPartAndSubtype = new();
 
         // HeadCoverings/HelmetAttachment는 그룹 C라 인덱스 0이 "착용 안 함"이다.
         // (Hair/Eyebrows/FacialHair 같은 그룹 A는 -1이 "없음"이라 규약이 다르다 — 혼동 방지용 상수)
         private const int HeadCoveringsNoneIndex = 0;
         private const int HelmetAttachmentNoneIndex = 0;
+        #endregion
 
-        // ── 초기화 ──
+        #region 초기화
         [Inject]
         public void Construct(
             AvatarPartKeyTableSO avatarPartKeyTable,
@@ -45,6 +46,7 @@ namespace MySecondWorld.Customization
 
         protected virtual void Start()
         {
+            // ★중요! 이 설정을 안하면 T포즈로 굳는다.
             var anim = GetComponent<Animator>() ?? GetComponentInParent<Animator>();
             if (anim != null)
                 anim.cullingMode = AnimatorCullingMode.AlwaysAnimate;
@@ -57,20 +59,23 @@ namespace MySecondWorld.Customization
         {
             _appearanceLock.Dispose();
         }
+        #endregion
 
-        // ── 공개 API ──
+        #region 공개 API
         // 전체 외형 "통째로 다시" 교체 (로그인 시 / 랜덤 / 불러오기)
         public async UniTask ApplyAppearance(CharacterAppearanceData data)
         {
             await _appearanceLock.WaitAsync(); //레이스컨디션을 막음
             try
             {
-                _currentAppearance = data;
+                _currentAppearance = data;                  // desired 통째로 교체
+                _lastSelectedIndexByPartAndSubtype.Clear(); // 세션 캐시 리셋 (기존과 동일)
 
-                // 스냅샷 무효화
-                // 완전 재적용이 일어나면 이번 세션에서 쌓아둔 헬멧 스냅샷 기억은 더 이상 유효하지 않으니 리셋한다
-                // ex) 사용자는 랜덤을 눌렀는데 화면엔 랜덤 결과가 아니라 뜬금없이 예전 헬멧 쓰기 전 모습이 섞여 나오는 버그
-                _preHelmetHead = _preHelmetHair = _preHelmetEyebrows = _preHelmetFacialHair = _preHelmetHeadCoverings = null;
+                // ApplyDirectSelectionRules(Stage1/Type-2)는 호출하지 않는다 — 2026-07-18 확정.
+                // 로드된 데이터가 설령 앞뒤가 안 맞아도(예: 예전에 억제된 상태로 저장됐어도)
+                // ComputeVisibleAppearance(Stage2)가 매번 desired만 보고 일관된 visible을 계산한다.
+                var visible = MutualExclusionResolver.ComputeVisibleAppearance(
+                    _currentAppearance, data.Gender, _avatarPartKeyTable, _lastSelectedIndexByPartAndSubtype);
 
                 // 기존 인스턴스 전부 해제
                 foreach (var key in new List<PartType>(_activePartInstances.Keys))
@@ -80,35 +85,36 @@ namespace MySecondWorld.Customization
                 // _boneMap은 이미 완성된 상태라 읽기만 하면 됨.
                 EnsureBoneMap();
 
-                // WhenAll로 동시 로드
+                // WhenAll로 동시 로드 — 전부 desired가 아니라 visible.X를 사용한다
                 await UniTask.WhenAll(
-                    InstantiatePart(PartType.Hair, data.Hair, data.Gender),
-                    InstantiatePart(PartType.Head, data.Head, data.Gender),
-                    InstantiatePart(PartType.Eyebrows, data.Eyebrows, data.Gender),
-                    InstantiatePart(PartType.FacialHair, data.FacialHair, data.Gender),
-                    InstantiatePart(PartType.Torso, data.Torso, data.Gender),
-                    InstantiatePart(PartType.ArmUpperRight, data.ArmUpperRight, data.Gender),
-                    InstantiatePart(PartType.ArmUpperLeft, data.ArmUpperLeft, data.Gender),
-                    InstantiatePart(PartType.ArmLowerRight, data.ArmLowerRight, data.Gender),
-                    InstantiatePart(PartType.ArmLowerLeft, data.ArmLowerLeft, data.Gender),
-                    InstantiatePart(PartType.HandRight, data.HandRight, data.Gender),
-                    InstantiatePart(PartType.HandLeft, data.HandLeft, data.Gender),
-                    InstantiatePart(PartType.Hips, data.Hips, data.Gender),
-                    InstantiatePart(PartType.LegRight, data.LegRight, data.Gender),
-                    InstantiatePart(PartType.LegLeft, data.LegLeft, data.Gender),
-                    InstantiatePart(PartType.HeadCoverings, data.HeadCoverings, data.Gender),
-                    InstantiatePart(PartType.Ear, data.Ear, data.Gender),
-                    InstantiatePart(PartType.HelmetAttachment, data.HelmetAttachment, data.Gender),
-                    InstantiatePart(PartType.BackAttachment, data.BackAttachment, data.Gender),
-                    InstantiatePart(PartType.ShoulderAttachRight, data.ShoulderAttachRight, data.Gender),
-                    InstantiatePart(PartType.ShoulderAttachLeft, data.ShoulderAttachLeft, data.Gender),
-                    InstantiatePart(PartType.ElbowAttachRight, data.ElbowAttachRight, data.Gender),
-                    InstantiatePart(PartType.ElbowAttachLeft, data.ElbowAttachLeft, data.Gender),
-                    InstantiatePart(PartType.KneeAttachRight, data.KneeAttachRight, data.Gender),
-                    InstantiatePart(PartType.KneeAttachLeft, data.KneeAttachLeft, data.Gender),
-                    InstantiatePart(PartType.HipsAttachment, data.HipsAttachment, data.Gender)
+                    InstantiatePart(PartType.Hair, visible.Hair, data.Gender),
+                    InstantiatePart(PartType.Head, visible.Head, data.Gender),
+                    InstantiatePart(PartType.Eyebrows, visible.Eyebrows, data.Gender),
+                    InstantiatePart(PartType.FacialHair, visible.FacialHair, data.Gender),
+                    InstantiatePart(PartType.Torso, visible.Torso, data.Gender),
+                    InstantiatePart(PartType.ArmUpperRight, visible.ArmUpperRight, data.Gender),
+                    InstantiatePart(PartType.ArmUpperLeft, visible.ArmUpperLeft, data.Gender),
+                    InstantiatePart(PartType.ArmLowerRight, visible.ArmLowerRight, data.Gender),
+                    InstantiatePart(PartType.ArmLowerLeft, visible.ArmLowerLeft, data.Gender),
+                    InstantiatePart(PartType.HandRight, visible.HandRight, data.Gender),
+                    InstantiatePart(PartType.HandLeft, visible.HandLeft, data.Gender),
+                    InstantiatePart(PartType.Hips, visible.Hips, data.Gender),
+                    InstantiatePart(PartType.LegRight, visible.LegRight, data.Gender),
+                    InstantiatePart(PartType.LegLeft, visible.LegLeft, data.Gender),
+                    InstantiatePart(PartType.HeadCoverings, visible.HeadCoverings, data.Gender),
+                    InstantiatePart(PartType.Ear, visible.Ear, data.Gender),
+                    InstantiatePart(PartType.HelmetAttachment, visible.HelmetAttachment, data.Gender),
+                    InstantiatePart(PartType.BackAttachment, visible.BackAttachment, data.Gender),
+                    InstantiatePart(PartType.ShoulderAttachRight, visible.ShoulderAttachRight, data.Gender),
+                    InstantiatePart(PartType.ShoulderAttachLeft, visible.ShoulderAttachLeft, data.Gender),
+                    InstantiatePart(PartType.ElbowAttachRight, visible.ElbowAttachRight, data.Gender),
+                    InstantiatePart(PartType.ElbowAttachLeft, visible.ElbowAttachLeft, data.Gender),
+                    InstantiatePart(PartType.KneeAttachRight, visible.KneeAttachRight, data.Gender),
+                    InstantiatePart(PartType.KneeAttachLeft, visible.KneeAttachLeft, data.Gender),
+                    InstantiatePart(PartType.HipsAttachment, visible.HipsAttachment, data.Gender)
                 );
 
+                _lastAppliedVisible = visible;
                 ReapplyColors();
                 OnAppearanceChanged();
             }
@@ -116,35 +122,38 @@ namespace MySecondWorld.Customization
             {
                 _appearanceLock.Release();
             }
-
-            // ApplyAppearance는 SetPart처럼 끝에서 ApplyMutualExclusion을 호출하지 않으므로 들어온 데이터를 검증 없이 그대로 로드한다.
-            // 성별전환/랜덤/세이브로드는 파츠를 하나씩 따로 정해서 조합하기 때문에,
-            // Head뿐 아니라 HeadCoverings/Hair/Eyebrows/FacialHair/HelmetAttachment 각자의 상호배제 규칙과도 충돌할 수 있어
-            // 트리거가 되는 6개 파츠를 전부 다시 검증한다. 매번 _currentAppearance를 새로 읽어 앞선 검증의 연쇄 결과를 반영한다.
-
-            // ※ 락을 반드시 놓은 뒤에 호출해야 한다 — 내부에서 SetPart를 호출할 수 있는데, SetPart도 같은
-            //   _appearanceLock을 기다리므로 락을 쥔 채로 부르면 자기 자신을 영원히 기다리는 데드락이 된다.
-            await ApplyMutualExclusion(PartType.Head, _currentAppearance.Head, data.Gender);
-            await ApplyMutualExclusion(PartType.HeadCoverings, _currentAppearance.HeadCoverings, data.Gender);
-            await ApplyMutualExclusion(PartType.Hair, _currentAppearance.Hair, data.Gender);
-            await ApplyMutualExclusion(PartType.Eyebrows, _currentAppearance.Eyebrows, data.Gender);
-            await ApplyMutualExclusion(PartType.FacialHair, _currentAppearance.FacialHair, data.Gender);
-            await ApplyMutualExclusion(PartType.HelmetAttachment, _currentAppearance.HelmetAttachment, data.Gender);
-
         }
 
         // 단일 파츠 변경 (UI 버튼에서 호출). 연타 방지 필요
         public async UniTask SetPart(PartType part, int index)
         {
-            if (_loadingParts.Contains(part)) return;
+            if (_loadingParts.Contains(part)) return;  // 파츠 하나 단위 가드 — 2026-07-18 확정, 확장 안 함
+            
             _loadingParts.Add(part);
             await _appearanceLock.WaitAsync();
             try
             {
-                ReleasePartInstance(part);  // 자기 자신의 이전 인스턴스 해제
-                SetCurrentIndex(part, index);
-                await InstantiatePart(part, index, _currentAppearance.Gender);
-                ReapplyColors(); // 새로 생성된 파츠에 기존 색상 재적용 — 없으면 프리팹 기본 색(예: 금발)이 노출됨
+                var previousVisible = _lastAppliedVisible; // 직전에 실제로 렌더링했던 상태
+                var gender = _currentAppearance.Gender;
+                _currentAppearance[part] = index;           // desired 갱신
+                RecordLastSelected(part, index, gender);     // 사용자 취향 캐시 갱신 (직접 선택만 기록)
+
+                MutualExclusionResolver.ApplyDirectSelectionRules(
+                    ref _currentAppearance, part,index, gender, _avatarPartKeyTable, _lastSelectedIndexByPartAndSubtype);
+
+                var newVisible = MutualExclusionResolver.ComputeVisibleAppearance(
+                    _currentAppearance, gender, _avatarPartKeyTable, _lastSelectedIndexByPartAndSubtype);
+
+                // 25개 파츠 전부 순회하지만 실제로 값이 다른 건 최대 6개(상호배제 대상)뿐.
+                // newVisible은 이 루프가 시작되기 전에 이미 완전히 확정된 값이라,
+                // 어떤 순서로 적용하든(서로를 참조하지 않으므로) 최종 결과는 항상 같다.
+                foreach (PartType p in Enum.GetValues(typeof(PartType)))
+                {
+                    if (newVisible[p] != previousVisible[p])
+                        await ReplacePartInstance(p, newVisible[p], gender);
+                }
+                _lastAppliedVisible = newVisible;
+                ReapplyColors();
                 OnAppearanceChanged();
             }
             finally
@@ -152,7 +161,6 @@ namespace MySecondWorld.Customization
                 _appearanceLock.Release();
                 _loadingParts.Remove(part);
             }
-            await ApplyMutualExclusion(part, index, _currentAppearance.Gender);
         }
 
         // 색 변경
@@ -224,12 +232,14 @@ namespace MySecondWorld.Customization
         }
 
         public CharacterAppearanceData GetCurrentAppearance() => _currentAppearance;
+        #endregion
 
-        // ── 오버라이드 포인트 ──
+        #region 오버라이드 포인트
         protected virtual void OnAppearanceChanged() { }
         protected virtual void OnPartInstantiated(GameObject instance) { }
+        #endregion
 
-        // ── 내부 구현 ──
+        #region 내부 구현
         private async UniTask InstantiatePart(PartType part, int index, Gender gender)
         {
             var candidates = _avatarPartKeyTable.GetCandidates(part, gender);
@@ -257,195 +267,27 @@ namespace MySecondWorld.Customization
             }
         }
 
-        private void SetCurrentIndex(PartType part, int index)
+        // "이 파츠는 사용자가 방금 이 인덱스로 직접 골랐다"는 사실을 기록해두는 함수.
+        // 나중에 같은 subtype 안에서 하나를 자동으로 골라야 할 때(예: 헬멧 벗고 얼굴 되돌리기),
+        // 아무거나 첫 번째를 고르지 않고 이 선택 기록을 먼저 확인해서 쓴다.
+        // 이 기록은 오직 여기서만 바뀐다 — 계산만 하는 순수 함수들(ApplyDirectSelectionRules,
+        // ComputeVisibleAppearance)은 이 기록을 읽기만 하고 절대 고치지 않는다.
+        private void RecordLastSelected(PartType part, int index, Gender gender)
         {
-            switch (part)
-            {
-                case PartType.Hair: _currentAppearance.Hair = index; break;
-                case PartType.Head: _currentAppearance.Head = index; break;
-                case PartType.Eyebrows: _currentAppearance.Eyebrows = index; break;
-                case PartType.FacialHair: _currentAppearance.FacialHair = index; break;
-                case PartType.Torso: _currentAppearance.Torso = index; break;
-                case PartType.ArmUpperRight: _currentAppearance.ArmUpperRight = index; break;
-                case PartType.ArmUpperLeft: _currentAppearance.ArmUpperLeft = index; break;
-                case PartType.ArmLowerRight: _currentAppearance.ArmLowerRight = index; break;
-                case PartType.ArmLowerLeft: _currentAppearance.ArmLowerLeft = index; break;
-                case PartType.HandRight: _currentAppearance.HandRight = index; break;
-                case PartType.HandLeft: _currentAppearance.HandLeft = index; break;
-                case PartType.Hips: _currentAppearance.Hips = index; break;
-                case PartType.LegRight: _currentAppearance.LegRight = index; break;
-                case PartType.LegLeft: _currentAppearance.LegLeft = index; break;
-                case PartType.HeadCoverings: _currentAppearance.HeadCoverings = index; break;
-                case PartType.Ear: _currentAppearance.Ear = index; break;
-                case PartType.HelmetAttachment: _currentAppearance.HelmetAttachment = index; break;
-                case PartType.BackAttachment: _currentAppearance.BackAttachment = index; break;
-                case PartType.ShoulderAttachRight: _currentAppearance.ShoulderAttachRight = index; break;
-                case PartType.ShoulderAttachLeft: _currentAppearance.ShoulderAttachLeft = index; break;
-                case PartType.ElbowAttachRight: _currentAppearance.ElbowAttachRight = index; break;
-                case PartType.ElbowAttachLeft: _currentAppearance.ElbowAttachLeft = index; break;
-                case PartType.KneeAttachRight: _currentAppearance.KneeAttachRight = index; break;
-                case PartType.KneeAttachLeft: _currentAppearance.KneeAttachLeft = index; break;
-                case PartType.HipsAttachment: _currentAppearance.HipsAttachment = index; break;
-            }
+            var subtype = _avatarPartKeyTable.GetSubType(part, gender, index);
+            _lastSelectedIndexByPartAndSubtype[(part, subtype)] = index;
         }
 
-        // 파츠 선택 시 Synty 상호배제 규칙 적용
-        // ── 상호배제 매트릭스 (Synty ModularCharacters 규칙) ──────────────────────────────
-        // 선택 파츠                  │ 조건                      │ 결과
-        // ───────────────────────────┼───────────────────────────┼─────────────────────────
-        // HeadCoverings  (index > 0) │ subtype = No_Hair          │ Hair              → -1
-        // HeadCoverings  (index > 0) │ subtype = No_FacialHair    │ FacialHair        → -1
-        // HeadCoverings  (index > 0) │ 현재 Head = No_Elements    │ Head → 첫 All_Elements
-        // Hair           (index ≥ 0) │ 현재 HC   = No_Hair        │ HeadCoverings     → 0
-        // Hair           (index ≥ 0) │ 현재 Head = No_Elements    │ Head → 첫 All_Elements
-        // Eyebrows       (index ≥ 0) │ 현재 Head = No_Elements    │ Head → 첫 All_Elements
-        // FacialHair     (index ≥ 0) │ 현재 HC   = No_FacialHair  │ HeadCoverings     → 0
-        // FacialHair     (index ≥ 0) │ 현재 Head = No_Elements    │ Head → 첫 All_Elements
-        // Head           (index ≥ 0) │ subtype   = All_Elements   │ HelmetAttachment  → 0
-        // Head           (index ≥ 0) │ subtype   = No_Elements    │ Hair, Eyebrows, FacialHair → -1 / HeadCoverings → 0
-        // HelmetAttachment(index > 0)│ 현재 Head = All_Elements   │ Head → 첫 No_Elements (씌우기 직전 상태 스냅샷 저장)
-        // HelmetAttachment(index = 0)│ 스냅샷 있음                │ Head/Hair/Eyebrows/FacialHair/HeadCoverings 스냅샷 복원
-        // ───────────────────────────┼───────────────────────────┼─────────────────────────
-        // ※ HeadCoverings/HelmetAttachment는 그룹 C라 index==0이 "없음 슬롯" — 그룹 A(-1)와 규약이 다름
-        private async UniTask ApplyMutualExclusion(PartType changedPart, int newIndex, Gender gender)
+        // 딱 하나의 파츠만 지우고 다시 만드는 함수. 다른 파츠는 절대 안 건드린다.
+        // 그래서 이 함수를 여러 번 연달아 불러도 서로 꼬이거나 겹칠 일이 없다.
+        private async UniTask ReplacePartInstance(PartType part, int index, Gender gender)
         {
-            var subtype = _avatarPartKeyTable.GetSubType(changedPart, gender, newIndex);
-
-            switch (changedPart)
-            {
-                case PartType.HeadCoverings when newIndex > 0: // 0 = 착용 안 함, 상호배제 대상 아님
-                    {
-                        // 헤드커버 선택 → No_Hair면 머리카락, No_FacialHair면 수염 해제
-                        if (subtype == "No_Hair")
-                            await SetPart(PartType.Hair, -1);
-                        else if (subtype == "No_FacialHair")
-                            await SetPart(PartType.FacialHair, -1);
-
-                        // 어떤 헤드커버든 No_Elements 헤드와 충돌 → All_Elements로 교체
-                        if (_avatarPartKeyTable.GetSubType(PartType.Head, gender, _currentAppearance.Head) == "No_Elements")
-                            await SwitchHeadTo("All_Elements", gender);
-                        break;
-                    }
-
-                case PartType.Hair when newIndex >= 0:
-                    {
-                        // 머리카락 선택 → No_Hair 헤드커버와 충돌 → 헤드커버 해제
-                        if (_avatarPartKeyTable.GetSubType(PartType.HeadCoverings, gender, _currentAppearance.HeadCoverings) == "No_Hair")
-                            await SetPart(PartType.HeadCoverings, HeadCoveringsNoneIndex);
-
-                        // No_Elements 헤드와도 충돌 → All_Elements로 교체
-                        if (_avatarPartKeyTable.GetSubType(PartType.Head, gender, _currentAppearance.Head) == "No_Elements")
-                            await SwitchHeadTo("All_Elements", gender);
-                        break;
-                    }
-
-                case PartType.Eyebrows when newIndex >= 0:
-                    {
-                        // 눈썹 선택 → No_Elements 헤드와 충돌 (눈썹 메시가 빈 얼굴판에 클리핑) → All_Elements로 교체
-                        if (_avatarPartKeyTable.GetSubType(PartType.Head, gender, _currentAppearance.Head) == "No_Elements")
-                            await SwitchHeadTo("All_Elements", gender);
-                        break;
-                    }
-
-                case PartType.FacialHair when newIndex >= 0:
-                    {
-                        // 수염 선택 → No_FacialHair 헤드커버와 충돌 → 헤드커버 해제
-                        if (_avatarPartKeyTable.GetSubType(PartType.HeadCoverings, gender, _currentAppearance.HeadCoverings) == "No_FacialHair")
-                            await SetPart(PartType.HeadCoverings, HeadCoveringsNoneIndex);
-
-                        // No_Elements 헤드와도 충돌 → All_Elements로 교체
-                        if (_avatarPartKeyTable.GetSubType(PartType.Head, gender, _currentAppearance.Head) == "No_Elements")
-                            await SwitchHeadTo("All_Elements", gender);
-                        break;
-                    }
-
-                case PartType.Head when newIndex >= 0:
-                    {
-                        // 헤드 선택
-                        // All_Elements(얼굴판 있음) → 헬멧과 충돌 → 헬멧 해제
-                        //   이미 0(착용 안 함)이면 다시 안 부름 — HelmetAttachment 복원 캐스케이드가
-                        //   Head를 All_Elements로 되돌릴 때 이 case가 재진입하는데, 그때 불필요한
-                        //   재귀 SetPart 호출을 막기 위한 가드다.
-                        // No_Elements(빈 얼굴판) → 머리카락·눈썹·수염·헤드커버 전부 충돌 → 일괄 해제
-                        if (subtype == "All_Elements")
-                        {
-                            if (_currentAppearance.HelmetAttachment != HelmetAttachmentNoneIndex)
-                                await SetPart(PartType.HelmetAttachment, HelmetAttachmentNoneIndex);
-                        }
-                        else if (subtype == "No_Elements")
-                        {
-                            await SetPart(PartType.Hair, -1);
-                            await SetPart(PartType.Eyebrows, -1);
-                            await SetPart(PartType.FacialHair, -1);
-                            await SetPart(PartType.HeadCoverings, HeadCoveringsNoneIndex);
-                        }
-                        break;
-                    }
-
-                case PartType.HelmetAttachment when newIndex > 0: // 인덱스 0은 "착용 안 함" 슬롯 — 상호배제 대상 아님
-                    {
-                        if (_avatarPartKeyTable.GetSubType(PartType.Head, gender, _currentAppearance.Head) == "All_Elements")
-                        {
-                            // 헬멧을 처음 씌우는 순간에만 직전 상태를 스냅샷 — 이미 헬멧을 쓴 채로
-                            // 다른 헬멧으로 갈아 끼우는 경우는 스냅샷을 덮어쓰지 않고 유지한다.
-                            if (_preHelmetHead == null)
-                            {
-                                _preHelmetHead = _currentAppearance.Head;
-                                _preHelmetHair = _currentAppearance.Hair;
-                                _preHelmetEyebrows = _currentAppearance.Eyebrows;
-                                _preHelmetFacialHair = _currentAppearance.FacialHair;
-                                _preHelmetHeadCoverings = _currentAppearance.HeadCoverings;
-                            }
-                            await SwitchHeadTo("No_Elements", gender);
-                        }
-                        break;
-                    }
-                case PartType.HelmetAttachment when newIndex == 0: // 헬멧을 벗음 → 스냅샷 있으면 복원
-                    {
-                        // _preHelmetHead가 null일 수 있음 — 이번 세션에서 UI로 직접 헬멧을 씌운 적이
-                        // 없다는 뜻(예: 세이브 로드/랜덤 결과가 처음부터 헬멧+맨헤드 조합)이라 되돌아갈
-                        // "씌우기 전" 상태를 애초에 모른다. 이 경우 복원 없이 그냥 벗은 채로 둔다.
-                        if (_preHelmetHead.HasValue)
-                        {
-                            int restoreHead = _preHelmetHead.Value;
-                            int restoreHair = _preHelmetHair.Value;
-                            int restoreEyebrows = _preHelmetEyebrows.Value;
-                            int restoreFacialHair = _preHelmetFacialHair.Value;
-                            int restoreHeadCoverings = _preHelmetHeadCoverings.Value;
-
-                            // 복원용 SetPart(Head, ...)가 내부적으로 "HelmetAttachment → 0" 캐스케이드를
-                            // 다시 태울 수 있어(All_Elements 복귀 시), 재진입 시 조용히 빠지도록 먼저 비운다.
-                            _preHelmetHead = null;
-                            _preHelmetHair = null;
-                            _preHelmetEyebrows = null;
-                            _preHelmetFacialHair = null;
-                            _preHelmetHeadCoverings = null;
-
-                            await SetPart(PartType.Head, restoreHead);
-                            await SetPart(PartType.Hair, restoreHair);
-                            await SetPart(PartType.Eyebrows, restoreEyebrows);
-                            await SetPart(PartType.FacialHair, restoreFacialHair);
-                            await SetPart(PartType.HeadCoverings, restoreHeadCoverings);
-                        }
-                        break;
-                    }
-            }
+            ReleasePartInstance(part);
+            await InstantiatePart(part, index, gender);
         }
+        #endregion
 
-        private async UniTask SwitchHeadTo(string targetSubtype, Gender gender)
-        {
-            var count = _avatarPartKeyTable.GetCount(PartType.Head, gender);
-            for (int i = 0; i < count; i++)
-            {
-                if (_avatarPartKeyTable.GetSubType(PartType.Head, gender, i) == targetSubtype)
-                {
-                    await SetPart(PartType.Head, i);
-                    return;
-                }
-            }
-        }
-
-        // ── 본 관련 ──
+        #region 본 관련
         private void EnsureBoneMap()
         {
             if (_boneMap.Count > 0) return;
@@ -473,5 +315,6 @@ namespace MySecondWorld.Customization
             if (_boneMap.TryGetValue(rootName, out var root))
                 smr.rootBone = root;
         }
+        #endregion
     }
 }

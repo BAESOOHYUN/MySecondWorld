@@ -171,6 +171,7 @@ namespace MySecondWorld.Customization
         // 인덱서 추가
         // 인덱서 : 배열 int[], string[] 등에서 쓰는 [] 문법을 내가 만든 class/struct에도 쓸 수 있게 해줌
         // this = CharacterAppearanceData struct 자기자신
+        // ex) _currentAppearance[part] 와 같이 사용한다.
         public int this[PartType part]
         {
             get => part switch
