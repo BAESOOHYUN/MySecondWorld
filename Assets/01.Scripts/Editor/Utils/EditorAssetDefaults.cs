@@ -1,6 +1,5 @@
 using UnityEditor;
 using UnityEngine;
-using MySecondWorld.Customization;
 
 namespace MySecondWorld.Editor
 {
