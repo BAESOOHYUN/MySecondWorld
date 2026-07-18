@@ -5,6 +5,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using Cleverous.VaultInventory;
+using Cleverous.VaultSystem;
 using MySecondWorld.Customization;
 using MySecondWorld.Inventory;
 using MySecondWorld.Inventory.Items;
@@ -13,7 +14,8 @@ namespace MySecondWorld.Editor
 {
     public class ItemAssetBakeHelper : EditorWindow
     {
-        #region 상수 · 설정 테이블
+        #region 필드 (상수 · 설정 · 인스턴스 상태)
+
         // 1개 아이템 생성 시 서브폴더 붙여서 쓰는 "쓰기 목적지" 베이스
         // 예: $"{AssetOutputFolder}/{subfolder}"  → .../Inventory/Equipment, .../Inventory/Consumables 등
         private const string AssetOutputFolder = "Assets/06.ScriptableObject/Inventory";
@@ -54,33 +56,6 @@ namespace MySecondWorld.Editor
             { "Consumable", "Consumables" },
             { "Generic", "Generic" },
         };
-        #endregion
-
-
-        #region 공용 헬퍼 (무기/아이템 · Wearable 베이킹 양쪽에서 사용)
-
-        private static SlotRestriction FindSlotRestriction(string title, Dictionary<string, SlotRestriction> cache)
-        {
-            if (cache.TryGetValue(title, out var cached)) return cached;
-
-            var guids = AssetDatabase.FindAssets("t:SlotRestriction", new[] { RestrictionSearchFolder });
-            foreach (var guid in guids)
-            {
-                string path = AssetDatabase.GUIDToAssetPath(guid);       // GUID → 파일 경로
-                var restriction = AssetDatabase.LoadAssetAtPath<SlotRestriction>(path); // 파일 경로 → 실제 오브젝트 로드후 <SlotRestriction> 타입으로 캐스팅
-                if (restriction != null && restriction.Title == title)
-                {
-                    cache[title] = restriction;
-                    return restriction;         // Title 문자열로 최종 매칭
-                }
-            }
-            Debug.LogWarning($"[ItemAssetBakeHelper] SlotRestriction '{title}' 못 찾음");
-            cache[title] = null;
-            return null;
-        }
-        #endregion
-
-        #region 에디터 창 (메뉴 · GUI)
 
         private AvatarPartKeyTableSO _partTable;
 
@@ -88,63 +63,9 @@ namespace MySecondWorld.Editor
         private bool _useRemotePrefab = true;
         private bool _overwrite = false;
 
-        [MenuItem("Tools/Inventory/Item Baker")]
-        private static void Open() => GetWindow<ItemAssetBakeHelper>("Item Baker");
+        #endregion
 
-        [MenuItem("Tools/Inventory/Ensure Slot Restrictions")]
-        private static void EnsureSlotRestrictions()
-        {
-            string[] partTypeNames =
-            {
-                // 그룹 A(머리,헤어,눈썹 등 신체 파트 아이템) 제외
-                // 그룹 B([0]번이 기본 몸체인 아이템) 10개
-                "Torso", "ArmUpperRight", "ArmUpperLeft", "ArmLowerRight", "ArmLowerLeft",
-                "HandLeft", "HandRight", "Hips", "LegLeft", "LegRight",
-                // 그룹 C(악세사리류) 10개
-                "HeadCoverings", "BackAttachment",
-                "ShoulderAttachLeft", "ShoulderAttachRight",
-                "ElbowAttachLeft", "ElbowAttachRight",
-                "KneeAttachLeft", "KneeAttachRight",
-                "HelmetAttachment", "HipsAttachment",
-            };
-
-            EditorFolderUtils.EnsureFolder(RestrictionSearchFolder);
-
-            // RestrictionSearchFolder 안에서 타입이 SlotRestriction인 에셋을 전부 찾음
-            //  "지금 폴더에 뭐가 있는지" 스냅샷을 뜨는 것
-            var existingTitles = new HashSet<string>();
-            foreach (var guid in AssetDatabase.FindAssets("t:SlotRestriction", new[] { RestrictionSearchFolder }))
-            {
-                var restriction = AssetDatabase.LoadAssetAtPath<SlotRestriction>(AssetDatabase.GUIDToAssetPath(guid));
-                if (restriction != null)
-                    existingTitles.Add(restriction.Title);
-            }
-
-            //
-            AssetDatabase.StartAssetEditing();
-            int created = 0;
-            try
-            {
-                foreach (var name in partTypeNames)
-                {
-                    if (existingTitles.Contains(name)) continue;
-
-                    var restriction = ScriptableObject.CreateInstance<SlotRestriction>();
-                    restriction.Title = name;
-                    string assetPath = $"{RestrictionSearchFolder}/Data-SlotRestriction-{name}.asset";
-                    AssetDatabase.CreateAsset(restriction, assetPath);
-                    created++;
-                }
-            }
-            finally
-            {
-                AssetDatabase.StopAssetEditing();
-            }
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
-
-            Debug.Log($"[ItemAssetBakeHelper] SlotRestriction {created}개 생성 완료 (기존 존재로 건너뜀: {partTypeNames.Length - created}개)");
-        }
+        #region Unity 콜백
 
         private void OnGUI()
         {
@@ -194,16 +115,120 @@ namespace MySecondWorld.Editor
             //_partTable = (AvatarPartKeyTableSO)EditorGUILayout.ObjectField(
             //    "AvatarPartKeyTableSO", _partTable, typeof(AvatarPartKeyTableSO), false);
 
-
             _partTable = EditorAssetDefaults.DrawWithDefault("Target SO", _partTable, EditorAssetDefaults.AvatarPartKeyTablePath);
             GUI.enabled = _partTable != null;
 
-            if (GUILayout.Button("그룹 B/C 장비 아이템 생성"))
+            if (GUILayout.Button("그룹 B/C  + Head 장비/잠금 아이템 생성"))
             {
                 GenerateEquipmentItemsFromTable(_partTable, _overwrite);
             }
             GUI.enabled = true;
+        }
 
+        #endregion
+
+        #region 메뉴 진입점 (MenuItem)
+
+        [MenuItem("Tools/Inventory/Item Baker")]
+        private static void Open() => GetWindow<ItemAssetBakeHelper>("Item Baker");
+
+        [MenuItem("Tools/Inventory/Ensure Slot Restrictions")]
+        private static void EnsureSlotRestrictions()
+        {
+            string[] partTypeNames =
+            {
+                // 그룹 A(머리,헤어,눈썹 등 신체 파트 아이템)는 대부분 제외하지만,
+                // Head는 No_Elements 서브타입만 헬멧 장착용으로 잠금 대상이라 예외적으로 포함
+                "Head",
+                // 그룹 B([0]번이 기본 몸체인 아이템) 10개
+                "Torso", "ArmUpperRight", "ArmUpperLeft", "ArmLowerRight", "ArmLowerLeft",
+                "HandLeft", "HandRight", "Hips", "LegLeft", "LegRight",
+                // 그룹 C(악세사리류) 10개
+                "HeadCoverings", "BackAttachment",
+                "ShoulderAttachLeft", "ShoulderAttachRight",
+                "ElbowAttachLeft", "ElbowAttachRight",
+                "KneeAttachLeft", "KneeAttachRight",
+                "HelmetAttachment", "HipsAttachment",
+            };
+
+            EditorFolderUtils.EnsureFolder(RestrictionSearchFolder);
+
+            // RestrictionSearchFolder 안에서 타입이 SlotRestriction인 에셋을 전부 찾음
+            //  "지금 폴더에 뭐가 있는지" 스냅샷을 뜨는 것
+            var existingTitles = new HashSet<string>();
+            foreach (var guid in AssetDatabase.FindAssets("t:SlotRestriction", new[] { RestrictionSearchFolder }))
+            {
+                var restriction = AssetDatabase.LoadAssetAtPath<SlotRestriction>(AssetDatabase.GUIDToAssetPath(guid));
+                if (restriction != null)
+                    existingTitles.Add(restriction.Title);
+            }
+
+            //
+            AssetDatabase.StartAssetEditing();
+            int created = 0;
+            try
+            {
+                foreach (var name in partTypeNames)
+                {
+                    if (existingTitles.Contains(name)) continue;
+
+                    var restriction = ScriptableObject.CreateInstance<SlotRestriction>();
+                    restriction.Title = name;
+                    string assetPath = $"{RestrictionSearchFolder}/Data-SlotRestriction-{name}.asset";
+                    AssetDatabase.CreateAsset(restriction, assetPath);
+                    created++;
+                }
+            }
+            finally
+            {
+                AssetDatabase.StopAssetEditing();
+            }
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+
+            Debug.Log($"[ItemAssetBakeHelper] SlotRestriction {created}개 생성 완료 (기존 존재로 건너뜀: {partTypeNames.Length - created}개)");
+        }
+
+        [MenuItem("Tools/Inventory/Migrate DbKeys")]
+        private static void MigrateDbKeys()
+        {
+            // AssetOutputFolder = "Assets/06.ScriptableObject/Inventory" 하위 전부
+            // (EquipmentItem 552 + SlotRestriction 19 + 기존 504개 무기/소비 아이템 다 포함,
+            //  Cleverous 벤더 예제 폴더는 검색 범위 밖이라 안 건드림)
+            var guids = AssetDatabase.FindAssets("t:DataEntity", new[] { AssetOutputFolder });
+
+            AssetDatabase.StartAssetEditing();
+            int registered = 0, skipped = 0;
+            try
+            {
+                foreach (var guid in guids)
+                {
+                    var entity = AssetDatabase.LoadAssetAtPath<DataEntity>(AssetDatabase.GUIDToAssetPath(guid));
+                    if (entity == null) continue;
+
+                    // DataEntity.cs: m_dbKey 기본값이 int.MinValue라 이 값이면 미등록으로 간주
+                    if (entity.GetDbKey() != int.MinValue)
+                    {
+                        skipped++;
+                        continue;
+                    }
+
+                    Vault.Db.Add(entity, generateNewId: true);
+                    registered++;
+                }
+            }
+            finally
+            {
+                AssetDatabase.StopAssetEditing();
+            }
+
+            // Vault.Db.Add()는 개별 DataEntity만 SetDirty하고 VaultCoreDatabase 자체는 안 건드림 —
+            // Data 딕셔너리 증가분을 저장하려면 DB 에셋도 직접 Dirty 표시해야 함
+            EditorUtility.SetDirty(Vault.Db);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+
+            Debug.Log($"[ItemAssetBakeHelper] dbKey 신규 등록 {registered}개, 이미 등록되어 스킵 {skipped}개");
         }
 
         #endregion
@@ -653,20 +678,29 @@ namespace MySecondWorld.Editor
                                 table, partType, Gender.Male, isGroupC: true, overwrite, restrictionCache, iconCache,
                                 ref created, ref updated, ref skipped, ref missingIcon, ref missingRestriction);
                 }
+
+                // Head는 그룹 A 예외 — No_Elements 서브타입만 헬멧 장착 조건으로 잠금 대상
+                foreach (var gender in new[] { Gender.Male, Gender.Female })
+                {
+                    BakeHeadNoElementsForGender(
+                        table, gender, overwrite, restrictionCache, iconCache,
+                        ref created, ref updated, ref skipped, ref missingIcon, ref missingRestriction);
+                }
             }
             finally
             {
                 AssetDatabase.StopAssetEditing();
+                EditorUtility.SetDirty(table);
                 AssetDatabase.SaveAssets();
                 AssetDatabase.Refresh();
-                EditorUtility.SetDirty(table);
             }
 
             Debug.Log(
-                $"[ItemAssetBakeHelper] 파츠 장비 생성 {created}개 / 갱신 {updated}개 / 건너뜀 {skipped}개 / " +
+                $"[ItemAssetBakeHelper] 파츠 장비/잠금 아이템 생성 {created}개 / 갱신 {updated}개 / 건너뜀 {skipped}개 / " +
                 $"아이콘 없음 {missingIcon}개 / SlotRestriction 없음 {missingRestriction}개 → {WearablesOutputFolder}");
         }
 
+        // 그룹 B/C ItemSO 굽기
         private static void BakeEquipmentItemsForPart(
             AvatarPartKeyTableSO table, PartType partType, Gender gender, bool isGroupC, bool overwrite,
             Dictionary<string, SlotRestriction> restrictionCache, Dictionary<string, Sprite> iconCache,
@@ -681,66 +715,107 @@ namespace MySecondWorld.Editor
             {
                 string subType = table.GetSubType(partType, gender, index);
                 string thumbnailName = index < thumbnails.Count ? thumbnails[index] : string.Empty;
-                string title = PartEquipmentCatalog.BuildTitle(partType, genderTag, subType, index, isGroupC);
-                string assetPath = $"{WearablesOutputFolder}/{partType}_{genderTag}_{index:00}.asset";
-
-                bool exists = File.Exists(assetPath);
-                if (exists && !overwrite) // ItemSO 경로가 있지만 overwrite 하지 않을때 패스
-                {
-                    skipped++;
-                    continue;
-                }
-
-                EquipmentItem item;
-                if (exists)
-                {
-                    item = AssetDatabase.LoadAssetAtPath<EquipmentItem>(assetPath);
-                    if (item == null)  // ItemSO 경로가 있고 실제 아이템이 없을때
-                    {
-                        Debug.LogWarning($"[ItemAssetBakeHelper] 기존 에셋 로드 실패 — {assetPath}");
-                        skipped++;
-                        continue;
-                    }
-                }
-                else // 경로가 없으면 새로 생성 (순수 RAM 상의 임시 객체)
-                {
-                    item = ScriptableObject.CreateInstance<EquipmentItem>();
-                }
-
-                item.Title = title;
-                item.Tags = ItemCategory.Equipment;
-                item.Stats = new List<StatModifier>();
-                item.MaxStackSize = 1;
-                item.ArtPrefab = null;
-                item.RemoteArtPrefab = null;
-
-                var restriction = FindSlotRestriction(partType.ToString(), restrictionCache);
-                if (restriction != null)
-                    item.Restriction = restriction;
-                else
-                    missingRestriction++;
-
-                var icon = FindThumbnailSprite(table, thumbnailName, iconCache);
-                if (icon != null)
-                    item.UiIcon = icon;
-                else
-                    missingIcon++;
-
-                if (exists) // 덮어 씌우기
-                {
-                    EditorUtility.SetDirty(item);
-                    updated++;
-                }
-                else // 진짜 에셋"으로 등록
-                {
-                    // ScriptableObject.CreateInstance → (필드 채우기) → AssetDatabase.CreateAsset인 이유 :
-                    // 메모리에서 먼저 다 채워놓고, 마지막에 딱 한 번 진짜로 디스크에 쓰는 것
-                    AssetDatabase.CreateAsset(item, assetPath);
-                    created++;
-                }
-
-                SetRequiredItem(table, partType, genderTag, index, item);
+                BakeSingleEquipmentItem(
+                     table, partType, genderTag, index, subType, thumbnailName, isGroupC, overwrite,
+                     restrictionCache, iconCache,
+                     ref created, ref updated, ref skipped, ref missingIcon, ref missingRestriction);
             }
+        }
+
+        // 그룹 A 헬멧 ItemSO 굽기
+        private static void BakeHeadNoElementsForGender(
+            AvatarPartKeyTableSO table, Gender gender, bool overwrite,
+            Dictionary<string, SlotRestriction> restrictionCache, Dictionary<string, Sprite> iconCache,
+            ref int created, ref int updated, ref int skipped, ref int missingIcon, ref int missingRestriction)
+        {
+            var candidates = table.GetCandidates(PartEquipmentCatalog.HeadLockPartType, gender);
+            var thumbnails = table.GetThumbnailNames(PartEquipmentCatalog.HeadLockPartType, gender);
+            string genderTag = gender.ToString();
+
+            // 그룹 A는 All_Elements는 전부 무료, No_Elements만 잠금 대상
+            for (int index = 0; index < candidates.Count; index++)
+            {
+                string subType = table.GetSubType(PartEquipmentCatalog.HeadLockPartType, gender, index);
+                // All_Elements인 경우 패스.
+                if (!string.Equals(subType, PartEquipmentCatalog.HeadLockSubType, StringComparison.OrdinalIgnoreCase))
+                    continue;
+                string thumbnailName = index < thumbnails.Count ? thumbnails[index] : string.Empty;
+                BakeSingleEquipmentItem(
+                     table, PartEquipmentCatalog.HeadLockPartType, genderTag, index, subType, thumbnailName,
+                     isGroupC: false, overwrite, restrictionCache, iconCache,
+                     ref created, ref updated, ref skipped, ref missingIcon, ref missingRestriction);
+            }
+        }
+
+        // 인덱스 하나에 대해 EquipmentItem 생성/갱신 + RequiredItems 연결까지 담당하는 공용 로직.
+        // 그룹 B/C(index>=1 전부)와 Head No_Elements(subType 필터링)가 "어떤 인덱스를 돌릴지"만
+        // 다르고 이 뒤 처리는 완전히 같아서 분리함 — BakeEquipmentItemsForPart/BakeHeadNoElementsForGender
+        // 둘 다한테서 호출되는 공유 헬퍼라 그 두 메서드 다음(하위 레벨)에 배치
+        private static void BakeSingleEquipmentItem(
+            AvatarPartKeyTableSO table, PartType partType, string genderTag, int index,
+            string subType, string thumbnailName, bool isGroupC, bool overwrite,
+            Dictionary<string, SlotRestriction> restrictionCache, Dictionary<string, Sprite> iconCache,
+            ref int created, ref int updated, ref int skipped, ref int missingIcon, ref int missingRestriction)
+        {
+            string title = PartEquipmentCatalog.BuildTitle(partType, genderTag, subType, index, isGourpC: isGroupC);
+            string assetPath = $"{WearablesOutputFolder}/{partType}_{genderTag}_{index:00}.asset";
+            bool exists = File.Exists(assetPath);
+            if (exists && !overwrite) // 덮어쓰기 x면 패스
+            {
+                skipped++;
+                return;
+            }
+
+            EquipmentItem item;
+            if (exists)
+            {
+                item = AssetDatabase.LoadAssetAtPath<EquipmentItem>(assetPath);
+                if (item == null)  // ItemSO 경로가 있고 실제 아이템이 없을때
+                {
+                    Debug.LogWarning($"[ItemAssetBakeHelper] 기존 에셋 로드 실패 — {assetPath}");
+                    skipped++;
+                    return;
+                }
+            }
+            else // 경로가 없으면 새로 생성 (순수 RAM 상의 임시 객체)
+            {
+                item = ScriptableObject.CreateInstance<EquipmentItem>();
+            }
+
+            item.Title = title;
+            item.Tags = ItemCategory.Equipment;
+            item.Stats = new List<StatModifier>();
+            item.MaxStackSize = 1;
+            item.ArtPrefab = null;
+            item.RemoteArtPrefab = null;
+
+            var restriction = FindSlotRestriction(partType.ToString(), restrictionCache);
+            if (restriction != null)
+                item.Restriction = restriction;
+            else
+                missingRestriction++;
+
+            var icon = FindThumbnailSprite(table, thumbnailName, iconCache);
+            if (icon != null)
+                item.UiIcon = icon;
+            else
+                missingIcon++;
+
+            if (exists) // 덮어 씌우기
+            {
+                EditorUtility.SetDirty(item);
+                updated++;
+            }
+            else // 진짜 에셋"으로 등록
+            {
+                // ScriptableObject.CreateInstance → (필드 채우기) → AssetDatabase.CreateAsset인 이유 :
+                // 메모리에서 먼저 다 채워놓고, 마지막에 딱 한 번 진짜로 디스크에 쓰는 것
+                AssetDatabase.CreateAsset(item, assetPath);
+                created++;
+            }
+
+            SetRequiredItem(table, partType, genderTag, index, item);
+
         }
 
         private static Sprite FindThumbnailSprite(AvatarPartKeyTableSO table, string thumbnailName, Dictionary<string, Sprite> cache)
@@ -784,6 +859,30 @@ namespace MySecondWorld.Editor
                 list.Add(null); // 인덱스가 리스트 길이보다 크면 null로 패딩 후 채움 — 인덱스 밀림 방지
 
             list[index] = item;
+        }
+
+        #endregion
+
+        #region 공용 헬퍼 (여러 베이킹 경로에서 공유)
+
+        private static SlotRestriction FindSlotRestriction(string title, Dictionary<string, SlotRestriction> cache)
+        {
+            if (cache.TryGetValue(title, out var cached)) return cached;
+
+            var guids = AssetDatabase.FindAssets("t:SlotRestriction", new[] { RestrictionSearchFolder });
+            foreach (var guid in guids)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);       // GUID → 파일 경로
+                var restriction = AssetDatabase.LoadAssetAtPath<SlotRestriction>(path); // 파일 경로 → 실제 오브젝트 로드후 <SlotRestriction> 타입으로 캐스팅
+                if (restriction != null && restriction.Title == title)
+                {
+                    cache[title] = restriction;
+                    return restriction;         // Title 문자열로 최종 매칭
+                }
+            }
+            Debug.LogWarning($"[ItemAssetBakeHelper] SlotRestriction '{title}' 못 찾음");
+            cache[title] = null;
+            return null;
         }
 
         #endregion

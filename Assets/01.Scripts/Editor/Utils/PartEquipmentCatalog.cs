@@ -28,6 +28,13 @@ namespace MySecondWorld.Editor
             PartType.HelmetAttachment, PartType.HipsAttachment,
         };
 
+        // 그룹 A(Head, Hair, Eyebrow, FacialHair, Ear)는 원칙적으로 이 카탈로그의 순회 대상이 아님
+        // (인벤토리 대상 아님, 타고난 생김새). 단 Head의 No_Elements 서브타입만 헬멧 장착 조건으로
+        // 예외적으로 잠금 대상 — 그룹 B/C처럼 "PartType 전체가 동일 규칙"이 아니라
+        // "PartType 안의 특정 서브타입만"이라 배열로 묶지 않고 단일 상수로 명시.
+        public const PartType HeadLockPartType = PartType.Head;
+        public const string HeadLockSubType = "No_Elements";
+
         private static readonly Dictionary<PartType, string> PartTypeKoreanNames = new()
         {
             { PartType.Torso, "상의" },
@@ -50,6 +57,8 @@ namespace MySecondWorld.Editor
             { PartType.KneeAttachRight, "오른쪽 무릎 보호구" },
             { PartType.HelmetAttachment, "투구 장식" },
             { PartType.HipsAttachment, "허리 장식" },
+            // Head는 그룹 A지만 No_Elements 서브타입만 헬멧 장착용으로 잠금 대상 — 그룹 B/C와 동일 패턴 재사용
+            { PartType.Head, "헬멧" },
         };
 
         private static readonly Dictionary<string, string> SubTypeKoreanNames =
