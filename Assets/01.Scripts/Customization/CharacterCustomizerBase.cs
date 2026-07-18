@@ -27,11 +27,6 @@ namespace MySecondWorld.Customization
         // 파츠별 subtype 후보가 여러 개일 때, 사용자가 마지막으로 직접 고른 인덱스를 기억 —
         // FindSubtypeIndex가 무조건 첫 후보를 고르는 대신 "사용자의 최근 선택을 우선"하게 함
         private readonly Dictionary<(PartType part, string subtype), int> _lastSelectedIndexByPartAndSubtype = new();
-
-        // HeadCoverings/HelmetAttachment는 그룹 C라 인덱스 0이 "착용 안 함"이다.
-        // (Hair/Eyebrows/FacialHair 같은 그룹 A는 -1이 "없음"이라 규약이 다르다 — 혼동 방지용 상수)
-        private const int HeadCoveringsNoneIndex = 0;
-        private const int HelmetAttachmentNoneIndex = 0;
         #endregion
 
         #region 초기화

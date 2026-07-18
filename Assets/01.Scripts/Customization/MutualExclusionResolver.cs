@@ -15,6 +15,8 @@ namespace MySecondWorld.Customization
     //
     // Type-2 (영구 취소) : desired 자체가 바뀜. ApplyDirectSelectionRules가 직접 수정.
     //   - 헬멧 쓴 채 Head(All_Elements) 직접 선택 → HelmetAttachment desired = 0
+    //   - HeadCoverings 직접 선택(착용) → HelmetAttachment desired = 0
+    //     (헤드커버와 헬멧장신구는 동시 착용 불가 — Head case의 대칭 규칙, 2026-07-19 버그 수정으로 추가)
     //   - Hair 직접 선택       → HeadCoverings(No_Hair) desired = 0
     //   - FacialHair 직접 선택 → HeadCoverings(No_FacialHair) desired = 0
     //   - HeadCoverings/Hair/Eyebrows/FacialHair 직접 선택 시 desired.Head가 No_Elements면
