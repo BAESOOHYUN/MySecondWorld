@@ -138,7 +138,7 @@ namespace MySecondWorld.Editor
             }
             finally
             {
-                AssetDatabase.StartAssetEditing();
+                AssetDatabase.StopAssetEditing();
             }
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
