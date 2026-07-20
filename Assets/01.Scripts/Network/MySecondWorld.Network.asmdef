@@ -22,6 +22,7 @@
         "Paroxe.PDFRenderer",
         "Cleverous.VaultInventory",
         "MySecondWorld.Inventory.Items",
+        "MySecondWorld.Inventory",
         "Cleverous.VaultSystem"
     ],
     "includePlatforms": [],
