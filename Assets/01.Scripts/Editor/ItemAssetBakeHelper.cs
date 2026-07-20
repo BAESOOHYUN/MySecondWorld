@@ -486,6 +486,8 @@ namespace MySecondWorld.Editor
                         case EquipmentItem equipment:
                             {
                                 equipment.Stats = ParseStats(cols, header);
+                                if (Enum.TryParse<WeaponCategory>(cols[header["Category"]], out var category))
+                                    equipment.Category = category;
                                 break;
                             }
                         case ConsumableItem consumable:
