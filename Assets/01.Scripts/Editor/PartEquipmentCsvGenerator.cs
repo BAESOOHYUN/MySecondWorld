@@ -36,12 +36,17 @@ namespace MySecondWorld.Editor
         {
             var rows = new List<string>
             {
-                "PartType,Gender,Index,SourcePrefabName,SubType,ThumbnailName,GeneratedTitle,RestrictionTitle," +
-                "Description,Stat1_Type,Stat1_Mod,Stat1_Value,Stat2_Type,Stat2_Mod,Stat2_Value,Stat3_Type,Stat3_Mod,Stat3_Value"
+                "PartType,Gender,Index,SourcePrefabName,SubType,ThumbnailName," +
+                "GeneratedTitle,FantasyName,Material," +
+                "RestrictionTitle,Description," +
+                "Stat1_Type,Stat1_Mod,Stat1_Value," +
+                "Stat2_Type,Stat2_Mod,Stat2_Value," +
+                "Stat3_Type,Stat3_Mod,Stat3_Value"
             };
             var titleSet = new HashSet<string>();
             int duplicateCount = 0;
 
+            // Torso, ArmUpperLeft, ...
             foreach (var partType in PartEquipmentCatalog.GroupBPartTypes)
             {
                 foreach (var gender in new[] { Gender.Male, Gender.Female })
@@ -50,10 +55,17 @@ namespace MySecondWorld.Editor
                 }
             }
 
+            // HeadCoverings, ShoulderAttachLeft, ...
             foreach (var partType in PartEquipmentCatalog.GroupCPartTypes)
             {
                 // AllGenderParts만 쓰는 그룹이라 Male/Female 어느 쪽으로 조회해도 결과가 같음 — 중복 방지 위해 한 번만 호출
                 AppendRows(table, partType, Gender.Male, isGroupC: true, rows, titleSet, ref duplicateCount);
+            }
+
+            // Head_No_Elements
+            foreach (var gender in new[] { Gender.Male, Gender.Female })
+            {
+                AppendHeadLockRows(table, gender, rows, titleSet, ref duplicateCount);
             }
 
             File.WriteAllLines(CsvOutputPath, rows, System.Text.Encoding.UTF8);
@@ -65,9 +77,16 @@ namespace MySecondWorld.Editor
             Debug.Log($"[PartEquipmentCsvGenerator] {rows.Count - 1}개 행 생성 완료 → {CsvOutputPath}");
         }
 
-        private static void AppendRows(AvatarPartKeyTableSO table, PartType partType, Gender gender, bool isGroupC,
+        // PartType(+Gender) 하나를 통째로 순회하면서,
+        // 그 안의 모든 파츠 변형(0번, 1번, 2번...)을 CSV 행으로 만들어 rows 리스트에 쌓는 함수
+        private static void AppendRows(
+            AvatarPartKeyTableSO table, PartType partType, Gender gender, bool isGroupC,
             List<string> rows, HashSet<string> titleSet, ref int duplicateCount)
         {
+            // 미러 쌍은 Left 1행만 출력 — Right는 베이킹 때 Left 값을 그대로 재사용
+            // 이 partType이 미러 쌍의 오른쪽 7개(ArmUpperRight, HandRight, LegRight...) 중 하나인지 bool로 판정
+            if (MirroredPartPairs.IsRight(partType)) return;
+
             var candidates = table.GetCandidates(partType, gender);
             var thumbnails = table.GetThumbnailNames(partType, gender);
             string genderColumn = isGroupC ? "All" : gender.ToString();
@@ -87,7 +106,40 @@ namespace MySecondWorld.Editor
 
                 rows.Add(
                     ToCsvRow(partType.ToString(), genderColumn, index.ToString(),
-                    sourcePrefabName, subType, thumbnailName, title, partType.ToString(),
+                    sourcePrefabName, subType, thumbnailName, title,
+                    "", "", partType.ToString(),
+                    "", "", "", "", "", "", "", "", "", ""));
+            }
+        }
+
+        // Head는 그룹 A 예외 — No_Elements 서브타입만 헬멧 장착 조건으로 잠금 대상 (ItemAssetBakeHelper와 동일 필터)
+        private static void AppendHeadLockRows(
+            AvatarPartKeyTableSO table, Gender gender,
+            List<string> rows, HashSet<string> titleSet, ref int duplicateCount)
+        {
+            var candidates = table.GetCandidates(PartEquipmentCatalog.HeadLockPartType, gender);
+            var thumbnails = table.GetThumbnailNames(PartEquipmentCatalog.HeadLockPartType, gender);
+            string genderColumn = gender.ToString();
+
+            for (int index = 0; index < candidates.Count; index++)
+            {
+                // 성별 별 Head 뽑은 것중에, "No_Elements" 값을 가졌는지 판단
+                string subType = table.GetSubType(PartEquipmentCatalog.HeadLockPartType, gender, index);
+                if (!string.Equals(subType, PartEquipmentCatalog.HeadLockSubType, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                string thumbnailName = index < thumbnails.Count ? thumbnails[index] : string.Empty;
+                string sourcePrefabName = GetPrefabName(candidates[index]);
+                string title = PartEquipmentCatalog.BuildTitle(
+                    PartEquipmentCatalog.HeadLockPartType, genderColumn, subType, index, isGourpC: false);
+                
+                if (!titleSet.Add(title))
+                    duplicateCount++;
+
+                rows.Add(
+                    ToCsvRow(PartEquipmentCatalog.HeadLockPartType.ToString(), genderColumn, index.ToString(),
+                    sourcePrefabName, subType, thumbnailName, title,
+                    "", "", PartEquipmentCatalog.HeadLockPartType.ToString(),
                     "", "", "", "", "", "", "", "", "", ""));
             }
         }

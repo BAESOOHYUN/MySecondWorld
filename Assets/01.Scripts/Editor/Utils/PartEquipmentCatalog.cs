@@ -134,6 +134,7 @@ namespace MySecondWorld.Editor
             return string.Join(" ", segments);
         }
 
+        // BuildDraftStats: 계산 단계
         // Value = 부위 기준값 × 재질 배율. 부위 매핑이 없으면(Head 락) 빈 리스트,
         // 재질이 13종 표에 없으면 배율 1.0(사람이 CSV에서 수기 보정하는 걸 전제로 한 안전한 기본값)
         public static List<StatModifier> BuildDraftStats(PartType partType, string material)
