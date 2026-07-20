@@ -276,8 +276,7 @@ namespace MySecondWorld.UI
                 btn.Setup(part, capturedIndex, sprite, OnThumbnailClicked);
                 btn.SetSelected(capturedIndex == selectedIndex);
                 // 잠금 체크
-                var requiredItem = _keyTable.GetRequiredItem(part, _currentGender, capturedIndex);
-                btn.SetLocked(!_inventoryProvider.IsOwned(requiredItem));
+                btn.SetLocked(!IsPartOwned(part, _currentGender, capturedIndex));
                 _spawnedButtons.Add(btn);
             }
         }
@@ -312,7 +311,11 @@ namespace MySecondWorld.UI
             _pendingParts.Add(part);
             try
             {
-                await _previewCustomizer.SetPart(part, index);
+                // 미러 쌍이면 반대쪽도 같은 index로 순차 반영 (Right 탭은 씬에서 숨김 처리됨)
+                if (MirroredPartPairs.TryGetMirror(part, out var mirrorPart))
+                    await _previewCustomizer.SetPart(mirrorPart, index);
+                else // 미러 쌍 아니면 기존 SetPart 그대로
+                    await _previewCustomizer.SetPart(part, index);
             }
             finally
             {
@@ -504,6 +507,15 @@ namespace MySecondWorld.UI
         }
 
         private bool IsPartOwned(PartType part, Gender gender, int index)
+        {
+            if (IsPartOwnedSelf(part, gender, index))
+                return true;
+            // 미러 쌍은 OR — 반대쪽만 소유해도 해금
+            return MirroredPartPairs.TryGetMirror(part, out var mirror)
+                && IsPartOwnedSelf(mirror, gender, index);
+        }
+
+        private bool IsPartOwnedSelf(PartType part, Gender gender, int index)
         {
             var requiredItem = _keyTable.GetRequiredItem(part, gender, index);
             return requiredItem == null || _inventoryProvider.IsOwned(requiredItem);

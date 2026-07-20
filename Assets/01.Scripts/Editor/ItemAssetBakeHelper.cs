@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -229,6 +230,56 @@ namespace MySecondWorld.Editor
             AssetDatabase.Refresh();
 
             Debug.Log($"[ItemAssetBakeHelper] dbKey 신규 등록 {registered}개, 이미 등록되어 스킵 {skipped}개");
+        }
+
+        [MenuItem("Tools/Inventory/Check Missing Subtype Translations")]
+        private static void CheckMissingSubtypeTranslations()
+        {
+            var table = AssetDatabase.LoadAssetAtPath<AvatarPartKeyTableSO>(EditorAssetDefaults.AvatarPartKeyTablePath);
+            if (table == null)
+            {
+                Debug.LogWarning("[ItemAssetBakeHelper] AvatarPartKeyTableSO를 못 찾음");
+                return;
+            }
+
+            var missing = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+            var parts = new List<PartType>();
+            parts.AddRange(PartEquipmentCatalog.GroupBPartTypes);
+            parts.AddRange(PartEquipmentCatalog.GroupCPartTypes);
+
+            foreach (var partType in parts)
+            {
+                foreach (var gender in new[] { Gender.Male, Gender.Female })
+                {
+                    var candidates = table.GetCandidates(partType, gender);
+                    for (int index = 1; index < candidates.Count; index++)
+                    {
+                        var subType = table.GetSubType(partType, gender, index);
+                        if (PartEquipmentCatalog.IsMissingTranslation(subType))
+                            missing.Add(subType);
+                    }
+                }
+            }
+
+            // 서브타입별 첫 등장 위치만 기록(같은 서브타입이 인덱스 수십 개에 반복 등장해
+            // 한 줄씩 로그하면 콘솔 창에서 밀려나 잘려버림 — 요약 한 줄로 압축)
+            var firstSeenAt = new Dictionary<string, string>();
+            foreach (var partType in parts)
+            {
+                foreach (var gender in new[] { Gender.Male, Gender.Female })
+                {
+                    var candidates = table.GetCandidates(partType, gender);
+                    for (int index = 1; index < candidates.Count; index++)
+                    {
+                        var subType = table.GetSubType(partType, gender, index);
+                        if (missing.Contains(subType) && !firstSeenAt.ContainsKey(subType))
+                            firstSeenAt[subType] = $"{partType}/{gender}[{index}]";
+                    }
+                }
+            }
+
+            var summary = string.Join(", ", missing.Select(s => $"{s}({firstSeenAt[s]})"));
+            Debug.Log($"[ItemAssetBakeHelper] v2 번역 사전에 없는 서브타입 {missing.Count}개: {summary}");
         }
 
         #endregion

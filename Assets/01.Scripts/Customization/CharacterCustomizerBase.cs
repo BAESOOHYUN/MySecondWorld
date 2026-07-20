@@ -158,6 +158,53 @@ namespace MySecondWorld.Customization
             }
         }
 
+        // 미러 쌍 전용 — 락 1번 + visible 계산 1번으로 두 파츠를 함께 반영 (CharacterCustomizeUI 전용, 결정 4)
+        // SetPart와 로직은 동일하되, 로드 단계만 순차가 아니라 WhenAll로 병렬 처리해 체감 지연을 줄인다
+        public async UniTask SetPartPair(PartType partA, PartType partB, int index)
+        {
+            if (_loadingParts.Contains(partA) || _loadingParts.Contains(partB)) return;
+
+            _loadingParts.Add(partA);
+            _loadingParts.Add(partB);
+            await _appearanceLock.WaitAsync();
+            try
+            {
+                var previousVisible = _lastAppliedVisible;
+                var gender = _currentAppearance.Gender;
+                _currentAppearance[partA] = index;
+                _currentAppearance[partB] = index;
+                RecordLastSelected(partA, index, gender);
+                RecordLastSelected(partB, index, gender);
+
+                MutualExclusionResolver.ApplyDirectSelectionRules(
+                    ref _currentAppearance, partA, index, gender, _avatarPartKeyTable, _lastSelectedIndexByPartAndSubtype);
+                MutualExclusionResolver.ApplyDirectSelectionRules(
+                    ref _currentAppearance, partB, index, gender, _avatarPartKeyTable, _lastSelectedIndexByPartAndSubtype);
+
+                var newVisible = MutualExclusionResolver.ComputeVisibleAppearance(
+                        _currentAppearance, gender, _avatarPartKeyTable, _lastSelectedIndexByPartAndSubtype);
+
+                // loadTasks에 집어넣고 동시에 돌림
+                var loadTasks = new List<UniTask>();
+                foreach (PartType p in Enum.GetValues(typeof(PartType)))
+                {
+                    if (newVisible[p] != previousVisible[p])
+                        loadTasks.Add(ReplacePartInstance(p, newVisible[p], gender));
+                }
+                await UniTask.WhenAll(loadTasks);
+                _lastAppliedVisible = newVisible;
+                ReapplyColors();
+                OnAppearanceChanged();
+            }
+            finally
+            {
+                _appearanceLock.Release();
+                _loadingParts.Remove(partA);
+                _loadingParts.Remove(partB);
+            }
+            
+        }
+
         // 색 변경
         public void SetColor(ColorTarget target, Color color)
         {
