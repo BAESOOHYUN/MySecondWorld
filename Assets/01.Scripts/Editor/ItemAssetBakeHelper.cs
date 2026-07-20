@@ -1009,7 +1009,7 @@ namespace MySecondWorld.Editor
             header = BuildHeaderIndex(lines[0]);
             int columnCount = header.Count;
 
-            for (int i = 0; i < lines.Length; i++)
+            for (int i = 1; i < lines.Length; i++)
             {
                 if (string.IsNullOrWhiteSpace(lines[i])) continue;
                 var cols = lines[i].Split(new[] { ',' }, columnCount);

@@ -313,7 +313,7 @@ namespace MySecondWorld.UI
             {
                 // 미러 쌍이면 반대쪽도 같은 index로 순차 반영 (Right 탭은 씬에서 숨김 처리됨)
                 if (MirroredPartPairs.TryGetMirror(part, out var mirrorPart))
-                    await _previewCustomizer.SetPart(mirrorPart, index);
+                    await _previewCustomizer.SetPartPair(part, mirrorPart, index);
                 else // 미러 쌍 아니면 기존 SetPart 그대로
                     await _previewCustomizer.SetPart(part, index);
             }
