@@ -10,7 +10,7 @@ namespace MySecondWorld.Editor
 {
     public class PartEquipmentCsvGenerator : EditorWindow
     {
-        private const string CsvOutputPath = "Assets/09.Datas/PartEquipmentItems.csv";
+        public const string CsvOutputPath = "Assets/09.Datas/PartEquipmentItems.csv";
         private AvatarPartKeyTableSO _target;
 
         [MenuItem("Tools/Inventory/Generate Part Equipment CSV")]
@@ -155,14 +155,18 @@ namespace MySecondWorld.Editor
 
         // ───────── 헬퍼 클래스 ──────────────
 
-        private static string ToCsvRow(params string[] fields)
+        public static string ToCsvRow(params string[] fields)
         {
             return string.Join(",", Array.ConvertAll(fields, EscapeCsvField));
         }
 
+        // CSV 텍스트 조립할 때 값 자체에 콤마/따옴표/줄바꿈이 들어있으면 깨지는 문제를 막는 이스케이프 함수
+        // ex)...가죽, 강철 혼합,다음컬럼...
+        //  ─ 컴마 기준으로 자르면 가죽과 강철 혼합이 서로 다른 컬럼인 것처럼 잘못 쪼개져 버림
         private static string EscapeCsvField(string field)
         {
             field ??= string.Empty;
+            // needsQuoting이 true면 →  "가죽, 강철 혼합"   (양쪽에 큰따옴표 추가)
             bool needsQuoting = field.Contains(',') || field.Contains('"') || field.Contains('\n');
             if (!needsQuoting)
                 return field;

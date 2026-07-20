@@ -282,6 +282,49 @@ namespace MySecondWorld.Editor
             Debug.Log($"[ItemAssetBakeHelper] v2 번역 사전에 없는 서브타입 {missing.Count}개: {summary}");
         }
 
+        [MenuItem("Tools/Inventory/Recompute Draft Stats From Material")]
+        private static void RecomputeDraftStatsFromMaterial()
+        {
+            string csvPath = PartEquipmentCsvGenerator.CsvOutputPath;
+            if (!File.Exists(csvPath))
+            {
+                Debug.LogWarning($"[ItemAssetBakeHelper] CSV 없음: {csvPath}");
+                return;
+            }
+
+            var lines = File.ReadAllLines(csvPath);
+            var header = BuildHeaderIndex(lines[0]);
+            int columnCount = header.Count;
+            int recomputed = 0;
+
+            for (int i = 1; i < lines.Length; i++)
+            {
+                if (string.IsNullOrWhiteSpace(lines[i])) continue;
+                var cols = lines[i].Split(new[] { ',' }, columnCount);
+                if (cols.Length < columnCount) continue;
+
+                if (!Enum.TryParse<PartType>(cols[header["PartType"]], out var partType)) continue;
+
+                string material = cols[header["Material"]];
+                if (string.IsNullOrEmpty(material)) continue; // 재질 미입력 행은 스킵
+
+                var stats =PartEquipmentCatalog.BuildDraftStats(partType, material);
+                if (stats.Count == 0) continue; // 부위 매핑 없음(Head 락 등) — 건드리지 않음
+
+                cols[header["Stat1_Type"]] = stats[0].Type.ToString();
+                cols[header["Stat1_Mod"]] = stats[0].ModifierType.ToString();
+                cols[header["Stat1_Value"]] = stats[0].Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                
+                lines[i] = PartEquipmentCsvGenerator.ToCsvRow(cols);
+                recomputed++;
+            }
+
+            File.WriteAllLines(csvPath, lines, System.Text.Encoding.UTF8);
+            AssetDatabase.Refresh();
+
+            Debug.Log($"[ItemAssetBakeHelper] Stat1 재계산 {recomputed}행 → {csvPath}");
+        }
+
         #endregion
 
         #region 무기 · 아이템 CSV 베이킹
@@ -698,11 +741,12 @@ namespace MySecondWorld.Editor
         #endregion
 
         #region 파츠 장비(Wearable, 그룹 B/C) SO 직접 베이킹
-
         private static void GenerateEquipmentItemsFromTable(AvatarPartKeyTableSO table, bool overwrite)
         {
             var restrictionCache = new Dictionary<string, SlotRestriction>();
             var iconCache = new Dictionary<string, Sprite>();
+            // CSV 한 번 로드해서 아래로 흘려보내기:
+            var csvLookup = LoadPartCsvRows(PartEquipmentCsvGenerator.CsvOutputPath, out var csvHeader);
             int created = 0, updated = 0, skipped = 0, missingIcon = 0, missingRestriction = 0;
 
             // StartAssetEditing 배치 중에는 방금 만든 폴더가 IsValidFolder에 바로 안 잡히는 문제가
@@ -718,6 +762,7 @@ namespace MySecondWorld.Editor
                     {
                         BakeEquipmentItemsForPart(
                             table, partType, gender, isGroupC: false, overwrite, restrictionCache, iconCache,
+                            csvLookup, csvHeader,
                             ref created, ref updated, ref skipped, ref missingIcon, ref missingRestriction);
                     }
                 }
@@ -727,6 +772,7 @@ namespace MySecondWorld.Editor
                     // AllGenderParts만 쓰는 그룹이라 Male/Female 어느 쪽으로 조회해도 결과가 같음 — 중복 방지 위해 한 번만 호출
                     BakeEquipmentItemsForPart(
                                 table, partType, Gender.Male, isGroupC: true, overwrite, restrictionCache, iconCache,
+                                csvLookup, csvHeader,
                                 ref created, ref updated, ref skipped, ref missingIcon, ref missingRestriction);
                 }
 
@@ -735,6 +781,7 @@ namespace MySecondWorld.Editor
                 {
                     BakeHeadNoElementsForGender(
                         table, gender, overwrite, restrictionCache, iconCache,
+                        csvLookup, csvHeader,
                         ref created, ref updated, ref skipped, ref missingIcon, ref missingRestriction);
                 }
             }
@@ -755,6 +802,7 @@ namespace MySecondWorld.Editor
         private static void BakeEquipmentItemsForPart(
             AvatarPartKeyTableSO table, PartType partType, Gender gender, bool isGroupC, bool overwrite,
             Dictionary<string, SlotRestriction> restrictionCache, Dictionary<string, Sprite> iconCache,
+            Dictionary<string, string[]> csvLookup, Dictionary<string, int> csvHeader,
             ref int created, ref int updated, ref int skipped, ref int missingIcon, ref int missingRestriction)
         {
             var candidates = table.GetCandidates(partType, gender);
@@ -768,7 +816,7 @@ namespace MySecondWorld.Editor
                 string thumbnailName = index < thumbnails.Count ? thumbnails[index] : string.Empty;
                 BakeSingleEquipmentItem(
                      table, partType, genderTag, index, subType, thumbnailName, isGroupC, overwrite,
-                     restrictionCache, iconCache,
+                     restrictionCache, iconCache, csvLookup, csvHeader,
                      ref created, ref updated, ref skipped, ref missingIcon, ref missingRestriction);
             }
         }
@@ -777,6 +825,7 @@ namespace MySecondWorld.Editor
         private static void BakeHeadNoElementsForGender(
             AvatarPartKeyTableSO table, Gender gender, bool overwrite,
             Dictionary<string, SlotRestriction> restrictionCache, Dictionary<string, Sprite> iconCache,
+            Dictionary<string, string[]> csvLookup, Dictionary<string, int> csvHeader,
             ref int created, ref int updated, ref int skipped, ref int missingIcon, ref int missingRestriction)
         {
             var candidates = table.GetCandidates(PartEquipmentCatalog.HeadLockPartType, gender);
@@ -793,7 +842,7 @@ namespace MySecondWorld.Editor
                 string thumbnailName = index < thumbnails.Count ? thumbnails[index] : string.Empty;
                 BakeSingleEquipmentItem(
                      table, PartEquipmentCatalog.HeadLockPartType, genderTag, index, subType, thumbnailName,
-                     isGroupC: false, overwrite, restrictionCache, iconCache,
+                     isGroupC: false, overwrite, restrictionCache, iconCache, csvLookup, csvHeader,
                      ref created, ref updated, ref skipped, ref missingIcon, ref missingRestriction);
             }
         }
@@ -806,9 +855,10 @@ namespace MySecondWorld.Editor
             AvatarPartKeyTableSO table, PartType partType, string genderTag, int index,
             string subType, string thumbnailName, bool isGroupC, bool overwrite,
             Dictionary<string, SlotRestriction> restrictionCache, Dictionary<string, Sprite> iconCache,
+            Dictionary<string, string[]> csvLookup, Dictionary<string, int> csvHeader,
             ref int created, ref int updated, ref int skipped, ref int missingIcon, ref int missingRestriction)
         {
-            string title = PartEquipmentCatalog.BuildTitle(partType, genderTag, subType, index, isGourpC: isGroupC);
+            string fallbackTitle = PartEquipmentCatalog.BuildTitle(partType, genderTag, subType, index, isGourpC: isGroupC);
             string assetPath = $"{WearablesOutputFolder}/{partType}_{genderTag}_{index:00}.asset";
             bool exists = File.Exists(assetPath);
             if (exists && !overwrite) // 덮어쓰기 x면 패스
@@ -833,9 +883,15 @@ namespace MySecondWorld.Editor
                 item = ScriptableObject.CreateInstance<EquipmentItem>();
             }
 
-            item.Title = title;
+            // 핵심 변경.
+            // CSV row 있으면 (FantasyName/Stat1~3) 우선 사용 — 없으면 자동조합 제목 + 빈 Stats로 폴백.
+            // 미러 Right는 FindCsvRow가 Left의 행을 그대로 찾아줌
+            var csvCols = csvHeader != null ? FindCsvRow(csvLookup, partType, genderTag, index) : null;
+            string fantasyName = csvCols != null ? csvCols[csvHeader["FantasyName"]] : string.Empty;
+
+            item.Title = !string.IsNullOrWhiteSpace(fantasyName) ? fantasyName : fallbackTitle;
             item.Tags = ItemCategory.Equipment;
-            item.Stats = new List<StatModifier>();
+            item.Stats = csvCols != null ? ParseStats(csvCols, csvHeader) : new List<StatModifier>();
             item.MaxStackSize = 1;
             item.ArtPrefab = null;
             item.RemoteArtPrefab = null;
@@ -934,6 +990,47 @@ namespace MySecondWorld.Editor
             Debug.LogWarning($"[ItemAssetBakeHelper] SlotRestriction '{title}' 못 찾음");
             cache[title] = null;
             return null;
+        }
+
+
+        // LoadPartCsvRows(csvPath)  →  CSV 파일을 한 번 통째로 읽어서 csvLookup(Dictionary) 완성
+        // PartEquipmentItems.csv를 (PartType_Gender_Index) 키로 인덱싱. 파일 없으면 빈 딕셔너리 + header=null
+        private static Dictionary<string, string[]> LoadPartCsvRows(string csvPath, out Dictionary<string, int> header)
+        {
+            // lookup 없이 → 매번 CSV 파일 552줄을 처음부터 다시 훑어서 일치하는 줄을 찾아야 함(비효율)
+            // lookup 있으면 → csvLookup["Torso_Male_5"]처럼 키 하나로 즉시 찾음
+            header = null;
+            var lookup = new Dictionary<string, string[]>();
+            if (!File.Exists(csvPath)) return lookup;
+
+            var lines = File.ReadAllLines(csvPath);
+            if (lines.Length == 0) return lookup;
+
+            header = BuildHeaderIndex(lines[0]);
+            int columnCount = header.Count;
+
+            for (int i = 0; i < lines.Length; i++)
+            {
+                if (string.IsNullOrWhiteSpace(lines[i])) continue;
+                var cols = lines[i].Split(new[] { ',' }, columnCount);
+                if (cols.Length < columnCount) continue;
+
+                string key = BuildCsvRowKey(cols[header["PartType"]], cols[header["Gender"]], cols[header["Index"]]);
+                lookup[key] = cols;
+            }
+            return lookup;
+        }
+
+        private static string BuildCsvRowKey(string partType, string gender, string index) => $"{partType}_{gender}_{index}";
+
+        // 미러 Right는 CSV에 자기 행이 없음(Left 1행만 저장) — Left 파트타입으로 대신 조회
+        private static string[] FindCsvRow(Dictionary<string, string[]> csvLookup, PartType partType, string genderTag, int index)
+        {
+            var lookupPartType = MirroredPartPairs.IsRight(partType)
+                            && MirroredPartPairs.TryGetMirror(partType, out var mirror)
+                            ? mirror : partType;
+            string key = BuildCsvRowKey(lookupPartType.ToString(), genderTag, index.ToString());
+            return csvLookup.TryGetValue(key, out var cols) ? cols : null;
         }
 
         #endregion
