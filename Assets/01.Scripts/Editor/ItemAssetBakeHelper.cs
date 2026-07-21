@@ -306,7 +306,6 @@ namespace MySecondWorld.Editor
                 if (!Enum.TryParse<PartType>(cols[header["PartType"]], out var partType)) continue;
 
                 string material = cols[header["Material"]];
-                if (string.IsNullOrEmpty(material)) continue; // 재질 미입력 행은 스킵
 
                 var stats =PartEquipmentCatalog.BuildDraftStats(partType, material);
                 if (stats.Count == 0) continue; // 부위 매핑 없음(Head 락 등) — 건드리지 않음

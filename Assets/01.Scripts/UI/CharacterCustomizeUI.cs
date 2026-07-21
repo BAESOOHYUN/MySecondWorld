@@ -86,6 +86,12 @@ namespace MySecondWorld.UI
             PartType.Hair, PartType.FacialHair, PartType.Eyebrows, PartType.Ear
         };
 
+        private static readonly HashSet<PartType> OptionalAccessoryParts = new HashSet<PartType>
+        {
+            PartType.HeadCoverings, PartType.BackAttachment, PartType.ShoulderAttachLeft,
+            PartType.ElbowAttachLeft, PartType.KneeAttachLeft, PartType.HelmetAttachment, PartType.HipsAttachment
+        };
+
         // ── UI 요소 ──
         private readonly List<PartThumbnailButton> _spawnedButtons = new();
         private readonly Dictionary<ColorTarget, ColorChannelRow> _colorRows = new();
@@ -326,7 +332,6 @@ namespace MySecondWorld.UI
             UpdateThumbnailSelection();
         }
 
-
         private void ClearThumbnailContent()
         {
             foreach (var btn in _spawnedButtons)
@@ -442,9 +447,55 @@ namespace MySecondWorld.UI
         {
             foreach (PartType part in System.Enum.GetValues(typeof(PartType)))
             {
+                if (MirroredPartPairs.IsRight(part)) continue; // Right는 아래서 Left 값을 그대로 복사받음
+
                 var count = _keyTable.GetCount(part, _currentGender);
-                _currentIndices[part] = count > 0 ? Random.Range(0, count) : -1;
+                if (count <= 0)
+                {
+                    // 현재 성별에서 옵션이 아예 0개인 경우 (여자 : 수염 없음)
+                    // "선택 불가/없음"을 뜻하는 센티널 값 -1을 넣어서 이후 로직이 이 파츠를 렌더링 안 하고 건너뜀
+                    _currentIndices[part] = -1;
+                }
+                else if (OptionalAccessoryParts.Contains(part) && Random.value < 0.5f)
+                {
+                    // 7개 액세서리 슬롯(헤드커버링/등장식/어깨/팔꿈치/무릎/헬멧장식/허리장식) 중 하나인가 && 0.5 미만인가
+                    // 둘 다 참이면 무조건 인덱스 0(착용 안 함)으로 고정
+                    _currentIndices[part] = 0; // 절반 확률로 "착용 안 함"
+                }
+                else
+                {
+                    // 1. 애초에 액세서리 슬롯이 아닌 파츠(예: Torso, Hair)
+                    // — "착용안함 확률 부스트" 대상이 아니니까 원래 하던 대로 그냥 균등 랜덤
+                    // 2. 액세서리 슬롯이긴 한데 Random.value < 0.5f에서 안 걸린 나머지 절반의 경우
+                    // — 이때는 "뭔가 착용은 하기로 했으니" 전체 옵션 중에서 균등하게 랜덤 선택
+                    _currentIndices[part] = Random.Range(0, count);
+                }
+
+                if (MirroredPartPairs.TryGetMirror(part, out var mirror))
+                    _currentIndices[mirror] = _currentIndices[part];
             }
+
+            // HelmetAttachment를 실제로 착용했는데, Head가 아직 No_Elements(헬멧용 얼굴)가 아니면,
+            // No_Elements 후보 중 하나를 랜덤으로 골라준다.
+            // (안 그러면 MutualExclusionResolver의 폴백이 "기억된 값 없음" 상태로 항상 첫 번째만 고름)
+            if (_currentIndices.TryGetValue(PartType.HelmetAttachment, out var helmetAttachmentIndex)
+                && helmetAttachmentIndex > 0
+                && _keyTable.GetSubType(PartType.Head, _currentGender, _currentIndices[PartType.Head]) != "No_Elements")
+            {
+                // Head 파츠 중에서 '헬멧 쓸 수 있는(No_Elements) 얼굴'들만 골라서 모아놓고, 그중 하나를 랜덤으로 뽑아야 함
+                int headIndex = _keyTable.GetCount(PartType.Head, _currentGender);
+                var noElementsCandidates = new List<int>();
+                for (int i = 0; i < headIndex; i++)
+                {
+                    // 각 인덱스가 "No_Elements"인지 확인후 후보에 넣는다
+                    if (_keyTable.GetSubType(PartType.Head, _currentGender, i) == "No_Elements")
+                        noElementsCandidates.Add(i);
+                }
+                // 후보가 있으면 랜덤으로 선택
+                if (noElementsCandidates.Count > 0)
+                    _currentIndices[PartType.Head] = noElementsCandidates[Random.Range(0, noElementsCandidates.Count)];
+            }
+
             var data = BuildData(); 
             data.PrimaryColor = Random.ColorHSV(0f, 1f, 0f, 1f, 0f, 1f);
             data.SecondaryColor = Random.ColorHSV(0f, 1f, 0f, 1f, 0f, 1f);
