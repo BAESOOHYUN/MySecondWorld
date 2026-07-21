@@ -26,10 +26,15 @@ namespace MySecondWorld.Network
         };
 
         [Header("장착 소켓")]
-        [SerializeField] private Transform _handSocket;
+
+        [SerializeField] private Transform _rightHandSocket;// 오른손 — Sword/Dagger/Axe/Polearm 장착 + Bow 장착 시 화살(ArrowToShoot) 부착
+        [SerializeField] private Transform _leftHandSocket; // 왼손 — Bow 전용(활은 왼손으로 쥐고 오른손으로 시위를 당기는 그립)
         [SerializeField] private Transform _fingerSocket;
         [SerializeField] private Transform _wristSocket;
         [SerializeField] private Transform _neckSocket;
+
+        [Header("궁수 전용")]
+        [SerializeField] private GameObject _bowArrowPrefab; // Bow 장착 시 오른손에 항상 붙는 화살 — 특정 소유 아이템과 무관한 고정 시각 프롭
 
 
         [Header("애니메이션")]
@@ -42,7 +47,8 @@ namespace MySecondWorld.Network
 
         private Cleverous.VaultInventory.Inventory _inventory;
         private GameObject _currentVisual;
-        private bool _currentVisualIsAddressable;        
+        private bool _currentVisualIsAddressable;
+        private GameObject _currentArrowVisual;
         private int _equipToken; // 빠른 연속 교체 시, 먼저 시작된 느린 로드가 나중에 끝나 최신 장착을 덮어쓰는 걸 막기 위한 토큰
         private RuntimeAnimatorController _defaultController;
 
@@ -81,12 +87,14 @@ namespace MySecondWorld.Network
         private async UniTask ApplyMainHandVisual(int dbKey, int generation)
         {
             ReleaseCurrentVisual();
+            
             if (dbKey == Unequipped)
             {
                 if (_animator != null)
                     _animator.runtimeAnimatorController = _defaultController;
                 return;
             }
+
             if (Vault.Get(dbKey) is not EquipmentItem item) return;
 
             var socket = GetSocket(item.Category);
@@ -114,6 +122,10 @@ namespace MySecondWorld.Network
                 _currentVisualIsAddressable = true;
             }
 
+            // Bow는 왼손에 활 자체 + 오른손에 화살(ArrowToShoot)이 동시에 붙어야 자연스럽다
+            if (item.Category == WeaponCategory.Bow && _bowArrowPrefab != null && _rightHandSocket != null)
+                _currentArrowVisual = Instantiate(_bowArrowPrefab, _rightHandSocket);
+
             if (_animationMap != null && _animator != null)
             {
                 var controller = _animationMap.GetController(item.Category);
@@ -126,22 +138,29 @@ namespace MySecondWorld.Network
         {
             return category switch
             {
+                WeaponCategory.Bow => _leftHandSocket,
                 WeaponCategory.Ring => _fingerSocket,
                 WeaponCategory.Bracelet => _wristSocket,
                 WeaponCategory.Necklace => _neckSocket,
-                _ => _handSocket,
+                _ => _rightHandSocket,
             };
         }
 
         private void ReleaseCurrentVisual()
         {
-            if (_currentVisual == null) return;
-            if (_currentVisualIsAddressable)
-                Addressables.ReleaseInstance(_currentVisual);
-            else
-                Destroy(_currentVisual);
-
-            _currentVisual = null;
+            if (_currentVisual != null)
+            {
+                if (_currentVisualIsAddressable)
+                    Addressables.ReleaseInstance(_currentVisual);
+                else
+                    Destroy(_currentVisual);
+                _currentVisual = null;
+            }
+            if (_currentArrowVisual != null)
+            {
+                Destroy(_currentArrowVisual);
+                _currentArrowVisual = null;
+            }
         }
     }
 }
