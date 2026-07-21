@@ -34,6 +34,8 @@ namespace MySecondWorld.Editor
 
         private static void GenerateCsv(AvatarPartKeyTableSO table)
         {
+            var existingData = LoadExistingFantasyData(CsvOutputPath);
+
             var rows = new List<string>
             {
                 "PartType,Gender,Index,SourcePrefabName,SubType,ThumbnailName," +
@@ -51,7 +53,7 @@ namespace MySecondWorld.Editor
             {
                 foreach (var gender in new[] { Gender.Male, Gender.Female })
                 {
-                    AppendRows(table, partType, gender, isGroupC: false, rows, titleSet, ref duplicateCount);
+                    AppendRows(table, partType, gender, isGroupC: false, rows, titleSet, ref duplicateCount, existingData);
                 }
             }
 
@@ -59,13 +61,13 @@ namespace MySecondWorld.Editor
             foreach (var partType in PartEquipmentCatalog.GroupCPartTypes)
             {
                 // AllGenderParts만 쓰는 그룹이라 Male/Female 어느 쪽으로 조회해도 결과가 같음 — 중복 방지 위해 한 번만 호출
-                AppendRows(table, partType, Gender.Male, isGroupC: true, rows, titleSet, ref duplicateCount);
+                AppendRows(table, partType, Gender.Male, isGroupC: true, rows, titleSet, ref duplicateCount, existingData);
             }
 
             // Head_No_Elements
             foreach (var gender in new[] { Gender.Male, Gender.Female })
             {
-                AppendHeadLockRows(table, gender, rows, titleSet, ref duplicateCount);
+                AppendHeadLockRows(table, gender, rows, titleSet, ref duplicateCount, existingData);
             }
 
             File.WriteAllLines(CsvOutputPath, rows, System.Text.Encoding.UTF8);
@@ -81,7 +83,8 @@ namespace MySecondWorld.Editor
         // 그 안의 모든 파츠 변형(0번, 1번, 2번...)을 CSV 행으로 만들어 rows 리스트에 쌓는 함수
         private static void AppendRows(
             AvatarPartKeyTableSO table, PartType partType, Gender gender, bool isGroupC,
-            List<string> rows, HashSet<string> titleSet, ref int duplicateCount)
+            List<string> rows, HashSet<string> titleSet, ref int duplicateCount,
+            Dictionary<string, (string fantasyName, string material)> existingData)
         {
             // 미러 쌍은 Left 1행만 출력 — Right는 베이킹 때 Left 값을 그대로 재사용
             // 이 partType이 미러 쌍의 오른쪽 7개(ArmUpperRight, HandRight, LegRight...) 중 하나인지 bool로 판정
@@ -104,10 +107,15 @@ namespace MySecondWorld.Editor
                 if (!titleSet.Add(title))
                     duplicateCount++;
 
+                string key = $"{partType}_{genderColumn}_{index}";
+                existingData.TryGetValue(key, out var existing);
+                string fantasyName = existing.fantasyName ?? string.Empty;
+                string material = existing.material ?? string.Empty;
+
                 rows.Add(
                     ToCsvRow(partType.ToString(), genderColumn, index.ToString(),
                     sourcePrefabName, subType, thumbnailName, title,
-                    "", "", partType.ToString(),
+                    fantasyName, material, partType.ToString(),
                     "", "", "", "", "", "", "", "", "", ""));
             }
         }
@@ -115,7 +123,8 @@ namespace MySecondWorld.Editor
         // Head는 그룹 A 예외 — No_Elements 서브타입만 헬멧 장착 조건으로 잠금 대상 (ItemAssetBakeHelper와 동일 필터)
         private static void AppendHeadLockRows(
             AvatarPartKeyTableSO table, Gender gender,
-            List<string> rows, HashSet<string> titleSet, ref int duplicateCount)
+            List<string> rows, HashSet<string> titleSet, ref int duplicateCount,
+            Dictionary<string, (string fantasyName, string material)> existingData)
         {
             var candidates = table.GetCandidates(PartEquipmentCatalog.HeadLockPartType, gender);
             var thumbnails = table.GetThumbnailNames(PartEquipmentCatalog.HeadLockPartType, gender);
@@ -136,10 +145,16 @@ namespace MySecondWorld.Editor
                 if (!titleSet.Add(title))
                     duplicateCount++;
 
+
+                string key = $"{PartEquipmentCatalog.HeadLockPartType}_{genderColumn}_{index}";
+                existingData.TryGetValue(key, out var existing);
+                string fantasyName = existing.fantasyName ?? string.Empty;
+                string material = existing.material ?? string.Empty;
+
                 rows.Add(
                     ToCsvRow(PartEquipmentCatalog.HeadLockPartType.ToString(), genderColumn, index.ToString(),
                     sourcePrefabName, subType, thumbnailName, title,
-                    "", "", PartEquipmentCatalog.HeadLockPartType.ToString(),
+                    fantasyName, material, PartEquipmentCatalog.HeadLockPartType.ToString(),
                     "", "", "", "", "", "", "", "", "", ""));
             }
         }
@@ -172,6 +187,41 @@ namespace MySecondWorld.Editor
                 return field;
             // CSV 표준: 콤마/따옴표/개행 있으면 통째로 따옴표로 감싸고, 내부 따옴표는 두 번 써서 이스케이프
             return $"\"{field.Replace("\"", "\"\"")}\"";
+        }
+
+        // 기존 CSV의 FantasyName/Material을 (PartType_Gender_Index) 키로 미리 읽어와 보존하는 로직.
+        // 재생성 시 이 값을 그대로 다시 써서, 사람이 손으로 채운 데이터가 덮어써지지 않게 한다.
+        private static Dictionary<string, (string fantasyName, string material)> LoadExistingFantasyData(string csvPath)
+        {
+            var result = new Dictionary<string, (string, string)>();
+            if (!File.Exists(csvPath)) return result;
+
+            var lines = File.ReadAllLines(csvPath);
+            if(lines.Length == 0) return result;
+
+            // 기존에 있는 컬럼(열)을 미리 읽음
+            // ex) CSV 헤더가 20개 컬럼이면 oldHeader.Count는 20
+            var oldHeader = new Dictionary<string, int>();
+            var headerFields = ItemAssetBakeHelper.ParseCsvLine(lines[0]);
+            for (int i = 0; i < headerFields.Length; i++)
+                oldHeader[headerFields[i].Trim()] = i;
+
+            if (!oldHeader.ContainsKey("FantasyName") || !oldHeader.ContainsKey("Material"))
+                return result; // 예전 스키마(그 컬럼이 아예 없던 시절) CSV면 건너뜀
+
+            for (int i = 1; i < headerFields.Length; i++)
+            {
+                if (string.IsNullOrWhiteSpace(lines[i])) continue; // 열 비었으면 패스
+                var cols = ItemAssetBakeHelper.ParseCsvLine(lines[i]); //한 열씩 읽음
+                // 파일이 중간에 깨졌다거나, 컬럼이 빠진 이상한 줄이라거나 해서 20개가 아니라 5개나 10개로만 쪼개졌다면
+                // → cols.Length < oldHeader.Count가 참. IndexOutOfRangeException에러가 뜸
+                // continue로 → 그냥 스킵하고 다음 줄로 넘어가자
+                if (cols.Length < oldHeader.Count) continue;
+            
+                string key = $"{cols[oldHeader["PartType"]]}_{cols[oldHeader["Gender"]]}_{cols[oldHeader["Index"]]}"; // Key
+                result[key] = (cols[oldHeader["FantasyName"]], cols[oldHeader["Material"]]); // Value
+            }
+            return result;
         }
     }
 }

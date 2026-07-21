@@ -300,7 +300,7 @@ namespace MySecondWorld.Editor
             for (int i = 1; i < lines.Length; i++)
             {
                 if (string.IsNullOrWhiteSpace(lines[i])) continue;
-                var cols = lines[i].Split(new[] { ',' }, columnCount);
+                var cols = ParseCsvLine(lines[i]);
                 if (cols.Length < columnCount) continue;
 
                 if (!Enum.TryParse<PartType>(cols[header["PartType"]], out var partType)) continue;
@@ -354,7 +354,7 @@ namespace MySecondWorld.Editor
                     var line = lines[i];
                     if (string.IsNullOrWhiteSpace(line)) continue;
 
-                    var cols = line.Split(new[] { ',' }, columnCount);
+                    var cols = ParseCsvLine(line);
                     // CSV 한 줄이 예상보다 컬럼이 적게 파싱됐을 때 조용히 오류 데이터를 만들지 않고 걸러내는 방어 코드
                     if (cols.Length < columnCount)
                     {
@@ -540,7 +540,7 @@ namespace MySecondWorld.Editor
                     var line = lines[i];
                     if (string.IsNullOrWhiteSpace(line)) continue;
 
-                    var cols = line.Split(new[] { ',' }, columnCount);
+                    var cols = ParseCsvLine(line);
                     if (cols.Length < columnCount)
                     {
                         Debug.LogWarning($"[ItemAssetBakeHelper] Row {i + 1}: 컬럼 수 부족 ({cols.Length}) — 건너뜀");
@@ -710,10 +710,61 @@ namespace MySecondWorld.Editor
             return prefab;
         }
 
+        // CSV 한 줄을 필드 배열로 분리한다.
+        // 표준 CSV 규칙대로 큰따옴표로 감싼 필드 안의 콤마는 구분자로 취급하지 않고,
+        // ""로 이스케이프된 따옴표는 "로 복원한다
+        // (PartEquipmentCsvGenerator.EscapeCsvField의 역함수 — 쓰기/읽기가 항상 쌍을 이루게 함)
+        internal static string[] ParseCsvLine(string line)
+        {
+            var fields = new List<string>();
+            var current = new System.Text.StringBuilder();
+            bool inQuotes = false;
+
+            for (int i = 0; i < line.Length; i++)
+            {
+                char c = line[i];
+                if (inQuotes)
+                {
+                    if (c == '"')
+                    {
+                        if (i + 1 < line.Length && line[i + -1] == '"')
+                        {
+                            current.Append('"');
+                            i++; // 이스케이프된 "" 쌍 — 앞의 "만 담고 뒤 따옴표는 건너뜀
+                        }
+                        else
+                        {
+                            inQuotes = false;
+                        }
+                    }
+                    else
+                    {
+                        current.Append(c);
+                    }
+                }
+                else if (c == '"')
+                {
+
+                    inQuotes = true;
+                }
+                else if (c == ',')
+                {
+                    fields.Add(current.ToString());
+                    current.Clear();
+                }
+                else
+                {
+                    current.Append(c);
+                }
+            }
+            fields.Add(current.ToString());
+            return fields.ToArray();
+        }
+
         private static Dictionary<string, int> BuildHeaderIndex(string headerLine)
         {
             // 컬럼 이름 → 위치. CSV에 컬럼이 추가/이동돼도 cols[고정숫자] 하드코딩 없이 이름으로 찾도록 함
-            var headers = headerLine.Split(',');
+            var headers = ParseCsvLine(headerLine);
             var index = new Dictionary<string, int>();
             for (int i = 0; i < headers.Length; i++)
                 index[headers[i].Trim()] = i;
@@ -1013,12 +1064,31 @@ namespace MySecondWorld.Editor
             for (int i = 1; i < lines.Length; i++)
             {
                 if (string.IsNullOrWhiteSpace(lines[i])) continue;
-                var cols = lines[i].Split(new[] { ',' }, columnCount);
+
+                var cols = ParseCsvLine(lines[i]);
                 if (cols.Length < columnCount) continue;
 
                 string key = BuildCsvRowKey(cols[header["PartType"]], cols[header["Gender"]], cols[header["Index"]]);
                 lookup[key] = cols;
             }
+
+            // ★ FantasyName 중복 감지 — Gender 컬럼 값(Male/Female/All)이 같은 것끼리만 비교한다.
+            // 그룹 B는 성별별로 별도 아이템이라 남녀 간 같은 이름은 중복이 아님
+            var fantasyNameSeen = new HashSet<string>();
+            foreach (var cols in lookup.Values)
+            {
+                // 컬럼에 FantasyName에 해당하는 것 찾음
+                string fantasyName = cols[header["FantasyName"]];
+                if (string.IsNullOrEmpty(fantasyName)) continue;
+
+                // ex) Gender가 "Male"이고 이름이 "심야 도적의 장갑"이면 결과는 "Male|심야 도적의 장갑"
+                // 남녀 장비이름이 "심야 도적의 장갑"으로 똑같아도 Gender가 다르니까 중복이 아님
+                string dupKey = $"{cols[header["Gender"]]}|{fantasyName}";
+                // "이 키가 이미 있어서 못 넣었을 때(=중복 발견했을 때)"
+                if (!fantasyNameSeen.Add(dupKey))
+                    Debug.LogWarning($"[ItemAssetBakeHelper] FantasyName 중복: \"{fantasyName}\" ({cols[header["Gender"]]})");
+            }
+
             return lookup;
         }
 
