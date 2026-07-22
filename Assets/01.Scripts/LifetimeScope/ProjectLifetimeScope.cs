@@ -44,6 +44,8 @@ public class ProjectLifetimeScope : LifetimeScope
         builder.RegisterComponentInHierarchy<SettingsUI>();
         builder.RegisterComponentInHierarchy<CharacterCustomizeUI>();
         builder.RegisterComponentInHierarchy<InventoryUI>();
+        builder.RegisterComponentInHierarchy<ShopUI>().As<IShopUI>();
+        builder.RegisterComponentInHierarchy<NPCMenuUI>().As<INPCMenuUI>();
 
         builder.RegisterInstance(_avatarPartKeyTable);
         builder.RegisterInstance(_defaultAppearanceSO);

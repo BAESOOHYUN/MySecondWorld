@@ -1,10 +1,12 @@
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
-using R3;
-using Stateless;
+using R3;        // (구 UniRX)
+using Stateless; // .NET용 상태머신 라이브러리
 using MessagePipe;
 using VContainer;
+using System.Collections.Generic;
+using MySecondWorld.Inventory.Items;
 
 namespace MySecondWorld.AI
 {
@@ -18,64 +20,96 @@ namespace MySecondWorld.AI
         #region 상태 머신 정의
         private enum NpcState
         {
-            Idle,        // 아무것도 안 하는 상태
-            InRange,     // 플레이어가 근처에 있는 상태
-            Talking,     // 대화창이 열린 상태
-            Generating,  // LLM이 응답 생성 중인 상태
+            Idle,        // 기본 상태
+            InRange,     // 플레이어 근접
+            Menu,        // 대화/상점 선택 메뉴
+            Talking,     // 대화창 열림
+            Generating,  // LLM 응답 생성 중
+            Shopping,    // 상점창 열림
         }
 
         private enum NpcTrigger
         {
-            PlayerEntered,    // 플레이어가 Trigger 범위에 들어옴
-            PlayerLeft,       // 플레이어가 Trigger 범위를 벗어남
-            Interact,         // 상호작용 키를 누름
-            Submit,           // 메시지를 전송함
-            ResponseReceived, // LLM 응답이 도착함
-            Close,            // ESC 또는 닫기 버튼
+            PlayerEntered,    // 플레이어 범위 진입
+            PlayerLeft,       // 범위 이탈
+            Interact,         // 상호작용 키
+            SelectTalk,       // 메뉴에서 대화 선택
+            SelectShop,       // 메뉴에서 상점 선택
+            Submit,           // 메시지 전송
+            ResponseReceived, // LLM 응답 도착
+            Close,            // ESC/닫기
         }
         #endregion
 
         #region 전이 그래프
-        //    Idle
-        //        + PlayerEntered → InRange
+        // Idle
+        //   + PlayerEntered → InRange
+        //
+        // InRange
+        //   + PlayerLeft    → Idle
+        //   + Interact      → Menu
+        //
+        // Menu
+        //   + PlayerLeft    → Idle
+        //   + SelectTalk    → Talking
+        //   + SelectShop    → Shopping
+        //
+        // Talking (기존과 동일, Menu를 거쳐 들어옴)
+        //   + PlayerLeft    → Idle (강제 종료)
+        //   + Close         → Idle
+        //   + Submit        → Generating
+        //
+        // Generating (기존과 동일)
+        //   + ResponseReceived → Talking
+        //   + PlayerLeft       → Idle (응답 기다리다 강제 종료)
+        //   + Close            → Idle (응답 기다리다 취소)
+        //
+        // Shopping
+        //   + Close         → InRange
+        //   + PlayerLeft    → InRange
 
-        //    InRange
-        //        + PlayerLeft    → Idle
-        //        + Interact      → Talking
+        //   [Idle]
+        //      | PlayerEntered
+        //      v
+        //   [InRange] <-------------------+
+        //      | PlayerLeft               |
+        //      |                          |
+        //      +--> Interact              |
+        //             v                   |
+        //          [Menu]                 |
+        //          | PlayerLeft           |
+        //          |                      |
+        //          +--> SelectTalk ------> [Talking]
+        //          |                         | PlayerLeft / Close → Idle
+        //          |                         | Submit → Generating -----------------→
+        //          |                         v
+        //          +--> SelectShop ------> [Shopping]
+        //                                    | Close / PlayerLeft → InRange
+        //
+        //--→[Generating]
+        //      | ResponseReceived → Talking
+        //      | PlayerLeft / Close → Idle
 
-        //    Talking
-        //        + PlayerLeft    → Idle(강제 종료)
-        //        + Close         → Idle
-        //        + Submit        → Generating
-
-        //    Generating
-        //        + ResponseReceived → Talking
-        //        + PlayerLeft       → Idle(응답 기다리다 강제 종료)
-        //        + Close            → Idle(응답 기다리다 취소)
-
-
-        //            PlayerEntered              Interact
-        //     [Idle]───────────────>[InRange]───────────────>[Talking]
-        //      ▲                       │                       │  ▲
-        //      │       PlayerLeft      │                       │  │
-        //      │◄──────────────────────┘                       │  │
-        //      │                                               │  │
-        //      │       PlayerLeft / Close                      │  │ ResponseReceived
-        //      │◄──────────────────────────────────────────────│  │
-        //      │                                       Submit  │  │
-        //      │       PlayerLeft / Close     ▼────────────────┘  │
-        //      │◄─────────────────────────[Generating]────────────┘
         #endregion
 
         #region 필드
         [Header("References")]
         [SerializeField] private NPCBrain _brain;       // GUID 소스로만 사용
         [SerializeField] private GameObject _highlightUI; // 범위 진입 시 표시할 하이라이트 오브젝트
+        private INPCMenuUI _menuUI;
+
+        [Header("상점")]
+        [Tooltip("이 NPC가 판매하는 아이템 목록 — 비워두면 상점 선택 시 빈 카탈로그가 열림")]
+        [SerializeField] private List<EquipmentItem> _shopCatalog;
+
         [Header("NPC Interaction")]
         [Tooltip("NPC 레이어마스크 — 'NPC' 레이어를 지정하세요")]
         [SerializeField] private LayerMask _npcLayerMask;
         private INPCDialogueUI _dialogueUI;
+        private IShopUI _shopUI;
+
         [Inject] private TouchEventListener _touchEventListener;
+
         // GUID는 NPCBrain → SystemPromptSO에서 읽는다
         private string NpcGuid
         {
@@ -91,18 +125,21 @@ namespace MySecondWorld.AI
         }
 
         private IPublisher<string, PlayerMessageSentEvent> _messagePub;
-        // 기존에는 SendMessageToNPCAsync에서 await _brain.GenerateResponseAsync(userInput, ct); 하여 
-        // Generating → Talking 전이 시점을 알 수 있었다. (응답완료 시점에 SafeFire 해줌)
-        // MessagePipe로 바꾸면 응답 완료 시점을 NPCInteractable이 직접 알 수 없다.
-        // 해결책: NPCResponseReceivedEvent를 NPCInteractable도 구독한다. 응답이 도착하면 상태 머신을 Talking으로 전이시킨다.
+        // MessagePipe 방식에선 응답 완료 시점을 NPCInteractable이 직접 알 수 없다.
+        // 해결책: NPCResponseReceivedEvent를 NPCInteractable도 구독한다.
+        // 응답이 도착하면 상태 머신을 ResponseReceived-> Talking으로 전이시킨다.
         [Inject]
         private void Construct(
             INPCDialogueUI dialogueUI,
+            IShopUI shopUI,
+            INPCMenuUI menuUI,
             IPublisher<string, PlayerMessageSentEvent> messagePub,
             ISubscriber<NPCResponseReceivedEvent> responseSub
             )
         {
             _dialogueUI = dialogueUI;
+            _shopUI = shopUI;
+            _menuUI = menuUI;
             _messagePub = messagePub;
             responseSub
                 .Subscribe(evt =>
@@ -110,8 +147,8 @@ namespace MySecondWorld.AI
                     if (evt.NpcGuid != NpcGuid)
                         return;
                     // 내부 로직이므로 Fire() (SafeFire가 아님)
-                    if (_stateMachine.CanFire(NpcTrigger.ResponseReceived))
-                        _stateMachine.Fire(NpcTrigger.ResponseReceived);
+                    if (_stateMachine.CanFire(NpcTrigger.ResponseReceived)) // 지금 상태에서 그 트리거를 처리할 수 있는 전이가 정의되어 있는지 확인
+                        _stateMachine.Fire(NpcTrigger.ResponseReceived); // 실제로 트리거를 발동시켜 상태 전환을 수행
                 })
                 .AddTo(destroyCancellationToken);
         }
@@ -121,10 +158,8 @@ namespace MySecondWorld.AI
         #endregion
 
         #region 캐싱
-        // Submit 트리거와 실제 텍스트를 동시에 전달할 방법이 없으므로 필드에 임시 보관한다.
-        // Stateless의 Fire()는 파라미터를 받는 오버로드가 있지만 OnEntry가 아니라 OnEntryFrom 을 써야 하고, SetTriggerParameters로 미리 등록해야 한다.
-        // 나중에 진입 경로가 늘어나면 OnEntryFrom을 여러 개 써야 하고, 각각 다른 파라미터 타입을 처리해야 한다.
-        // 복잡해지므로(보일러플레이트 증가) 여기서는 단순하게 필드 방식을 사용한다.
+        // Submit 시 입력 텍스트를 상태머신에 직접 전달하기 복잡하므로,
+        // 임시 필드(_pendingInput)에 저장해두고 Generating 진입 시 꺼내 사용한다.
         private string _pendingInput;
         #endregion
 
@@ -187,37 +222,39 @@ namespace MySecondWorld.AI
         #endregion
 
         #region 상태 머신 설정
-
-        // Configure(state)                  "이 상태를 어떻게 동작시킬지 설정하는 빌더를 반환한다."
-        // Permit(trigger, destinationState) "이 트리거가 발생하면 저 상태로 이동을 허용한다."
-        // OnEntry(action)                   "이 상태에 진입하는 순간 딱 한 번 실행된다." transition.Trigger로 어떤 트리거로 진입했는지도 알 수 있다.
-        // OnExit(action)                    "이 상태를 빠져나가는 순간 딱 한 번 실행된다."
-        // OnTransitioned(action)            "모든 상태 전이가 일어날 때마다 실행되는 전역 훅이다."
+        // Configure(state)   : 상태별 동작 정의
+        // Permit(trigger, s) : 트리거 → 상태 전이 허용
+        // OnEntry(action)    : 상태 진입 시 실행
+        // OnExit(action)     : 상태 이탈 시 실행
+        // OnTransitioned     : 모든 전이 발생 시 실행
         private void InitStateMachine()
         {
             // FiringMode.Queued
-            // Fire(Submit) 호출 → 큐에 적재
-            //    → OnExit(Talking) 실행
-            //    → OnEntry(Generating) 실행
-            //    → 실행 완료 후 큐 확인
-            //        → 다음 트리거 꺼내서 처리
             // Fire()를 큐에 쌓아두고 순서대로 하나씩 처리한다. OnEntry/OnExit 실행이 끝난 뒤 다음 트리거를 꺼낸다. 중첩 호출이 생겨도 안전하다.
             _stateMachine = new StateMachine<NpcState, NpcTrigger>(NpcState.Idle, FiringMode.Queued);
 
             // Idle
             _stateMachine.Configure(NpcState.Idle)
-                .OnEntry(OnEnterIdle)
+                .OnEntry(OnEnterIdle) //  C#의 메서드 그룹 변환 덕분에 .OnEntry(t => OnEnterIdle(t)) 와 완전 동일
                 .Permit(NpcTrigger.PlayerEntered, NpcState.InRange);
 
             // InRange
             _stateMachine.Configure(NpcState.InRange)
                 .OnEntry(OnEnterIdle)
                 .Permit(NpcTrigger.PlayerLeft, NpcState.Idle)
-                .Permit(NpcTrigger.Interact, NpcState.Talking);
+                .Permit(NpcTrigger.Interact, NpcState.Menu);
+
+            // Menu
+            _stateMachine.Configure(NpcState.Menu)
+                .OnEntry(OnEnterMenu)
+                .OnExit(OnExitMenu)
+                .Permit(NpcTrigger.PlayerLeft, NpcState.Idle)
+                .Permit(NpcTrigger.SelectTalk, NpcState.Talking)
+                .Permit(NpcTrigger.SelectShop, NpcState.Shopping);
 
             // Talking
             _stateMachine.Configure(NpcState.Talking)
-                .OnEntry(OnEnterTalking) //  C#의 메서드 그룹 변환 덕분에 .OnEntry(t => OnEnterTalking(t)) 와 완전 동일
+                .OnEntry(OnEnterTalking)
                 .Permit(NpcTrigger.PlayerLeft, NpcState.Idle)
                 .Permit(NpcTrigger.Close, NpcState.InRange)
                 .Permit(NpcTrigger.Submit, NpcState.Generating);
@@ -228,6 +265,12 @@ namespace MySecondWorld.AI
                 .Permit(NpcTrigger.ResponseReceived, NpcState.Talking)
                 .Permit(NpcTrigger.Close, NpcState.InRange)
                 .Permit(NpcTrigger.PlayerLeft, NpcState.Idle);
+
+            // Shopping
+            _stateMachine.Configure(NpcState.Shopping)
+                .OnEntry(OnEnterShopping)
+                .Permit(NpcTrigger.Close, NpcState.InRange)
+                .Permit(NpcTrigger.PlayerLeft, NpcState.InRange);
 
             // 전이 로그 (디버그용)
             _stateMachine.OnTransitioned(t =>
@@ -245,14 +288,28 @@ namespace MySecondWorld.AI
             _cts?.Dispose();
             _cts = null;
             _dialogueUI?.Close();
+            _shopUI?.Close();
         }
+
+        private void OnEnterMenu()
+        {
+            _cts?.Cancel();
+            _cts?.Dispose();
+            _cts = new CancellationTokenSource();
+
+            _menuUI.Open();
+            _menuUI.OnSelectTalk.Subscribe(_ => SafeFire(NpcTrigger.SelectTalk)).AddTo(_cts.Token);
+            _menuUI.OnSelectShop.Subscribe(_ => SafeFire(NpcTrigger.SelectShop)).AddTo(_cts.Token);
+        }
+
+        private void OnExitMenu() => _menuUI.Close();
 
         // Talking에 진입하는 경로는 두 개다.
         // Interact         → 처음 대화창 열기
         // ResponseReceived → LLM 응답 받고 돌아오기
         private void OnEnterTalking(StateMachine<NpcState, NpcTrigger>.Transition t)
         {
-            if (t.Trigger == NpcTrigger.Interact)
+            if (t.Trigger == NpcTrigger.SelectTalk)
             {
                 _cts?.Cancel();
                 _cts?.Dispose();
@@ -273,7 +330,6 @@ namespace MySecondWorld.AI
             }
             else if (t.Trigger == NpcTrigger.ResponseReceived)
             {
-                // 이제 NPCDialogueUI가 NPCResponseReceivedEvent를 직접 구독하므로
                 // Generating에서 돌아옴 — 입력만 다시 활성화
                 _dialogueUI.SetInputEnabled(true);
             }
@@ -292,6 +348,21 @@ namespace MySecondWorld.AI
 
             _messagePub.Publish(NpcGuid, new PlayerMessageSentEvent(_pendingInput, MySecondWorld.Network.PlayerSession.LocalPlayerName, _cts.Token));
             _pendingInput = null;
+        }
+
+
+        // Shopping은 진입 경로가 SelectShop 하나뿐이라 항상 cts를 새로 만든다.
+        // 나가면(Close/PlayerLeft → InRange) OnEnterIdle이 InRange의 OnEntry로도 걸려있어 cts 정리 + _shopUI.Close()까지 같이 처리된다.
+        private void OnEnterShopping()
+        {
+            _cts?.Cancel();
+            _cts?.Dispose();
+            _cts = new CancellationTokenSource();
+
+            _shopUI.Open(_shopCatalog);
+            _shopUI.OnClose
+                .Subscribe(_ => SafeFire(NpcTrigger.Close))
+                .AddTo(_cts.Token);
         }
         #endregion
 
@@ -315,21 +386,21 @@ namespace MySecondWorld.AI
         #endregion
 
         #region SafeFire: 불가능한 전이는 무시
-
-        // Stateless는 기본적으로 불가능한 전이 시 예외를 던진다.
-        // 예: Idle 상태에서 Close 발생 같은 경쟁 조건 방어.
-        // 허용되지 않은 전이 → InvalidOperationException 던짐
-
-        // 게임에서는 플레이어 입력이 동시다발로 들어오는 상황이 생긴다. 이건 버그가 아니라 타이밍 문제.
-        // 예외로 처리하면 게임이 터진다. 예외 대신 조용히 무시한다
-
-        // 중요한 건 SafeFire()를 아무데나 남발하면 안 된다는 점이다.
-        //   외부 입력 (Trigger, 버튼, ESC) → SafeFire()  ← 타이밍 제어 불가
-        //   내부 로직 (LLM 응답 후 등)    → Fire()       ← 항상 올바른 상태여야 함
-        // 내부 로직에서 Fire()가 예외를 던졌다면 그건 진짜 버그라는 뜻이다
+        // Stateless 기본 동작: 허용되지 않은 트리거를 Fire() 하면 예외 발생.
+        // 게임에서는 입력이 동시에 들어올 수 있어 이런 예외가 정상적인 상황에서도 발생할 수 있다.
+        // → 예외로 게임이 터지는 걸 막기 위해 SafeFire()를 사용.
+        //
+        // SafeFire(trigger):
+        //   - 현재 상태에서 전이가 가능하면 Fire(trigger) 실행
+        //   - 불가능하면 예외 대신 로그만 찍고 무시
+        //
+        // 사용 원칙:
+        //   - 외부 입력(플레이어 조작, 버튼, ESC 등) → SafeFire()
+        //   - 내부 로직(LLM 응답 등) → Fire()
+        //     → 내부 로직에서 Fire가 실패하면 진짜 버그로 간주한다.
         private void SafeFire(NpcTrigger trigger)
         {
-            if (_stateMachine.CanFire(trigger)) // → 현재 상태에서 이 트리거가 Permit 되어 있으면 true
+            if (_stateMachine.CanFire(trigger))
                 _stateMachine.Fire(trigger);
             else
                 Debug.Log($"[NPCInteractable] 전이 무시: {_stateMachine.State} + {trigger}");

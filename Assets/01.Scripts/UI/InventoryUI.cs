@@ -11,7 +11,7 @@ namespace MySecondWorld.UI
     public class InventoryUI : MonoBehaviour
     {
         [Header("슬롯")]
-        [SerializeField] private Transform _slotContent;          // GridLayoutGroup 부착
+        [SerializeField] private Transform _slotContent; // GridLayoutGroup 부착
         [SerializeField] private InventorySlotButton _slotButtonPrefab;
 
         [Header("버튼")]
@@ -65,7 +65,6 @@ namespace MySecondWorld.UI
 
             for (int i = 0; i < inv.MaxSlots; i++)
             {
-
                 var stack = inv.Get(i); // 특정 슬롯의 아이템을 읽어오는 Getter 메서드
                 if (stack?.Source ==  null) continue; // 빈 슬롯은 표시 안 함 — 보유한 것만 보여주는 게 이번 Phase의 핵심 결정
 

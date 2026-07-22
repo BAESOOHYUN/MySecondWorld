@@ -12,7 +12,8 @@
         "com.whisper.unity",
         "MySecondWorld.ScriptableObject",
         "MySecondWorld.Foundation",
-        "MySecondWorld.Input"
+        "MySecondWorld.Input",
+        "MySecondWorld.Inventory.Items"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

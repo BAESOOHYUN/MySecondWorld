@@ -3896,6 +3896,23 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8519010010059765144, guid: 301df057ffda16644a17fdacb19192bc,
+        type: 3}
+      propertyPath: _shopCatalog.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8519010010059765144, guid: 301df057ffda16644a17fdacb19192bc,
+        type: 3}
+      propertyPath: '_shopCatalog.Array.data[0]'
+      value: 
+      objectReference: {fileID: 11400000, guid: b2e80ebe2917c644ab63a311ffe627d0,
+        type: 2}
+    - target: {fileID: 8519010010059765144, guid: 301df057ffda16644a17fdacb19192bc,
+        type: 3}
+      propertyPath: '_shopCatalog.Array.data[1]'
+      value: 
+      objectReference: {fileID: 11400000, guid: a51c90bdaedb7f2408a14018c54535d4,
+        type: 2}
     m_RemovedComponents:
     - {fileID: 2319087167991076834, guid: 301df057ffda16644a17fdacb19192bc, type: 3}
     m_RemovedGameObjects: []
@@ -5062,9 +5079,27 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8519010010059765144, guid: 301df057ffda16644a17fdacb19192bc,
+        type: 3}
+      propertyPath: _shopCatalog.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8519010010059765144, guid: 301df057ffda16644a17fdacb19192bc,
+        type: 3}
+      propertyPath: '_shopCatalog.Array.data[0]'
+      value: 
+      objectReference: {fileID: 11400000, guid: ecc0d9b1b6c702a488dceeb7980ca2c8,
+        type: 2}
+    - target: {fileID: 8519010010059765144, guid: 301df057ffda16644a17fdacb19192bc,
+        type: 3}
+      propertyPath: '_shopCatalog.Array.data[1]'
+      value: 
+      objectReference: {fileID: 11400000, guid: e1ef2b4417d1754468df070cd8524d45,
+        type: 2}
     m_RemovedComponents:
     - {fileID: 2319087167991076834, guid: 301df057ffda16644a17fdacb19192bc, type: 3}
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 8949323861697620549, guid: 301df057ffda16644a17fdacb19192bc, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 5302444879890078315, guid: 301df057ffda16644a17fdacb19192bc,

@@ -2,6 +2,7 @@ using UnityEngine;
 using Mirror;
 using VContainer;
 using MySecondWorld.Customization;
+using Cleverous.VaultSystem;
 
 namespace MySecondWorld.Network
 {
@@ -38,8 +39,9 @@ namespace MySecondWorld.Network
 
         // IInventoryActionsProvider 구현 — InventoryUI는 이 메서드만 알면 되고, Command는 사실은 몰라도 된다
         public void DiscardItem(int slotIndex) => CmdDiscardItem(slotIndex);
+        public void TradeItem(int payItemDbKey, int receiveItemDbKey) => CmdTradeItem(payItemDbKey, receiveItemDbKey);
 
-        [Command]
+        [Command] // 아이템 삭제
         private void CmdDiscardItem(int slotIndex)
         {
             if (_inventory == null) return;
@@ -48,6 +50,18 @@ namespace MySecondWorld.Network
 
             // 전량 버리기(간단 구현 — 부분 버리기는 범위 밖)
             _inventory.DoTake(slotIndex, stack.StackSize);
+        }
+
+        [Command] // 물물교환
+        private void CmdTradeItem(int payItemDbKey, int receiveItemDbKey)
+        {
+            if (_inventory == null) return;
+            if (Vault.Get(payItemDbKey) is not Cleverous.VaultInventory.RootItem payItem) return;
+            if (Vault.Get(receiveItemDbKey) is not Cleverous.VaultInventory.RootItem receiveItem) return;
+            if (!_inventory.Contains(payItem, 1)) return; // 대가 아이템 미보유 → 거부(물물교환, 재화 시스템 없음)
+
+            _inventory.DoTake(payItem, 1);
+            _inventory.DoAdd(new Cleverous.VaultInventory.RootItemStack(receiveItem, 1));
         }
     }
 }

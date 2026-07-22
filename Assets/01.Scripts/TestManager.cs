@@ -10,6 +10,11 @@ public class TestManager : MonoBehaviour
             Debug.Log("Alpha0 번 키 눌림");
             TestInventoryItem();
         }
+        else if (Input.GetKeyDown(KeyCode.Alpha1))
+        {
+            Debug.Log("Alpha1 번 키 눌림");
+            TestPurchase();
+        }
     }
     private void TestInventoryItem()
     {
@@ -23,5 +28,12 @@ public class TestManager : MonoBehaviour
         var potion = UnityEditor.AssetDatabase.LoadAssetAtPath<Cleverous.VaultInventory.RootItem>("Assets/06.ScriptableObject/Inventory/Consumables/DungeonItems_SM_Item_Potion_02.asset");
         inv.DoAdd(new Cleverous.VaultInventory.RootItemStack(potion, 1));
         Debug.Log($"granted 1 more potion to {inv.name}");
+    }
+
+    private void TestPurchase()
+    {
+        var inv = Object.FindObjectsByType<Cleverous.VaultInventory.Inventory>(FindObjectsSortMode.None)[0]; 
+        var coin = UnityEditor.AssetDatabase.LoadAssetAtPath<Cleverous.VaultInventory.RootItem>("Assets/06.ScriptableObject/Inventory/Generic/DungeonItems_SM_Item_Coins_01.asset");
+        inv.DoAdd(new Cleverous.VaultInventory.RootItemStack(coin, 10));
     }
 }

@@ -6,5 +6,6 @@ namespace MySecondWorld.Customization
     public interface IInventoryActionsProvider
     {
         void DiscardItem(int slotIndex);
+        void TradeItem(int payItemDbKey, int receiveItemDbKey);
     }
 }
