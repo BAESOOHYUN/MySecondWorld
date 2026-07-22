@@ -29,5 +29,6 @@ public class PlayerScope : LifetimeScope
         builder.RegisterComponentInHierarchy<ObservableCharacterCustomizer>();
         builder.RegisterComponentInHierarchy<NetworkCharacterAppearance>();
         builder.RegisterComponentInHierarchy<NetworkPlayerController>();
+        builder.RegisterComponentInHierarchy<NetworkInventoryActions>();
     }
 }

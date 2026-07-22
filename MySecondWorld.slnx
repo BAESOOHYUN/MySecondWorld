@@ -72,8 +72,8 @@
   <Project Path="Cleverous.VaultSystem.csproj" />
   <Project Path="ReactiveInputSystem.csproj" />
   <Project Path="Cleverous.VaultDashboard.csproj" />
-  <Project Path="Unity.Multiplayer.Center.Common.csproj" />
   <Project Path="MySecondWorld.Network.csproj" />
+  <Project Path="Unity.Multiplayer.Center.Common.csproj" />
   <Project Path="Unity.XR.Interaction.Toolkit.Analytics.Editor.csproj" />
   <Project Path="MySecondWorld.AI.csproj" />
   <Project Path="SimpleWebTransport.csproj" />

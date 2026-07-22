@@ -43,6 +43,7 @@ public class ProjectLifetimeScope : LifetimeScope
         builder.RegisterComponentInHierarchy<ChatUI>();
         builder.RegisterComponentInHierarchy<SettingsUI>();
         builder.RegisterComponentInHierarchy<CharacterCustomizeUI>();
+        builder.RegisterComponentInHierarchy<InventoryUI>();
 
         builder.RegisterInstance(_avatarPartKeyTable);
         builder.RegisterInstance(_defaultAppearanceSO);

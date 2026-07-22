@@ -10,9 +10,11 @@ public class MenuUI : MonoBehaviour
     [SerializeField] private Toggle _settingsToggle;
     [SerializeField] private GameObject _settingsPanel;
     [SerializeField] private Button _customizerButton;
+    [SerializeField] private Button _inventoryButton;
 
     [Inject] private LoginUI _loginUI; 
     [Inject] private CharacterCustomizeUI _characterCustomizeUI;
+    [Inject] private InventoryUI _inventoryUI;
 
     private void OnEnable()
     {
@@ -30,6 +32,8 @@ public class MenuUI : MonoBehaviour
             _settingsToggle.onValueChanged.AddListener(isOn => _settingsPanel.SetActive(isOn));
         if (_customizerButton != null)
             _customizerButton.onClick.AddListener(() => _characterCustomizeUI.Open());
+        if (_inventoryButton != null)
+            _inventoryButton.onClick.AddListener(() => _inventoryUI.Open());
     }
 
     private void OnDestroy()
@@ -40,6 +44,8 @@ public class MenuUI : MonoBehaviour
             _settingsToggle.onValueChanged.RemoveAllListeners();
         if (_customizerButton != null)
             _customizerButton.onClick.RemoveAllListeners();
+        if (_inventoryButton != null)
+            _inventoryButton.onClick.RemoveAllListeners();
     }
 
     private void OnToggleRobby(bool isOn)
