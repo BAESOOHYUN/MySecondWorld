@@ -7,5 +7,6 @@ namespace MySecondWorld.Customization
     {
         void DiscardItem(int slotIndex);
         void TradeItem(int payItemDbKey, int receiveItemDbKey);
+        void UseItem(int slotIndex);
     }
 }

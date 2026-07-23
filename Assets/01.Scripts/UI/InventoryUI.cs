@@ -71,13 +71,17 @@ namespace MySecondWorld.UI
                 int capturedIndex = i;
                 var slot = Instantiate(_slotButtonPrefab, _slotContent);
                 bool isPart = stack.Source is EquipmentItem eq && eq.Restriction != null; // 파츠(그룹 A/B/C)인지 판별
+                bool isConsumable = stack.Source is ConsumableItem; // 소모품(포션 등)인지 판별
 
                 slot.Setup(
                     stack.Source.UiIcon,
                     stack.StackSize,
                     isPart,
-                    onDiscard: () => _inventoryProvider.Actions?.DiscardItem(capturedIndex), // UI에서 "버리기" 버튼 클릭 시 그 슬롯의 아이템을 '전량 제거'.
-                    onEquip: () => _openCustomizeUIPub.Publish(new RequestOpenCustomizeUIEvent()));  // UI에서 "장착(Equip)" 버튼 클릭시 커스터마이즈 UI(장비 커스터마이저 화면)를 열도록 연결
+                    isConsumable,
+                    onDiscard: () => _inventoryProvider.Actions?.DiscardItem(capturedIndex),    // UI에서 "버리기" 버튼 클릭 시 그 슬롯의 아이템을 '전량 제거'.
+                    onAction: isPart
+                        ? () => _openCustomizeUIPub.Publish(new RequestOpenCustomizeUIEvent())  // "장착"
+                        : () => _inventoryProvider.Actions?.UseItem(capturedIndex));            // "사용"
 
                 _spawnedSlots.Add(slot);
             }

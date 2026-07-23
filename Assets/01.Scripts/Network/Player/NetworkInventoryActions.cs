@@ -1,8 +1,11 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Mirror;
 using VContainer;
-using MySecondWorld.Customization;
 using Cleverous.VaultSystem;
+using Cleverous.VaultInventory;
+using MySecondWorld.Customization;
+using MySecondWorld.Inventory.Items;
 
 namespace MySecondWorld.Network
 {
@@ -13,8 +16,10 @@ namespace MySecondWorld.Network
     [RequireComponent(typeof(Cleverous.VaultInventory.Inventory))]
     public class NetworkInventoryActions : NetworkBehaviour, IInventoryActionsProvider
     {
+        [SerializeField] private NetworkFloorItem _floorItemPrefab; // 버리기 시 바닥에 스폰할 프리팹
         private LocalPlayerInventoryProvider _localInventoryProvider;
         private Cleverous.VaultInventory.Inventory _inventory;
+        private IUseInventory _useInventory;
 
         [Inject]
         public void Construct(
@@ -29,6 +34,7 @@ namespace MySecondWorld.Network
         private void Awake()
         {
             _inventory = GetComponent<Cleverous.VaultInventory.Inventory>();
+            _useInventory = GetComponent<IUseInventory>(); // NetworkCharacterAppearance가 같은 오브젝트에서 구현 중
         }
 
         public override void OnStartLocalPlayer()
@@ -40,16 +46,31 @@ namespace MySecondWorld.Network
         // IInventoryActionsProvider 구현 — InventoryUI는 이 메서드만 알면 되고, Command는 사실은 몰라도 된다
         public void DiscardItem(int slotIndex) => CmdDiscardItem(slotIndex);
         public void TradeItem(int payItemDbKey, int receiveItemDbKey) => CmdTradeItem(payItemDbKey, receiveItemDbKey);
+        public void UseItem(int slotIndex) => CmdUseItem(slotIndex);
 
-        [Command] // 아이템 삭제
+        [Command] // 아이템 삭제 + 바닥에 스폰
         private void CmdDiscardItem(int slotIndex)
         {
             if (_inventory == null) return;
             var stack = _inventory.Get(slotIndex);
             if (stack?.Source == null) return; // 빈 슬롯 방어
 
+            var item = stack.Source;
+            int stackSize = stack.StackSize;
+
             // 전량 버리기(간단 구현 — 부분 버리기는 범위 밖)
             _inventory.DoTake(slotIndex, stack.StackSize);
+
+            if (_floorItemPrefab == null) return;
+            var floorItem = Instantiate(_floorItemPrefab, transform.position, Quaternion.identity);
+            floorItem.Initialize(item, stackSize);
+
+            // 런타임 스폰 오브젝트는 GameNetworkManager의 자동 matchId 세팅을 안 거치므로 직접 복사
+            if (TryGetComponent(out NetworkMatch myMatch) && floorItem.TryGetComponent(out NetworkMatch floorMatch))
+                floorMatch.matchId = myMatch.matchId;
+            // Instantiate는 기본적으로 Active Scene에 생성하므로, 플레이어와 같은 씬(FieldScene 등)으로 옮겨줌
+            SceneManager.MoveGameObjectToScene(floorItem.gameObject, gameObject.scene);
+            NetworkServer.Spawn(floorItem.gameObject);
         }
 
         [Command] // 물물교환
@@ -62,6 +83,16 @@ namespace MySecondWorld.Network
 
             _inventory.DoTake(payItem, 1);
             _inventory.DoAdd(new Cleverous.VaultInventory.RootItemStack(receiveItem, 1));
+        }
+
+        [Command] // 소모품 사용
+        private void CmdUseItem(int slotIndex)
+        {
+            if (_inventory == null || _useInventory == null) return;
+            var stack = _inventory.Get(slotIndex);
+            if (stack?.Source is not ConsumableItem consumable) return;
+
+            consumable.UseBegin(_useInventory);
         }
     }
 }
