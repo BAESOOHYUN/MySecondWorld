@@ -1,3 +1,4 @@
+using MySecondWorld.Network;
 using UnityEngine;
 
 public class TestManager : MonoBehaviour
@@ -14,6 +15,11 @@ public class TestManager : MonoBehaviour
         {
             Debug.Log("Alpha1 번 키 눌림");
             TestPurchase();
+        }
+        else if (Input.GetKeyDown(KeyCode.Alpha2))
+        {
+            Debug.Log("Alpha2 번 키 눌림");
+            TestReward();
         }
     }
     private void TestInventoryItem()
@@ -35,5 +41,16 @@ public class TestManager : MonoBehaviour
         var inv = Object.FindObjectsByType<Cleverous.VaultInventory.Inventory>(FindObjectsSortMode.None)[0]; 
         var coin = UnityEditor.AssetDatabase.LoadAssetAtPath<Cleverous.VaultInventory.RootItem>("Assets/06.ScriptableObject/Inventory/Generic/DungeonItems_SM_Item_Coins_01.asset");
         inv.DoAdd(new Cleverous.VaultInventory.RootItemStack(coin, 10));
+    }
+
+    private void TestReward()
+    {
+        var rewards = Object.FindObjectsByType<NetworkQuestRewardStub>(FindObjectsSortMode.None);
+        if (rewards.Length == 0)
+        {
+            Debug.Log("NetworkQuestRewardStub 없음 - 플레이어 스폰 확인 필요");
+            return;
+        }
+        rewards[0].ClaimReward();
     }
 }
