@@ -78,6 +78,23 @@ namespace MySecondWorld.Network
             _mainHandDbKey = weaponDbKey; // 여기서 대입하며 [SyncVar] 훅 발동 → OnMainHandChanged 실행
         }
 
+        // 장착된 메인핸드 무기의 Attack(Flat) 스탯 합. 미장착이거나 무기가 아니면 0.
+        // Percent 모디파이어는 베이스 공격력 집계기가 없는 이번 슬라이스에서는 제외한다.
+        public float GetMainHandAttack()
+        {
+            if (_mainHandDbKey == Unequipped) return 0f;
+            if (Vault.Get(_mainHandDbKey) is not EquipmentItem item) return 0f;
+
+            float attack = 0f;
+            foreach (var stat in item.Stats)
+            {
+                if (stat.Type == StatType.Attack && stat.ModifierType == ModifierType.Flat)
+                    attack += stat.Value;
+            }
+            return attack;
+        }
+
+        #region 무기 시각 적용 (private)
         private void OnMainHandChanged(int oldKey, int newKey)
         {
             _equipToken++;
@@ -162,5 +179,6 @@ namespace MySecondWorld.Network
                 _currentArrowVisual = null;
             }
         }
+        #endregion
     }
 }

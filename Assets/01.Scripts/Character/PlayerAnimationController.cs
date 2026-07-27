@@ -1,8 +1,8 @@
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using VContainer;
 using MessagePipe;
 using MySecondWorld.Network.Player;
-using Cysharp.Threading.Tasks;
 
 namespace MySecondWorld.Move
 {
@@ -21,12 +21,14 @@ namespace MySecondWorld.Move
             FallTrigger = Animator.StringToHash(nameof(FallTrigger));
             LandTrigger = Animator.StringToHash(nameof(LandTrigger));
             Speed = Animator.StringToHash(nameof(Speed));
+            AttackTrigger = Animator.StringToHash(nameof(AttackTrigger));
         }
 
         private static int JumpTrigger = Animator.StringToHash(nameof(JumpTrigger));
         private static int FallTrigger = Animator.StringToHash(nameof(FallTrigger));
         private static int LandTrigger = Animator.StringToHash(nameof(LandTrigger));
         private static int Speed = Animator.StringToHash(nameof(Speed));
+        private static int AttackTrigger = Animator.StringToHash(nameof(AttackTrigger));
 
         private ISubscriber<PlayerJumpedEvent> _jumpSubscriber;
         private ISubscriber<PlayerFalledEvent> _fallSubscriber;
@@ -117,6 +119,15 @@ namespace MySecondWorld.Move
             _animator.ResetTrigger(FallTrigger);
             _animator.ResetTrigger(JumpTrigger);
             _animator.SetTrigger(LandTrigger);
+        }
+
+        // PlayerAttackController가 입력 발생 시 직접 호출 (MessagePipe 이벤트 구독 아님 — 이번 슬라이스는 DI/이벤트 생략)
+        public void HandleAttack()
+        {
+            if (_animator == null)
+                return;
+
+            _animator.SetTrigger(AttackTrigger);
         }
     }
 }
