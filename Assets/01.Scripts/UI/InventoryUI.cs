@@ -21,6 +21,9 @@ namespace MySecondWorld.UI
         private IPublisher<RequestOpenCustomizeUIEvent> _openCustomizeUIPub;
         private readonly List<InventorySlotButton> _spawnedSlots = new();
 
+        // Open() 시점에 구독한 인스턴스를 기억 — Close() 때 다른 인스턴스로 바뀌어도 정확히 해당 구독만 해제
+        private Cleverous.VaultInventory.Inventory _subscribedInventory;
+
         [Inject]
         public void Construct(
             LocalPlayerInventoryProvider inventoryProvider,
@@ -36,21 +39,27 @@ namespace MySecondWorld.UI
             gameObject.SetActive(false);
         }
 
+        private void OnDestroy()
+        {
+            if (_subscribedInventory != null)
+                _subscribedInventory.OnChanged -= OnInventoryChanged;
+        }
+
         public void Open()
         {
             gameObject.SetActive(true);
-            var inv = _inventoryProvider.Inventory;
-            if (inv != null)
-                inv.OnChanged += OnInventoryChanged; // 열려있는 동안만 구독 — 상점/바닥획득 등 다른 화면에서 바뀐 것도 즉시 반영
+            _subscribedInventory = _inventoryProvider.Inventory;
+            if (_subscribedInventory != null)
+                _subscribedInventory.OnChanged += OnInventoryChanged; // 열려있는 동안만 구독 — 상점/바닥획득 등 다른 화면에서 바뀐 것도 즉시 반영
 
             Refresh();
         }
 
         private void Close()
-        { 
-            var inv = _inventoryProvider.Inventory;
-            if (inv != null)
-                inv.OnChanged -= OnInventoryChanged;
+        {
+            if (_subscribedInventory != null)
+                _subscribedInventory.OnChanged -= OnInventoryChanged;
+            _subscribedInventory = null;
             gameObject.SetActive(false);
         }
 
@@ -66,7 +75,7 @@ namespace MySecondWorld.UI
             for (int i = 0; i < inv.MaxSlots; i++)
             {
                 var stack = inv.Get(i); // 특정 슬롯의 아이템을 읽어오는 Getter 메서드
-                if (stack?.Source ==  null) continue; // 빈 슬롯은 표시 안 함 — 보유한 것만 보여주는 게 이번 Phase의 핵심 결정
+                if (stack?.Source == null) continue; // 빈 슬롯은 표시 안 함 — 보유한 것만 보여주는 게 이번 Phase의 핵심 결정
 
                 int capturedIndex = i;
                 var slot = Instantiate(_slotButtonPrefab, _slotContent);

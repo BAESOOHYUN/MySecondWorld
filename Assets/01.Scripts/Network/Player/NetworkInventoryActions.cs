@@ -52,8 +52,14 @@ namespace MySecondWorld.Network
         private void CmdDiscardItem(int slotIndex)
         {
             if (_inventory == null) return;
+            if (slotIndex < 0 || slotIndex >= _inventory.MaxSlots) return; // 조작된 인덱스 방어
             var stack = _inventory.Get(slotIndex);
             if (stack?.Source == null) return; // 빈 슬롯 방어
+            if (_floorItemPrefab == null)
+            {
+                Debug.LogWarning("[NetworkInventoryActions] _floorItemPrefab이 연결되지 않아 버리기를 취소합니다.");
+                return;
+            }
 
             var item = stack.Source;
             int stackSize = stack.StackSize;
@@ -61,13 +67,13 @@ namespace MySecondWorld.Network
             // 전량 버리기(간단 구현 — 부분 버리기는 범위 밖)
             _inventory.DoTake(slotIndex, stack.StackSize);
 
-            if (_floorItemPrefab == null) return;
             var floorItem = Instantiate(_floorItemPrefab, transform.position, Quaternion.identity);
             floorItem.Initialize(item, stackSize);
 
             // 런타임 스폰 오브젝트는 GameNetworkManager의 자동 matchId 세팅을 안 거치므로 직접 복사
             if (TryGetComponent(out NetworkMatch myMatch) && floorItem.TryGetComponent(out NetworkMatch floorMatch))
                 floorMatch.matchId = myMatch.matchId;
+            
             // Instantiate는 기본적으로 Active Scene에 생성하므로, 플레이어와 같은 씬(FieldScene 등)으로 옮겨줌
             SceneManager.MoveGameObjectToScene(floorItem.gameObject, gameObject.scene);
             NetworkServer.Spawn(floorItem.gameObject);
@@ -89,6 +95,7 @@ namespace MySecondWorld.Network
         private void CmdUseItem(int slotIndex)
         {
             if (_inventory == null || _useInventory == null) return;
+            if (slotIndex < 0 || slotIndex >= _inventory.MaxSlots) return; // 조작된 인덱스 방어
             var stack = _inventory.Get(slotIndex);
             if (stack?.Source is not ConsumableItem consumable) return;
 

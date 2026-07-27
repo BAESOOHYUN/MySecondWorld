@@ -20,6 +20,7 @@ namespace MySecondWorld.UI
             _stackSizeText.text = stackSize > 1 ? stackSize.ToString() : string.Empty;
             _discardButton.onClick.RemoveAllListeners();
             _discardButton.onClick.AddListener(() => onDiscard?.Invoke());
+            _actionButton.onClick.RemoveAllListeners();
             if (isPart)
             {
                 _actionButton.gameObject.SetActive(true);

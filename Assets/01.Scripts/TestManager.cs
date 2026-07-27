@@ -1,9 +1,9 @@
 using MySecondWorld.Network;
 using UnityEngine;
 
+#if UNITY_EDITOR
 public class TestManager : MonoBehaviour
 {
-
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.Alpha0))
@@ -54,3 +54,4 @@ public class TestManager : MonoBehaviour
         rewards[0].ClaimReward();
     }
 }
+#endif
