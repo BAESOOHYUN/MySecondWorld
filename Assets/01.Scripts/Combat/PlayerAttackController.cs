@@ -23,10 +23,9 @@ namespace MySecondWorld.Combat
 
         [Header("쿨다운")]
         [SerializeField] private float _attackCooldown = 0.8f;
-        private float _cooldownTimer;
-
 
         private SkillExecutor _skillExecutor;
+        private float _nextAttackTime;
 
         private void Awake()
         {
@@ -59,8 +58,9 @@ namespace MySecondWorld.Combat
 
         private void OnAttackInput(InputAction.CallbackContext ctx)
         {
-            if (_cooldownTimer > 0f) return;
-            _cooldownTimer = _attackCooldown;
+            if (Time.time < _nextAttackTime) return;
+
+            _nextAttackTime = Time.time + _attackCooldown;
             _animationController.HandleAttack();
         }
 
