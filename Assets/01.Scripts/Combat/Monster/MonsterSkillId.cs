@@ -4,5 +4,7 @@ namespace MySecondWorld.Combat.Monster
     public static class MonsterSkillId
     {
         public const int MeleeAttack = 0;
+        public const int RangedShoot = 1;
+        public const int Retreat = 2;
     }
 }

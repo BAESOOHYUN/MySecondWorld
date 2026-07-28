@@ -11,12 +11,19 @@ namespace MySecondWorld.Combat
         public GameObject Caster { get; }
         public IReadOnlyList<IDamageable> Candidates { get; }
         public float Power { get; }
+        // 투사체 등 발사형 스킬의 조준 목표 지점. 즉시발동(InstantCast) 스킬은 사용하지 않아 기본값 null.
+        public Vector3? AimPoint { get; }
 
-        public SkillContext(GameObject caster, IReadOnlyList<IDamageable> candidates, float power)
+        public SkillContext(
+            GameObject caster,
+            IReadOnlyList<IDamageable> candidates,
+            float power,
+            Vector3? aimPoint = null)
         {
             Caster = caster;
             Candidates = candidates;
             Power = power;
+            AimPoint = aimPoint;
         }
     }
 }

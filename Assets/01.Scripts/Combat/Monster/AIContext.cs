@@ -4,5 +4,7 @@ namespace MySecondWorld.Combat.Monster
     // TODO : 지금은 필드가 없지만, 원거리몹/보스 selector가 생기면 거리/체력비율 등을 여기 추가한다.
     public class AIContext
     {
+        // RangedMobSelector가 후퇴/사격 여부를 판단하는 기준 (MonsterAI.UpdateAttack()에서 매 프레임 갱신)
+        public float DistanceToTarget { get; set; }
     }
 }
