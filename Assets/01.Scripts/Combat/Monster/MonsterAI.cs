@@ -36,6 +36,7 @@ namespace MySecondWorld.Combat.Monster
         private readonly AIContext _aiContext = new AIContext();
         private Transform _target;
 
+
         private void Awake()
         {
             _agent = GetComponent<NavMeshAgent>();
@@ -134,7 +135,9 @@ namespace MySecondWorld.Combat.Monster
         {
             if (_target == null) return;
 
-            if (Vector3.Distance(transform.position, _target.position) > _stats.AttackRange)
+            // AttackRange보다 확실히 더 멀어져야 Chase로 돌아가게 함 (유격 20%) — 경계에서 떨리는 것 방지
+            float exitRange = _stats.AttackRange * 1.2f;
+            if (Vector3.Distance(transform.position, _target.position) > exitRange)
             {
                 SafeFire(MonsterTrigger.TargetOutOfRange);
                 return;

@@ -2,7 +2,6 @@ namespace MySecondWorld.Inventory
 {
     public enum StatType
     {
-        MaxHP,
         Attack,
         MagicAttack,
         Defense,
@@ -13,5 +12,6 @@ namespace MySecondWorld.Inventory
         HpRegen,
         CastSpeed,
         CooldownReduction,
+        MaxHP,
     }
 }
