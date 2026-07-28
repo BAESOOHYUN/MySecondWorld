@@ -20,7 +20,7 @@ namespace MySecondWorld.Combat
         [SerializeField] private Transform _attackPoint;
         [SerializeField] private float _attackRadius = 1.5f;
         [SerializeField] private float _unarmedAttack = 10f; // 무기 미장착(맨주먹) 시 기본 공격력
-        [SerializeField] private LayerMask _monsterLayer;
+        [SerializeField] private LayerMask _targetLayerMask;
 
         [Header("쿨다운")]
         [SerializeField] private float _attackCooldown = 0.8f;
@@ -70,7 +70,7 @@ namespace MySecondWorld.Combat
         // Attack 애니메이션 클립의 타격 프레임에 Animation Event로 연결
         public void OnAttackHit()
         {
-            var candidates = Physics.OverlapSphere(_attackPoint.position, _attackRadius, _monsterLayer, QueryTriggerInteraction.Ignore) // 공격 지점 반경 안의 몬스터 레이어 콜라이더 전부 탐지(트리거 콜라이더는 무조건 무시)
+            var candidates = Physics.OverlapSphere(_attackPoint.position, _attackRadius, _targetLayerMask, QueryTriggerInteraction.Ignore) // 공격 지점 반경 안의 몬스터 레이어 콜라이더 전부 탐지(트리거 콜라이더는 무조건 무시)
                 .OrderBy(c => Vector3.Distance(_attackPoint.position, c.transform.position)) // 가까운 순 정렬 (SingleTargetSelector가 첫 번째를 "가장 가까운 대상"으로 씀)
                 .Select(c => c.GetComponentInParent<IDamageable>()) // 콜라이더 → 자신+조상 중 IDamageable 붙은 가장 가까운 오브젝트로 변환
                 .Where(d => d != null)                              // IDamageable이 없는 대상(오탐) 제거

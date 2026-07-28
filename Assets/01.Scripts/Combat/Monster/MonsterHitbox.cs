@@ -11,7 +11,7 @@ namespace MySecondWorld.Combat.Monster
     {
         [SerializeField] private Transform _attackPoint;
         [SerializeField] private float _attackRadius = 1.5f;
-        [SerializeField] private LayerMask _targetLayer; // 더미(또는 향후 플레이어) 등 "맞을 수 있는" 대상 레이어
+        [SerializeField] private LayerMask _targetLayerMask; // 더미(또는 향후 플레이어) 등 "맞을 수 있는" 대상 레이어
         [SerializeField] private MonsterStatsSO _stats;
 
         private SkillExecutor _skillExecutor;
@@ -34,7 +34,7 @@ namespace MySecondWorld.Combat.Monster
         // Attack 애니메이션 클립의 타격 프레임에 Animation Event로 연결
         public void OnAttackHit()
         {
-            var candidates = Physics.OverlapSphere(_attackPoint.position, _attackRadius, _targetLayer, QueryTriggerInteraction.Ignore)
+            var candidates = Physics.OverlapSphere(_attackPoint.position, _attackRadius, _targetLayerMask, QueryTriggerInteraction.Ignore)
                 .OrderBy(c => Vector3.Distance(_attackPoint.position, c.transform.position))
                 .Select(c => c.GetComponentInParent<IDamageable>())
                 .Where(d => d != null)

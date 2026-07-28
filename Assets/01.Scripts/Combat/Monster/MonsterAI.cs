@@ -160,13 +160,8 @@ namespace MySecondWorld.Combat.Monster
                 return;
             }
 
-            // NavMeshAgent는 정지하면(isStopped = true) 회전도 같이 멈춰서 엉뚱한 방향을 보게 됨 →
-            // 공격 중에는 매 프레임 타겟 쪽으로 직접 회전시켜줌
-            Vector3 lookDirection = _target.position - transform.position;
-            lookDirection.y = 0f; // 위아래로 기울지 않게 수평 방향만
-            if (lookDirection.sqrMagnitude > 0.001f)
-                transform.rotation = Quaternion.LookRotation(lookDirection);
             _aiContext.DistanceToTarget = distance;
+
 
             switch (_skillSelector.SelectSkill(_aiContext))
             {
@@ -174,16 +169,24 @@ namespace MySecondWorld.Combat.Monster
                     {
                         _agent.isStopped = false;
                         Vector3 awayDirection = (this.transform.position - _target.position).normalized;
-                        _agent.SetDestination(this.transform.position + awayDirection *_stats.AttackRange); // 공격범위 밖으로 후퇴.
+                        _agent.SetDestination(this.transform.position + awayDirection * _stats.AttackRange); // 공격범위 밖으로 후퇴.
+                        // 이동 중엔 NavMeshAgent의 자동 회전(updateRotation)에 맡김 — 강제로 타겟을 보게 하면 경합함
                     }
                     break;
                 case MonsterSkillId.MeleeAttack:
                 case MonsterSkillId.RangedShoot:
                     {
                         _agent.isStopped = true;
+
+                        // NavMeshAgent는 정지하면(isStopped = true) 회전도 같이 멈춰서 엉뚱한 방향을 보게 됨 →
+                        // 정지해서 공격하는 순간에만 타겟 쪽으로 직접 회전시켜줌
+                        Vector3 lookDirection = _target.position - transform.position;
+                        lookDirection.y = 0f; // 위아래로 기울지 않게 수평 방향만
+                        if (lookDirection.sqrMagnitude > 0.001f)
+                            transform.rotation = Quaternion.LookRotation(lookDirection);
+
                         if (_animator != null)
                             _animator.SetTrigger(AttackTrigger);
-
                     }
                     break;
 

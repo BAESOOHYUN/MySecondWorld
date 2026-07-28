@@ -12,7 +12,7 @@ namespace MySecondWorld.Combat.Monster
         [SerializeField] private RangedMonsterStatsSO _stats;
         [SerializeField] private Transform _spawnPoint;
         [SerializeField] private EnemyProjectile _projectilePrefab;
-        [SerializeField] private float _aimHeightOffset = 1.0f; // 플레이어 피벗이 발밑이라 가슴 높이 정도로 보정
+        [SerializeField] private float _aimHeightOffset = 1.4f; // 플레이어 피벗이 발밑이라 가슴 높이 정도로 보정
         private SkillExecutor _skillExecutor;
 
         private void Awake()
