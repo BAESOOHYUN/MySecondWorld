@@ -1,17 +1,47 @@
+using System.Collections.Generic;
+using System.Linq;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 namespace MySecondWorld.Combat.Monster
 {
     // 몬스터 근접 공격의 애니메이션 이벤트 훅.
-    // 플레이어 쪽 Health/IDamageable이 아직 없어서(PLAN.md 제외 범위) 지금은 실제 데미지 판정을 하지 않는다.
-    // 플레이어 피격 시스템이 추가되면 PlayerAttackController.OnAttackHit()과 대칭으로
-    // Physics.OverlapSphere + SkillExecutor.Execute() 호출을 여기에 채운다.
+    // PlayerAttackController.OnAttackHit()과 대칭 구조.
     public class MonsterHitbox : MonoBehaviour
     {
+        [SerializeField] private Transform _attackPoint;
+        [SerializeField] private float _attackRadius = 1.5f;
+        [SerializeField] private LayerMask _targetLayer; // 더미(또는 향후 플레이어) 등 "맞을 수 있는" 대상 레이어
+        [SerializeField] private MonsterStatsSO _stats;
+
+        private SkillExecutor _skillExecutor;
+
+        private void Awake()
+        {
+            if (_attackPoint == null || _stats == null)
+            {
+                Debug.LogError($"MonsterHitbox 참조 누락 on {this.gameObject.name}", this);
+                enabled = false;
+                return;
+            }
+
+            _skillExecutor = new SkillExecutor(
+                new SingleTargetSelector(),
+                new InstantCast(),
+                new List<ISkillEffect> { new DamageEffect() });
+        }
+
         // Attack 애니메이션 클립의 타격 프레임에 Animation Event로 연결
         public void OnAttackHit()
         {
-            // TODO: 플레이어 Health 추가 후 구현
+            var candidates = Physics.OverlapSphere(_attackPoint.position, _attackRadius, _targetLayer, QueryTriggerInteraction.Ignore)
+                .OrderBy(c => Vector3.Distance(_attackPoint.position, c.transform.position))
+                .Select(c => c.GetComponentInParent<IDamageable>())
+                .Where(d => d != null)
+                .ToList();
+
+            var ctx = new SkillContext(this.gameObject, candidates, _stats.Attack);
+            _skillExecutor.Execute(ctx).Forget();
         }
     }
 }

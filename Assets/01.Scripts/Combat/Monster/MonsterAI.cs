@@ -36,6 +36,9 @@ namespace MySecondWorld.Combat.Monster
         private readonly AIContext _aiContext = new AIContext();
         private Transform _target;
 
+        // RangedMonsterHitbox가 조준점으로 읽어감. 타겟이 없으면 null.
+        public Vector3? CurrentTargetPosition => _target != null ? (Vector3?)_target.position : null;
+
 
         private void Awake()
         {
@@ -59,9 +62,10 @@ namespace MySecondWorld.Combat.Monster
                 _detectionTrigger.isTrigger = true;
                 _detectionTrigger.radius = _stats.DetectRange;
             }
-
-            // TODO : 몬스터 추가시 외부에서 어떤 selector를 쓸지 정해서 넣어주는 방식으로 변경
-            _skillSelector = new MeleeMobSelector(_stats.AttackCooldown);
+            // 스탯 SO 타입으로 몹 종류 판별 — 별도 enum 없이 RangedMonsterStatsSO 상속 여부로 분기
+            _skillSelector = _stats is RangedMonsterStatsSO rangedStats
+                ? new RangedMobSelector(rangedStats.RetreatDistance, rangedStats.AttackCooldown)
+                : new MeleeMobSelector(_stats.AttackCooldown);
 
             InitStateMachine();
         }
@@ -143,16 +147,39 @@ namespace MySecondWorld.Combat.Monster
         {
             if (_target == null) return;
 
+            float distance = Vector3.Distance(transform.position, _target.position);
+
             // AttackRange보다 확실히 더 멀어져야 Chase로 돌아가게 함 (유격 20%) — 경계에서 떨리는 것 방지
             float exitRange = _stats.AttackRange * 1.2f;
-            if (Vector3.Distance(transform.position, _target.position) > exitRange)
+            if (distance > exitRange)
             {
                 SafeFire(MonsterTrigger.TargetOutOfRange);
                 return;
             }
 
-            if (_skillSelector.SelectSkill(_aiContext) != null && _animator != null)
-                _animator.SetTrigger(AttackTrigger);
+            _aiContext.DistanceToTarget = distance;
+
+            switch (_skillSelector.SelectSkill(_aiContext))
+            {
+                case MonsterSkillId.Retreat: // 후퇴
+                    {
+                        _agent.isStopped = false;
+                        Vector3 awayDirection = (this.transform.position - _target.position).normalized;
+                        _agent.SetDestination(this.transform.position + awayDirection *_stats.AttackRange); // 공격범위 밖으로 후퇴.
+                    }
+                    break;
+                case MonsterSkillId.MeleeAttack:
+                case MonsterSkillId.RangedShoot:
+                    {
+                        _agent.isStopped = true;
+                        if (_animator != null)
+                            _animator.SetTrigger(AttackTrigger);
+
+                    }
+                    break;
+
+                    // null: 쿨다운 대기, 아무것도 안 함
+            }
         }
 
         private void HandleDied() => SafeFire(MonsterTrigger.Died);
@@ -160,7 +187,7 @@ namespace MySecondWorld.Combat.Monster
         private void HandleEnterDead()
         {
             _agent.isStopped = true;
-            gameObject.SetActive(false);
+            this.gameObject.SetActive(false);
         }
 
         private void SafeFire(MonsterTrigger trigger)
