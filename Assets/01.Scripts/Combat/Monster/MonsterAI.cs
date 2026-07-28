@@ -39,8 +39,16 @@ namespace MySecondWorld.Combat.Monster
 
         private void Awake()
         {
+            if (_stats == null)
+            {
+                Debug.LogError($"MonsterStatsSO missing on {gameObject.name}", this);
+                enabled = false;
+                return;
+            }
+
             _agent = GetComponent<NavMeshAgent>();
             _health = GetComponent<Health>();
+
             // Health.OnEnable()보다 먼저 실행돼야 MaxHP가 정확히 반영됨
             // (같은 오브젝트의 모든 컴포넌트는 Awake가 전부 끝난 뒤에야 OnEnable이 실행되므로 안전)
             _health.Initialize(_stats.MaxHP);

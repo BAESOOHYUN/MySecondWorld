@@ -39,9 +39,10 @@ namespace MySecondWorld.Combat
 
         private void OnEnable()
         {
-            if (_weaponEquip == null)
+            if (_weaponEquip == null || _attackAction == null || _animationController == null || _attackPoint == null)
             {
-                Debug.LogError($"NetworkWeaponEquip missing on {this.gameObject.name}", this);
+                Debug.LogError($"PlayerAttackController 참조 누락 on {this.gameObject.name}", this);
+                enabled = false;
                 return;
             }
 
@@ -51,7 +52,8 @@ namespace MySecondWorld.Combat
 
         private void OnDisable()
         {
-            _attackAction.action.performed -= OnAttackInput;
+            if (_attackAction != null)
+                _attackAction.action.performed -= OnAttackInput;
         }
 
         private void OnAttackInput(InputAction.CallbackContext ctx)
