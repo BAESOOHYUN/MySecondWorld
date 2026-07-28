@@ -4,7 +4,10 @@ using Stateless;
 
 namespace MySecondWorld.Combat.Monster
 {
+    [RequireComponent(typeof(Animator))]
     [RequireComponent(typeof(NavMeshAgent))]
+    [RequireComponent(typeof(CapsuleCollider))]
+    [RequireComponent(typeof(SphereCollider))]
     [RequireComponent(typeof(Health))]
     public class MonsterAI : MonoBehaviour
     {
@@ -157,6 +160,12 @@ namespace MySecondWorld.Combat.Monster
                 return;
             }
 
+            // NavMeshAgent는 정지하면(isStopped = true) 회전도 같이 멈춰서 엉뚱한 방향을 보게 됨 →
+            // 공격 중에는 매 프레임 타겟 쪽으로 직접 회전시켜줌
+            Vector3 lookDirection = _target.position - transform.position;
+            lookDirection.y = 0f; // 위아래로 기울지 않게 수평 방향만
+            if (lookDirection.sqrMagnitude > 0.001f)
+                transform.rotation = Quaternion.LookRotation(lookDirection);
             _aiContext.DistanceToTarget = distance;
 
             switch (_skillSelector.SelectSkill(_aiContext))

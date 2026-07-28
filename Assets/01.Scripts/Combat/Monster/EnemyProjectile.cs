@@ -6,9 +6,11 @@ namespace MySecondWorld.Combat.Monster
     // 투사체 자체 — 등속 직선 이동 + 실제 물리 충돌(Trigger) 시점에 대상을 확정한다.
     // Rigidbody(Kinematic)+SphereCollider(Trigger) 전제 (프리팹 세팅, 씬 배치 항목 참고).
     [RequireComponent(typeof(Rigidbody))]
+    [RequireComponent(typeof(SphereCollider))]
     public class EnemyProjectile : MonoBehaviour
     {
         [SerializeField] private float _lifetime = 5f;  // 아무것도 못 맞히고 이 시간 지나면 자동 소멸
+        [SerializeField] private LayerMask _targetLayerMask; // "Player" 레이어만 지정 — Monster는 무시
         private Rigidbody _rigidbody;
         private Vector3 _direction;
         private float _speed; 
@@ -32,6 +34,8 @@ namespace MySecondWorld.Combat.Monster
             // _resolved : 같은 프레임 중복 호출과,
             // OnDestroy의 오판정(맞았는데 타임아웃으로 잘못 처리)을 둘 다 막는 안전장치
             if (_resolved) return;
+            // 대상 레이어가 아니면 무시하고 계속 비행
+            if ((_targetLayerMask.value & (1 << other.gameObject.layer)) == 0) return;
             var target = other.GetComponentInParent<IDamageable>();
             if (target == null) return; // IDamageable 없는 콜라이더(지형 등)는 무시하고 계속 비행
             // TODO : 벽 통과 문제 분기
