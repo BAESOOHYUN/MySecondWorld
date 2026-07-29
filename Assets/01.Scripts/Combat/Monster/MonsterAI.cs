@@ -1,6 +1,9 @@
 using UnityEngine;
 using UnityEngine.AI;
 using Stateless;
+using System.Linq;
+using Cysharp.Threading.Tasks;
+using System;
 
 namespace MySecondWorld.Combat.Monster
 {
@@ -16,6 +19,7 @@ namespace MySecondWorld.Combat.Monster
             Idle,
             Chase,
             Attack,
+            PhaseTransition, // 보스 전용
             Dead,
         }
         private enum MonsterTrigger
@@ -24,6 +28,8 @@ namespace MySecondWorld.Combat.Monster
             PlayerLost,
             TargetInRange,
             TargetOutOfRange,
+            HpThresholdCrossed,  // 보스 전용
+            TransitionComplete,  // 보스 전용
             Died,
         }
         [SerializeField] private MonsterStatsSO _stats;
@@ -31,6 +37,8 @@ namespace MySecondWorld.Combat.Monster
         [SerializeField] private Animator _animator;
 
         private static readonly int AttackTrigger = Animator.StringToHash(nameof(AttackTrigger));
+        private static readonly int AoESlamTrigger = Animator.StringToHash(nameof(AoESlamTrigger));
+        private static readonly int PhaseTransitionTrigger = Animator.StringToHash(nameof(PhaseTransitionTrigger));
 
         private NavMeshAgent _agent;
         private Health _health;
@@ -38,6 +46,10 @@ namespace MySecondWorld.Combat.Monster
         private ISkillSelector _skillSelector;
         private readonly AIContext _aiContext = new AIContext();
         private Transform _target;
+
+        private BossStatsSO _bossStats; // null이면 보스가 아님
+        private int _currentPhaseIndex;
+
 
         // RangedMonsterHitbox가 조준점으로 읽어감. 타겟이 없으면 null.
         public Vector3? CurrentTargetPosition => _target != null ? (Vector3?)_target.position : null;
@@ -65,10 +77,21 @@ namespace MySecondWorld.Combat.Monster
                 _detectionTrigger.isTrigger = true;
                 _detectionTrigger.radius = _stats.DetectRange;
             }
+
             // 스탯 SO 타입으로 몹 종류 판별 — 별도 enum 없이 RangedMonsterStatsSO 상속 여부로 분기
-            _skillSelector = _stats is RangedMonsterStatsSO rangedStats
-                ? new RangedMobSelector(rangedStats.RetreatDistance, rangedStats.AttackCooldown)
-                : new MeleeMobSelector(_stats.AttackCooldown);
+            if (_stats is BossStatsSO bossStats)
+            {
+                _bossStats = bossStats;
+                _skillSelector = CreateSelectorForPhase(0);
+            }
+            else if (_stats is RangedMonsterStatsSO rangedStats)
+            {
+                _skillSelector = new RangedMobSkillSelector(rangedStats.RetreatDistance, rangedStats.AttackCooldown);
+            }
+            else if (_stats is MonsterStatsSO)
+            {
+                _skillSelector = new MeleeMobSkillSelector(_stats.AttackCooldown);
+            }
 
             InitStateMachine();
         }
@@ -85,6 +108,9 @@ namespace MySecondWorld.Combat.Monster
 
         private void Update()
         {
+            if (_bossStats != null && _stateMachine.State != MonsterState.Dead)
+                CheckPhaseTransition();
+
             switch (_stateMachine.State)
             {
                 case MonsterState.Chase:
@@ -123,11 +149,18 @@ namespace MySecondWorld.Combat.Monster
                 .OnEntry(() => _agent.isStopped = false)
                 .Permit(MonsterTrigger.PlayerLost, MonsterState.Idle)
                 .Permit(MonsterTrigger.TargetInRange, MonsterState.Attack)
+                .Permit(MonsterTrigger.HpThresholdCrossed, MonsterState.PhaseTransition)
                 .Permit(MonsterTrigger.Died, MonsterState.Dead);
 
             _stateMachine.Configure(MonsterState.Attack)
                 .OnEntry(() => _agent.isStopped = true)
                 .Permit(MonsterTrigger.TargetOutOfRange, MonsterState.Chase)
+                .Permit(MonsterTrigger.HpThresholdCrossed, MonsterState.PhaseTransition)
+                .Permit(MonsterTrigger.Died, MonsterState.Dead);
+
+            _stateMachine.Configure(MonsterState.PhaseTransition)
+                .OnEntry(HandleEnterPhaseTransition)
+                .Permit(MonsterTrigger.TransitionComplete, MonsterState.Attack)
                 .Permit(MonsterTrigger.Died, MonsterState.Dead);
 
             _stateMachine.Configure(MonsterState.Dead)
@@ -141,8 +174,8 @@ namespace MySecondWorld.Combat.Monster
             if (_target == null) return;
 
             _agent.SetDestination(_target.position);
-
-            if (Vector3.Distance(transform.position, _target.position) <= _stats.AttackRange)
+            float distance = Vector3.Distance(transform.position, _target.position);
+            if (distance <= _stats.AttackRange)
                 SafeFire(MonsterTrigger.TargetInRange);
         }
 
@@ -151,7 +184,6 @@ namespace MySecondWorld.Combat.Monster
             if (_target == null) return;
 
             float distance = Vector3.Distance(transform.position, _target.position);
-
             // AttackRange보다 확실히 더 멀어져야 Chase로 돌아가게 함 (유격 20%) — 경계에서 떨리는 것 방지
             float exitRange = _stats.AttackRange * 1.2f;
             if (distance > exitRange)
@@ -176,22 +208,89 @@ namespace MySecondWorld.Combat.Monster
                 case MonsterSkillId.MeleeAttack:
                 case MonsterSkillId.RangedShoot:
                     {
-                        _agent.isStopped = true;
-
-                        // NavMeshAgent는 정지하면(isStopped = true) 회전도 같이 멈춰서 엉뚱한 방향을 보게 됨 →
-                        // 정지해서 공격하는 순간에만 타겟 쪽으로 직접 회전시켜줌
-                        Vector3 lookDirection = _target.position - transform.position;
-                        lookDirection.y = 0f; // 위아래로 기울지 않게 수평 방향만
-                        if (lookDirection.sqrMagnitude > 0.001f)
-                            transform.rotation = Quaternion.LookRotation(lookDirection);
-
+                        FaceTarget();
                         if (_animator != null)
                             _animator.SetTrigger(AttackTrigger);
+                    }
+                    break;
+                case MonsterSkillId.AoESlam:
+                    {
+                        FaceTarget();
+                        if (_animator != null)
+                            _animator.SetTrigger(AoESlamTrigger);
                     }
                     break;
 
                     // null: 쿨다운 대기, 아무것도 안 함
             }
+        }
+
+        // NavMeshAgent는 정지하면(isStopped = true) 회전도 같이 멈춰서 엉뚱한 방향을 보게 됨 →
+        // 정지해서 공격하는 순간에만 타겟 쪽으로 직접 회전시켜줌
+        private void FaceTarget()
+        {
+            _agent.isStopped = true;
+
+            Vector3 lookDirection = _target.position - transform.position;
+            lookDirection.y = 0f; // 위아래로 기울지 않게 수평 방향만
+            if (lookDirection.sqrMagnitude > 0.001f)
+                transform.rotation = Quaternion.LookRotation(lookDirection);
+        }
+
+        private void CheckPhaseTransition()
+        {
+            int newPhaseIndex = CalculatePhaseIndex(_health.CurrentHP / _health.MaxHP);
+            if (newPhaseIndex == _currentPhaseIndex) return;
+
+            // 실제로 발동에 성공했을 때만 인덱스 갱신 (Idle 등에서 씹히면 다음 프레임에 다시 시도)
+            if (SafeFire(MonsterTrigger.HpThresholdCrossed))
+                _currentPhaseIndex = newPhaseIndex;
+        }
+
+        private int CalculatePhaseIndex(float hpRatio)
+        {
+            // PhaseHpThresholds : 오름차순 배열
+            // HP비율이 이 값 이하로 내려갈 때마다 다음 페이즈로 전환.
+            // 예: [0.5f] = 1회 전환(페이즈1→2), 50% 미만이면 페이즈2.
+            var thresholds = _bossStats.PhaseHpThresholds;
+            int index = 0;
+            for (int i = 0; i < thresholds.Count; i++)
+            {
+                if (hpRatio <= thresholds[i])
+                    index = i + 1;
+            } 
+            return index;
+        }
+
+        private ISkillSelector CreateSelectorForPhase(int phaseIndex)
+        {
+            // 페이즈가 올라갈수록 광역 슬램 비중이 커지고 간격이 짧아짐
+            return phaseIndex switch
+            {
+                0 => new BossPatternSelector(
+                    new[] { MonsterSkillId.MeleeAttack, MonsterSkillId.MeleeAttack, MonsterSkillId.AoESlam },
+                    _bossStats.AttackCooldown),
+                _ => new BossPatternSelector(
+                    new[] { MonsterSkillId.MeleeAttack, MonsterSkillId.AoESlam, MonsterSkillId.AoESlam },
+                    _bossStats.AoECooldown),
+            };
+        }
+
+        private void HandleEnterPhaseTransition()
+        {
+            _agent.isStopped = true;
+            _skillSelector = CreateSelectorForPhase(_currentPhaseIndex);
+
+            if (_animator != null)
+                _animator.SetTrigger(PhaseTransitionTrigger);
+
+            WaitAndResumeAttack().Forget();
+        }
+
+        private async UniTask WaitAndResumeAttack()
+        {
+            await UniTask.Delay(TimeSpan.FromSeconds(_bossStats.PhaseTransitionDuration));
+            SafeFire(MonsterTrigger.TransitionComplete);
         }
 
         private void HandleDied() => SafeFire(MonsterTrigger.Died);
@@ -202,10 +301,11 @@ namespace MySecondWorld.Combat.Monster
             this.gameObject.SetActive(false);
         }
 
-        private void SafeFire(MonsterTrigger trigger)
+        private bool SafeFire(MonsterTrigger trigger)
         {
-            if (_stateMachine.CanFire(trigger))
-                _stateMachine.Fire(trigger);
+            if (!_stateMachine.CanFire(trigger)) return false;
+            _stateMachine.Fire(trigger);
+            return true;
         }
     }
 }

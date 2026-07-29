@@ -6,5 +6,6 @@ namespace MySecondWorld.Combat.Monster
         public const int MeleeAttack = 0;   // 근거리 공격
         public const int RangedShoot = 1;   // 원거리 공격
         public const int Retreat = 2;       // 후퇴
+        public const int AoESlam = 3;       // 보스 광역 슬램
     }
 }

@@ -3,12 +3,12 @@ using UnityEngine;
 namespace MySecondWorld.Combat.Monster
 {
     // 원거리몹 스킬 선택 전략 — 너무 가까우면 쿨다운 무시하고 후퇴 최우선, 아니면 쿨다운 통과 시 사격.
-    public class RangedMobSelector : ISkillSelector
+    public class RangedMobSkillSelector : ISkillSelector
     {
         private readonly float _retreatDistance;
         private readonly float _cooldown;
         private float _nextShootTime;
-        public RangedMobSelector(float retreatDistance, float cooldown)
+        public RangedMobSkillSelector(float retreatDistance, float cooldown)
         {
             _retreatDistance = retreatDistance;
             _cooldown = cooldown;

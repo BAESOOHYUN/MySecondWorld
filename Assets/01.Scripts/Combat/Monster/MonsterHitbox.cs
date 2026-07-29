@@ -11,7 +11,7 @@ namespace MySecondWorld.Combat.Monster
     {
         [SerializeField] private Transform _attackPoint;
         [SerializeField] private float _attackRadius = 1.5f;
-        [SerializeField] private LayerMask _targetLayerMask; // 더미(또는 향후 플레이어) 등 "맞을 수 있는" 대상 레이어
+        [SerializeField] private LayerMask _targetLayerMask; // "맞을 수 있는" 대상 레이어
         [SerializeField] private MonsterStatsSO _stats;
 
         private SkillExecutor _skillExecutor;
