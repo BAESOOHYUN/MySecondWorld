@@ -13,7 +13,6 @@ namespace MySecondWorld.Combat.Monster
         [SerializeField] private float _moveSpeed = 3.5f;
         [SerializeField] private float _deathDuration = 1.5f; // Death 애니메이션 재생 후 비활성화까지 대기시간
 
-
         #region Property
         public float MaxHP => _maxHP;
         public float Attack => _attack;

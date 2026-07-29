@@ -73,6 +73,7 @@ namespace MySecondWorld.Combat.Monster
                         FaceTarget();
                         if (_animator != null)
                             _animator.SetTrigger(_meleeAttackHashes[UnityEngine.Random.Range(0, _meleeAttackHashes.Length)]);
+                        LockUntilAnimationFinishes();
                     }
                     break;
                 case MonsterSkillId.AoESlam:
@@ -80,6 +81,7 @@ namespace MySecondWorld.Combat.Monster
                         FaceTarget();
                         if (_animator != null)
                             _animator.SetTrigger(_aoeSlamHash);
+                        LockUntilAnimationFinishes();
                     }
                     break;
                 default:
@@ -92,7 +94,7 @@ namespace MySecondWorld.Combat.Monster
 
         #region 페이즈 전환
 
-        protected override bool IsUpdatePaused => _inPhaseTransition;
+        protected override bool IsUpdatePaused => base.IsUpdatePaused || _inPhaseTransition;
 
         protected override void OnTick()
         {
@@ -152,16 +154,24 @@ namespace MySecondWorld.Combat.Monster
         // 상태머신을 안 거치고 MonsterAI.IsUpdatePaused로만 얼려놨다가 풀기 때문에 트리거/퍼밋 추가가 필요 없음.
         private async UniTaskVoid PlayPhaseTransitionSequence()
         {
-            if (_animator != null)
+            var ct = this.GetCancellationTokenOnDestroy();
+            try
+            {
+                if (_animator != null)
                 _animator.SetTrigger(_collapseHash);
-            await UniTask.Delay(TimeSpan.FromSeconds(_bossStats.CollapseDuration));
+                await UniTask.Delay(TimeSpan.FromSeconds(_bossStats.CollapseDuration));
 
-            if (_animator != null)
-                _animator.SetTrigger(_reassembleHash);
-            await UniTask.Delay(TimeSpan.FromSeconds(_bossStats.ReassembleDuration));
+                if (_animator != null)
+                    _animator.SetTrigger(_reassembleHash);
+                await UniTask.Delay(TimeSpan.FromSeconds(_bossStats.ReassembleDuration));
 
-            //SafeFire(MonsterTrigger.TransitionComplete);
-            _inPhaseTransition = false;
+                //SafeFire(MonsterTrigger.TransitionComplete);
+                _inPhaseTransition = false;
+            }
+            catch (OperationCanceledException)
+            {
+                // 대기 중 오브젝트가 파괴됨 — 정상 흐름, 별도 처리 불필요
+            }
         }
 
         #endregion
@@ -188,8 +198,23 @@ namespace MySecondWorld.Combat.Monster
             // 최초 발견 시 Taunt
             if (_animator != null)
                 _animator.SetTrigger(_tauntHash);
+            PlayTauntSequence().Forget();
         }
 
+        private async UniTaskVoid PlayTauntSequence()
+        {
+            _agent.updateRotation = false;
+            FaceTarget();
+            await WaitForCurrentAnimationToFinish(); 
+            _agent.updateRotation = true;
+
+            var targetPos = CurrentTargetPosition;
+            if (targetPos == null) return; // 대기 중 플레이어가 감지 범위를 벗어남 — OnTriggerExit가 이미 Idle로 전환 처리함
+
+            float distance = Vector3.Distance(transform.position, targetPos.Value);
+            if (distance > _stats.AttackRange)
+                _agent.isStopped = false;
+        }
         #endregion
 
         #region 이동 / 사망 애니메이션

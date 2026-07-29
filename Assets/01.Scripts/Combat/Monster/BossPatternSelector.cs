@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace MySecondWorld.Combat.Monster
@@ -13,6 +14,9 @@ namespace MySecondWorld.Combat.Monster
 
         public BossPatternSelector(int[] pattern, float actionInterval)
         {
+            if (pattern == null || pattern.Length == 0)
+                throw new ArgumentException("pattern은 최소 1개 이상이어야 합니다.", nameof(pattern));
+
             _pattern = pattern;
             _actionInterval = actionInterval;
         }

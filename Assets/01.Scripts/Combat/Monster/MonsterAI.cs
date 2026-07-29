@@ -1,8 +1,8 @@
+using System;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AI;
 using Stateless;
-using Cysharp.Threading.Tasks;
-using System;
 
 namespace MySecondWorld.Combat.Monster
 {
@@ -48,6 +48,7 @@ namespace MySecondWorld.Combat.Monster
         protected ISkillSelector _skillSelector;
         private readonly AIContext _aiContext = new AIContext();
         private Transform _target;
+        private bool _actionLocked;
 
         // RangedMonsterHitbox가 조준점으로 읽어감. 타겟이 없으면 null.
         public Vector3? CurrentTargetPosition => _target != null ? (Vector3?)_target.position : null;
@@ -209,6 +210,7 @@ namespace MySecondWorld.Combat.Monster
                         FaceTarget();
                         if (_animator != null)
                             _animator.SetTrigger(AttackTrigger);
+                        LockUntilAnimationFinishes();
                     }
                     break;
                 // null: 쿨다운 대기, 아무것도 안 함
@@ -232,7 +234,7 @@ namespace MySecondWorld.Combat.Monster
         }
         #endregion
 
-            #region 사망 처리
+        #region 사망 처리
 
         private void HandleDied() => SafeFire(MonsterTrigger.Died);
 
@@ -244,10 +246,18 @@ namespace MySecondWorld.Combat.Monster
 
         private async UniTaskVoid PlayDeathSequence()
         {
-            if (_animator != null)
+            var ct = this.GetCancellationTokenOnDestroy();
+            try
+            {
+                if (_animator != null)
                 _animator.SetTrigger(GetDeathTriggerHash());
-            await UniTask.Delay(TimeSpan.FromSeconds(_stats.DeathDuration));
-            this.gameObject.SetActive(false);
+                await UniTask.Delay(TimeSpan.FromSeconds(_stats.DeathDuration));
+                this.gameObject.SetActive(false);
+            }
+            catch (OperationCanceledException)
+            {
+                // 대기 중 오브젝트가 파괴됨 — 정상 흐름, 별도 처리 불필요
+            }
         }
 
         #endregion
@@ -261,6 +271,64 @@ namespace MySecondWorld.Combat.Monster
             return true;
         }
 
+        // 실제 대기 로직 (awaitable). 앞뒤로 다른 처리(이동 멈춤/재개 등)를 끼워 넣어야 할 때 이걸 직접 await한다.
+        protected async UniTask WaitForCurrentAnimationToFinish()
+        {
+            _actionLocked = true;
+            var ct = this.GetCancellationTokenOnDestroy();
+
+            Debug.Log($"[Lock] 시작, ct.IsCancellationRequested={ct.IsCancellationRequested}");
+            try
+            {
+                int baselineHash = _animator.GetCurrentAnimatorStateInfo(0).shortNameHash;
+
+                // 1) 트리거로 인한 전이가 실제로 일어나 상태가 기준선에서 벗어날 때까지 대기
+                int enteredStateHash = baselineHash;
+                while (!ct.IsCancellationRequested)
+                {
+                    await UniTask.Yield(ct);
+                    // Base Layer(레이어 인덱스 0)에서 실제로 재생 중인 상태를 읽어서 그 이름의 해시값을 저장
+                    enteredStateHash = _animator.GetCurrentAnimatorStateInfo(0).shortNameHash;
+                    if (enteredStateHash != baselineHash)
+                        break;
+                }
+
+                Debug.Log($"[Lock] 상태 캡처: hash={enteredStateHash}, normalizedTime={_animator.GetCurrentAnimatorStateInfo(0).normalizedTime}");
+                
+                // 2) 그 상태가 끝나거나(정상 종료) 다른 상태로 또 바뀔 때까지(인터럽트) 대기
+                while (!ct.IsCancellationRequested)
+                {
+                    var stateInfo = _animator.GetCurrentAnimatorStateInfo(0);
+                    // shortNameHash != enteredStateHash: 우리가 기다리던 상태가 아니라 다른 상태로 바뀜 
+                    bool interrupted = stateInfo.shortNameHash != enteredStateHash;
+                    // normalizedTime >= 1f: "이 애니메이션을 최소 한 번은 끝까지 재생했다"는 뜻.
+                    // IsInTransition(0)은 지금 크로스페이드가 진행 중인지 알려주는 값.
+                    //  - normalizedTime이 1을 넘었어도 아직 블렌드 중이면 계속 기다림
+                    bool finished = stateInfo.normalizedTime >= 1f && !_animator.IsInTransition(0);
+                    // 매 프레임 상태를 다시 읽어서 두 조건 중 하나라도 맞으면 루프를 빠져나감
+                    if (interrupted || finished)
+                    {
+                        Debug.Log($"[Lock] 루프 탈출: interrupted={interrupted}, finished={finished}, normalizedTime={stateInfo.normalizedTime}");
+                        break;
+                    }
+                    await UniTask.Yield(ct);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                Debug.Log("[Lock] OperationCanceledException 캐치됨");
+                // 대기 중 오브젝트가 파괴됨 — 정상 흐름
+            }
+            finally
+            {
+                Debug.Log("[Lock] finally 진입 — 락 해제");
+                _actionLocked = false;
+            }
+        }
+
+
+        // 그냥 발동만 시키고 잊어도 되는 경우(공격류)용 — FaceTarget()이 이미 isStopped를 관리해주기 때문에 별도 뒤처리 불필요.
+        protected void LockUntilAnimationFinishes() => WaitForCurrentAnimationToFinish().Forget();
         #endregion
 
         #region 하위 클래스(BossAI 등) 확장 지점
@@ -272,7 +340,7 @@ namespace MySecondWorld.Combat.Monster
 
         protected virtual int GetDeathTriggerHash() => DeathTrigger;
         protected virtual void OnTick() { }
-        protected virtual bool IsUpdatePaused => false;
+        protected virtual bool IsUpdatePaused => _actionLocked;
         protected virtual void OnIdleUpdate() { }
         protected virtual void OnEnterIdle() { }
         protected virtual void OnPlayerFirstDetected() { }
