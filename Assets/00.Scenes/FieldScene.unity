@@ -3929,6 +3929,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8519010010059765144, guid: 301df057ffda16644a17fdacb19192bc,
         type: 3}
+      propertyPath: _npcLayerMask.m_Bits
+      value: 256
+      objectReference: {fileID: 0}
+    - target: {fileID: 8519010010059765144, guid: 301df057ffda16644a17fdacb19192bc,
+        type: 3}
       propertyPath: _shopCatalog.Array.size
       value: 2
       objectReference: {fileID: 0}
@@ -5225,6 +5230,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8519010010059765144, guid: 301df057ffda16644a17fdacb19192bc,
+        type: 3}
+      propertyPath: _npcLayerMask.m_Bits
+      value: 256
       objectReference: {fileID: 0}
     - target: {fileID: 8519010010059765144, guid: 301df057ffda16644a17fdacb19192bc,
         type: 3}
