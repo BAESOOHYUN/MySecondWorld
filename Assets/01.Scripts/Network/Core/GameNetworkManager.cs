@@ -23,10 +23,6 @@ namespace MySecondWorld.Network
         [Scene] public string defaultSubScene;           // FieldScene (마을) — 기본 스폰 존
         public ZoneDefinitionSO[] zones;                 // 모든 존 정의 (SO 배열). defaultSubScene도 포함.
         public float zoneCheckInterval = 0.5f;           // 존 체크 주기 (초)
-
-        // 바닥 드롭 아이템 순수 프리팹(NetworkIdentity+MeshCollider만, 스크립트 없음).
-        // Spawnable Prefabs 리스트에는 넣지 않는다 — 기본 RegisterPrefab과 커스텀 스폰 핸들러가 같은 assetId를 두고 충돌하기 때문.
-        [SerializeField] private GameObject _floorItemPrefab;
         public bool ServerReady { get; private set; }    // 서버 씬 프리로드 완료 여부
         public CancellationTokenSource Cts { get; private set; }
 
@@ -219,23 +215,8 @@ namespace MySecondWorld.Network
                             _clientBundleService.OnBundleRequired(msg, destroyCancellationToken).Forget());
             NetworkClient.RegisterHandler<AdditiveSceneMessage>(_clientSyncService.OnAdditiveSceneMessage);
             NetworkClient.RegisterHandler<SpawnReadyMessage>(_clientSyncService.OnSpawnReadyMessage);
-
-            // 바닥 드롭 아이템: 기본 RegisterPrefab(순수 프리팹 그대로 복제) 대신
-            // FloorItemFactory를 거치는 커스텀 스폰 핸들러 등록 — 서버가 AddComponent로 붙인 것과
-            // 동일한 컴포넌트 구성이 클라이언트에도 만들어지도록 함.
-            if (_floorItemPrefab != null)
-                NetworkClient.RegisterPrefab(_floorItemPrefab, SpawnFloorItem, UnspawnFloorItem);
-        }
-
-        private GameObject SpawnFloorItem(SpawnMessage msg)
-        {
-            var floorItem = FloorItemFactory.Create(_floorItemPrefab, msg.position, msg.rotation);
-            return floorItem.gameObject;
-        }
-
-        private void UnspawnFloorItem(GameObject spawned)
-        {
-            Destroy(spawned);
+            // 바닥 드롭 아이템(FloorItem.prefab)은 NetworkFloorItem이 프리팹에 이미 붙어있어
+            // Spawnable Prefabs 리스트에만 넣으면 NetworkManager 기본 로직이 알아서 등록해준다 — 커스텀 스폰 핸들러 불필요.
         }
 
         public override void OnClientConnect()

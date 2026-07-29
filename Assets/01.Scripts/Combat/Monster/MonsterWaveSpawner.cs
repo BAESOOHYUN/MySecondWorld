@@ -51,9 +51,17 @@ namespace MySecondWorld.Combat.Monster
             }
 
             var wave = _waveDefinition.Waves[_currentWaveIndex];
+            if (wave.Monsters == null || wave.Monsters.Count == 0)
+            {
+                // 몬스터 0마리인 파수는 전멸 이벤트 자체가 안 생겨서 다음 파수로 못 넘어감 — 즉시 건너뜀
+                Debug.LogWarning($"[MonsterWaveSpawner] 파수 {_currentWaveIndex}에 몬스터가 없어 건너뜀 on {gameObject.name}", this);
+                SpawnNextWave();
+                return;
+            }
+
             _aliveMonsters.Clear();
 
-            for (int i = 0; i < wave.Monsters.Length; i++)
+            for (int i = 0; i < wave.Monsters.Count; i++)
             {
                 var entry = wave.Monsters[i];
                 var spawnPoint = _spawnPoints[i % _spawnPoints.Length];
@@ -65,7 +73,16 @@ namespace MySecondWorld.Combat.Monster
 
                 var health = instance.GetComponent<Health>();
                 _aliveMonsters.Add(health);
-                health.OnDied += () => HandleMonsterDied(health);
+
+                // 자기 자신을 구독 해제하는 델리게이트 — 죽은 몬스터는 Destroy가 아니라 SetActive(false)로만 남아서
+                // 명시적으로 해제 안 하면 이 구독이 계속 메모리에 쌓임
+                Action onDied = null;
+                onDied = () =>
+                {
+                    health.OnDied -= onDied;
+                    HandleMonsterDied(health);
+                };
+                health.OnDied += onDied;
             }
         }
 

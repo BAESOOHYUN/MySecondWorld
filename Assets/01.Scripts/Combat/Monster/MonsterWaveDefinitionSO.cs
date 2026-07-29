@@ -9,14 +9,19 @@ namespace MySecondWorld.Combat.Monster
         [System.Serializable]
         public struct MonsterEntry
         {
-            public GameObject PurePrefab;
-            public MonsterStatsSO Stats;
+            [SerializeField] private GameObject _purePrefab;
+            [SerializeField] private MonsterStatsSO _stats;
+
+            public GameObject PurePrefab => _purePrefab;
+            public MonsterStatsSO Stats => _stats;
         }
 
         [System.Serializable]
         public struct Wave
         {
-            public MonsterEntry[] Monsters;
+            [SerializeField] private MonsterEntry[] _monsters;
+
+            public IReadOnlyList<MonsterEntry> Monsters => _monsters;
         }
 
         // 리스트 순서대로 진행. 마지막 파수에 보스(BossStatsSO)를 넣어서 마무리한다.
