@@ -42,6 +42,9 @@ namespace MySecondWorld.Combat.Monster
         // Attack 애니메이션 클립의 타격 프레임에 Animation Event로 연결
         public void OnAttackHit()
         {
+            // Animation Event(SendMessage)는 enabled=false여도 무시하고 호출됨 — Awake에서 참조 누락으로 꺼진 경우 방어
+            if (_skillExecutor == null) return;
+
             var candidates = Physics.OverlapSphere(_attackPoint.position, _attackRadius, _targetLayerMask, QueryTriggerInteraction.Ignore)
                 .OrderBy(c => Vector3.Distance(_attackPoint.position, c.transform.position))
                 .Select(c => c.GetComponentInParent<IDamageable>())

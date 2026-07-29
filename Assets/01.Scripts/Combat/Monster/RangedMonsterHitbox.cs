@@ -43,6 +43,9 @@ namespace MySecondWorld.Combat.Monster
         // Shoot 애니메이션 클립의 발사(화살이 손을 떠나는) 프레임에 Animation Event로 연결
         public void OnShootRelease()
         {
+            // Animation Event(SendMessage)는 enabled=false여도 무시하고 호출됨 — Awake에서 참조 누락으로 꺼진 경우 방어
+            if (_skillExecutor == null) return;
+
             var targetPosition = _monsterAI.CurrentTargetPosition;
             if (targetPosition == null) return; // 타겟을 잃은 상태(사거리 이탈 등)면 발사 취소
             var aimPoint = targetPosition.Value + Vector3.up * _aimHeightOffset;
