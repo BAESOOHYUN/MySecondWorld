@@ -16,6 +16,14 @@ namespace MySecondWorld.Combat.Monster
 
         private SkillExecutor _skillExecutor;
 
+        // MonsterFactory가 AddComponent 직후(비활성 상태에서) 호출한다. Initialize와 Awake 순서 이유는 MonsterAI.Initialize 참고.
+        public void Initialize(Transform attackPoint, MonsterStatsSO stats)
+        {
+            _attackPoint = attackPoint;
+            _stats = stats;
+            _targetLayerMask = LayerMask.GetMask("Player");
+        }
+
         private void Awake()
         {
             if (_attackPoint == null || _stats == null)

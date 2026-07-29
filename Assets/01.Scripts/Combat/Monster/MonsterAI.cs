@@ -55,6 +55,51 @@ namespace MySecondWorld.Combat.Monster
 
         #endregion
 
+        #region 팩토리 초기화
+
+        // MonsterFactory가 AddComponent 직후(비활성 상태에서) 호출한다.
+        // AddComponent는 오브젝트가 활성 상태면 그 자리에서 즉시 Awake를 실행시키므로,
+        // Awake가 필요로 하는 _stats를 먼저 채워두지 않으면 Awake가 null 체크에 걸려 자기 자신을 비활성화한다.
+        //
+        // 순수 프리팹엔 Animator/Collider/NavMeshAgent가 아예 없다 — RequireComponent가 방금 기본값으로 새로 만든 것들이라
+        // Avatar/Controller/몸통 크기/이동 파라미터를 전부 여기서 채워야 실제 게임플레이와 같은 결과가 나온다.
+        public void Initialize(MonsterStatsSO stats)
+        {
+            _stats = stats;
+            if (_animator == null) _animator = GetComponent<Animator>();
+            if (_detectionTrigger == null) _detectionTrigger = GetComponent<SphereCollider>();
+
+            _animator.avatar = stats.Avatar;
+            _animator.runtimeAnimatorController = stats.AnimatorController;
+
+            var body = GetComponent<CapsuleCollider>();
+            body.center = stats.BodyColliderCenter;
+            body.radius = stats.BodyColliderRadius;
+            body.height = stats.BodyColliderHeight;
+
+            ConfigureNavMeshAgent(GetComponent<NavMeshAgent>());
+        }
+
+        // MoveSpeed(스탯 SO 값)를 제외한 나머지는 몬스터 전체가 공유하는 고정 휴머노이드 프로파일.
+        // 몬스터별로 값이 갈라져야 하는 사례가 나오면 그때 스탯 SO 필드로 옮긴다.
+        private static void ConfigureNavMeshAgent(NavMeshAgent agent)
+        {
+            agent.baseOffset = 0f;
+            agent.angularSpeed = 120f;
+            agent.acceleration = 8f;
+            agent.stoppingDistance = 0f;
+            agent.autoBraking = true;
+            agent.radius = 0.5f;
+            agent.height = 2f;
+            agent.obstacleAvoidanceType = ObstacleAvoidanceType.HighQualityObstacleAvoidance;
+            agent.avoidancePriority = 50;
+            agent.autoTraverseOffMeshLink = true;
+            agent.autoRepath = true;
+            agent.areaMask = NavMesh.AllAreas;
+        }
+
+        #endregion
+
         #region Unity 생명주기
 
         protected virtual void Awake()
@@ -277,7 +322,6 @@ namespace MySecondWorld.Combat.Monster
             _actionLocked = true;
             var ct = this.GetCancellationTokenOnDestroy();
 
-            Debug.Log($"[Lock] 시작, ct.IsCancellationRequested={ct.IsCancellationRequested}");
             try
             {
                 int baselineHash = _animator.GetCurrentAnimatorStateInfo(0).shortNameHash;
@@ -293,8 +337,6 @@ namespace MySecondWorld.Combat.Monster
                         break;
                 }
 
-                Debug.Log($"[Lock] 상태 캡처: hash={enteredStateHash}, normalizedTime={_animator.GetCurrentAnimatorStateInfo(0).normalizedTime}");
-                
                 // 2) 그 상태가 끝나거나(정상 종료) 다른 상태로 또 바뀔 때까지(인터럽트) 대기
                 while (!ct.IsCancellationRequested)
                 {
@@ -307,21 +349,17 @@ namespace MySecondWorld.Combat.Monster
                     bool finished = stateInfo.normalizedTime >= 1f && !_animator.IsInTransition(0);
                     // 매 프레임 상태를 다시 읽어서 두 조건 중 하나라도 맞으면 루프를 빠져나감
                     if (interrupted || finished)
-                    {
-                        Debug.Log($"[Lock] 루프 탈출: interrupted={interrupted}, finished={finished}, normalizedTime={stateInfo.normalizedTime}");
                         break;
-                    }
+
                     await UniTask.Yield(ct);
                 }
             }
             catch (OperationCanceledException)
             {
-                Debug.Log("[Lock] OperationCanceledException 캐치됨");
                 // 대기 중 오브젝트가 파괴됨 — 정상 흐름
             }
             finally
             {
-                Debug.Log("[Lock] finally 진입 — 락 해제");
                 _actionLocked = false;
             }
         }
