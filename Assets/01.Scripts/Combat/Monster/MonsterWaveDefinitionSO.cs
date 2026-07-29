@@ -24,7 +24,7 @@ namespace MySecondWorld.Combat.Monster
             public IReadOnlyList<MonsterEntry> Monsters => _monsters;
         }
 
-        // 리스트 순서대로 진행. 마지막 파수에 보스(BossStatsSO)를 넣어서 마무리한다.
+        // 리스트 순서대로 진행. 마지막 웨이브에 보스(BossStatsSO)를 넣어서 마무리한다.
         [SerializeField] private Wave[] _waves;
 
         public IReadOnlyList<Wave> Waves => _waves;

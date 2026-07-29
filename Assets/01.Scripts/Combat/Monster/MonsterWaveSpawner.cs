@@ -5,12 +5,12 @@ using UnityEngine.SceneManagement;
 
 namespace MySecondWorld.Combat.Monster
 {
-    // 파수를 순서대로 소환하고, 파수 내 전멸 시 다음 파수로 넘어간다. 마지막 파수 클리어 시 이벤트 발행.
+    // 웨이브를 순서대로 소환하고, 웨이브 내 전멸 시 다음 웨이브로 넘어간다. 마지막 웨이브 클리어 시 이벤트 발행.
     // room 식별자는 그냥 실어 나르기만 함 — 어떤 room 시스템(던전/필드)인지는 몰라도 됨(DungeonRoomRegistry 직접 참조 금지).
     public class MonsterWaveSpawner : MonoBehaviour
     {
         [SerializeField] private MonsterWaveDefinitionSO _waveDefinition;
-        [SerializeField] private Transform[] _spawnPoints; // 한 파수의 몬스터 수만큼 순환 사용
+        [SerializeField] private Transform[] _spawnPoints; // 한 웨이브의 몬스터 수만큼 순환 사용
 
         [Header("테스트용")]
         [SerializeField] private bool _autoStartForTesting;
@@ -53,8 +53,8 @@ namespace MySecondWorld.Combat.Monster
             var wave = _waveDefinition.Waves[_currentWaveIndex];
             if (wave.Monsters == null || wave.Monsters.Count == 0)
             {
-                // 몬스터 0마리인 파수는 전멸 이벤트 자체가 안 생겨서 다음 파수로 못 넘어감 — 즉시 건너뜀
-                Debug.LogWarning($"[MonsterWaveSpawner] 파수 {_currentWaveIndex}에 몬스터가 없어 건너뜀 on {gameObject.name}", this);
+                // 몬스터 0마리인 웨이브는 전멸 이벤트 자체가 안 생겨서 다음 웨이브로 못 넘어감 — 즉시 건너뜀
+                Debug.LogWarning($"[MonsterWaveSpawner] 웨이브 {_currentWaveIndex}에 몬스터가 없어 건너뜀 on {gameObject.name}", this);
                 SpawnNextWave();
                 return;
             }
