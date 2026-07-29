@@ -8,6 +8,12 @@ namespace MySecondWorld.Combat.Monster
     {
         public static GameObject Create(GameObject purePrefab, MonsterStatsSO stats, Vector3 position, Quaternion rotation)
         {
+            if (purePrefab == null || stats == null)
+            {
+                Debug.LogError($"[MonsterFactory] purePrefab 또는 stats가 비어있어 스폰을 건너뜀 (purePrefab={purePrefab}, stats={stats})");
+                return null;
+            }
+
             var instance = Object.Instantiate(purePrefab, position, rotation);
 
             // 비활성화 후 조립 — AddComponent는 오브젝트가 활성 상태면 그 자리에서 Awake를 실행시켜버려서,

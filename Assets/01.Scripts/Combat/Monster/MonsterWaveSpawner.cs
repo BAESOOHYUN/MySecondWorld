@@ -30,6 +30,12 @@ namespace MySecondWorld.Combat.Monster
 
         public void StartWaves(string roomId)
         {
+            if (_waveDefinition == null || _spawnPoints == null || _spawnPoints.Length == 0)
+            {
+                Debug.LogError($"[MonsterWaveSpawner] _waveDefinition 또는 _spawnPoints가 비어있어 웨이브를 시작할 수 없음 on {gameObject.name}", this);
+                return;
+            }
+
             _roomId = roomId;
             _currentWaveIndex = -1;
             SpawnNextWave();
@@ -52,6 +58,8 @@ namespace MySecondWorld.Combat.Monster
                 var entry = wave.Monsters[i];
                 var spawnPoint = _spawnPoints[i % _spawnPoints.Length];
                 var instance = MonsterFactory.Create(entry.PurePrefab, entry.Stats, spawnPoint.position, spawnPoint.rotation);
+                if (instance == null) continue; // 프리팹/스탯 누락 — MonsterFactory가 이미 에러 로그를 남김
+
                 // Instantiate는 기본적으로 활성 씬(Active Scene)에 생성하므로, 스포너가 있는 씬(FieldScene 등)으로 옮겨줌
                 SceneManager.MoveGameObjectToScene(instance, gameObject.scene);
 
