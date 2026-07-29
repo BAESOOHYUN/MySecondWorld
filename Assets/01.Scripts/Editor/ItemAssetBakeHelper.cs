@@ -761,7 +761,7 @@ namespace MySecondWorld.Editor
             return fields.ToArray();
         }
 
-        private static Dictionary<string, int> BuildHeaderIndex(string headerLine)
+        internal static Dictionary<string, int> BuildHeaderIndex(string headerLine)
         {
             // 컬럼 이름 → 위치. CSV에 컬럼이 추가/이동돼도 cols[고정숫자] 하드코딩 없이 이름으로 찾도록 함
             var headers = ParseCsvLine(headerLine);

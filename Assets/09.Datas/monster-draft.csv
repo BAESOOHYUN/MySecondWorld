@@ -1,0 +1,3 @@
+MonsterId,MonsterType,MaxHP,Attack,AttackRange,AttackCooldown,DetectRange,MoveSpeed,RetreatDistance,ProjectileSpeed
+GoblinWarrior,Melee,100,10,2,1.5,8,3.5,,
+SkeletonSoldier,Ranged,100,10,4,1.5,8,3.5,3,15
