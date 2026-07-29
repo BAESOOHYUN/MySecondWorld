@@ -265,11 +265,15 @@ namespace MySecondWorld.Combat.Monster
         private ISkillSelector CreateSelectorForPhase(int phaseIndex)
         {
             // 페이즈가 올라갈수록 광역 슬램 비중이 커지고 간격이 짧아짐
+            // 페이즈 0(체력 50%↑): 근접 2번당 슬램 1번 (AoE 비중 낮음)
+            // 페이즈 1(체력 50%↓): 근접 1번당 슬램 2번 + 쿨다운도 AttackCooldown(근접용, 보통 더 김) 대신 AoECooldown으로 교체
             return phaseIndex switch
             {
+                // phaseIndex가 정확히 0일 때
                 0 => new BossPatternSelector(
                     new[] { MonsterSkillId.MeleeAttack, MonsterSkillId.MeleeAttack, MonsterSkillId.AoESlam },
                     _bossStats.AttackCooldown),
+                // 그 외 전부 (1, 2, 3, ... 뭐가 오든)
                 _ => new BossPatternSelector(
                     new[] { MonsterSkillId.MeleeAttack, MonsterSkillId.AoESlam, MonsterSkillId.AoESlam },
                     _bossStats.AoECooldown),
