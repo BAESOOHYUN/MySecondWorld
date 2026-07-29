@@ -1,6 +1,9 @@
 using System.IO;
+using System.Diagnostics;
 using LLMUnity;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
+
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -21,6 +24,7 @@ namespace MySecondWorld.AI
 
         private async void Start()
         {
+            LogLlamalibState("PlayMode 시작 - 잔여 확인");
             string fileName = PlayerPrefs.GetString("SelectedModelFileName", "");
             if (string.IsNullOrEmpty(fileName))
             {
@@ -82,6 +86,8 @@ namespace MySecondWorld.AI
             if (_cleanedUp) return; // 중복 실행 방지
             _cleanedUp = true;
 
+            LogLlamalibState("정리 시작");
+
             // Step 1: 프로세스 강제 종료
             // Windows의 llamalib_win-x64_server.exe 프로세스를 찾아서 proc.Kill() → 강제 종료
             foreach (var proc in System.Diagnostics.Process.GetProcessesByName("llamalib_win-x64_server"))
@@ -90,15 +96,35 @@ namespace MySecondWorld.AI
                 { 
                     proc.Kill();            // ← OS 프로세스 즉시 죽임 (해결책)
                     proc.WaitForExit(500);  // ← 500ms 대기해서 정말 죽을 때까지 기다림
+
+                    LogLlamalibState($"PID {proc.Id} kill 시도 후 HasExited={proc.HasExited}");
                 }
-                catch { }
+                catch (System.Exception e)
+                {
+                    LogLlamalibState($"PID {proc.Id} kill 실패: {e.Message}");
+                }
             }
             // Step 2: C# 객체 정리
             try 
             {
                 _llm?.Destroy(); // C++ 메모리 (native handle) 정리
             }
-            catch { }
+            catch (System.Exception e)
+            {
+                LogLlamalibState($"_llm.Destroy() 실패: {e.Message}");
+            }
+        }
+
+        private void LogLlamalibState(string context)
+        {
+            var procs = Process.GetProcessesByName("llamalib_win-x64_server");
+            string logDir = Path.Combine(Application.dataPath, "..", "Logs");
+            Directory.CreateDirectory(logDir);
+            string pids = procs.Length > 0
+                ? string.Join(",", System.Array.ConvertAll(procs, p => p.Id.ToString()))
+                : "-";
+            string line = $"[{System.DateTime.Now:MM-dd HH:mm:ss}] {context} | count={procs.Length} | pids={pids}";
+            File.AppendAllText(Path.Combine(logDir, "llamalib_debug.log"), line + "\n");
         }
     }
 }
