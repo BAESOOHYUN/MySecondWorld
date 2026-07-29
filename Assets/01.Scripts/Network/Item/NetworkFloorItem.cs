@@ -4,7 +4,8 @@ using Cleverous.VaultInventory;
 
 namespace MySecondWorld.Network
 {
-    [RequireComponent(typeof(Collider))]
+    [RequireComponent(typeof(SphereCollider))]
+    [RequireComponent(typeof(NetworkMatch))] // NetworkInventoryActions.CmdDiscardItem이 스폰 직후 matchId를 복사해 넣음(서버 전용, 클라는 안 씀)
     public class NetworkFloorItem : NetworkBehaviour
     {
         [SerializeField] private RootItem _item;

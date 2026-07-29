@@ -16,7 +16,7 @@ namespace MySecondWorld.Network
     [RequireComponent(typeof(Cleverous.VaultInventory.Inventory))]
     public class NetworkInventoryActions : NetworkBehaviour, IInventoryActionsProvider
     {
-        [SerializeField] private NetworkFloorItem _floorItemPrefab; // 버리기 시 바닥에 스폰할 프리팹
+        [SerializeField] private GameObject _floorItemPrefab; // 버리기 시 바닥에 스폰할 순수 프리팹 (스크립트는 FloorItemFactory가 스폰 시점에 부착)
         private LocalPlayerInventoryProvider _localInventoryProvider;
         private Cleverous.VaultInventory.Inventory _inventory;
         private IUseInventory _useInventory;
@@ -67,7 +67,7 @@ namespace MySecondWorld.Network
             // 전량 버리기(간단 구현 — 부분 버리기는 범위 밖)
             _inventory.DoTake(slotIndex, stack.StackSize);
 
-            var floorItem = Instantiate(_floorItemPrefab, transform.position, Quaternion.identity);
+            var floorItem = FloorItemFactory.Create(_floorItemPrefab, transform.position, Quaternion.identity);
             floorItem.Initialize(item, stackSize);
 
             // 런타임 스폰 오브젝트는 GameNetworkManager의 자동 matchId 세팅을 안 거치므로 직접 복사
