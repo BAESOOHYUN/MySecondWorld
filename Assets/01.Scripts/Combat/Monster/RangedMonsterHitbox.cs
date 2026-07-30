@@ -11,7 +11,7 @@ namespace MySecondWorld.Combat.Monster
         [SerializeField] private MonsterAI _monsterAI;
         [SerializeField] private RangedMonsterStatsSO _stats;
         [SerializeField] private Transform _spawnPoint;
-        [SerializeField] private EnemyProjectile _projectilePrefab;
+        [SerializeField] private GameObject _projectilePrefab; // 순수 프리팹(스크립트 없음) — ProjectileFactory가 스폰 시점에 EnemyProjectile을 붙임
         [SerializeField] private float _aimHeightOffset = 1.4f; // 플레이어 피벗이 발밑이라 가슴 높이 정도로 보정
         private SkillExecutor _skillExecutor;
 
@@ -36,7 +36,7 @@ namespace MySecondWorld.Combat.Monster
 
             _skillExecutor = new SkillExecutor(
                 new SingleTargetSelector(),
-                new ProjectileCast(_projectilePrefab, _spawnPoint, _stats.ProjectileSpeed),
+                new ProjectileCast(_projectilePrefab, _spawnPoint, _stats.ProjectileSpeed, _stats.ProjectileColliderCenter, _stats.ProjectileColliderRadius),
                 new List<ISkillEffect> { new DamageEffect() });
         }
 
