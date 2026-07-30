@@ -132,6 +132,8 @@ namespace MySecondWorld.Network
 
             // base.OnServerAddPlayer(conn) 대신 직접 인스턴스화 (위치 보정 위해)
             GameObject player = MySecondWorld.Network.Player.PlayerFactory.Create(_manager.playerPrefab, spawnPos, Quaternion.identity);
+            if (player == null)
+                return;
             NetworkServer.AddPlayerForConnection(conn, player);
 
             session.currentScene = session.pendingSpawnScene;
