@@ -9,6 +9,7 @@ using MySecondWorld.AI;
 using MySecondWorld.Save;
 using MySecondWorld.Bundle;
 using MySecondWorld.Customization;
+using MySecondWorld.Network.Web;
 
 /// <summary>
 /// VContainerSettings에 등록되어 앱 시작 시 자동 인스턴스화되는 최상위 LifetimeScope.
@@ -33,6 +34,12 @@ public class ProjectLifetimeScope : LifetimeScope
         builder.Register<SaveManager>(Lifetime.Singleton);
         builder.Register<CharacterSaveService>(Lifetime.Singleton);
         builder.Register<LocalPlayerInventoryProvider>(Lifetime.Singleton);
+        // Web 리소스 시스템
+        builder.Register<WebResourceDownloader>(Lifetime.Singleton);
+        builder.Register<TextureMemoryCache>(Lifetime.Singleton);
+        builder.Register<AudioClipMemoryCache>(Lifetime.Singleton);
+        builder.Register<DiskCacheService>(Lifetime.Singleton);
+        builder.Register<IWebResourceService, WebResourceService>(Lifetime.Singleton);
 
         builder.RegisterComponent(_uiManager).As<UIManager>().As<IUIManager>();
         builder.RegisterComponentInHierarchy<TouchEventListener>();
