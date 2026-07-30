@@ -64,11 +64,13 @@ namespace MySecondWorld.Network
             var item = stack.Source;
             int stackSize = stack.StackSize;
 
+            // 인벤토리에서 빼기 전에 먼저 스폰 성공 여부부터 확인 — 실패 시 아이템이 증발하는 것 방지
+            var floorItem = FloorItemFactory.Create(_floorItemPrefab, transform.position, Quaternion.identity);
+            if (floorItem == null) return; // 프리팹 구성 오류 — FloorItemFactory가 이미 에러 로그를 남김
+            floorItem.Initialize(item, stackSize);
+
             // 전량 버리기(간단 구현 — 부분 버리기는 범위 밖)
             _inventory.DoTake(slotIndex, stack.StackSize);
-
-            var floorItem = FloorItemFactory.Create(_floorItemPrefab, transform.position, Quaternion.identity);
-            floorItem.Initialize(item, stackSize);
 
             // 런타임 스폰 오브젝트는 GameNetworkManager의 자동 matchId 세팅을 안 거치므로 직접 복사
             if (TryGetComponent(out NetworkMatch myMatch) && floorItem.TryGetComponent(out NetworkMatch floorMatch))

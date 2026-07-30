@@ -10,7 +10,14 @@ namespace MySecondWorld.Network
         public static NetworkFloorItem Create(GameObject purePrefab, Vector3 position, Quaternion rotation)
         {
             var go = UnityEngine.Object.Instantiate(purePrefab, position, rotation);
-            var floorItem = go.GetComponent<NetworkFloorItem>();
+
+            // 프리팹에서 NetworkFloorItem을 다시 뺐다 붙이는 실수가 실제로 반복됐던 지점이라 방어적으로 확인
+            if (!go.TryGetComponent(out NetworkFloorItem floorItem))
+            {
+                Debug.LogError($"[FloorItemFactory] '{purePrefab.name}' 프리팹에 NetworkFloorItem이 없습니다.", purePrefab);
+                UnityEngine.Object.Destroy(go);
+                return null;
+            }
 
             // RequireComponent 덕에 SphereCollider는 프리팹에 항상 있지만, isTrigger 기본값(false)만은
             // 항상 명시적으로 강제 — 프리팹 쪽에서 깜빡 꺼놔도 픽업 판정(OnTriggerEnter)이 안전하게 동작하도록.
