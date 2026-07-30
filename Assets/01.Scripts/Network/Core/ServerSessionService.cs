@@ -131,7 +131,7 @@ namespace MySecondWorld.Network
                 : (_manager.GetStartPosition()?.position ?? Vector3.zero);
 
             // base.OnServerAddPlayer(conn) 대신 직접 인스턴스화 (위치 보정 위해)
-            GameObject player = UnityEngine.Object.Instantiate(_manager.playerPrefab, spawnPos, Quaternion.identity);
+            GameObject player = MySecondWorld.Network.Player.PlayerFactory.Create(_manager.playerPrefab, spawnPos, Quaternion.identity);
             NetworkServer.AddPlayerForConnection(conn, player);
 
             session.currentScene = session.pendingSpawnScene;
