@@ -17,6 +17,11 @@ namespace MySecondWorld.Combat.Monster
         private readonly Dictionary<MonsterStatsSO, IGameObjectPool> _monsterPools 
             = new Dictionary<MonsterStatsSO, IGameObjectPool>();
 
+        // GetOrCreatePool에서 같은 Stats에 다른 PurePrefab이 들어오는 실수를 잡아내기 위한 보조 기록
+        private readonly Dictionary<MonsterStatsSO, GameObject> _poolPrefabs
+            = new Dictionary<MonsterStatsSO, GameObject>();
+
+
         [Header("테스트용")]
         [SerializeField] private bool _autoStartForTesting;
         [SerializeField] private string _testRoomId = "test-room";
@@ -35,6 +40,15 @@ namespace MySecondWorld.Combat.Monster
 
         private void OnDestroy()
         {
+            // 풀 Dispose는 "대기 중(비활성)" 인스턴스만 정리함
+            // — 지금 살아있는 활성 몬스터는 별도로 정리해야 함
+            foreach (var health in _aliveMonsters)
+            {
+                if (health != null)
+                    Destroy(health.gameObject);
+            }
+            _aliveMonsters.Clear();
+
             foreach (var pool in _monsterPools.Values) // _monsterPools.Values(값 컬렉션만) 검색
                 pool.Dispose();
             _monsterPools.Clear();
@@ -110,7 +124,11 @@ namespace MySecondWorld.Combat.Monster
         {
             // MonsterStatsSO((=몬스터 타입)를 key로 등록해둔 pool(그 타입 전용 풀)이 있으면 그걸 꺼내옴
             if (_monsterPools.TryGetValue(entry.Stats, out var pool))
+            {
+                if (_poolPrefabs[entry.Stats] != entry.PurePrefab)
+                    Debug.LogWarning($"[MonsterWaveSpawner] {entry.Stats.name}는 이미 다른 프리팹({_poolPrefabs[entry.Stats].name})으로 풀이 만들어져 있어, 이번 PurePrefab({entry.PurePrefab.name})은 무시됨 on {gameObject.name}", this);
                 return pool; // ① 이미 있으면 그대로 반환
+            } 
 
             var scene = this.gameObject.scene;
 

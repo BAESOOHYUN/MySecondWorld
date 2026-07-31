@@ -187,7 +187,8 @@ namespace MySecondWorld.Combat.Monster
         public virtual void PrepareForSpawn(Vector3 position, Quaternion rotation)
         {
             InitStateMachine(); // Dead 등 이전 상태 제거 → Idle로 재생성
-            _agent.Warp(position);
+            if (!_agent.Warp(position))
+                Debug.LogWarning($"[MonsterAI] Warp 실패 — spawnPoint가 NavMesh 밖에 있을 수 있음 on {gameObject.name}", this);
             this.transform.rotation = rotation;
             _target = null;
             _actionLocked = false;
