@@ -12,10 +12,10 @@ namespace MySecondWorld.Pool
         // 일반 Object.Instantiate 전용. Addressable 프리팹은 사용 불가
         // (Addressables.ReleaseInstance와 혼용 시 메모리 누수 발생)
         // TODO : AddressableObjectPool 클래스를 나중에 추가
-        public GameObjectPool(GameObject prefab, Transform root, int defaultCapacity = 10, int maxSize = 100)
+        public GameObjectPool(Func<GameObject> createFunc, int defaultCapacity = 10, int maxSize = 100)
         {
             _pool = new ObjectPool<GameObject>(
-                createFunc: () => UnityEngine.Object.Instantiate(prefab, root),
+                createFunc: createFunc,
                 actionOnGet: obj => obj.SetActive(true),
                 actionOnRelease: obj => obj.SetActive(false),
                 actionOnDestroy: obj => UnityEngine.Object.Destroy(obj),

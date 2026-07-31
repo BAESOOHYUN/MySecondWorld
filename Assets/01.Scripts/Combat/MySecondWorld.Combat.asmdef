@@ -1,0 +1,21 @@
+{
+    "name": "MySecondWorld.Combat",
+    "rootNamespace": "",
+    "references": [
+        "UniTask",
+        "Mirror",
+        "Unity.InputSystem",
+        "MySecondWorld.Network",
+        "MySecondWorld.Character",
+        "MySecondWorld.Pool"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
