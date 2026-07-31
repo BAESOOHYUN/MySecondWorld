@@ -3,6 +3,7 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AI;
 using Stateless;
+using MySecondWorld.Pool;
 
 namespace MySecondWorld.Combat.Monster
 {
@@ -11,6 +12,7 @@ namespace MySecondWorld.Combat.Monster
     [RequireComponent(typeof(CapsuleCollider))]
     [RequireComponent(typeof(SphereCollider))]
     [RequireComponent(typeof(Health))]
+    [RequireComponent(typeof(PooledObject))]
     public class MonsterAI : MonoBehaviour
     {
         #region State Machine 정의
@@ -53,51 +55,9 @@ namespace MySecondWorld.Combat.Monster
         // RangedMonsterHitbox가 조준점으로 읽어감. 타겟이 없으면 null.
         public Vector3? CurrentTargetPosition => _target != null ? (Vector3?)_target.position : null;
 
-        #endregion
-
-        #region 팩토리 초기화
-
-        // MonsterFactory가 AddComponent 직후(비활성 상태에서) 호출한다.
-        // AddComponent는 오브젝트가 활성 상태면 그 자리에서 즉시 Awake를 실행시키므로,
-        // Awake가 필요로 하는 _stats를 먼저 채워두지 않으면 Awake가 null 체크에 걸려 자기 자신을 비활성화한다.
-        //
-        // 순수 프리팹엔 Animator/Collider/NavMeshAgent가 아예 없다 — RequireComponent가 방금 기본값으로 새로 만든 것들이라
-        // Avatar/Controller/몸통 크기/이동 파라미터를 전부 여기서 채워야 실제 게임플레이와 같은 결과가 나온다.
-        public void Initialize(MonsterStatsSO stats)
-        {
-            _stats = stats;
-            if (_animator == null) _animator = GetComponent<Animator>();
-            if (_detectionTrigger == null) _detectionTrigger = GetComponent<SphereCollider>();
-
-            _animator.avatar = stats.Avatar;
-            _animator.runtimeAnimatorController = stats.AnimatorController;
-
-            var body = GetComponent<CapsuleCollider>();
-            body.center = stats.BodyColliderCenter;
-            body.radius = stats.BodyColliderRadius;
-            body.height = stats.BodyColliderHeight;
-
-            ConfigureNavMeshAgent(GetComponent<NavMeshAgent>());
-        }
-
-        // MoveSpeed(스탯 SO 값)를 제외한 나머지는 몬스터 전체가 공유하는 고정 휴머노이드 프로파일.
-        // 몬스터별로 값이 갈라져야 하는 사례가 나오면 그때 스탯 SO 필드로 옮긴다.
-        private static void ConfigureNavMeshAgent(NavMeshAgent agent)
-        {
-            agent.baseOffset = 0f;
-            agent.angularSpeed = 120f;
-            agent.acceleration = 8f;
-            agent.stoppingDistance = 0f;
-            agent.autoBraking = true;
-            agent.radius = 0.5f;
-            agent.height = 2f;
-            agent.obstacleAvoidanceType = ObstacleAvoidanceType.HighQualityObstacleAvoidance;
-            agent.avoidancePriority = 50;
-            agent.autoTraverseOffMeshLink = true;
-            agent.autoRepath = true;
-            agent.areaMask = NavMesh.AllAreas;
-        }
-
+        // 실제로 풀에 반납된 시점(=죽는 애니메이션까지 완전히 끝난 시점) 통지
+        // — MonsterWaveSpawner가 웨이브 전환 타이밍으로 구독
+        public event Action OnReturnedToPool;
         #endregion
 
         #region Unity 생명주기
@@ -178,6 +138,69 @@ namespace MySecondWorld.Combat.Monster
             _target = null;
         }
 
+        #endregion
+
+        #region 팩토리 초기화
+
+        // MonsterFactory가 AddComponent 직후(비활성 상태에서) 호출한다.
+        // AddComponent는 오브젝트가 활성 상태면 그 자리에서 즉시 Awake를 실행시키므로,
+        // Awake가 필요로 하는 _stats를 먼저 채워두지 않으면 Awake가 null 체크에 걸려 자기 자신을 비활성화한다.
+        //
+        // 순수 프리팹엔 Animator/Collider/NavMeshAgent가 아예 없다 — RequireComponent가 방금 기본값으로 새로 만든 것들이라
+        // Avatar/Controller/몸통 크기/이동 파라미터를 전부 여기서 채워야 실제 게임플레이와 같은 결과가 나온다.
+        public void Initialize(MonsterStatsSO stats)
+        {
+            _stats = stats;
+            if (_animator == null) _animator = GetComponent<Animator>();
+            if (_detectionTrigger == null) _detectionTrigger = GetComponent<SphereCollider>();
+
+            _animator.avatar = stats.Avatar;
+            _animator.runtimeAnimatorController = stats.AnimatorController;
+
+            var body = GetComponent<CapsuleCollider>();
+            body.center = stats.BodyColliderCenter;
+            body.radius = stats.BodyColliderRadius;
+            body.height = stats.BodyColliderHeight;
+
+            ConfigureNavMeshAgent(GetComponent<NavMeshAgent>());
+        }
+
+        // MoveSpeed(스탯 SO 값)를 제외한 나머지는 몬스터 전체가 공유하는 고정 휴머노이드 프로파일.
+        // 몬스터별로 값이 갈라져야 하는 사례가 나오면 그때 스탯 SO 필드로 옮긴다.
+        private static void ConfigureNavMeshAgent(NavMeshAgent agent)
+        {
+            agent.baseOffset = 0f;
+            agent.angularSpeed = 120f;
+            agent.acceleration = 8f;
+            agent.stoppingDistance = 0f;
+            agent.autoBraking = true;
+            agent.radius = 0.5f;
+            agent.height = 2f;
+            agent.obstacleAvoidanceType = ObstacleAvoidanceType.HighQualityObstacleAvoidance;
+            agent.avoidancePriority = 50;
+            agent.autoTraverseOffMeshLink = true;
+            agent.autoRepath = true;
+            agent.areaMask = NavMesh.AllAreas;
+        }
+
+        // 스포너가 pool.Rent() 직후 호출 — 최초 생성/재사용 두 경우 모두 이 경로로 통일
+        public virtual void PrepareForSpawn(Vector3 position, Quaternion rotation)
+        {
+            InitStateMachine(); // Dead 등 이전 상태 제거 → Idle로 재생성
+            _agent.Warp(position);
+            this.transform.rotation = rotation;
+            _target = null;
+            _actionLocked = false;
+            // 쿨다운/패턴 상태 완전 초기화
+            // (BossAI는 이 메서드를 오버라이드해 Phase 0으로 돌아감)
+            _skillSelector = CreateDefaultSkillSelector();
+
+            if (_animator != null)
+            {
+                _animator.Rebind(); // 이전 생애의 트리거/상태(Death 등) 전부 초기화
+                _animator.Update(0);
+            }
+        }
         #endregion
 
         #region State Machine 동작
@@ -297,7 +320,9 @@ namespace MySecondWorld.Combat.Monster
                 if (_animator != null)
                 _animator.SetTrigger(GetDeathTriggerHash());
                 await UniTask.Delay(TimeSpan.FromSeconds(_stats.DeathDuration));
-                this.gameObject.SetActive(false);
+                //풀 반납 — 내부적으로 SetActive(false)까지 처리됨
+                GetComponent<PooledObject>().ReturnToPool();
+                OnReturnedToPool?.Invoke();
             }
             catch (OperationCanceledException)
             {

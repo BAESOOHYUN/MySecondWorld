@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
+using MySecondWorld.Pool;
 
 namespace MySecondWorld.Combat.Monster
 {
@@ -6,7 +8,9 @@ namespace MySecondWorld.Combat.Monster
     // 스탯 SO 타입에 따라 AI + Hitbox 컴포넌트 조합을 스폰 시점에 붙인다.
     public static class MonsterFactory
     {
-        public static GameObject Create(GameObject purePrefab, MonsterStatsSO stats, Vector3 position, Quaternion rotation)
+        // 풀 createFunc 전용 — 인스턴스가 최초로 태어날 때 1회만 호출됨.
+        // 위치/회전은 Rent() 이후 호출부가 PrepareForSpawn으로 넣어주므로 여기선 다루지 않음
+        public static GameObject CreatePooled(GameObject purePrefab, MonsterStatsSO stats, IGameObjectPool pool, Scene scene)
         {
             if (purePrefab == null || stats == null)
             {
@@ -14,13 +18,14 @@ namespace MySecondWorld.Combat.Monster
                 return null;
             }
 
-            var instance = Object.Instantiate(purePrefab, position, rotation);
+            var instance = Object.Instantiate(purePrefab);
 
             // 비활성화 후 조립 — AddComponent는 오브젝트가 활성 상태면 그 자리에서 Awake를 실행시켜버려서,
             // Awake가 필요로 하는 데이터(Initialize)를 미리 못 채우면 각 컴포넌트가 참조 누락으로 자기 자신을 꺼버린다.
             instance.SetActive(false);
 
-            // 소켓 이름은 스탯 SO가 결정 — 리그마다 본 이름이 달라서 하드코딩 대신 데이터로 관리(예: SkeletonWarriorLP는 "ShieldBoneR")
+            // 소켓 이름은 스탯 SO가 결정 — 리그마다 본 이름이 달라서 하드코딩 대신 데이터로 관리
+            // (예: SkeletonWarriorLP는 "ShieldBoneR")
             var attackPoint = FindSocket(instance, stats.AttackPointSocketName);
 
             MonsterAI monsterAI = stats is BossStatsSO
@@ -42,6 +47,12 @@ namespace MySecondWorld.Combat.Monster
                     instance.AddComponent<MonsterHitbox>().Initialize(attackPoint, stats);
                     break;
             }
+
+            // MonsterAI의 [RequireComponent(typeof(PooledObject))]로 이미 자동 부착돼있음
+            // — AddComponent 아니라 GetComponent로 조회
+            var pooled = instance.GetComponent<PooledObject>();
+            pooled.Init(pool);
+            SceneManager.MoveGameObjectToScene(instance, scene);
 
             instance.SetActive(true); // 여기서 전부 Awake — 필요한 데이터는 이미 다 채워진 상태
             return instance;

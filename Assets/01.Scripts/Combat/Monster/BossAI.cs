@@ -34,6 +34,8 @@ namespace MySecondWorld.Combat.Monster
         {
             // base.Awake()가 CreateDefaultSkillSelector()를 내부에서 호출하므로,
             // 그 시점엔 이미 _bossStats가 준비돼 있어야 함 -> base.Awake() 호출 전에 캐스팅.
+            // _stats는 "이 몬스터가 뭐든 간에 공통으로 가진 스탯"용,
+            // _bossStats는 "이게 보스일 때만 접근 가능한 전용 스탯"용으로 역할이 나뉨
             _bossStats = _stats as BossStatsSO;
             base.Awake();
 
@@ -57,7 +59,21 @@ namespace MySecondWorld.Combat.Monster
             _deathHash = Animator.StringToHash(_bossStats.DeathTrigger);
             _locomotionHash = Animator.StringToHash(_bossStats.LocomotionParam);
         }
+        #endregion
 
+
+        #region 팩토리 초기화
+        // MonsterAI.PrepareForSpawn이 상태머신/Warp/애니메이터/스킬셀렉터(CreateDefaultSkillSelector 오버라이드로 Phase 0 재생성)를
+        // 이미 처리해주므로, 여기선 보스 전용 상태(페이즈/전환플래그/Idle Break 타이머)만 추가로 리셋
+        public override void PrepareForSpawn(Vector3 position, Quaternion rotation)
+        {
+            base.PrepareForSpawn(position, rotation);
+
+            _currentPhaseIndex = 0;
+            _inPhaseTransition = false;
+            _idleBreakTimer = 0f;
+            _nextIdleBreakInterval = 0f;
+        }
         #endregion
 
         #region 스킬 선택 / 공격 재생

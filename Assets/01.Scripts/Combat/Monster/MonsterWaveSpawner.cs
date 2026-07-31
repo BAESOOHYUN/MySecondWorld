@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
+using MySecondWorld.Pool;
+using System.Threading;
 
 namespace MySecondWorld.Combat.Monster
 {
@@ -11,6 +12,10 @@ namespace MySecondWorld.Combat.Monster
     {
         [SerializeField] private MonsterWaveDefinitionSO _waveDefinition;
         [SerializeField] private Transform[] _spawnPoints; // 한 웨이브의 몬스터 수만큼 순환 사용
+
+        // 몬스터 타입(스탯 SO)별 전용 풀 — 웨이브를 돌수록 같은 타입 몬스터를 재사용
+        private readonly Dictionary<MonsterStatsSO, IGameObjectPool> _monsterPools 
+            = new Dictionary<MonsterStatsSO, IGameObjectPool>();
 
         [Header("테스트용")]
         [SerializeField] private bool _autoStartForTesting;
@@ -26,6 +31,13 @@ namespace MySecondWorld.Combat.Monster
         {
             if (_autoStartForTesting)
                 StartWaves(_testRoomId);
+        }
+
+        private void OnDestroy()
+        {
+            foreach (var pool in _monsterPools.Values) // _monsterPools.Values(값 컬렉션만) 검색
+                pool.Dispose();
+            _monsterPools.Clear();
         }
 
         public void StartWaves(string roomId)
@@ -64,26 +76,53 @@ namespace MySecondWorld.Combat.Monster
             for (int i = 0; i < wave.Monsters.Count; i++)
             {
                 var entry = wave.Monsters[i];
-                var spawnPoint = _spawnPoints[i % _spawnPoints.Length];
-                var instance = MonsterFactory.Create(entry.PurePrefab, entry.Stats, spawnPoint.position, spawnPoint.rotation);
-                if (instance == null) continue; // 프리팹/스탯 누락 — MonsterFactory가 이미 에러 로그를 남김
+                if (entry.PurePrefab == null || entry.Stats == null)
+                {
+                    Debug.LogError($"[MonsterWaveSpawner] 웨이브 {_currentWaveIndex}의 몬스터 슬롯 {i}에 PurePrefab 또는 Stats가 비어있어 스킵 on {gameObject.name}", this);
+                    continue;
+                }
 
-                // Instantiate는 기본적으로 활성 씬(Active Scene)에 생성하므로, 스포너가 있는 씬(FieldScene 등)으로 옮겨줌
-                SceneManager.MoveGameObjectToScene(instance, gameObject.scene);
+                var spawnPoint = _spawnPoints[i % _spawnPoints.Length];
+
+                var pool = GetOrCreatePool(entry);
+                var instance = pool.Rent();
+
+                var monsterAI = instance.GetComponent<MonsterAI>();
+                monsterAI.PrepareForSpawn(spawnPoint.position, spawnPoint.rotation);
 
                 var health = instance.GetComponent<Health>();
                 _aliveMonsters.Add(health);
 
-                // 자기 자신을 구독 해제하는 델리게이트 — 죽은 몬스터는 Destroy가 아니라 SetActive(false)로만 남아서
-                // 명시적으로 해제 안 하면 이 구독이 계속 메모리에 쌓임
-                Action onDied = null;
-                onDied = () =>
+                // 자기 자신을 구독 해제하는 델리게이트 — HP가 0 되는 즉시가 아니라,
+                // 죽는 애니메이션까지 끝나고 실제로 풀에 반납된 시점에 웨이브를 넘기기 위해 OnReturnedToPool을 구독
+                Action onReturned = null;
+                onReturned = () =>
                 {
-                    health.OnDied -= onDied;
+                    monsterAI.OnReturnedToPool -= onReturned;
                     HandleMonsterDied(health);
                 };
-                health.OnDied += onDied;
+                monsterAI.OnReturnedToPool += onReturned;
             }
+        }
+
+        // 풀을 타입별로 만들어주는 헬퍼 
+        private IGameObjectPool GetOrCreatePool(MonsterWaveDefinitionSO.MonsterEntry entry)
+        {
+            // MonsterStatsSO((=몬스터 타입)를 key로 등록해둔 pool(그 타입 전용 풀)이 있으면 그걸 꺼내옴
+            if (_monsterPools.TryGetValue(entry.Stats, out var pool))
+                return pool; // ① 이미 있으면 그대로 반환
+
+            var scene = this.gameObject.scene;
+
+            // ② 없으면 새로 만들고
+            IGameObjectPool newPool = null;
+            newPool = new GameObjectPool(
+                () => MonsterFactory.CreatePooled(
+                    entry.PurePrefab, entry.Stats, newPool, scene),
+                    defaultCapacity: 2, maxSize: 8);
+
+            _monsterPools[entry.Stats] = newPool; // ③ 여기서 처음으로 등록(저장)
+            return newPool;
         }
 
         private void HandleMonsterDied(Health health)
