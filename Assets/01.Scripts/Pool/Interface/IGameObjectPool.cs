@@ -1,8 +1,9 @@
+using System;
 using UnityEngine;
 
 namespace MySecondWorld.Pool
 {
-    public interface IGameObjectPool
+    public interface IGameObjectPool : IDisposable
     {
         GameObject Rent();
         void Return(GameObject obj);

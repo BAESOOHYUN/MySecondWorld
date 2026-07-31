@@ -10,6 +10,7 @@ namespace MySecondWorld.Combat
         // '대기가 없으므로' 판정 시점과 명중 시점 사이에 시간차가 없어 그대로 써도 안전(회귀 없음).
         public UniTask<IReadOnlyList<IDamageable>> ResolveTargets(SkillContext ctx) => UniTask.FromResult(ctx.Candidates);
 
+        public void Dispose() { }  // // 들고 있는 리소스가 없어서 빈 구현
     }
 }
 

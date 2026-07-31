@@ -41,5 +41,11 @@ namespace MySecondWorld.Combat
             var hitTarget = await completionSource.Task;
             return hitTarget == null ? Array.Empty<IDamageable>() : new List<IDamageable> { hitTarget };
         }
+
+        public void Dispose()
+        {
+            _pool.Dispose();
+        }
+
     }
 }

@@ -40,6 +40,11 @@ namespace MySecondWorld.Combat.Monster
                 new List<ISkillEffect> { new DamageEffect() });
         }
 
+        private void OnDestroy()
+        {
+            _skillExecutor?.Dispose();
+        }
+
         // Shoot 애니메이션 클립의 발사(화살이 손을 떠나는) 프레임에 Animation Event로 연결
         public void OnShootRelease()
         {
