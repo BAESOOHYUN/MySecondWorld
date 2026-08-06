@@ -289,6 +289,8 @@ namespace MySecondWorld.AI
             _cts = null;
             _dialogueUI?.Close();
             _shopUI?.Close();
+
+            OnConversationStateChanged(false);
         }
 
         private void OnEnterMenu()
@@ -300,6 +302,8 @@ namespace MySecondWorld.AI
             _menuUI.Open();
             _menuUI.OnSelectTalk.Subscribe(_ => SafeFire(NpcTrigger.SelectTalk)).AddTo(_cts.Token);
             _menuUI.OnSelectShop.Subscribe(_ => SafeFire(NpcTrigger.SelectShop)).AddTo(_cts.Token);
+            
+            OnConversationStateChanged(true);
         }
 
         private void OnExitMenu() => _menuUI.Close();
@@ -364,6 +368,11 @@ namespace MySecondWorld.AI
                 .Subscribe(_ => SafeFire(NpcTrigger.Close))
                 .AddTo(_cts.Token);
         }
+
+        // companion이 대화 중에 딴 데로 걸어가버리는 걸 막기 위한 훅
+        // "대화창이 열려있냐/닫혀있냐" 라는 UI 레벨 상태로, 이걸 CompanionAI한테 알려줘서 이동을 잠깐 멈추게 하는 용도
+        protected virtual void OnConversationStateChanged(bool paused) { }
+        
         #endregion
 
         #region 입력 처리
@@ -377,7 +386,7 @@ namespace MySecondWorld.AI
         }
 
         // 클릭/탭으로 외부에서 직접 호출 (TouchEventListener의 Raycast 결과)
-        public void Interact()
+        public virtual void Interact()
         {
             if (OnUIChecker.IsInputFieldFocused())
                 return;
