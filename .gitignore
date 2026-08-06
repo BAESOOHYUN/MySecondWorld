@@ -46,6 +46,8 @@ Temporary Items
 /Packages/com.youngwoocho02.unity-cli-connector/
 
 *_BackUpThisFolder_ButDontShipItWithYourGame/
+*_BurstDebugInformation_DoNotShip/
+*.symbols.zip
 
 # unity model asset igonore temp 
 /Assets/[Mm]odels/
