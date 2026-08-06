@@ -11,7 +11,13 @@ namespace MySecondWorld.Combat
     // 기존 Combat→Network 참조와 순환 참조가 되므로, Combat 어셈블리 안에 별도로 둔다.
     public class PlayerAttackAuthority : NetworkBehaviour
     {
+        #region Fields
+
         private SkillExecutor _skillExecutor;
+
+        #endregion
+
+        #region Unity 생명주기
 
         private void Awake()
         {
@@ -20,6 +26,10 @@ namespace MySecondWorld.Combat
                 new InstantCast(),
                 new List<ISkillEffect> { new DamageEffect() });
         }
+
+        #endregion
+
+        #region 공격 판정
 
         // PlayerAttackController.OnAttackHit() 이 위임하는 서버 권위 판정.
         // 몬스터의 Health/몸통 Collider는 서버 인스턴스에만 존재하므로(Mirror 몬스터 풀링 설계),
@@ -38,5 +48,7 @@ namespace MySecondWorld.Combat
             var ctx = new SkillContext(this.gameObject, candidates, power);
             _skillExecutor.Execute(ctx).Forget();
         }
+
+        #endregion
     }
 }

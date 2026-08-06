@@ -9,6 +9,8 @@ namespace MySecondWorld.Combat
     // 입력 발생 → 쿨다운 체크 → 애니메이션 트리거 → (애니메이션의 타격 프레임에서) 범위 안 후보 탐지 → SkillContext 구성 → SkillExecutor.Execute()
     public class PlayerAttackController : MonoBehaviour
     {
+        #region Fields
+
         [Header("참조")]
         [SerializeField] private NetworkWeaponEquip _weaponEquip;
         [SerializeField] private PlayerAttackAuthority _attackAuthority;
@@ -26,6 +28,10 @@ namespace MySecondWorld.Combat
 
         private SkillExecutor _skillExecutor;
         private float _nextAttackTime;
+
+        #endregion
+
+        #region Unity 생명주기
 
         private void Awake()
         {
@@ -55,6 +61,10 @@ namespace MySecondWorld.Combat
                 _attackAction.action.performed -= OnAttackInput;
         }
 
+        #endregion
+
+        #region 입력 처리
+
         private void OnAttackInput(InputAction.CallbackContext ctx)
         {
             if (!_weaponEquip.isLocalPlayer)
@@ -66,6 +76,10 @@ namespace MySecondWorld.Combat
             _animationController.HandleAttack();
         }
 
+        #endregion
+
+        #region 공격 판정
+
         // Attack 애니메이션 클립의 타격 프레임에 Animation Event로 연결
         public void OnAttackHit()
         {
@@ -76,5 +90,7 @@ namespace MySecondWorld.Combat
 
             _attackAuthority.CmdResolveAttackHit(_attackPoint.position, _attackRadius, power, _targetLayerMask.value);
         }
+
+        #endregion
     }
 }
