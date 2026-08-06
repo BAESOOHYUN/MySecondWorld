@@ -4,6 +4,7 @@
     "references": [
         "UniTask",
         "Mirror",
+        "Mirror.Components",
         "Unity.InputSystem",
         "MySecondWorld.Network",
         "MySecondWorld.Character",

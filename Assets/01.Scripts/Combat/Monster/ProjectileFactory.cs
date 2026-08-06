@@ -19,15 +19,15 @@ namespace MySecondWorld.Combat.Monster
                 Debug.LogError("[ProjectileFactory] purePrefab이 비어있어 스폰을 건너뜀");
                 return null;
             }
-            var go = Object.Instantiate(purePrefab); // position/rotation 인자 없음 — Rent 이후 캐스트 쪽에서 SetPositionAndRotation
-            var projectile = go.AddComponent<EnemyProjectile>();
+            var instance = Object.Instantiate(purePrefab); // position/rotation 인자 없음 — Rent 이후 캐스트 쪽에서 SetPositionAndRotation
+            var projectile = instance.AddComponent<EnemyProjectile>();
             projectile.Initialize(colliderCenter, colliderRadius);
 
-            var pooled = go.GetComponent<PooledObject>();
+            var pooled = instance.GetComponent<PooledObject>();
             pooled.Init(pool);
-            SceneManager.MoveGameObjectToScene(go, scene);
+            SceneManager.MoveGameObjectToScene(instance, scene);
 
-            return go; // GameObject 반환 — Func<GameObject> 시그니처에 맞춰야 함
+            return instance; // GameObject 반환 — Func<GameObject> 시그니처에 맞춰야 함
         }
     }
 }

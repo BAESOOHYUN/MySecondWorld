@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Mirror;
+using MySecondWorld.Network;
 using MySecondWorld.Pool;
-using System.Threading;
 
 namespace MySecondWorld.Combat.Monster
 {
@@ -34,6 +35,9 @@ namespace MySecondWorld.Combat.Monster
 
         private void Start()
         {
+            // Additive 씬은 모든 클라에도 로드됨 — 가드 없으면 클라마다 독립적으로 중복 스폰함
+            if (!NetworkServer.active) return;
+
             if (_autoStartForTesting)
                 StartWaves(_testRoomId);
         }
@@ -56,6 +60,9 @@ namespace MySecondWorld.Combat.Monster
 
         public void StartWaves(string roomId)
         {
+            // 외부에서 직접 호출될 경우 대비하여 서버 가드 설정
+            if (!NetworkServer.active) return;
+
             if (_waveDefinition == null || _spawnPoints == null || _spawnPoints.Length == 0)
             {
                 Debug.LogError($"[MonsterWaveSpawner] _waveDefinition 또는 _spawnPoints가 비어있어 웨이브를 시작할 수 없음 on {gameObject.name}", this);
@@ -100,6 +107,13 @@ namespace MySecondWorld.Combat.Monster
 
                 var pool = GetOrCreatePool(entry);
                 var instance = pool.Rent();
+
+                // NetworkMatch — 이 웨이브의 몬스터를 같은 방(roomId)의 플레이어에게만 보이게 함
+                // 주의: 지금은 필드 씬 기준(_roomId를 그대로 해시)만 정확함.
+                // 던전 인스턴스별 실제 Guid roomId(DungeonRoomRegistry.AssignRoom) 연동은 아직 안 돼있음
+                // TODO : roomId 배선이 실제로 연결되면 이 줄을 그 Guid로 교체해야 함.
+                if (instance.TryGetComponent(out NetworkMatch match))
+                    match.matchId = SceneMatchId.GetMatchIdFromScene(_roomId);
 
                 var monsterAI = instance.GetComponent<MonsterAI>();
                 monsterAI.PrepareForSpawn(spawnPoint.position, spawnPoint.rotation);

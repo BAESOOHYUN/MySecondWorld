@@ -3,6 +3,7 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AI;
 using Stateless;
+using Mirror;
 using MySecondWorld.Pool;
 
 namespace MySecondWorld.Combat.Monster
@@ -151,11 +152,11 @@ namespace MySecondWorld.Combat.Monster
         public void Initialize(MonsterStatsSO stats)
         {
             _stats = stats;
+
+            // Animator는 프리팹에 사전 부착 + Avatar/Controller가 이미 세팅되어 있어야 함
+            // (클라이언트가 자기 Animator로 애니메이션을 재생하려면 서버 AddComponent 경로 없이도 준비돼 있어야 하기 때문)
             if (_animator == null) _animator = GetComponent<Animator>();
             if (_detectionTrigger == null) _detectionTrigger = GetComponent<SphereCollider>();
-
-            _animator.avatar = stats.Avatar;
-            _animator.runtimeAnimatorController = stats.AnimatorController;
 
             var body = GetComponent<CapsuleCollider>();
             body.center = stats.BodyColliderCenter;
@@ -201,6 +202,12 @@ namespace MySecondWorld.Combat.Monster
                 _animator.Rebind(); // 이전 생애의 트리거/상태(Death 등) 전부 초기화
                 _animator.Update(0);
             }
+
+            // 클라이언트는 이 재사용된 GameObject를 모름
+            // 서버가 다시 스폰 메시지를 보내야 클라 쪽에 새 사본이 생김
+            // NetworkServer.active 가드로 로컬(비-네트워크) 테스트도 그대로 동작
+            if (NetworkServer.active)
+                NetworkServer.Spawn(gameObject);
         }
         #endregion
 
@@ -321,7 +328,12 @@ namespace MySecondWorld.Combat.Monster
                 if (_animator != null)
                 _animator.SetTrigger(GetDeathTriggerHash());
                 await UniTask.Delay(TimeSpan.FromSeconds(_stats.DeathDuration));
-                //풀 반납 — 내부적으로 SetActive(false)까지 처리됨
+
+                // 클라이언트 사본을 먼저 정리 — SetActive(false)보다 먼저 호출해야 함
+                if (NetworkServer.active)
+                    NetworkServer.UnSpawn(gameObject);
+
+                // 풀 반납 — 내부적으로 SetActive(false)까지 처리됨
                 GetComponent<PooledObject>().ReturnToPool();
                 OnReturnedToPool?.Invoke();
             }

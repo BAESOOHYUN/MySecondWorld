@@ -72,6 +72,7 @@
   <Project Path="Unity.XR.CoreUtils.Editor.csproj" />
   <Project Path="NuGetForUnity.csproj" />
   <Project Path="Unity.AI.Navigation.Editor.csproj" />
+  <Project Path="MySecondWorld.Combat.csproj" />
   <Project Path="Cleverous.VaultSystem.csproj" />
   <Project Path="ReactiveInputSystem.csproj" />
   <Project Path="Cleverous.VaultDashboard.csproj" />
@@ -99,6 +100,7 @@
   <Project Path="UniTask.TextMeshPro.csproj" />
   <Project Path="UnityCliConnector.Editor.csproj" />
   <Project Path="MySecondWorld.LifetimeScope.csproj" />
+  <Project Path="MySecondWorld.Pool.csproj" />
   <Project Path="SimpleFileBrowser.Runtime.csproj" />
   <Project Path="NativeFilePicker.Editor.csproj" />
   <Project Path="Unity.Settings.Editor.csproj" />

@@ -30,10 +30,10 @@ namespace MySecondWorld.Combat
             if (ctx.AimPoint == null) // 조준 지점 없음 — 발사 자체가 불가능한 상황
                 return Array.Empty<IDamageable>(); 
             var direction = (ctx.AimPoint.Value - _spawnPoint.position).normalized;
-            var go = _pool.Rent();
-            go.transform.SetPositionAndRotation(_spawnPoint.position, Quaternion.LookRotation(direction));
+            var instance = _pool.Rent();
+            instance.transform.SetPositionAndRotation(_spawnPoint.position, Quaternion.LookRotation(direction));
 
-            var projectile = go.GetComponent<EnemyProjectile>();
+            var projectile = instance.GetComponent<EnemyProjectile>();
             var completionSource = new UniTaskCompletionSource<IDamageable>();
             projectile.Launch(direction, _speed, completionSource);
             

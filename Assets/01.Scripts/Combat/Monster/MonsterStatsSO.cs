@@ -23,10 +23,6 @@ namespace MySecondWorld.Combat.Monster
         [SerializeField] private float _bodyColliderRadius = 0.2f;
         [SerializeField] private float _bodyColliderHeight = 1.9f;
 
-        [Header("애니메이터 (리그 전용 — 몬스터마다 다름)")]
-        [SerializeField] private Avatar _avatar;
-        [SerializeField] private RuntimeAnimatorController _animatorController;
-
         #region Property
         public float MaxHP => _maxHP;
         public float Attack => _attack;
@@ -39,8 +35,6 @@ namespace MySecondWorld.Combat.Monster
         public Vector3 BodyColliderCenter => _bodyColliderCenter;
         public float BodyColliderRadius => _bodyColliderRadius;
         public float BodyColliderHeight => _bodyColliderHeight;
-        public Avatar Avatar => _avatar;
-        public RuntimeAnimatorController AnimatorController => _animatorController;
         #endregion
     }
 }

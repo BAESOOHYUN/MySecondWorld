@@ -1,6 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
-using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using MySecondWorld.Network;
@@ -13,6 +11,7 @@ namespace MySecondWorld.Combat
     {
         [Header("참조")]
         [SerializeField] private NetworkWeaponEquip _weaponEquip;
+        [SerializeField] private PlayerAttackAuthority _attackAuthority;
         [SerializeField] private PlayerAnimationController _animationController;
         [SerializeField] private InputActionReference _attackAction;
 
@@ -39,7 +38,7 @@ namespace MySecondWorld.Combat
 
         private void OnEnable()
         {
-            if (_weaponEquip == null || _attackAction == null || _animationController == null || _attackPoint == null)
+            if (_weaponEquip == null || _attackAuthority == null || _attackAction == null || _animationController == null || _attackPoint == null)
             {
                 Debug.LogError($"PlayerAttackController 참조 누락 on {this.gameObject.name}", this);
                 enabled = false;
@@ -70,19 +69,12 @@ namespace MySecondWorld.Combat
         // Attack 애니메이션 클립의 타격 프레임에 Animation Event로 연결
         public void OnAttackHit()
         {
-            var candidates = Physics.OverlapSphere(_attackPoint.position, _attackRadius, _targetLayerMask, QueryTriggerInteraction.Ignore) // 공격 지점 반경 안의 몬스터 레이어 콜라이더 전부 탐지(트리거 콜라이더는 무조건 무시)
-                .OrderBy(c => Vector3.Distance(_attackPoint.position, c.transform.position)) // 가까운 순 정렬 (SingleTargetSelector가 첫 번째를 "가장 가까운 대상"으로 씀)
-                .Select(c => c.GetComponentInParent<IDamageable>()) // 콜라이더 → 자신+조상 중 IDamageable 붙은 가장 가까운 오브젝트로 변환
-                .Where(d => d != null)                              // IDamageable이 없는 대상(오탐) 제거
-                .ToList();                                          // 지연 평가를 여기서 즉시 실행해 리스트로 확정 (Candidates가 인덱스 접근 필요)
-
             // 무기 미장착 시 맨주먹 공격력 사용
             float power = _weaponEquip.GetMainHandAttack();
             if (power <= 0f)
                 power = _unarmedAttack;
 
-            var ctx = new SkillContext(this.gameObject, candidates, power);
-            _skillExecutor.Execute(ctx).Forget();
+            _attackAuthority.CmdResolveAttackHit(_attackPoint.position, _attackRadius, power, _targetLayerMask.value);
         }
     }
 }
