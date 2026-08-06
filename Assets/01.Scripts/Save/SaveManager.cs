@@ -9,11 +9,12 @@ namespace MySecondWorld.Save
     /// </summary>
     public class SaveManager
     {
-        private const string KeyScenes = "save_scenes_";
-        private const string KeyPosX   = "save_pos_x_";
-        private const string KeyPosY   = "save_pos_y_";
-        private const string KeyPosZ   = "save_pos_z_";
-        private const char   SceneSep  = '|';
+        private const string KeyScenes     = "save_scenes_";
+        private const string KeyPosX       = "save_pos_x_";
+        private const string KeyPosY       = "save_pos_y_";
+        private const string KeyPosZ       = "save_pos_z_";
+        private const string KeyCompanions = "save_companions_";
+        private const char   SceneSep      = '|';
 
         /// <param name="playerId">플레이어 식별자 (netId 등). 키 충돌 방지용.</param>
         public void Save(string playerId, SaveData data)
@@ -22,6 +23,7 @@ namespace MySecondWorld.Save
             PlayerPrefs.SetFloat(KeyPosX + playerId, data.lastPosition.x);
             PlayerPrefs.SetFloat(KeyPosY + playerId, data.lastPosition.y);
             PlayerPrefs.SetFloat(KeyPosZ + playerId, data.lastPosition.z);
+            PlayerPrefs.SetString(KeyCompanions + playerId, string.Join(SceneSep, data.recruitedCompanionIds ?? System.Array.Empty<string>()));
             PlayerPrefs.Save();
         }
 
@@ -38,7 +40,9 @@ namespace MySecondWorld.Save
                 lastPosition = new Vector3(
                     PlayerPrefs.GetFloat(KeyPosX + playerId),
                     PlayerPrefs.GetFloat(KeyPosY + playerId),
-                    PlayerPrefs.GetFloat(KeyPosZ + playerId))
+                    PlayerPrefs.GetFloat(KeyPosZ + playerId)),
+                recruitedCompanionIds = PlayerPrefs.GetString(KeyCompanions + playerId)
+                    .Split(SceneSep, System.StringSplitOptions.RemoveEmptyEntries)
             };
         }
 
@@ -52,6 +56,7 @@ namespace MySecondWorld.Save
             PlayerPrefs.DeleteKey(KeyPosX + playerId);
             PlayerPrefs.DeleteKey(KeyPosY + playerId);
             PlayerPrefs.DeleteKey(KeyPosZ + playerId);
+            PlayerPrefs.DeleteKey(KeyCompanions + playerId);
             PlayerPrefs.Save();
         }
     }

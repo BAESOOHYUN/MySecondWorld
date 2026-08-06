@@ -1,7 +1,9 @@
 {
     "name": "MySecondWorld.Foundation",
     "rootNamespace": "",
-    "references": [],
+    "references": [
+        "Mirror"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

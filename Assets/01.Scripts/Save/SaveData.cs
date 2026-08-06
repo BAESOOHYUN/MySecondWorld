@@ -7,5 +7,6 @@ namespace MySecondWorld.Save
     {
         public string[] lastSceneNames;
         public Vector3 lastPosition;
+        public string[] recruitedCompanionIds;
     }
 }

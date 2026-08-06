@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Mirror;
 
 namespace MySecondWorld.Network
 {
@@ -30,5 +31,7 @@ namespace MySecondWorld.Network
 
         public Guid roomId = Guid.Empty;
         public bool isNewPlayer; // 세이브 데이터 없이 최초 접속한 경우 true — 시작 골드 지급 판단용
+        public string[] recruitedCompanionIds = Array.Empty<string>(); // SaveData 왕복용 — RemovePlayer 저장 시 유실 방지
+        public NetworkIdentity companionIdentity; // 현재 스폰된 동행 NPC (없으면 null)
     }
 }
