@@ -11,6 +11,7 @@ namespace MySecondWorld.Combat
         public float CurrentHP { get; private set; }
         public bool IsDead => CurrentHP <= 0f;
         public event Action OnDied;
+        public event Action<float> OnDamaged; // 데미지로 CurrentHP가 바뀔 때마다 새 CurrentHP 값을 실어 발행
 
         private void OnEnable()
         {
@@ -27,6 +28,7 @@ namespace MySecondWorld.Combat
         {
             if (IsDead || damage <= 0f) return;
             CurrentHP = Mathf.Max(0f, CurrentHP - damage);
+            OnDamaged?.Invoke(CurrentHP);
 
             if (CurrentHP <= 0)
                 OnDied?.Invoke();

@@ -8,7 +8,8 @@
         "Unity.InputSystem",
         "MySecondWorld.Network",
         "MySecondWorld.Character",
-        "MySecondWorld.Pool"
+        "MySecondWorld.Pool",
+        "MySecondWorld.Foundation"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
