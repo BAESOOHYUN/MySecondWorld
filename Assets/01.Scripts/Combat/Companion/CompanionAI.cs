@@ -1,0 +1,287 @@
+using System;
+using Cysharp.Threading.Tasks;
+using UnityEngine;
+using UnityEngine.AI;
+using Stateless;
+
+namespace MySecondWorld.Combat.Companion
+{
+    // MonsterAI와 대칭 구조(Follow/Chase/Attack/Dead)지만 상속하지 않는다 — 감지 태그/Idle 개념이
+    // 정반대라(제 발로 서있는 몹 vs owner를 항상 따라다니는 동료) 상속으로 끼워 맞추면 더 부자연스럽다.
+    // (설계 근거: .claude/memory/20260730-companion-npc-CONTEXT.md 결정 4)
+    [RequireComponent(typeof(Animator))]
+    [RequireComponent(typeof(NavMeshAgent))]
+    [RequireComponent(typeof(CapsuleCollider))]
+    [RequireComponent(typeof(SphereCollider))]
+    [RequireComponent(typeof(Health))]
+    public class CompanionAI : MonoBehaviour
+    {
+        #region State Machine 정의
+
+        private enum CompanionState
+        {
+            Follow,
+            Chase,
+            Attack,
+            Dead,
+        }
+
+        private enum CompanionTrigger
+        {
+            MonsterDetected,
+            MonsterLost,
+            TargetInRange,
+            TargetOutOfRange,
+            Died,
+        }
+
+        #endregion
+
+        #region Fields
+
+        [SerializeField] private CompanionStatsSO _stats;
+        [SerializeField] private SphereCollider _detectionTrigger;
+        [SerializeField] private Animator _animator;
+
+        private static readonly int AttackTrigger = Animator.StringToHash(nameof(AttackTrigger));
+        private static readonly int DeathTrigger = Animator.StringToHash(nameof(DeathTrigger));
+
+        private NavMeshAgent _agent;
+        private Health _health;
+        private Transform _owner;
+        private Transform _target; // 감지된 몬스터
+        private StateMachine<CompanionState, CompanionTrigger> _stateMachine;
+        private float _lastAttackTime;
+        private bool _followPaused;
+
+        public bool IsInCombat =>
+            _stateMachine != null &&
+            (_stateMachine.State == CompanionState.Chase || _stateMachine.State == CompanionState.Attack);
+
+        #endregion
+
+        #region Unity 생명주기
+
+        private void Awake()
+        {
+            if (_stats == null)
+            {
+                Debug.LogError($"CompanionStatsSO missing on {gameObject.name}", this);
+                enabled = false;
+                return;
+            }
+
+            _agent = GetComponent<NavMeshAgent>();
+            _health = GetComponent<Health>();
+            if (_animator == null) _animator = GetComponent<Animator>();
+            if (_detectionTrigger == null) _detectionTrigger = GetComponent<SphereCollider>();
+
+            // Health.OnEnable()보다 먼저 실행돼야 MaxHP가 정확히 반영됨 (MonsterAI와 동일 순서 근거)
+            _health.Initialize(_stats.MaxHP);
+            _agent.speed = _stats.MoveSpeed;
+            _detectionTrigger.isTrigger = true;
+            _detectionTrigger.radius = _stats.DetectRange;
+
+            InitStateMachine();
+        }
+
+        private void OnEnable()
+        {
+            _health.OnDied += HandleDied;
+        }
+
+        private void OnDisable()
+        {
+            _health.OnDied -= HandleDied;
+        }
+
+        private void Update()
+        {
+            if (_owner == null) return;
+
+            switch (_stateMachine.State)
+            {
+                case CompanionState.Follow:
+                    UpdateFollow();
+                    break;
+                case CompanionState.Chase:
+                    UpdateChase();
+                    break;
+                case CompanionState.Attack:
+                    UpdateAttack();
+                    break;
+            }
+        }
+
+        private void OnTriggerEnter(Collider other)
+        {
+            if (other.gameObject.layer != LayerMask.NameToLayer("Monster")) return;
+            if (_stateMachine.State != CompanionState.Follow) return;
+            _target = other.transform;
+            SafeFire(CompanionTrigger.MonsterDetected);
+        }
+
+        #endregion
+
+        #region 팩토리 초기화
+
+        // CompanionFactory가 서버에서만 호출한다.
+        // 프리팹은 CompanionAI가 기본 비활성 상태로 배치돼 있어야 하고(씬 배치 체크리스트 참고),
+        // Initialize가 owner를 채운 뒤 enabled = true로 켠다
+        // — 클라이언트 관전 사본은 이 메서드가 아예 호출되지 않아 비활성 상태 그대로 남는다
+        // (Player 트랙에서 확립된 "팩토리는 서버 인스턴스에만 작용" 패턴과 동일).
+        public void Initialize(Transform ownerTransform)
+        {
+            _owner = ownerTransform;
+            enabled = true;
+        }
+
+        // CompanionServerState.Revive()가 서버에서 호출 — NavMeshAgent 경유로 안전하게 위치 이동
+        public void Warp(Vector3 position)
+        {
+            if (!_agent.Warp(position))
+                Debug.LogWarning($"[CompanionAI] Warp 실패 — position이 NavMesh 밖에 있을 수 있음 on {gameObject.name}", this);
+        }
+
+        #endregion
+
+        #region State Machine 동작
+
+        private void InitStateMachine()
+        {
+            _stateMachine = new StateMachine<CompanionState, CompanionTrigger>(CompanionState.Follow, FiringMode.Queued);
+
+            _stateMachine.Configure(CompanionState.Follow)
+                .OnEntry(() => _agent.isStopped = _followPaused)
+                .Permit(CompanionTrigger.MonsterDetected, CompanionState.Chase)
+                .Permit(CompanionTrigger.Died, CompanionState.Dead);
+
+            _stateMachine.Configure(CompanionState.Chase)
+                .OnEntry(() => { _agent.isStopped = false; _agent.updateRotation = true; })
+                .Permit(CompanionTrigger.MonsterLost, CompanionState.Follow)
+                .Permit(CompanionTrigger.TargetInRange, CompanionState.Attack)
+                .Permit(CompanionTrigger.Died, CompanionState.Dead);
+
+            _stateMachine.Configure(CompanionState.Attack)
+                .OnEntry(() => _agent.isStopped = true)
+                .Permit(CompanionTrigger.TargetOutOfRange, CompanionState.Chase)
+                .Permit(CompanionTrigger.Died, CompanionState.Dead);
+
+            _stateMachine.Configure(CompanionState.Dead)
+                .OnEntry(HandleEnterDead);
+
+            _stateMachine.OnTransitioned(t => Debug.Log($"[CompanionAI] {t.Source} → {t.Destination} ({t.Trigger})"));
+        }
+
+        private void UpdateFollow()
+        {
+            if (_followPaused) return;
+
+            float distance = Vector3.Distance(transform.position, _owner.position);
+            if (distance >= _stats.FollowDistanceThreshold)
+                _agent.SetDestination(_owner.position);
+        }
+
+        private void UpdateChase()
+        {
+            if (_target == null)
+            {
+                SafeFire(CompanionTrigger.MonsterLost);
+                return;
+            }
+
+            _agent.SetDestination(_target.position);
+            float distance = Vector3.Distance(transform.position, _target.position);
+            if (distance <= _stats.AttackRange)
+                SafeFire(CompanionTrigger.TargetInRange);
+        }
+
+        private void UpdateAttack()
+        {
+            if (_target == null)
+            {
+                SafeFire(CompanionTrigger.TargetOutOfRange);
+                return;
+            }
+
+            float distance = Vector3.Distance(transform.position, _target.position);
+            float exitRange = _stats.AttackRange * 1.2f; // Monster 쪽과 동일한 유격 — 경계에서 상태 떨림 방지
+            if (distance > exitRange)
+            {
+                SafeFire(CompanionTrigger.TargetOutOfRange);
+                return;
+            }
+
+            FaceTarget();
+
+            if (Time.time - _lastAttackTime < _stats.AttackCooldown) return;
+            _lastAttackTime = Time.time;
+            _animator.SetTrigger(AttackTrigger); // 실제 데미지는 CompanionHitbox.OnAttackHit()의 Animation Event가 처리
+        }
+
+        private void FaceTarget()
+        {
+            Vector3 lookDirection = _target.position - transform.position;
+            lookDirection.y = 0f;
+            if (lookDirection.sqrMagnitude > 0.001f)
+                transform.rotation = Quaternion.LookRotation(lookDirection);
+        }
+
+        #endregion
+
+        #region 대화 중 이동 정지 (CompanionInteractable이 호출)
+
+        public void PauseFollow()
+        {
+            _followPaused = true;
+            if (_stateMachine.State == CompanionState.Follow)
+                _agent.isStopped = true;
+        }
+
+        public void ResumeFollow()
+        {
+            _followPaused = false;
+            if (_stateMachine.State == CompanionState.Follow)
+                _agent.isStopped = false;
+        }
+
+        #endregion
+
+        #region 사망 처리
+
+        private void HandleDied() => SafeFire(CompanionTrigger.Died);
+
+        private void HandleEnterDead()
+        {
+            _agent.isStopped = true;
+            PlayDeathSequence().Forget();
+        }
+
+        private async UniTaskVoid PlayDeathSequence()
+        {
+            try
+            {
+                _animator.SetTrigger(DeathTrigger);
+                await UniTask.Delay(TimeSpan.FromSeconds(_stats.DeathDuration), cancellationToken: this.GetCancellationTokenOnDestroy());
+                GetComponent<CompanionServerState>()?.MarkDead(); // 죽음 애니메이션 '재생 완료 후' 비활성화되도록 호출. MarkDead() => _isAlive = false;
+            }
+            catch (OperationCanceledException)
+            {
+                // 대기 중 오브젝트가 파괴됨 — 정상 흐름
+            }
+        }
+
+        #endregion
+
+        #region 유틸리티
+
+        private bool SafeFire(CompanionTrigger trigger)
+        {
+            if (!_stateMachine.CanFire(trigger)) return false;
+            _stateMachine.Fire(trigger);
+            return true;
+        }
+
+        #endregion
+    }
+}
