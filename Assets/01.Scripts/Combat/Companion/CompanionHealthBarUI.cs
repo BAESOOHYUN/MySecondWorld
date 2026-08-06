@@ -12,7 +12,7 @@ namespace MySecondWorld.Combat.Companion
 
         private void Start()
         {
-            if (_serverState == null || _health == null || _fillImage)
+            if (_serverState == null || _health == null || _fillImage == null)
             {
                 Debug.LogError($"CompanionHealthBarUI 참조 누락 on {gameObject.name}", this);
                 enabled = false;

@@ -45,14 +45,17 @@ namespace MySecondWorld.Combat.Companion
 
         private static readonly int AttackTrigger = Animator.StringToHash(nameof(AttackTrigger));
         private static readonly int DeathTrigger = Animator.StringToHash(nameof(DeathTrigger));
+        private static readonly int MonsterLayer = LayerMask.NameToLayer("Monster");
 
         private NavMeshAgent _agent;
         private Health _health;
-        private Transform _owner;
-        private Transform _target; // 감지된 몬스터
+        private Transform _owner;   // 따라다녀야 할 플레이어 
+        private Transform _target;  // 감지된 몬스터
         private StateMachine<CompanionState, CompanionTrigger> _stateMachine;
         private float _lastAttackTime;
         private bool _followPaused;
+        private Vector3 _lastFollowTarget;
+        private const float FollowRecalcThreshold = 0.5f; // 이 거리 이상 움직였을 때만 재계산
 
         public bool IsInCombat =>
             _stateMachine != null &&
@@ -115,7 +118,7 @@ namespace MySecondWorld.Combat.Companion
 
         private void OnTriggerEnter(Collider other)
         {
-            if (other.gameObject.layer != LayerMask.NameToLayer("Monster")) return;
+            if (other.gameObject.layer != MonsterLayer) return;
             if (_stateMachine.State != CompanionState.Follow) return;
             _target = other.transform;
             SafeFire(CompanionTrigger.MonsterDetected);
@@ -173,13 +176,18 @@ namespace MySecondWorld.Combat.Companion
             _stateMachine.OnTransitioned(t => Debug.Log($"[CompanionAI] {t.Source} → {t.Destination} ({t.Trigger})"));
         }
 
+        //  owner가 일정 거리 이상 움직였을 때만 재계산하여 이동
         private void UpdateFollow()
         {
             if (_followPaused) return;
 
             float distance = Vector3.Distance(transform.position, _owner.position);
-            if (distance >= _stats.FollowDistanceThreshold)
-                _agent.SetDestination(_owner.position);
+            if (distance < _stats.FollowDistanceThreshold) return;
+
+            if (Vector3.Distance(_owner.position, _lastFollowTarget) < FollowRecalcThreshold) return;
+
+            _lastFollowTarget = _owner.position;
+            _agent.SetDestination(_owner.position); // owner 위치로 이동
         }
 
         private void UpdateChase()
