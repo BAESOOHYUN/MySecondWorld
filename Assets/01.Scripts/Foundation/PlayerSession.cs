@@ -29,5 +29,6 @@ namespace MySecondWorld.Network
         public float fallTimer;                    // 낙하 경과 시간
 
         public Guid roomId = Guid.Empty;
+        public bool isNewPlayer; // 세이브 데이터 없이 최초 접속한 경우 true — 시작 골드 지급 판단용
     }
 }

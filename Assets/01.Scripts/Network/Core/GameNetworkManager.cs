@@ -9,6 +9,7 @@ using UnityEngine.ResourceManagement.ResourceProviders;
 using Mirror;
 using MessagePipe;
 using VContainer;
+using Cleverous.VaultInventory;
 using MySecondWorld.Save;
 using MySecondWorld.Bundle;
 #if UNITY_EDITOR
@@ -23,6 +24,11 @@ namespace MySecondWorld.Network
         [Scene] public string defaultSubScene;           // FieldScene (마을) — 기본 스폰 존
         public ZoneDefinitionSO[] zones;                 // 모든 존 정의 (SO 배열). defaultSubScene도 포함.
         public float zoneCheckInterval = 0.5f;           // 존 체크 주기 (초)
+
+        [Header("신규 플레이어 시작 지급")]
+        [SerializeField] private RootItem _startingGoldItem;
+        [SerializeField] private int _startingGoldAmount = 1000;
+        
         public bool ServerReady { get; private set; }    // 서버 씬 프리로드 완료 여부
         public CancellationTokenSource Cts { get; private set; }
 
@@ -118,7 +124,7 @@ namespace MySecondWorld.Network
             base.OnStartServer(); // Mirror가 onlineScene(MainScene)을 로드. 완료 후 → OnServerSceneChanged
             Cts = new CancellationTokenSource();
             _roomRegistry = new DungeonRoomRegistry();
-            _sessionService = new ServerSessionService(this, _roomRegistry, _saveManager);
+            _sessionService = new ServerSessionService(this, _roomRegistry, _saveManager, _startingGoldItem, _startingGoldAmount);
             _zoneService = new ServerZoneService(this, _sessionService, _roomRegistry);
 
             // 클라이언트가 보내는 메시지 → NetworkServer.RegisterHandler (서버가 받으니까)

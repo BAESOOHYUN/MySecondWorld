@@ -154,6 +154,7 @@ namespace MySecondWorld.Combat.Monster
                     defaultCapacity: 2, maxSize: 8);
 
             _monsterPools[entry.Stats] = newPool; // ③ 여기서 처음으로 등록(저장)
+            _poolPrefabs[entry.Stats] = entry.PurePrefab;
             return newPool;
         }
 

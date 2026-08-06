@@ -5,6 +5,7 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Mirror;
+using Cleverous.VaultInventory;
 using MySecondWorld.Save;
 
 namespace MySecondWorld.Network
@@ -15,16 +16,22 @@ namespace MySecondWorld.Network
         private readonly GameNetworkManager _manager;
         private readonly DungeonRoomRegistry _roomRegistry;
         private readonly SaveManager _saveManager;
+        private readonly RootItem _startingGoldItem;
+        private readonly int _startingGoldAmount;
         public Dictionary<int, PlayerSession> Sessions { get; } = new();
 
         public ServerSessionService(
             GameNetworkManager manager,
             DungeonRoomRegistry roomRegistry,
-            SaveManager saveManager)
+            SaveManager saveManager,
+            RootItem startingGoldItem,
+            int startingGoldAmount)
         {
             _manager = manager;
             _roomRegistry = roomRegistry;
             _saveManager = saveManager;
+            _startingGoldItem = startingGoldItem;
+            _startingGoldAmount = startingGoldAmount;
         }
 
         // [S3] 세션 생성 + PrepareAndSpawn 시작
@@ -73,6 +80,7 @@ namespace MySecondWorld.Network
 
             var saveData = _saveManager.Load(session.playerId);
             var hasSpawnData = saveData.HasValue;
+            session.isNewPlayer = !hasSpawnData;
 
             string spawnScene = _manager.defaultSubScene;
             Vector3 spawnPosition = _manager.GetStartPosition()?.position ?? Vector3.zero;
@@ -82,6 +90,7 @@ namespace MySecondWorld.Network
                 // 세이브 데이터가 있으면 → 저장된 씬 + 위치 사용
                 spawnScene = saveData.Value.lastSceneNames[0];
                 spawnPosition = saveData.Value.lastPosition;
+                session.recruitedCompanionIds = saveData.Value.recruitedCompanionIds ?? Array.Empty<string>();
             }
 
             session.pendingSpawnPosition = spawnPosition;
@@ -136,6 +145,13 @@ namespace MySecondWorld.Network
                 return;
             NetworkServer.AddPlayerForConnection(conn, player);
 
+            // 신규 플레이어에게만 시작 골드 지급 (재접속 시 중복 지급 방지)
+            if (session.isNewPlayer && _startingGoldItem != null)
+            {
+                var inventory = player.GetComponent<Cleverous.VaultInventory.Inventory>();
+                inventory?.DoAdd(new Cleverous.VaultInventory.RootItemStack(_startingGoldItem, _startingGoldAmount));
+            }
+
             session.currentScene = session.pendingSpawnScene;
             SceneManager.MoveGameObjectToScene(conn.identity.gameObject, _manager.GetServerScene(session.currentScene));
 
@@ -177,7 +193,8 @@ namespace MySecondWorld.Network
                         _saveManager.Save(session.playerId, new SaveData
                         {
                             lastSceneNames = new string[] { session.currentScene },
-                            lastPosition = posToSave
+                            lastPosition = posToSave,
+                            recruitedCompanionIds = session.recruitedCompanionIds
                         });
                     }
                 }
