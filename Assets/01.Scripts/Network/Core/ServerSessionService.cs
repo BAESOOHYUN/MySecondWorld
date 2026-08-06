@@ -161,7 +161,7 @@ namespace MySecondWorld.Network
             session.fallTimer = 0f;
             session.isSpawned = true;
 
-            // 첫 접속 시 씬이 던전인지 판별하여 roomId 배정
+            // 첫 접속 시 씬이 던전인지 판별하여 matchId ← roomId 배정
             if (_roomRegistry.IsDungeonScene(session.currentScene))
             {
                 var roomId = _roomRegistry.AssignRoom(session.currentScene, conn.connectionId);
@@ -172,6 +172,17 @@ namespace MySecondWorld.Network
             {
                 // session.roomId는 Guid.Empty 그대로 — 던전 방이 아니니까
                 conn.identity.GetComponent<NetworkMatch>().matchId = SceneMatchId.GetMatchIdFromScene(session.currentScene);
+            }
+
+            // 이미 영입된 companion 자동 재소환 (MVP("Minimum Viable Product"(최소 기능 제품)): 1마리만)
+            if (session.recruitedCompanionIds != null && session.recruitedCompanionIds.Length > 0)
+            {
+                var companionId = session.recruitedCompanionIds[0];
+                var prefab = _manager.GetCompanionPrefab(companionId);
+                if (prefab != null)
+                    SpawnCompanionFor(session, conn, prefab);
+                else
+                    Debug.LogWarning($"[Session] companionId '{companionId}'에 매칭되는 프리팹이 레지스트리에 없음");
             }
         }
 
@@ -199,6 +210,9 @@ namespace MySecondWorld.Network
                     }
                 }
 
+                if (session.companionIdentity != null)
+                    NetworkServer.Destroy(session.companionIdentity.gameObject);
+
                 // 2. 던전 룸 퇴장 — 방 슬롯 반환해야 다른 플레이어가 입장 가능
                 if (session.roomId != Guid.Empty)
                     _roomRegistry.LeaveRoom(session.currentScene, conn.connectionId);
@@ -212,5 +226,46 @@ namespace MySecondWorld.Network
                 Sessions.Remove(conn.connectionId);
             }
         }
+
+
+        #region 헬퍼
+
+        private void SpawnCompanionFor(PlayerSession session, NetworkConnectionToClient conn, GameObject prefab)
+        {
+            var companion = MySecondWorld.Network.Companion.CompanionFactory.Create(
+                prefab, conn.identity.transform.position, Quaternion.identity, conn.identity.transform);
+            if (companion == null) return;
+
+            session.companionIdentity = companion.GetComponent<NetworkIdentity>();
+            if (companion.TryGetComponent(out NetworkMatch companionMatch))
+                companionMatch.matchId = conn.identity.GetComponent<NetworkMatch>().matchId;
+        }
+
+        // 퀘스트/이벤트 시스템이 나중에 호출할 진입점 — "누가 언제 부르는지"는 이 메서드 책임 밖
+        private void RecruitCompanion(NetworkConnectionToClient conn, GameObject speciesPrefab, string companionId)
+        {
+            if (!Sessions.TryGetValue(conn.connectionId, out var session)) return;
+            if (session.companionIdentity != null) return; // MVP: 이미 있으면 무시
+            
+            SpawnCompanionFor(session, conn, speciesPrefab);
+            if (session.companionIdentity == null) return; // 스폰 실패
+
+            // recruitedCompanionIds는 "이 플레이어가 지금까지 영입한 companion들의 ID 목록"
+            var ids = session.recruitedCompanionIds ?? Array.Empty<string>();
+            if (System.Array.IndexOf(ids, companionId) < 0) // < 0은 "못 찾았다 = 아직 이 companionId가 목록에 없다"는 뜻
+            {
+                // (없을 때만) 배열을 하나 더 큰 걸로 새로 만듦
+                var newIds = new string[ids.Length + 1];
+                // 옛날 배열(ids)에 있던 값들을 새 배열(newIds)의 0번 자리부터 그대로 복사
+                // 예를 들어 ids가 ["Mowe"]였으면, newIds는 지금 ["Mowe", null](맨 뒤 한 칸은 아직 빈 자리) 상태
+                ids.CopyTo(newIds, 0);
+                // 새 값을 맨 끝자리에 넣기
+                newIds[ids.Length] = companionId;
+                //  세션에 반영
+                session.recruitedCompanionIds = newIds;
+            }
+        }
+
+        #endregion
     }
 }

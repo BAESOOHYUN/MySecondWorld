@@ -6,6 +6,7 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Mirror;
+using MySecondWorld.Combat.Companion; // ICompanionServerState
 
 namespace MySecondWorld.Network
 {
@@ -96,12 +97,20 @@ namespace MySecondWorld.Network
                 SceneManager.GetSceneByPath(sceneName));
             session.currentScene = sceneName;
 
+            // 플레이어 씬 이동 직후에 companion도 같은 씬으로 이동
+            if (session.companionIdentity != null)
+            {
+                SceneManager.MoveGameObjectToScene(
+                    session.companionIdentity.gameObject, SceneManager.GetSceneByPath(sceneName));
+            }
+
             // 던전 씬 진입/퇴장 분기 (matchId 갱신)
             UpdateDungeonMatch(conn, session, prevScene, sceneName);
         }
 
         // [S-Loop-1-b] 던전 진입/퇴장 시 matchId 갱신 (MatchInterestManagement가 matchId로 가시성 판단)
-        private void UpdateDungeonMatch(NetworkConnectionToClient conn, PlayerSession session, string prevScene, string sceneName)
+        private void UpdateDungeonMatch(
+            NetworkConnectionToClient conn, PlayerSession session, string prevScene, string sceneName)
         {
             var networkMatch = conn.identity.GetComponent<NetworkMatch>();
             if (networkMatch == null) return;
@@ -127,7 +136,21 @@ namespace MySecondWorld.Network
                 }
                 // 필드→필드, 던전→필드 모두 항상 갱신
                 networkMatch.matchId = SceneMatchId.GetMatchIdFromScene(sceneName);
+
+                // 필드 복귀 시 죽어있던 companion 부활
+                if (session.companionIdentity != null
+                    && session.companionIdentity.TryGetComponent(out ICompanionServerState companionState)
+                    && !companionState.IsAlive)
+                {
+                    companionState.Revive(conn.identity.transform.position);
+                }
             }
+
+            // companion matchId를 플레이어와 동일하게 맞춤
+            // DungeonRoomRegistry는 안 거침(정원 계산에서 제외, "방 인원 수(4)"에는 안 잡힘)
+            if (session.companionIdentity != null 
+                && session.companionIdentity.TryGetComponent(out NetworkMatch companionMatch))
+                companionMatch.matchId = networkMatch.matchId;
         }
 
         // [S-Loop-2] 낙하 복귀 텔레포트 (fallTimer >= 3초)

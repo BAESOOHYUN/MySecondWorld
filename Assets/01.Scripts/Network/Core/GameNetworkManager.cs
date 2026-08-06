@@ -28,7 +28,29 @@ namespace MySecondWorld.Network
         [Header("신규 플레이어 시작 지급")]
         [SerializeField] private RootItem _startingGoldItem;
         [SerializeField] private int _startingGoldAmount = 1000;
-        
+
+        [Header("동행 NPC")]
+        [SerializeField] private CompanionEntry[] _companionRegistry;
+
+        [System.Serializable]
+        public struct CompanionEntry
+        {
+            public string id;
+            public GameObject prefab;
+        }
+
+        public GameObject GetCompanionPrefab(string companionId)
+        {
+            if (_companionRegistry == null) return null;
+
+            foreach (var entry in _companionRegistry)
+            {
+                if (entry.id == companionId) 
+                    return entry.prefab;
+            }
+            return null;
+        }
+
         public bool ServerReady { get; private set; }    // 서버 씬 프리로드 완료 여부
         public CancellationTokenSource Cts { get; private set; }
 
