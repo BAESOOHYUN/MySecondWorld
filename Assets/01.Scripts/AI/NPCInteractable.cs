@@ -163,7 +163,7 @@ namespace MySecondWorld.AI
         private string _pendingInput;
         #endregion
 
-        #region 초기화 검증
+        #region 유니티 생명주기
         private void Awake()
         {
             _highlightUI?.SetActive(false);
@@ -193,17 +193,24 @@ namespace MySecondWorld.AI
             })
             .AddTo(destroyCancellationToken);
         }
-        #endregion
+        private void OnDisable()
+        {
+            _brain?.OnConversationEnded();
+            _dialogueUI?.Close();
+            _shopUI?.Close();
+            _menuUI?.Close();
+            _cts?.Cancel();
+            _cts?.Dispose();
+            _cts = null;
+            InitStateMachine(); // 나중에 다시 활성화(부활 등)될 때 Idle부터 깨끗하게 시작
+        }
 
-        #region 입력 등록
         private void OnDestroy()
         {
             _cts?.Cancel();
             _cts?.Dispose();
         }
-        #endregion
 
-        #region Trigger 감지
         private void OnTriggerEnter(Collider other)
         {
             if (!other.CompareTag("Player"))
@@ -249,6 +256,7 @@ namespace MySecondWorld.AI
                 .OnEntry(OnEnterMenu)
                 .OnExit(OnExitMenu)
                 .Permit(NpcTrigger.PlayerLeft, NpcState.Idle)
+                .Permit(NpcTrigger.Close, NpcState.InRange)
                 .Permit(NpcTrigger.SelectTalk, NpcState.Talking)
                 .Permit(NpcTrigger.SelectShop, NpcState.Shopping);
 
@@ -302,7 +310,8 @@ namespace MySecondWorld.AI
             _menuUI.Open();
             _menuUI.OnSelectTalk.Subscribe(_ => SafeFire(NpcTrigger.SelectTalk)).AddTo(_cts.Token);
             _menuUI.OnSelectShop.Subscribe(_ => SafeFire(NpcTrigger.SelectShop)).AddTo(_cts.Token);
-            
+            _menuUI.OnClose.Subscribe(_ => SafeFire(NpcTrigger.Close)).AddTo(_cts.Token);
+
             OnConversationStateChanged(true);
         }
 

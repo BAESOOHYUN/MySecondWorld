@@ -8,6 +8,7 @@ namespace MySecondWorld.AI
     {
         Observable<Unit> OnSelectTalk { get; }
         Observable<Unit> OnSelectShop { get; }
+        Observable<Unit> OnClose { get; }
         void Open();
         void Close();
     }
