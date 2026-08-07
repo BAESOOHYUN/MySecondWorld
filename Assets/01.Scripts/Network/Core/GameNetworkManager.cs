@@ -12,6 +12,8 @@ using VContainer;
 using Cleverous.VaultInventory;
 using MySecondWorld.Save;
 using MySecondWorld.Bundle;
+using MySecondWorld.Combat.Companion;
+
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -272,6 +274,35 @@ namespace MySecondWorld.Network
         public Scene GetServerScene(string sceneName) =>
             _serverSceneHandles.TryGetValue(sceneName, out var handle)
             ? handle.Result.Scene : SceneManager.GetSceneByPath(sceneName); //폴백
+
+        // 테스트용 — RecruitCompanion() 실제 인게임 진입점(퀘스트/이벤트)이 생기면 이 메서드는 삭제
+        public void DebugRecruitCompanion(NetworkConnectionToClient conn, string companionId)
+        {
+            var prefab = GetCompanionPrefab(companionId);
+            if (prefab == null)
+            {
+                Debug.LogWarning($"[Debug] companionId '{companionId}'에 매칭되는 프리팹이 레지스트리에 없음");
+                return;
+            }
+            _sessionService.RecruitCompanion(conn, prefab, companionId);
+        }
+
+        // 테스트용 — 부활 검증(죽음 → 필드 복귀)을 빨리 재현하기 위한 즉사 훅
+        public void DebugKillCompanion(NetworkConnectionToClient conn)
+        {
+            var session = _sessionService.Sessions[conn.connectionId];
+            if (session.companionIdentity == null) return;
+            if (session.companionIdentity.TryGetComponent(out ICompanionServerState serverState))
+                serverState.DebugKill();
+        }
+
+        public void DebugReviveCompanion(NetworkConnectionToClient conn)
+        {
+            var session = _sessionService.Sessions[conn.connectionId];
+            if (session.companionIdentity == null) return;
+            if (session.companionIdentity.TryGetComponent(out ICompanionServerState serverState))
+                serverState.Revive(conn.identity.transform.position);
+        }
     }
 }
 

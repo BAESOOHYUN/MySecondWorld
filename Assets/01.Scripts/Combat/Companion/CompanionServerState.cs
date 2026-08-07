@@ -6,7 +6,7 @@ namespace MySecondWorld.Combat.Companion
 {
     [RequireComponent(typeof(NetworkIdentity))]
     [RequireComponent(typeof(NetworkMatch))]
-    public class CompanionServerState : NetworkBehaviour
+    public class CompanionServerState : NetworkBehaviour, ICompanionServerState
     {
         [SyncVar(hook = nameof(OnAliveChanged))]
         private bool _isAlive = true;
@@ -51,10 +51,16 @@ namespace MySecondWorld.Combat.Companion
 
             // Warp 전에 먼저 켜야 NavMeshAgent가 동작함(Health.OnEnable()도 여기서 같이 실행돼 CurrentHP가 MaxHP로 리셋됨)
             this.gameObject.SetActive(true);
-            GetComponent<CompanionAI>().Warp(position);
+            var ai = GetComponent<CompanionAI>();
+            ai.Warp(position);
+            ai.ResetForRevive();
             _currentHP = _health.MaxHP;
             _isAlive = true;
         }
+
+        // 테스트용 즉사기 
+        [Server]
+        public void DebugKill() => GetComponent<Health>().TakeDamage(99999f);
 
         private void OnAliveChanged(bool _, bool newValue)
         {

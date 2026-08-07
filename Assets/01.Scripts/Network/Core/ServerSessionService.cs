@@ -236,13 +236,16 @@ namespace MySecondWorld.Network
                 prefab, conn.identity.transform.position, Quaternion.identity, conn.identity.transform);
             if (companion == null) return;
 
+            // 최초 스폰 시 씬 위치 동일하게 맞춤
+            SceneManager.MoveGameObjectToScene(companion, conn.identity.gameObject.scene);
+
             session.companionIdentity = companion.GetComponent<NetworkIdentity>();
             if (companion.TryGetComponent(out NetworkMatch companionMatch))
                 companionMatch.matchId = conn.identity.GetComponent<NetworkMatch>().matchId;
         }
 
         // 퀘스트/이벤트 시스템이 나중에 호출할 진입점 — "누가 언제 부르는지"는 이 메서드 책임 밖
-        private void RecruitCompanion(NetworkConnectionToClient conn, GameObject speciesPrefab, string companionId)
+        public void RecruitCompanion(NetworkConnectionToClient conn, GameObject speciesPrefab, string companionId)
         {
             if (!Sessions.TryGetValue(conn.connectionId, out var session)) return;
             if (session.companionIdentity != null) return; // MVP: 이미 있으면 무시

@@ -45,7 +45,7 @@ namespace MySecondWorld.Combat.Companion
 
         private static readonly int AttackTrigger = Animator.StringToHash(nameof(AttackTrigger));
         private static readonly int DeathTrigger = Animator.StringToHash(nameof(DeathTrigger));
-        private static readonly int MonsterLayer = LayerMask.NameToLayer("Monster");
+        private int _monsterLayer;
 
         private NavMeshAgent _agent;
         private Health _health;
@@ -84,6 +84,7 @@ namespace MySecondWorld.Combat.Companion
             _agent.speed = _stats.MoveSpeed;
             _detectionTrigger.isTrigger = true;
             _detectionTrigger.radius = _stats.DetectRange;
+            _monsterLayer = LayerMask.NameToLayer("Monster");
 
             InitStateMachine();
         }
@@ -118,7 +119,7 @@ namespace MySecondWorld.Combat.Companion
 
         private void OnTriggerEnter(Collider other)
         {
-            if (other.gameObject.layer != MonsterLayer) return;
+            if (other.gameObject.layer != _monsterLayer) return;
             if (_stateMachine.State != CompanionState.Follow) return;
             _target = other.transform;
             SafeFire(CompanionTrigger.MonsterDetected);
@@ -144,6 +145,13 @@ namespace MySecondWorld.Combat.Companion
         {
             if (!_agent.Warp(position))
                 Debug.LogWarning($"[CompanionAI] Warp 실패 — position이 NavMesh 밖에 있을 수 있음 on {gameObject.name}", this);
+        }
+
+        // CompanionServerState.Revive()가 부활 시 호출 — Dead에서 못 빠져나오는 상태머신을 통째로 재초기화
+        public void ResetForRevive()
+        {
+            InitStateMachine();
+            _agent.isStopped = _followPaused;
         }
 
         #endregion
