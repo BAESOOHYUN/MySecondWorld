@@ -25,6 +25,8 @@ public class ProjectLifetimeScope : LifetimeScope
     [SerializeField] private CharacterAppearanceSO _defaultAppearanceSO;
     protected override void Configure(IContainerBuilder builder)
     {
+        ServerModeFlag.Set(_useServerMode);
+
         var options = builder.RegisterMessagePipe(o => o.InstanceLifetime = InstanceLifetime.Singleton);
         builder.RegisterMessageBroker<AuthStateChangedEvent>(options);
         builder.RegisterMessageBroker<CharacterAppearanceSavedEvent>(options);
