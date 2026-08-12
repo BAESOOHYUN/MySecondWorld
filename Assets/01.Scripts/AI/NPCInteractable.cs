@@ -42,32 +42,6 @@ namespace MySecondWorld.AI
         #endregion
 
         #region 전이 그래프
-        // Idle
-        //   + PlayerEntered → InRange
-        //
-        // InRange
-        //   + PlayerLeft    → Idle
-        //   + Interact      → Menu
-        //
-        // Menu
-        //   + PlayerLeft    → Idle
-        //   + SelectTalk    → Talking
-        //   + SelectShop    → Shopping
-        //
-        // Talking (기존과 동일, Menu를 거쳐 들어옴)
-        //   + PlayerLeft    → Idle (강제 종료)
-        //   + Close         → Idle
-        //   + Submit        → Generating
-        //
-        // Generating (기존과 동일)
-        //   + ResponseReceived → Talking
-        //   + PlayerLeft       → Idle (응답 기다리다 강제 종료)
-        //   + Close            → Idle (응답 기다리다 취소)
-        //
-        // Shopping
-        //   + Close         → InRange
-        //   + PlayerLeft    → InRange
-
         //   [Idle]
         //      | PlayerEntered
         //      v
@@ -89,14 +63,12 @@ namespace MySecondWorld.AI
         //--→[Generating]
         //      | ResponseReceived → Talking
         //      | PlayerLeft / Close → Idle
-
         #endregion
 
-        #region 필드
+        #region 필드 — Inspector 참조
         [Header("References")]
         [SerializeField] private NPCBrain _brain;       // GUID 소스로만 사용
         [SerializeField] private GameObject _highlightUI; // 범위 진입 시 표시할 하이라이트 오브젝트
-        private INPCMenuUI _menuUI;
 
         [Header("상점")]
         [Tooltip("이 NPC가 판매하는 아이템 목록 — 비워두면 상점 선택 시 빈 카탈로그가 열림")]
@@ -105,10 +77,24 @@ namespace MySecondWorld.AI
         [Header("NPC Interaction")]
         [Tooltip("NPC 레이어마스크 — 'NPC' 레이어를 지정하세요")]
         [SerializeField] private LayerMask _npcLayerMask;
+        #endregion
+
+        #region 필드 — 주입 의존성
+        [Inject] private TouchEventListener _touchEventListener; 
+        private readonly RaycastHit[] _clickHitsBuffer = new RaycastHit[4]; // 한 클릭에 겹칠 수 있는 NPC 수 상한
+        private INPCMenuUI _menuUI;
         private INPCDialogueUI _dialogueUI;
         private IShopUI _shopUI;
+        private IPublisher<string, PlayerMessageSentEvent> _messagePub;
+        #endregion
 
-        [Inject] private TouchEventListener _touchEventListener;
+        #region 필드 — 상태
+        private StateMachine<NpcState, NpcTrigger> _stateMachine;
+        private static NPCInteractable s_activeInteraction; // 지금 공유 UI(Menu/Dialogue/Shop)를 차지하고 있는 NPC — 전역 공유
+        private CancellationTokenSource _cts;
+        private string _pendingInput;      // Submit 시 입력 텍스트를 임시 저장(Generating 진입 시 꺼내 씀)
+        private bool _playerInProximity;   // 플레이어가 지금 물리적으로 범위 안에 있는지(ForceReset 후 즉시 복구용)
+        #endregion
 
         // GUID는 NPCBrain → SystemPromptSO에서 읽는다
         private string NpcGuid
@@ -124,7 +110,7 @@ namespace MySecondWorld.AI
             }
         }
 
-        private IPublisher<string, PlayerMessageSentEvent> _messagePub;
+        #region 유니티 생명주기
         // MessagePipe 방식에선 응답 완료 시점을 NPCInteractable이 직접 알 수 없다.
         // 해결책: NPCResponseReceivedEvent를 NPCInteractable도 구독한다.
         // 응답이 도착하면 상태 머신을 ResponseReceived-> Talking으로 전이시킨다.
@@ -147,23 +133,12 @@ namespace MySecondWorld.AI
                     if (evt.NpcGuid != NpcGuid)
                         return;
                     // 내부 로직이므로 Fire() (SafeFire가 아님)
-                    if (_stateMachine.CanFire(NpcTrigger.ResponseReceived)) // 지금 상태에서 그 트리거를 처리할 수 있는 전이가 정의되어 있는지 확인
-                        _stateMachine.Fire(NpcTrigger.ResponseReceived); // 실제로 트리거를 발동시켜 상태 전환을 수행
+                    if (_stateMachine.CanFire(NpcTrigger.ResponseReceived))
+                        _stateMachine.Fire(NpcTrigger.ResponseReceived);
                 })
                 .AddTo(destroyCancellationToken);
         }
 
-        private StateMachine<NpcState, NpcTrigger> _stateMachine;
-        private CancellationTokenSource _cts;
-        #endregion
-
-        #region 캐싱
-        // Submit 시 입력 텍스트를 상태머신에 직접 전달하기 복잡하므로,
-        // 임시 필드(_pendingInput)에 저장해두고 Generating 진입 시 꺼내 사용한다.
-        private string _pendingInput;
-        #endregion
-
-        #region 유니티 생명주기
         private void Awake()
         {
             _highlightUI?.SetActive(false);
@@ -185,44 +160,54 @@ namespace MySecondWorld.AI
                     return;
 
                 Ray ray = Camera.main.ScreenPointToRay(screenPos);
-                if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, _npcLayerMask, QueryTriggerInteraction.Collide))
+                int hitCount = Physics.RaycastNonAlloc(ray, _clickHitsBuffer, Mathf.Infinity, _npcLayerMask, QueryTriggerInteraction.Collide);
+                if (hitCount == 0)
+                    return;
+
+                // 레이에 닿은 후보들 중, 실제 클릭 지점(화면 좌표)에 가장 가까운 NPC를 고른다
+                NPCInteractable closest = null;
+                float closestScreenDist = float.MaxValue;
+                for (int i = 0; i < hitCount; i++)
                 {
-                    var npc = hit.collider.GetComponentInParent<NPCInteractable>();
-                    npc?.Interact();
+                    var candidate = _clickHitsBuffer[i].collider.GetComponentInParent<NPCInteractable>();
+                    if (candidate == null) continue;
+
+                    Vector2 candidateScreenPos = Camera.main.WorldToScreenPoint(candidate.transform.position);
+                    float dist = Vector2.Distance(candidateScreenPos, screenPos);
+                    if (dist < closestScreenDist)
+                    {
+                        closestScreenDist = dist;
+                        closest = candidate;
+                    }
                 }
+
+                closest?.Interact();
             })
             .AddTo(destroyCancellationToken);
         }
-        private void OnDisable()
-        {
-            _brain?.OnConversationEnded();
-            _dialogueUI?.Close();
-            _shopUI?.Close();
-            _menuUI?.Close();
-            _cts?.Cancel();
-            _cts?.Dispose();
-            _cts = null;
-            InitStateMachine(); // 나중에 다시 활성화(부활 등)될 때 Idle부터 깨끗하게 시작
-        }
+
+        private void OnDisable() => ForceReset();
 
         private void OnDestroy()
         {
             _cts?.Cancel();
             _cts?.Dispose();
         }
+        #endregion
 
-        private void OnTriggerEnter(Collider other)
+        #region Trigger 감지 (TriggerRelay가 자식 오브젝트에서 대신 받아서 호출)
+        public void HandlePlayerTriggerEnter(Collider other)
         {
-            if (!other.CompareTag("Player"))
-                return;
+            if (!other.CompareTag("Player")) return;
+            _playerInProximity = true;
             _highlightUI?.SetActive(true);
             SafeFire(NpcTrigger.PlayerEntered);
         }
 
-        private void OnTriggerExit(Collider other)
+        public void HandlePlayerTriggerExit(Collider other)
         {
-            if (!other.CompareTag("Player"))
-                return;
+            if (!other.CompareTag("Player")) return;
+            _playerInProximity = false;
             _highlightUI?.SetActive(false);
             SafeFire(NpcTrigger.PlayerLeft);
         }
@@ -282,7 +267,7 @@ namespace MySecondWorld.AI
 
             // 전이 로그 (디버그용)
             _stateMachine.OnTransitioned(t =>
-                Debug.Log($"[NPCInteractable] {t.Source} → {t.Destination} ({t.Trigger})"));
+                Debug.Log($"[NPCInteractable] {name}: {t.Source} → {t.Destination} ({t.Trigger})", this));
         }
         #endregion
 
@@ -291,6 +276,9 @@ namespace MySecondWorld.AI
         // Idle 진입 시 항상 정리
         private void OnEnterIdle()
         {
+            if (s_activeInteraction == this)
+                s_activeInteraction = null;
+
             _brain?.OnConversationEnded();  // _cts.Cancel() 전 — destroyCancellationToken 살아있어야 함
             _cts?.Cancel();
             _cts?.Dispose();
@@ -303,6 +291,11 @@ namespace MySecondWorld.AI
 
         private void OnEnterMenu()
         {
+            // 새 NPC가 Menu에 진입하는 순간, 이전에 활성화돼있던 다른 NPC를 강제로 정리
+            if (s_activeInteraction != null && s_activeInteraction != this)
+                s_activeInteraction.ForceReset();
+            s_activeInteraction = this;
+
             _cts?.Cancel();
             _cts?.Dispose();
             _cts = new CancellationTokenSource();
@@ -363,7 +356,6 @@ namespace MySecondWorld.AI
             _pendingInput = null;
         }
 
-
         // Shopping은 진입 경로가 SelectShop 하나뿐이라 항상 cts를 새로 만든다.
         // 나가면(Close/PlayerLeft → InRange) OnEnterIdle이 InRange의 OnEntry로도 걸려있어 cts 정리 + _shopUI.Close()까지 같이 처리된다.
         private void OnEnterShopping()
@@ -381,7 +373,26 @@ namespace MySecondWorld.AI
         // companion이 대화 중에 딴 데로 걸어가버리는 걸 막기 위한 훅
         // "대화창이 열려있냐/닫혀있냐" 라는 UI 레벨 상태로, 이걸 CompanionAI한테 알려줘서 이동을 잠깐 멈추게 하는 용도
         protected virtual void OnConversationStateChanged(bool paused) { }
-        
+
+        // 다른 NPC가 공유 UI를 새로 차지할 때(s_activeInteraction 경유), 또는 자기 자신이 비활성화될 때(OnDisable) 호출되는 강제 정리
+        public void ForceReset()
+        {
+            if (s_activeInteraction == this)
+                s_activeInteraction = null;
+
+            _brain?.OnConversationEnded();
+            _dialogueUI?.Close();
+            _shopUI?.Close();
+            _menuUI?.Close();
+            _cts?.Cancel();
+            _cts?.Dispose();
+            _cts = null;
+            InitStateMachine(); // Idle부터 깨끗하게 재시작
+
+            if (_playerInProximity)
+                SafeFire(NpcTrigger.PlayerEntered); // 플레이어가 계속 범위 안에 있었으면 즉시 InRange로 복귀
+        }
+
         #endregion
 
         #region 입력 처리
@@ -421,7 +432,7 @@ namespace MySecondWorld.AI
             if (_stateMachine.CanFire(trigger))
                 _stateMachine.Fire(trigger);
             else
-                Debug.Log($"[NPCInteractable] 전이 무시: {_stateMachine.State} + {trigger}");
+                Debug.Log($"[NPCInteractable] {name}: 전이 무시: {_stateMachine.State} + {trigger}", this);
         }
         #endregion
     }
