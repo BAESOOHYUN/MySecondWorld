@@ -58,6 +58,14 @@ namespace MySecondWorld.Combat.Companion
             _isAlive = true;
         }
 
+        [Server]
+        public void ToggleFollowPaused()
+        {
+            var ai = GetComponent<CompanionAI>();
+            if (ai.IsFollowPaused) ai.ResumeFollow();
+            else ai.PauseFollow();
+        }
+
         // 테스트용 즉사기 
         [Server]
         public void DebugKill() => GetComponent<Health>().TakeDamage(99999f);

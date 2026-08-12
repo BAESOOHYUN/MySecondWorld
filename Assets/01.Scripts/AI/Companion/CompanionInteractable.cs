@@ -8,7 +8,7 @@ namespace MySecondWorld.AI.Companion
 
         public override void Interact()
         {
-            if (_companionAI != null && _companionAI.IsInCombat)
+            if (_companionAI != null && (_companionAI.IsInCombat || _companionAI.IsOwnerInCombat))
                 return;
 
             base.Interact();

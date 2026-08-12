@@ -45,6 +45,7 @@ namespace MySecondWorld.Combat.Companion
 
         private static readonly int AttackTrigger = Animator.StringToHash(nameof(AttackTrigger));
         private static readonly int DeathTrigger = Animator.StringToHash(nameof(DeathTrigger));
+        private static readonly int Speed = Animator.StringToHash(nameof(Speed));
         private int _monsterLayer;
 
         private NavMeshAgent _agent;
@@ -60,6 +61,9 @@ namespace MySecondWorld.Combat.Companion
         public bool IsInCombat =>
             _stateMachine != null &&
             (_stateMachine.State == CompanionState.Chase || _stateMachine.State == CompanionState.Attack);
+        public bool IsOwnerInCombat =>
+            _owner != null && _owner.TryGetComponent(out PlayerAttackController attackController) && attackController.IsInCombat;
+        public bool IsFollowPaused => _followPaused;
 
         #endregion
 
@@ -102,6 +106,7 @@ namespace MySecondWorld.Combat.Companion
         private void Update()
         {
             if (_owner == null) return;
+            _animator.SetFloat(Speed, _agent.velocity.magnitude);
 
             switch (_stateMachine.State)
             {
@@ -116,15 +121,6 @@ namespace MySecondWorld.Combat.Companion
                     break;
             }
         }
-
-        private void OnTriggerEnter(Collider other)
-        {
-            if (other.gameObject.layer != _monsterLayer) return;
-            if (_stateMachine.State != CompanionState.Follow) return;
-            _target = other.transform;
-            SafeFire(CompanionTrigger.MonsterDetected);
-        }
-
         #endregion
 
         #region 팩토리 초기화
@@ -296,6 +292,15 @@ namespace MySecondWorld.Combat.Companion
             if (!_stateMachine.CanFire(trigger)) return false;
             _stateMachine.Fire(trigger);
             return true;
+        }
+
+        // 자식 오브젝트(몬스터 감지 전용 콜라이더, NPC 레이어와 분리)의 트리거 이벤트를 TriggerRelay가 대신 받아서 전달
+        public void HandleDetectionTriggerEnter(Collider other)
+        {
+            if (other.gameObject.layer != _monsterLayer) return;
+            if (_stateMachine.State != CompanionState.Follow) return;
+            _target = other.transform;
+            SafeFire(CompanionTrigger.MonsterDetected);
         }
 
         #endregion

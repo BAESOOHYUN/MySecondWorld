@@ -23,6 +23,11 @@ namespace MySecondWorld.Combat
         [SerializeField] private float _unarmedAttack = 10f; // 무기 미장착(맨주먹) 시 기본 공격력
         [SerializeField] private LayerMask _targetLayerMask;
 
+        [Header("전투 상태")]
+        [SerializeField] private float _combatStateDuration = 3f; // 마지막 공격 후 이 시간 동안 "전투 중"으로 간주
+        private float _lastAttackTime = float.NegativeInfinity;
+        public bool IsInCombat => Time.time - _lastAttackTime < _combatStateDuration;
+
         [Header("쿨다운")]
         [SerializeField] private float _attackCooldown = 0.8f;
 
@@ -73,6 +78,7 @@ namespace MySecondWorld.Combat
             if (Time.time < _nextAttackTime) return;
 
             _nextAttackTime = Time.time + _attackCooldown;
+            _lastAttackTime = Time.time;
             _animationController.HandleAttack();
         }
 

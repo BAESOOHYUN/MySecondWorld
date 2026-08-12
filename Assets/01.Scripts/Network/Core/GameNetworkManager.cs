@@ -290,7 +290,7 @@ namespace MySecondWorld.Network
         // 테스트용 — 부활 검증(죽음 → 필드 복귀)을 빨리 재현하기 위한 즉사 훅
         public void DebugKillCompanion(NetworkConnectionToClient conn)
         {
-            var session = _sessionService.Sessions[conn.connectionId];
+            if (!_sessionService.Sessions.TryGetValue(conn.connectionId, out var session)) return;
             if (session.companionIdentity == null) return;
             if (session.companionIdentity.TryGetComponent(out ICompanionServerState serverState))
                 serverState.DebugKill();
@@ -298,10 +298,18 @@ namespace MySecondWorld.Network
 
         public void DebugReviveCompanion(NetworkConnectionToClient conn)
         {
-            var session = _sessionService.Sessions[conn.connectionId];
+            if (!_sessionService.Sessions.TryGetValue(conn.connectionId, out var session)) return;
             if (session.companionIdentity == null) return;
             if (session.companionIdentity.TryGetComponent(out ICompanionServerState serverState))
                 serverState.Revive(conn.identity.transform.position);
+        }
+
+        public void DebugToggleCompanionFollow(NetworkConnectionToClient conn)
+        {
+            if (!_sessionService.Sessions.TryGetValue(conn.connectionId, out var session)) return;
+            if (session.companionIdentity == null) return;
+            if (session.companionIdentity.TryGetComponent(out ICompanionServerState serverState))
+                serverState.ToggleFollowPaused();
         }
     }
 }

@@ -18,11 +18,12 @@ namespace MySecondWorld.Network.Companion
         private void Update()
         {
             if (!_isReady) return;
+            if (Keyboard.current.f8Key.wasPressedThisFrame)
+                CmdToggleCompanionFollow();
             if (Keyboard.current.f9Key.wasPressedThisFrame)
                 CmdRecruitDebugCompanion("Ari");
             if (Keyboard.current.f10Key.wasPressedThisFrame)
                 CmdKillDebugCompanion();
-
             if (Keyboard.current.f11Key.wasPressedThisFrame)
                 CmdReviveDebugCompanion();
         }
@@ -46,6 +47,13 @@ namespace MySecondWorld.Network.Companion
         {
             var manager = (GameNetworkManager)NetworkManager.singleton;
             manager.DebugReviveCompanion(connectionToClient);
+        }
+
+        [Command]
+        private void CmdToggleCompanionFollow()
+        {
+            var manager = (GameNetworkManager)NetworkManager.singleton;
+            manager.DebugToggleCompanionFollow(connectionToClient);
         }
     }
 }
