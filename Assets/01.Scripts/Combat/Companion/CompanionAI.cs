@@ -147,7 +147,7 @@ namespace MySecondWorld.Combat.Companion
         public void ResetForRevive()
         {
             InitStateMachine();
-            _agent.isStopped = _followPaused;
+            SetAgentStopped(_followPaused);
         }
 
         #endregion
@@ -159,18 +159,18 @@ namespace MySecondWorld.Combat.Companion
             _stateMachine = new StateMachine<CompanionState, CompanionTrigger>(CompanionState.Follow, FiringMode.Queued);
 
             _stateMachine.Configure(CompanionState.Follow)
-                .OnEntry(() => _agent.isStopped = _followPaused)
+                .OnEntry(() => SetAgentStopped(_followPaused))
                 .Permit(CompanionTrigger.MonsterDetected, CompanionState.Chase)
                 .Permit(CompanionTrigger.Died, CompanionState.Dead);
 
             _stateMachine.Configure(CompanionState.Chase)
-                .OnEntry(() => { _agent.isStopped = false; _agent.updateRotation = true; })
+                .OnEntry(() => { SetAgentStopped(false); _agent.updateRotation = true; })
                 .Permit(CompanionTrigger.MonsterLost, CompanionState.Follow)
                 .Permit(CompanionTrigger.TargetInRange, CompanionState.Attack)
                 .Permit(CompanionTrigger.Died, CompanionState.Dead);
 
             _stateMachine.Configure(CompanionState.Attack)
-                .OnEntry(() => _agent.isStopped = true)
+                .OnEntry(() => SetAgentStopped(true))
                 .Permit(CompanionTrigger.TargetOutOfRange, CompanionState.Chase)
                 .Permit(CompanionTrigger.Died, CompanionState.Dead);
 
@@ -191,7 +191,7 @@ namespace MySecondWorld.Combat.Companion
             if (Vector3.Distance(_owner.position, _lastFollowTarget) < FollowRecalcThreshold) return;
 
             _lastFollowTarget = _owner.position;
-            _agent.SetDestination(_owner.position); // owner 위치로 이동
+            SetAgentDestination(_owner.position); // owner 위치로 이동
         }
 
         private void UpdateChase()
@@ -202,7 +202,7 @@ namespace MySecondWorld.Combat.Companion
                 return;
             }
 
-            _agent.SetDestination(_target.position);
+            SetAgentDestination(_target.position);
             float distance = Vector3.Distance(transform.position, _target.position);
             if (distance <= _stats.AttackRange)
                 SafeFire(CompanionTrigger.TargetInRange);
@@ -247,14 +247,14 @@ namespace MySecondWorld.Combat.Companion
         {
             _followPaused = true;
             if (_stateMachine.State == CompanionState.Follow)
-                _agent.isStopped = true;
+                SetAgentStopped(true);
         }
 
         public void ResumeFollow()
         {
             _followPaused = false;
             if (_stateMachine.State == CompanionState.Follow)
-                _agent.isStopped = false;
+                SetAgentStopped(false);
         }
 
         #endregion
@@ -265,7 +265,7 @@ namespace MySecondWorld.Combat.Companion
 
         private void HandleEnterDead()
         {
-            _agent.isStopped = true;
+            SetAgentStopped(true);
             PlayDeathSequence().Forget();
         }
 
@@ -303,6 +303,17 @@ namespace MySecondWorld.Combat.Companion
             SafeFire(CompanionTrigger.MonsterDetected);
         }
 
+        // NavMeshAgent가 지형에 파묻히는 등으로 NavMesh 밖에 있을 때 isStopped/SetDestination을 호출하면
+        // "Resume can only be called on an active agent that has been placed on a NavMesh" 예외가 남 — 방어
+        private void SetAgentStopped(bool stopped)
+        {
+            if (_agent.isOnNavMesh) _agent.isStopped = stopped;
+        }
+
+        private void SetAgentDestination(Vector3 destination)
+        {
+            if (_agent.isOnNavMesh) _agent.SetDestination(destination);
+        }
         #endregion
     }
 }
