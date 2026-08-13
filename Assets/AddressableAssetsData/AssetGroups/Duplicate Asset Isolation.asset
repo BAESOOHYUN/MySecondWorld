@@ -1,0 +1,413 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Duplicate Asset Isolation
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: Duplicate Asset Isolation
+  m_GUID: 8c9bc74871f866c41b8cf89a32965805
+  m_SerializeEntries:
+  - m_GUID: 0064c986094c87041827a3cf3b60c917
+    m_Address: Assets/Models/PolygonDungeon/Models/CollisionConvex/SM_Env_Rock_Rectangle_08_Convex.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 038320a534bd8b444b43734860d1a211
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Models/ModularCharacters.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 04ab6b691310c81478551a35432ad6cb
+    m_Address: Assets/Models/PolygonDungeon/Models/CollisionConvex/SM_Env_RockPile_Rounded_01_Convex.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0574116a7188c654ab34fcd54a2d0ecc
+    m_Address: Assets/Models/PolygonDungeon/Materials/Dungeon_Material_02.mat
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 08617ef5fe30afb47bbbda21f76b2ee5
+    m_Address: Assets/Models/PolygonDungeon/Models/CollisionConvex/SM_Prop_Goblin_Spikes_04_Convex.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0cdd78d0852bde7469df84cc43da2cda
+    m_Address: Assets/Models/PolygonDungeon/Models/SM_Prop_Goblin_Spikes_04.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0dfe3ab5ab1251f43b4102b6dbd1725b
+    m_Address: Assets/Models/PolygonDungeon/Models/SM_Env_Entrance_Dirt_01.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0f4064e95661ff748a8bb70fff3ab929
+    m_Address: Assets/Models/PolygonDungeon/Models/SM_Env_Fence_Metal_Spikes_01.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 11e7dbe8ec708764d876102a93894d55
+    m_Address: Assets/Models/PolygonDungeon/Models/CollisionConvex/SM_Wep_Banner_05_Convex.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1662c5fdc33df5140a04fcc8d7e175c5
+    m_Address: Assets/Models/PolygonDungeon/Models/SM_Env_Rock_Rectangle_08.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 17f39f0c3806ad2438eaa0f8c0371e45
+    m_Address: Assets/Models/PolygonDungeon/Models/CollisionConvex/SM_Env_RockPile_Rounded_02_Convex.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1b5a637a2abea174d9aff7195a85a687
+    m_Address: Assets/Models/PolygonDungeon/Models/SM_Wep_Greatsword_Straight_01.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1edc04d18e562674fbd6d001fc0a636a
+    m_Address: Assets/Models/PolygonDungeon/Models/SM_Env_Tiles_04.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 24b7fe3ac6774f445a118f057e3eaaae
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Textures/Masks/PolygonFantasyHero_Texture_Mask_05.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 34bce3c786a0b6346a44587a7dabeca6
+    m_Address: Assets/Models/PolygonDungeon/Models/SM_Wep_HandAxe_01.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 36e335017ad71d54fbb10842863188ae
+    m_Address: Packages/com.unity.render-pipelines.core/Runtime/RenderPipelineResources/FallbackShader.shader
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 39047e10d197b034eae1d4bc4f90313f
+    m_Address: Assets/Models/PolygonDungeon/Models/SM_Wep_BrokenSword_01.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3d08e7b2590a6e04b94ff909910ecea2
+    m_Address: Assets/Models/PolygonDungeon/Models/SM_Env_Rock_Flat_06.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4005043fea3574d4baa999bc147d97f2
+    m_Address: Assets/Models/PolygonDungeon/Models/SM_Prop_Goblin_Spikes_01.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 42b64fdb315e3054ea757d8d1c4bcfa7
+    m_Address: Assets/Models/PolygonDungeon/Materials/Dungeon_Material_01.mat
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 448d3d8b1beb4a249b906c736d1bbbbc
+    m_Address: Assets/Models/PolygonDungeon/Models/CollisionConvex/SM_Prop_Goblin_Spikes_01_Convex.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 49123ea06040fdb4e86c6fb0b4288c09
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Textures/Masks/PolygonFantasyHero_Texture_Mask_04.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4a31887e3b64b2d4bbc64351abe099e2
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Shaders/POLYGON_CustomCharacters_URP.shadergraph
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4bbb2f057a2e93944a53c3527c9dd94e
+    m_Address: Assets/Models/PolygonDungeon/Models/SM_Env_CrackedRock_01.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4d2aa66f9d16bf644aeced5c66a39109
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Textures/Masks/PolygonFantasyHero_Texture_Mask_01.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4defd012a08212345b354f1eeb2a3704
+    m_Address: Assets/Models/PolygonDungeon/Models/SM_Env_Rock_Flat_02.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5d7790c8dc24c7f4087a37c492c585cd
+    m_Address: Assets/Models/PolygonDungeon/Models/SM_Env_Rock_Flat_01.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 60b2a7f7020b3204c88877411d4c6fb5
+    m_Address: Assets/Models/PolygonDungeon/Models/CollisionConvex/SM_Wep_BrokenSword_01_Convex.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6ad547dc06f7b0b429181338d87a85f5
+    m_Address: Assets/Models/PolygonDungeon/Models/CollisionConvex/SM_Prop_Goblin_Spikes_02_Convex.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6b92aee661d2ee64cbbae3a0e1b228f4
+    m_Address: Assets/Models/PolygonDungeon/Models/SM_Env_Rock_Flat_03.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6d22f6fbbfeddf649a05be61f452e040
+    m_Address: Assets/Models/PolygonDungeon/Models/CollisionConvex/SM_Env_Fence_Metal_Spikes_01_Convex.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6f510652c8960614f8c48c9f8c6a9a1c
+    m_Address: Assets/Models/PolygonDungeon/Models/SM_Wep_Banner_04.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 73a29315b5e2f7b469e4115de7cf8c58
+    m_Address: Assets/Models/PolygonDungeon/Models/CollisionConvex/SM_Wep_Spear_02_Convex.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 76bcfda0a40b45b4f990dd4dbf951c29
+    m_Address: Assets/Models/PolygonDungeon/Models/SM_Wep_Banner_05.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7b67d90977497b24c890fe89d3a17e05
+    m_Address: Assets/Models/PolygonDungeon/Models/SM_Wep_Shield_Skull_01.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7dd0476daa9e82447856b542d1d238eb
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Textures/Textures/PolygonFantasyHero_Texture_01_A.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7fb7ea1852c2eec42be4b24bd2fcfaea
+    m_Address: Assets/Models/PolygonDungeon/Models/CollisionCustom/SM_Env_Entrance_Crypt_01_Collision.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8153ff91c8b7c6c4ca02b27c13ec43df
+    m_Address: Assets/Models/PolygonDungeon/Models/SM_Env_Wall_01.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 82dbd7e056798da4db4958fc7dc79cd1
+    m_Address: Assets/Models/PolygonDungeon/Models/SM_Env_Entrance_Crypt_02.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 83c8563e287501f4997504c772dd2387
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Textures/Masks/PolygonFantasyHero_Texture_Mask_03.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8853b485feca9f84c86d745635a2f5ee
+    m_Address: Assets/Models/PolygonDungeon/Models/CollisionConvex/SM_Wep_Greatsword_Straight_01_Convex.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8c7dd9c3365f19d4c995f92c3932d3c9
+    m_Address: Assets/Models/PolygonDungeon/Textures/Emmisive/Emmisive_02.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8de7a266236fac948bc21a174bdb4dcb
+    m_Address: Assets/Models/PolygonDungeon/Models/CollisionConvex/SM_Prop_Goblin_Spikes_03_Convex.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 900efcc743872814c8925c2117b7568d
+    m_Address: Assets/Models/PolygonDungeon/Models/SM_Env_RockPile_Rounded_02.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 91ec928f471bba747ad8c1a981051402
+    m_Address: Assets/Models/PolygonDungeon/Textures/Emmisive/Emmisive_01.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 933532a4fcc9baf4fa0491de14d08ed7
+    m_Address: Packages/com.unity.render-pipelines.universal/Shaders/Lit.shader
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9494e94d0ebe78f44978bcf3e914dc18
+    m_Address: Assets/Models/PolygonDungeon/Models/CollisionConvex/SM_Wep_Banner_04_Convex.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 97696996785d8c247a0f241f7b5add76
+    m_Address: Assets/Models/PolygonDungeon/Models/SM_Wep_Spear_02.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9e385948ee5f4ea4890585f68e12e431
+    m_Address: Assets/Models/PolygonDungeon/Models/SM_Wep_Hammer_Small_01.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: aaec033cb99795e4a94b548bd31def1a
+    m_Address: Assets/Models/PolygonDungeon/Models/CollisionConvex/SM_Wep_Banner_03_Convex.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b24b57e0cfed05643be34b0256df875e
+    m_Address: Assets/Models/PolygonDungeon/Textures/Dungeons_Texture_01.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b726c726944d7e2479236c22c23009ce
+    m_Address: Assets/Models/PolygonDungeon/Models/SM_Wep_Axe_01.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b8d8f0f13772c374d8d6354900c44e30
+    m_Address: Assets/Models/PolygonDungeon/Textures/Misc/Dungeons_Crystal_Metallic.tif
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: badd767e3563b6e4190930d629760a8d
+    m_Address: Assets/Models/PolygonDungeon/Models/CollisionConvex/SM_Env_Tree_Twisted_02_Convex.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: bf5d9044930ddc94f8aac4c670130fd7
+    m_Address: Assets/Models/PolygonDungeon/Models/CollisionConvex/SM_Wep_Axe_01_Convex.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: bfedc0212f3a9074b98f3789de5ee652
+    m_Address: Assets/Models/PolygonDungeon/Models/SM_Env_BonePile_Small_02.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c38e25d47ad295f498aeefd124008345
+    m_Address: Assets/Models/PolygonDungeon/Models/CollisionConvex/SM_Wep_HandAxe_01_Convex.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c5e825c8e925bc943945b4168ee1d2de
+    m_Address: Assets/Models/PolygonDungeon/Models/CollisionConvex/SM_Env_BonePile_Small_02_Convex.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cb3884391d9ac3e4e92efba0b92d8e67
+    m_Address: Assets/Models/PolygonDungeon/Models/SM_Env_Stairs_02.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cebc4b3d84a0e2d4a98474c6be92b303
+    m_Address: Assets/Models/PolygonDungeon/Models/CollisionCustom/SM_Env_Stairs_02_Collision.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d0ea5df7c5a0f7a4a8a9d98484b9e00c
+    m_Address: Assets/Models/PolygonDungeon/Models/CollisionConvex/SM_Wep_Hammer_Small_01_Convex.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d38df770b6f586445a858535d7617c13
+    m_Address: Assets/Models/PolygonDungeon/Models/SM_Prop_Goblin_Spikes_03.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d665c2f5a5ec32745b439bf07bb6ff1d
+    m_Address: Assets/Models/PolygonDungeon/Models/SM_Env_Rock_Flat_05.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d7d580f0dc2774e4684f318dcefcc45f
+    m_Address: Assets/Models/PolygonDungeon/Models/CollisionConvex/SM_Wep_Hammer_Small_02_Convex.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d96d8a59ab1c2b24b9c5f6faf74dfda4
+    m_Address: Assets/Models/PolygonDungeon/Models/SM_Env_RockPile_Rounded_01.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: dce79eddb1f19244d94b925ff2be24bb
+    m_Address: Assets/Models/PolygonDungeon/Models/CollisionConvex/SM_Env_BonePile_02_Convex.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: de31136d42ebe6b4a896b248bb39d41e
+    m_Address: Assets/Models/PolygonDungeon/Models/SM_Env_Tiles_05.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: de39427fbf0a17843aa550ed7b2ff935
+    m_Address: Assets/Models/PolygonDungeon/Models/SM_Wep_Hammer_Small_02.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e6e9a19c3678ded42a3bc431ebef7dbd
+    m_Address: Packages/com.unity.render-pipelines.universal/Shaders/Utils/FallbackError.shader
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ea128b040f8b0af4c9d2de400aaff30a
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Materials/FantasyHero.mat
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f26aa914d740efc44bdd254a731404e6
+    m_Address: Assets/Models/PolygonDungeon/Models/SM_Wep_Banner_03.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f2ab6909d7290214e95481ce10d46c15
+    m_Address: Assets/Models/PolygonDungeon/Models/SM_Prop_Goblin_Spikes_02.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f3117e735161a1e49aa3f78498761f06
+    m_Address: Assets/Models/PolygonDungeon/Textures/Dungeons_Texture_02.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f4106ba9953cea94d8555d111eeb953f
+    m_Address: Assets/Models/PolygonDungeon/Models/SM_Env_BonePile_02.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f4507495542cb0f489f932033787252c
+    m_Address: Assets/Models/PolygonDungeon/Models/SM_Env_Tree_Twisted_02.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f80537c1a3e5d9b49ab6102ef9cdfffd
+    m_Address: Assets/Models/PolygonDungeon/Models/CollisionConvex/SM_Wep_Shield_Skull_01_Convex.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f8e518b469cb2bd4c92100e04b7d4ab3
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Textures/Masks/PolygonFantasyHero_Texture_Mask_02.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f917cb4f97193bb488ccec2d7af4a4cd
+    m_Address: Assets/Models/PolygonDungeon/Models/SM_Env_Ceiling_Stone_Flat_01.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: d2176961fdb6fe549bc4ce1763ceb434, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 4014b52a78120e64ba8ff414d6224731, type: 2}
+    - {fileID: 11400000, guid: 177238d947d06eb499cbb599a64f88da, type: 2}

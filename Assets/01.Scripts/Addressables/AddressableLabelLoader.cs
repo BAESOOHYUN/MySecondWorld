@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
@@ -15,7 +16,7 @@ namespace MySecondWorld.Bundle
         private Dictionary<string, AsyncOperationHandle> _handles = new();
         private Dictionary<string, int> _refCounts = new();
 
-        public async UniTask LoadLabelAsync(string label, CancellationToken ct)
+        public async UniTask LoadLabelAsync(string label, CancellationToken ct, Action<float> onProgress = null)
         {
             // label = "zone_dungeon_1"
             // label = "character_parts"
@@ -45,8 +46,18 @@ namespace MySecondWorld.Bundle
             // 처음 로드할 때만 여기까지 옴 (플레이어A 진입 시)
             var newHandle = Addressables.DownloadDependenciesAsync(label, false); // false는 "자동 Release 안 함" 옵션
             _handles[label] = newHandle;                                          // handle 저장 (나중에 Release 때 필요)
-            await newHandle.ToUniTask(cancellationToken: ct);                     // 다운로드 완료 대기
+            
+            // 완료될 때까지 매 프레임 진행률 폴링 — AIModelDownloader와 동일 패턴
+            while (!newHandle.IsDone)
+            {
+                onProgress?.Invoke(newHandle.PercentComplete);
+                await UniTask.Yield(PlayerLoopTiming.Update, ct);
+            }
 
+            if (newHandle.Status == AsyncOperationStatus.Failed)
+                throw newHandle.OperationException ?? new Exception($"'{label}' 다운로드 실패");
+
+            onProgress?.Invoke(1f);
             Debug.Log($"[Bundle] '{label}' 로드 완료");
         }
 

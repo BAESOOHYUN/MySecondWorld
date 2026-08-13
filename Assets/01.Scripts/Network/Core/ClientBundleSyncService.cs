@@ -56,7 +56,8 @@ namespace MySecondWorld.Network
             // try-catch는 번들 다운로드 실패 시 재시도 기능을 위한 것
             try
             {
-                await _zoneLoader.LoadLabelAsync(msg.zoneLabel, ct); //번들 다운로드
+                // 진행률 콜백 전달 — 다운로드 도중 UI가 실시간으로 갱신됨
+                await _zoneLoader.LoadLabelAsync(msg.zoneLabel, ct, p => addressableUI?.UpdateProgress(p));
                 addressableUI?.UpdateProgress(1f);
                 NetworkClient.Send(new BundleReadyMessage { zoneLabel = msg.zoneLabel }); // > GameNetworkManager.OnStartServer
             }
