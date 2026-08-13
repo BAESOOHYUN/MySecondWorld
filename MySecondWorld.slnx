@@ -1,7 +1,6 @@
 ﻿<Solution>
   <Project Path="Unity.Timeline.csproj" />
   <Project Path="Unity.RenderPipelines.GPUDriven.Runtime.csproj" />
-  <Project Path="Unity.PlasticSCM.Editor.csproj" />
   <Project Path="ZString.csproj" />
   <Project Path="Unity.ShaderGraph.Editor.csproj" />
   <Project Path="Unity.RenderPipelines.Core.Runtime.csproj" />
@@ -13,12 +12,12 @@
   <Project Path="Unity.Cinemachine.Editor.csproj" />
   <Project Path="Unity.Multiplayer.Center.Editor.csproj" />
   <Project Path="Unity.RenderPipelines.Core.Editor.csproj" />
+  <Project Path="Unity.Collections.csproj" />
   <Project Path="UnityEngine.UI.csproj" />
   <Project Path="Unity.Addressables.Editor.csproj" />
-  <Project Path="Unity.Collections.csproj" />
+  <Project Path="Unity.RenderPipelines.Universal.2D.Runtime.csproj" />
   <Project Path="Unity.Splines.csproj" />
   <Project Path="Unity.RenderPipelines.Universal.Editor.csproj" />
-  <Project Path="Unity.RenderPipelines.Universal.2D.Runtime.csproj" />
   <Project Path="Unity.PerformanceTesting.Editor.csproj" />
   <Project Path="UnityEngine.TestRunner.csproj" />
   <Project Path="Unity.Burst.csproj" />
@@ -112,7 +111,6 @@
   <Project Path="MessagePipe.Editor.csproj" />
   <Project Path="MySecondWorld.Bundle.csproj" />
   <Project Path="endel.nativewebsocket.csproj" />
-  <Project Path="Unity.CollabProxy.Editor.csproj" />
   <Project Path="Unity.RenderPipeline.Universal.ShaderLibrary.csproj" />
   <Project Path="FlexibleColorPicker.csproj" />
   <Project Path="Cloud.Unum.USearch.csproj" />
@@ -133,7 +131,6 @@
   <Project Path="MySecondWorld.Character.csproj" />
   <Project Path="MySecondWorld.Camera.csproj" />
   <Project Path="Unity.ScriptableBuildPipeline.csproj" />
-  <Project Path="Unity.PlasticSCM.Editor.Entities.csproj" />
   <Project Path="Mirror.Authenticators.csproj" />
   <Project Path="UniTask.Addressables.csproj" />
   <Project Path="Unity.Rendering.LightTransport.Editor.csproj" />
