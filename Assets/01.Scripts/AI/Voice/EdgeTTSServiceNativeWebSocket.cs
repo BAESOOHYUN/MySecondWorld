@@ -29,6 +29,13 @@ namespace MySecondWorld.AI.Voice
 
         private readonly List<WebSocket> _activeConnections = new();
 
+        private void Awake()
+        {
+#if UNITY_SERVER
+    enabled = false;
+#endif
+        }
+
         private void Update()
         {
             // 백그라운드 수신 메시지를 메인 스레드로 전달

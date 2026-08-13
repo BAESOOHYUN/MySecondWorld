@@ -42,7 +42,6 @@ namespace MySecondWorld.Network
         // 번들 해제:  PlayerLeftZone(Zone 완전 이탈 시 1회)
 
         // [C2-a] 씬 로드 + 완료 카운터 증가
-        // TODO: 데디케이티드 서버 전환 시 변경 필요
         private async UniTask LoadAdditiveScene(string sceneName)
         {
             Debug.Log($"[Client] LoadAdditiveScene: {sceneName}");

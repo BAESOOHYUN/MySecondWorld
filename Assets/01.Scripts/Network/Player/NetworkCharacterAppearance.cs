@@ -108,7 +108,9 @@ namespace MySecondWorld.Network
 
         private void OnAppearanceChanged(CharacterAppearanceData old, CharacterAppearanceData next)
         {
-            _customizer.ApplyAppearance(next).Forget();
+#if !UNITY_SERVER
+            _customizer.ApplyAppearance(next).Forget(); // 파츠 프리팹 Instantiate — 렌더링용
+#endif 
         }
 
         private static int Clamp(int value, int count)

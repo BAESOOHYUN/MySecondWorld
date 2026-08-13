@@ -57,6 +57,13 @@ namespace MySecondWorld.AI.Voice
             }).AddTo(destroyCancellationToken);
         }
 
+        private void Awake()
+        {
+#if UNITY_SERVER
+    enabled = false;
+#endif
+        }
+
         private async UniTaskVoid PlayQueue(CancellationToken ct)
         {
             _isPlaying = true;

@@ -98,7 +98,9 @@ namespace MySecondWorld.Network
         private void OnMainHandChanged(int oldKey, int newKey)
         {
             _equipToken++;
-            ApplyMainHandVisual(newKey, _equipToken).Forget();
+#if !UNITY_SERVER
+            ApplyMainHandVisual(newKey, _equipToken).Forget(); // 무기 모델 Instantiate — 렌더링용
+#endif
         }
 
         private async UniTask ApplyMainHandVisual(int dbKey, int generation)

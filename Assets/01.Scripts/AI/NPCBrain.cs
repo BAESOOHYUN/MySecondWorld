@@ -89,6 +89,13 @@ namespace MySecondWorld.AI
                 .AddTo(destroyCancellationToken);
         }
 
+        private void Awake()
+        {
+#if UNITY_SERVER
+    enabled = false;
+#endif
+        }
+
         private void Start()
         {
             _memory?.Load(NpcNameKey);

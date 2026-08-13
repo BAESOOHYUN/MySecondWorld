@@ -39,7 +39,10 @@ namespace MySecondWorld.Network.Player
             // Mirror 스폰 시 보이는 모든 캐릭터(내 캐릭터 + 다른 플레이어 캐릭터 전부)에서 실행
             // 진짜 필요한 건 1번 줄 — character_parts 애셋 존을 로드하는 것. 이건 소유권과 무관하게,
             // 화면에 그 캐릭터를 렌더링하려면(SyncVar로 외형이 내려왔을 때 파츠를 인스턴스화하려면) 누구든 미리 로드해둬야 함
+            // 단, 데디케이티드 서버는 화면 렌더링 자체를 안 하므로 이 로드가 불필요함
+#if !UNITY_SERVER
             InitializeAppearanceAsync().Forget();
+#endif
         }
 
         public override void OnStartAuthority() // "이 캐릭터 네 꺼야" → 조종 활성화
