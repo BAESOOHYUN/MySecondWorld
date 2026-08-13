@@ -47,6 +47,7 @@ namespace MySecondWorld.AI
 
         private void OnEnable()
         {
+            _cleanedUp = false;   // Play 재진입 시 정리 로직이 다시 동작하도록
             Application.quitting += CleanupNative;
 #if UNITY_EDITOR
             // Unity Editor 전용 — Play Mode ↔ Edit Mode 전환을 감지하는 이벤트
