@@ -44,7 +44,7 @@ namespace MySecondWorld.Move
 
         private const float Gravity = -9.81f;
         private const float FallMultiplier = 2.5f; // 낙하 시 추가 가속도
-        private const float DeadZone = 0.01f;
+        private const float DeadZone = 0.04f;  // magnitude 기준 0.2 이하 무시
         private const float GroundedVelocity = -2f;
 
         private float _jumpStartTimer; // JumpStart 클립 길이만큼 OnFall 발화 지연
@@ -120,15 +120,19 @@ namespace MySecondWorld.Move
 
             Vector3 rawInput = new Vector3(MoveX.Value, 0f, MoveY.Value);
 
+            // "조이스틱 입력이 거의 없거나" OR "방금 착지해서 경직 중"
             if (rawInput.sqrMagnitude < DeadZone || _landingTimer > 0)
             {
+                // 이동 방향·속도를 0으로 초기화하고 함수 종료
                 _moveDirection = Vector3.zero;
                 _inputDirection = Vector3.zero;
                 _speedPublisher.Publish(new PlayerSpeedChangedEvent { Speed = 0 });
                 return;
             }
 
-            _speedPublisher.Publish(new PlayerSpeedChangedEvent { Speed = rawInput.magnitude });
+            // 지상일 때만 Speed 발행, 공중은 0으로 강제 (점프/낙하 모션 우선)
+            float animSpeed = IsGrounded ? rawInput.magnitude : 0f;
+            _speedPublisher.Publish(new PlayerSpeedChangedEvent { Speed = animSpeed });
             _inputDirection = rawInput.normalized;
 
             // 카메라 Y축 회전만 추출해서 이동 방향 계산 (pitch 영향 없음)
