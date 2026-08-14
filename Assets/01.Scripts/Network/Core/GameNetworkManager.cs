@@ -26,10 +26,14 @@ namespace MySecondWorld.Network
         [Scene] public string defaultSubScene;           // FieldScene (마을) — 기본 스폰 존
         public ZoneDefinitionSO[] zones;                 // 모든 존 정의 (SO 배열). defaultSubScene도 포함.
         public float zoneCheckInterval = 0.5f;           // 존 체크 주기 (초)
+        public LayerMask groundLayer;             // 낙하 안전망 레이캐스트용 지면 레이어
+
+        [Tooltip("이 Y 아래로 떨어지면 존 판정과 무관하게 마지막 안전 위치로 구조한다")]
+        public float fallRescueY = -50f;
 
         [Header("신규 플레이어 시작 지급")]
         [SerializeField] private RootItem _startingGoldItem;
-        [SerializeField] private int _startingGoldAmount = 1000;
+        [SerializeField] private int _startingGoldAmount = 100;
 
         [Header("동행 NPC")]
         [SerializeField] private CompanionEntry[] _companionRegistry;
@@ -310,6 +314,13 @@ namespace MySecondWorld.Network
             if (session.companionIdentity == null) return;
             if (session.companionIdentity.TryGetComponent(out ICompanionServerState serverState))
                 serverState.ToggleFollowPaused();
+        }
+
+        // 테스트용 — 기존 계정(isNewPlayer=false)에도 강제로 시작 골드를 지급한다.
+        // 누를 때마다 누적 지급되므로 디버그 전용.
+        public void DebugGrantStartingGold(NetworkConnectionToClient conn)
+        {
+            _sessionService.GrantStartingGold(conn);
         }
     }
 }

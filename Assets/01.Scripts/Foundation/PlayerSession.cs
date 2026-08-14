@@ -26,8 +26,10 @@ namespace MySecondWorld.Network
 
         public string playerId;                    // SaveManager 키
         public Vector3 lastSafePosition;           // 마지막 안전 위치
+        public string lastSafeScene;               // 그 위치가 속해 있던 씬 (구조 시 복귀 대상)
 
         public float fallTimer;                    // 낙하 경과 시간
+        public float ungroundedTimer;               // 발밑 지형 없음 경과 시간 (존 안이어도 허공일 수 있음)
 
         public Guid roomId = Guid.Empty;
         public bool isNewPlayer; // 세이브 데이터 없이 최초 접속한 경우 true — 시작 골드 지급 판단용

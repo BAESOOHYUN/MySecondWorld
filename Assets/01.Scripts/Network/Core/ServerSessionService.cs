@@ -83,7 +83,7 @@ namespace MySecondWorld.Network
             session.isNewPlayer = !hasSpawnData;
 
             string spawnScene = _manager.defaultSubScene;
-            Vector3 spawnPosition = _manager.GetStartPosition()?.position ?? Vector3.zero;
+            Vector3 spawnPosition;
 
             if (!string.IsNullOrEmpty(session.playerId) && hasSpawnData)
             {
@@ -91,6 +91,16 @@ namespace MySecondWorld.Network
                 spawnScene = saveData.Value.lastSceneNames[0];
                 spawnPosition = saveData.Value.lastPosition;
                 session.recruitedCompanionIds = saveData.Value.recruitedCompanionIds ?? Array.Empty<string>();
+            }
+            else
+            {
+                // 시작 지점은 신규 플레이어만 소비한다.
+                // GetStartPosition()은 조회처럼 보이지만 RoundRobin 인덱스를 전진시키므로
+                // (NetworkManager.cs:1123), 값을 쓰지도 않을 경로에서 부르면 스폰 순번이 헛돈다.
+                var startPos = _manager.GetStartPosition();
+                if (startPos == null)
+                    Debug.LogError("[Session] NetworkStartPosition이 없다 — 원점에 스폰된다. 씬 배치 확인 필요.");
+                spawnPosition = startPos != null ? startPos.position : Vector3.zero;
             }
 
             session.pendingSpawnPosition = spawnPosition;
@@ -118,6 +128,9 @@ namespace MySecondWorld.Network
             }
             // 번들 완료 확인 후 씬 로드 지시
             conn.Send(new AdditiveSceneMessage { sceneName = spawnScene, load = true });
+            // PlayerEnteredZone을 안 거치는 경로라 loadedScenes에 수동 등록해야 한다.
+            // 빠뜨리면 첫 CheckZones 틱이 스폰 씬까지 "신규"로 판정해 중복 로드 지시를 보낸다.
+            session.loadedScenes.Add(spawnScene);
             conn.Send(new SpawnReadyMessage { sceneCount = 1 });
         }
 
@@ -134,10 +147,10 @@ namespace MySecondWorld.Network
             Debug.Log($"[Session] SpawnPlayer 호출 conn={conn.connectionId}");
             var session = Sessions[conn.connectionId];
 
-            // Instantiate 시점부터 올바른 위치에 생성해야 Spawn 메시지에 정확한 위치가 포함됨
-            Vector3 spawnPos = (session.pendingSpawnPosition != Vector3.zero)
-                ? session.pendingSpawnPosition
-                : (_manager.GetStartPosition()?.position ?? Vector3.zero);
+            // Instantiate 시점부터 올바른 위치에 생성해야 Spawn 메시지에 정확한 위치가 포함됨.
+            // 위치는 PrepareAndSpawn에서 이미 확정됐으므로 여기서 다시 뽑지 않는다 —
+            // GetStartPosition()을 한 번 더 부르면 RoundRobin 순번이 접속 1회당 두 칸씩 밀린다.
+            Vector3 spawnPos = session.pendingSpawnPosition;
 
             // base.OnServerAddPlayer(conn) 대신 직접 인스턴스화 (위치 보정 위해)
             GameObject player = MySecondWorld.Network.Player.PlayerFactory.Create(_manager.playerPrefab, spawnPos, Quaternion.identity);
@@ -145,12 +158,10 @@ namespace MySecondWorld.Network
                 return;
             NetworkServer.AddPlayerForConnection(conn, player);
 
+            // After
             // 신규 플레이어에게만 시작 골드 지급 (재접속 시 중복 지급 방지)
-            if (session.isNewPlayer && _startingGoldItem != null)
-            {
-                var inventory = player.GetComponent<Cleverous.VaultInventory.Inventory>();
-                inventory?.DoAdd(new Cleverous.VaultInventory.RootItemStack(_startingGoldItem, _startingGoldAmount));
-            }
+            if (session.isNewPlayer)
+                GrantStartingGold(conn);
 
             session.currentScene = session.pendingSpawnScene;
             SceneManager.MoveGameObjectToScene(conn.identity.gameObject, _manager.GetServerScene(session.currentScene));
@@ -158,6 +169,7 @@ namespace MySecondWorld.Network
             // 스폰 직후 lastSafePosition 초기화:
             // zone bounds 체크 실패해도 즉시 텔레포트되지 않도록 안전 위치를 스폰 위치로 세팅
             session.lastSafePosition = session.pendingSpawnPosition;
+            session.lastSafeScene = session.currentScene;
             session.fallTimer = 0f;
             session.isSpawned = true;
 
@@ -269,6 +281,27 @@ namespace MySecondWorld.Network
             }
         }
 
+        // 시작 골드 지급. 스폰 경로와 디버그 버튼이 같은 코드를 쓰도록 분리.
+        // "신규 플레이어인가" 판단은 호출부 책임 — 디버그 경로는 그 조건을 일부러 건너뛴다.
+        public void GrantStartingGold(NetworkConnectionToClient conn)
+        {
+            if (_startingGoldItem == null)
+            {
+                Debug.LogWarning("[Session] GameNetworkManager의 Starting Gold Item이 비어 있어 지급을 건너뜀");
+                return;
+            }
+            if (conn.identity == null) return;
+
+            var inventory = conn.identity.GetComponent<Cleverous.VaultInventory.Inventory>();
+            if (inventory == null)
+            {
+                Debug.LogWarning($"[Session] conn={conn.connectionId}의 플레이어에 Inventory가 없음");
+                return;
+            }
+
+            inventory.DoAdd(new Cleverous.VaultInventory.RootItemStack(_startingGoldItem, _startingGoldAmount));
+            Debug.Log($"[Session] conn={conn.connectionId}에게 골드 {_startingGoldAmount} 지급");
+        }
         #endregion
     }
 }
