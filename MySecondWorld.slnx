@@ -60,6 +60,7 @@
   <Project Path="Unity.AI.Navigation.Updater.csproj" />
   <Project Path="MySecondWorld.Inventory.Items.csproj" />
   <Project Path="MySecondWorld.Foundation.csproj" />
+  <Project Path="Unity.SysrootPackage.Editor.csproj" />
   <Project Path="UnityEditor.UI.csproj" />
   <Project Path="Unity.RenderPipelines.Universal.2D.Editor.Overrides.csproj" />
   <Project Path="undream.llmunity.Runtime.csproj" />
@@ -81,6 +82,7 @@
   <Project Path="MySecondWorld.AI.csproj" />
   <Project Path="SimpleWebTransport.csproj" />
   <Project Path="Unity.InputSystem.ForUI.csproj" />
+  <Project Path="Unity.Toolchain.Win-x86_64-Linux.csproj" />
   <Project Path="Unity.XR.Interaction.Toolkit.CodeSamples.Tests.csproj" />
   <Project Path="R3.Unity.Editor.csproj" />
   <Project Path="Unity.Mirror.CodeGen.csproj" />
@@ -145,4 +147,5 @@
   <Project Path="Unity.RenderPipelines.ShaderGraph.ShaderGraphLibrary.csproj" />
   <Project Path="Unity.RenderPipelines.Core.ShaderLibrary.csproj" />
   <Project Path="EncryptionTransportEditor.csproj" />
+  <Project Path="Unity.Sysroot.Linux_x86_64.csproj" />
 </Solution>
