@@ -60,7 +60,6 @@ namespace MySecondWorld.Move
         public InputAxis MoveX = InputAxis.DefaultMomentary;
         public InputAxis MoveY = InputAxis.DefaultMomentary;
         public InputAxis Jump = InputAxis.DefaultMomentary;
-        public InputAxis Interact = InputAxis.DefaultMomentary;
 
         // DI
         private IPublisher<PlayerJumpedEvent> _jumpPublisher;
@@ -104,7 +103,6 @@ namespace MySecondWorld.Move
             axes.Add(new() { DrivenAxis = () => ref MoveX, Name = nameof(MoveX), Hint = IInputAxisOwner.AxisDescriptor.Hints.X });
             axes.Add(new() { DrivenAxis = () => ref MoveY, Name = nameof(MoveY), Hint = IInputAxisOwner.AxisDescriptor.Hints.Y });
             axes.Add(new() { DrivenAxis = () => ref Jump, Name = nameof(Jump) });
-            axes.Add(new() { DrivenAxis = () => ref Interact, Name = nameof(Interact) });
         }
 
         private void JoyStickMove()
