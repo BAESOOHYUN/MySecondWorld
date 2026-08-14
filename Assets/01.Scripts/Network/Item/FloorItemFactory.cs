@@ -19,9 +19,15 @@ namespace MySecondWorld.Network
                 return null;
             }
 
-            // RequireComponent 덕에 SphereCollider는 프리팹에 항상 있지만, isTrigger 기본값(false)만은
-            // 항상 명시적으로 강제 — 프리팹 쪽에서 깜빡 꺼놔도 픽업 판정(OnTriggerEnter)이 안전하게 동작하도록.
-            go.GetComponent<SphereCollider>().isTrigger = true;
+            // isTrigger는 반드시 프리팹에 저장돼 있어야 한다.
+            // 여기서 런타임에 대입하면 서버 인스턴스에만 적용되고, 클라는 각자 원본 프리팹에서
+            // Instantiate하므로 프리팹 값(false)을 그대로 쓴다 → 원격 클라에서 통행 방해 + 픽업 불가.
+            // 그래서 고쳐주지 않고 잘못된 설정을 드러내기만 한다.
+            var sphere = go.GetComponent<SphereCollider>();
+            if (!sphere.isTrigger)
+                Debug.LogError(
+                    $"[FloorItemFactory] '{purePrefab.name}' 프리팹의 SphereCollider가 Trigger가 아닙니다 — " +
+                    $"원격 클라에서 픽업 불가 + 통행 방해. 프리팹에서 직접 체크하세요.", purePrefab);
 
             return floorItem;
         }

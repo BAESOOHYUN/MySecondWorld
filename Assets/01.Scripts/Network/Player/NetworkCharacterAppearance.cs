@@ -79,6 +79,20 @@ namespace MySecondWorld.Network
             _inventory.Initialize(this, resetContent: true);
         }
 
+        public override void OnStartClient()
+        {
+            base.OnStartClient();
+
+            Debug.Log($"[Inv] OnStartClient isServer={isServer} " +
+                      $"IsInitialized={_inventory.IsInitialized}");
+
+            // 호스트는 OnStartServer에서 이미 초기화됨.
+            // 여기서 또 부르면 resetContent:true가 서버가 채워둔 내용을 지운다.
+            if (isServer) return;
+
+            _inventory.Initialize(this, resetContent: true);
+        }
+
         [Command]
         public void CmdSetAppearance(CharacterAppearanceData data)
         {

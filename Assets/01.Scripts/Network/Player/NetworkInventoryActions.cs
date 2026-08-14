@@ -89,8 +89,13 @@ namespace MySecondWorld.Network
             if (Vault.Get(receiveItemDbKey) is not Cleverous.VaultInventory.RootItem receiveItem) return;
             if (!_inventory.Contains(payItem, 1)) return; // 대가 아이템 미보유 → 거부(물물교환, 재화 시스템 없음)
 
+            // 받을 아이템을 먼저 넣어보고, 실제로 들어갔을 때만 대가를 지불한다.
+            // DoAdd(amount=1)는 전부 들어가거나(0 반환) 전혀 안 들어가거나(1 반환) 둘 중 하나뿐이고,
+            // 실패 시 Content를 건드리지 않으므로 이 순서가 안전하다 — "지불했는데 못 받는" 상태를 막는다.
+            int leftover = _inventory.DoAdd(new RootItemStack(receiveItem, 1));
+            if (leftover > 0) return; // 자리 없음 — 아무 것도 지불되지 않은 채로 거부
+
             _inventory.DoTake(payItem, 1);
-            _inventory.DoAdd(new Cleverous.VaultInventory.RootItemStack(receiveItem, 1));
         }
 
         [Command] // 소모품 사용
