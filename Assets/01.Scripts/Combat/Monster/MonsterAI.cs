@@ -14,6 +14,8 @@ namespace MySecondWorld.Combat.Monster
     [RequireComponent(typeof(SphereCollider))]
     [RequireComponent(typeof(Health))]
     [RequireComponent(typeof(PooledObject))]
+    [RequireComponent(typeof(Rigidbody))] // Rigidbody 없이는 CharacterController가 꺼진 원격 플레이어와
+                                          // OnTriggerEnter 자체가 발생하지 않는다 (Unity 물리 규칙)
     public class MonsterAI : MonoBehaviour
     {
         #region State Machine 정의
@@ -47,6 +49,7 @@ namespace MySecondWorld.Combat.Monster
 
         protected NavMeshAgent _agent;
         protected Health _health;
+        private NetworkAnimator _networkAnimator;   // Trigger 타입 파라미터는 이걸 거쳐야 다른 클라에 동기화됨
         private StateMachine<MonsterState, MonsterTrigger> _stateMachine;
         protected ISkillSelector _skillSelector;
         private readonly AIContext _aiContext = new AIContext();
@@ -74,11 +77,19 @@ namespace MySecondWorld.Combat.Monster
 
             _agent = GetComponent<NavMeshAgent>();
             _health = GetComponent<Health>();
+            _networkAnimator = GetComponent<NetworkAnimator>();
 
             // Health.OnEnable()보다 먼저 실행돼야 MaxHP가 정확히 반영됨
             // (같은 오브젝트의 모든 컴포넌트는 Awake가 전부 끝난 뒤에야 OnEnable이 실행되므로 안전)
             _health.Initialize(_stats.MaxHP);
             _agent.speed = _stats.MoveSpeed;
+
+            // RequireComponent가 기본값(isKinematic=false, useGravity=true)으로 방금 새로 붙인 것이므로
+            // 여기서 직접 세팅해야 한다. Rigidbody 존재 자체가 목적이지 물리 시뮬레이션이 목적이 아니다 —
+            // NavMeshAgent가 이동을 담당하므로 중력/충돌 반응은 꺼서 서로 간섭하지 않게 한다.
+            var rb = GetComponent<Rigidbody>();
+            rb.isKinematic = true;
+            rb.useGravity = false;
 
             if (_detectionTrigger != null)
             {
@@ -284,8 +295,8 @@ namespace MySecondWorld.Combat.Monster
                 case MonsterSkillId.RangedShoot:
                     {
                         FaceTarget();
-                        if (_animator != null)
-                            _animator.SetTrigger(AttackTrigger);
+                        if (_networkAnimator != null)
+                            _networkAnimator.SetTrigger(AttackTrigger);
                         LockUntilAnimationFinishes();
                     }
                     break;
@@ -325,8 +336,8 @@ namespace MySecondWorld.Combat.Monster
             var ct = this.GetCancellationTokenOnDestroy();
             try
             {
-                if (_animator != null)
-                _animator.SetTrigger(GetDeathTriggerHash());
+                if (_networkAnimator != null)
+                    _networkAnimator.SetTrigger(GetDeathTriggerHash());
                 await UniTask.Delay(TimeSpan.FromSeconds(_stats.DeathDuration));
 
                 // 클라이언트 사본을 먼저 정리 — SetActive(false)보다 먼저 호출해야 함

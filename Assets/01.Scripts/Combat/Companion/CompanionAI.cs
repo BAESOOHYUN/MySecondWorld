@@ -3,17 +3,18 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AI;
 using Stateless;
+using Mirror;
 
 namespace MySecondWorld.Combat.Companion
 {
     // MonsterAI와 대칭 구조(Follow/Chase/Attack/Dead)지만 상속하지 않는다 — 감지 태그/Idle 개념이
     // 정반대라(제 발로 서있는 몹 vs owner를 항상 따라다니는 동료) 상속으로 끼워 맞추면 더 부자연스럽다.
-    // (설계 근거: .claude/memory/20260730-companion-npc-CONTEXT.md 결정 4)
     [RequireComponent(typeof(Animator))]
     [RequireComponent(typeof(NavMeshAgent))]
     [RequireComponent(typeof(CapsuleCollider))]
     [RequireComponent(typeof(SphereCollider))]
     [RequireComponent(typeof(Health))]
+    [RequireComponent(typeof(Rigidbody))]   // 몬스터 감지 트리거가 (MonsterAI와) 같은 이유로 부실할 수 있어 선제 조치
     public class CompanionAI : MonoBehaviour
     {
         #region State Machine 정의
@@ -50,8 +51,10 @@ namespace MySecondWorld.Combat.Companion
 
         private NavMeshAgent _agent;
         private Health _health;
+        private NetworkAnimator _networkAnimator;
         private Transform _owner;   // 따라다녀야 할 플레이어 
-        private Transform _target;  // 감지된 몬스터
+        private Transform _targetM;  // 감지된 몬스터
+        private Health _targetMHealth; // 현재 감지된 몬스터의 Health — 사망을 직접 감지하기 위함
         private StateMachine<CompanionState, CompanionTrigger> _stateMachine;
         private float _lastAttackTime;
         private bool _followPaused;
@@ -80,12 +83,19 @@ namespace MySecondWorld.Combat.Companion
 
             _agent = GetComponent<NavMeshAgent>();
             _health = GetComponent<Health>();
+            _networkAnimator = GetComponent<NetworkAnimator>();
+
             if (_animator == null) _animator = GetComponent<Animator>();
             if (_detectionTrigger == null) _detectionTrigger = GetComponent<SphereCollider>();
 
             // Health.OnEnable()보다 먼저 실행돼야 MaxHP가 정확히 반영됨 (MonsterAI와 동일 순서 근거)
             _health.Initialize(_stats.MaxHP);
             _agent.speed = _stats.MoveSpeed;
+
+            var rb = GetComponent<Rigidbody>();
+            rb.isKinematic = true;
+            rb.useGravity = false;
+
             _detectionTrigger.isTrigger = true;
             _detectionTrigger.radius = _stats.DetectRange;
             _monsterLayer = LayerMask.NameToLayer("Monster");
@@ -101,6 +111,7 @@ namespace MySecondWorld.Combat.Companion
         private void OnDisable()
         {
             _health.OnDied -= HandleDied;
+            ClearTarget(); // 추적 중이던 타겟의 OnDied 구독 해제
         }
 
         private void Update()
@@ -196,27 +207,27 @@ namespace MySecondWorld.Combat.Companion
 
         private void UpdateChase()
         {
-            if (_target == null)
+            if (_targetM == null)
             {
                 SafeFire(CompanionTrigger.MonsterLost);
                 return;
             }
 
-            SetAgentDestination(_target.position);
-            float distance = Vector3.Distance(transform.position, _target.position);
+            SetAgentDestination(_targetM.position);
+            float distance = Vector3.Distance(transform.position, _targetM.position);
             if (distance <= _stats.AttackRange)
                 SafeFire(CompanionTrigger.TargetInRange);
         }
 
         private void UpdateAttack()
         {
-            if (_target == null)
+            if (_targetM == null)
             {
                 SafeFire(CompanionTrigger.TargetOutOfRange);
                 return;
             }
 
-            float distance = Vector3.Distance(transform.position, _target.position);
+            float distance = Vector3.Distance(transform.position, _targetM.position);
             float exitRange = _stats.AttackRange * 1.2f; // Monster 쪽과 동일한 유격 — 경계에서 상태 떨림 방지
             if (distance > exitRange)
             {
@@ -228,12 +239,13 @@ namespace MySecondWorld.Combat.Companion
 
             if (Time.time - _lastAttackTime < _stats.AttackCooldown) return;
             _lastAttackTime = Time.time;
-            _animator.SetTrigger(AttackTrigger); // 실제 데미지는 CompanionHitbox.OnAttackHit()의 Animation Event가 처리
+            if (_networkAnimator != null)
+                _networkAnimator.SetTrigger(AttackTrigger); // 실제 데미지는 CompanionHitbox.OnAttackHit()의 Animation Event가 처리
         }
 
         private void FaceTarget()
         {
-            Vector3 lookDirection = _target.position - transform.position;
+            Vector3 lookDirection = _targetM.position - transform.position;
             lookDirection.y = 0f;
             if (lookDirection.sqrMagnitude > 0.001f)
                 transform.rotation = Quaternion.LookRotation(lookDirection);
@@ -273,7 +285,8 @@ namespace MySecondWorld.Combat.Companion
         {
             try
             {
-                _animator.SetTrigger(DeathTrigger);
+                if (_networkAnimator != null)
+                    _networkAnimator.SetTrigger(DeathTrigger);
                 await UniTask.Delay(TimeSpan.FromSeconds(_stats.DeathDuration), cancellationToken: this.GetCancellationTokenOnDestroy());
                 GetComponent<CompanionServerState>()?.MarkDead(); // 죽음 애니메이션 '재생 완료 후' 비활성화되도록 호출. MarkDead() => _isAlive = false;
             }
@@ -299,8 +312,29 @@ namespace MySecondWorld.Combat.Companion
         {
             if (other.gameObject.layer != _monsterLayer) return;
             if (_stateMachine.State != CompanionState.Follow) return;
-            _target = other.transform;
+
+            _targetM = other.transform;
+            _targetMHealth = other.GetComponentInParent<Health>();
+            if (_targetMHealth != null)
+                _targetMHealth.OnDied += HandleTargetDied;
             SafeFire(CompanionTrigger.MonsterDetected);
+        }
+
+        // 추적 중이던 타겟이 죽었을 때 — Transform은 안 사라지므로(풀링) 이 이벤트가 유일한 신호
+        private void HandleTargetDied()
+        {
+            ClearTarget();
+            SafeFire(CompanionTrigger.MonsterLost);
+        }
+
+        // 구독 해제 + 참조 정리를 한곳에 모음 — 타겟이 바뀌거나 죽거나 컴포넌트가 파괴될 때 전부 여기를 거치게 해서
+        // 구독 누락/중복 구독을 막는다
+        private void ClearTarget()
+        {
+            if (_targetMHealth != null)
+                _targetMHealth.OnDied -= HandleTargetDied;
+            _targetMHealth = null;
+            _targetM = null;
         }
 
         // NavMeshAgent가 지형에 파묻히는 등으로 NavMesh 밖에 있을 때 isStopped/SetDestination을 호출하면
