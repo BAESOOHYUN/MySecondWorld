@@ -219,6 +219,9 @@ namespace MySecondWorld.Combat.Monster
             // NetworkServer.active 가드로 로컬(비-네트워크) 테스트도 그대로 동작
             if (NetworkServer.active)
                 NetworkServer.Spawn(gameObject);
+
+            if (_animator != null)
+                FixRendererVisibilityNextFrame().Forget();
         }
         #endregion
 
@@ -352,6 +355,16 @@ namespace MySecondWorld.Combat.Monster
             {
                 // 대기 중 오브젝트가 파괴됨 — 정상 흐름, 별도 처리 불필요
             }
+        }
+
+        // 스폰 직후 SkinnedMeshRenderer가 꺼진 채로 고정되는 보스 버그 방어(Write Defaults + 특정 클립 커브 추정).
+        // NetworkAnimator가 초기 동기화 시 animator.Play()로 상태를 한 번 더 강제 점프시켜
+        // Spawn() 직후 바로 켜도 다시 꺼지므로, 한 프레임 기다렸다가 재보정한다.
+        private async UniTaskVoid FixRendererVisibilityNextFrame()
+        {
+            await UniTask.Yield(this.GetCancellationTokenOnDestroy());
+            foreach (var renderer in GetComponentsInChildren<SkinnedMeshRenderer>(true))
+                renderer.enabled = true;
         }
 
         #endregion
