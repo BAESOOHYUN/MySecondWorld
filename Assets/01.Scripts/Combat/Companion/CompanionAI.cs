@@ -308,21 +308,15 @@ namespace MySecondWorld.Combat.Companion
             return true;
         }
 
-        // 자식 오브젝트(몬스터 감지 전용 콜라이더, NPC 레이어와 분리)의 트리거 이벤트를 TriggerRelay가 대신 받아서 전달
+        // 자식 오브젝트(몬스터 감지 전용 콜라이더, NPC 레이어와 분리)의 트리거 이벤트를 TriggerRelay가 대신 받아서 전달.
+        // 코드 참조가 아니라 Companion_Ari.prefab의 TriggerRelay.OnTriggerEntered(UnityEvent) 슬롯에
+        // 인스펙터로 직접 연결돼있음 — Find References로는 호출부가 안 잡힘, 프리팹에서 확인해야 함.
         public void HandleDetectionTriggerEnter(Collider other)
         {
             if (other.gameObject.layer != _monsterLayer) return;
             if (_stateMachine.State != CompanionState.Follow) return;
 
-            var health = other.GetComponentInParent<Health>();
-            if (health == null || health.IsDead) return; // 죽음 애니메이션 재생 중인 시체는 후보에서 제외
-
-            _targetM = other.transform;
-            _targetMHealth = health;
-
-            Debug.Log($"[CompanionTarget] 지정: {_targetM.name} healthId={_targetMHealth?.GetInstanceID()}", this);
-            _targetMHealth.OnDied += HandleTargetDied;
-            SafeFire(CompanionTrigger.MonsterDetected);
+            AcquireNearestTarget();
         }
 
         // 추적 중이던 타겟이 죽었을 때 — Transform은 안 사라지므로(풀링) 이 이벤트가 유일한 신호
@@ -344,17 +338,40 @@ namespace MySecondWorld.Combat.Companion
             _targetM = null;
         }
 
-        private void TryDetectNearbyMonster()
+        private void TryDetectNearbyMonster() => AcquireNearestTarget();
+
+        // 감지 범위 안 살아있는 몬스터 중 가장 가까운 걸 채택.
+        // OverlapSphere 결과 순서는 거리순이 아니라 물리엔진 내부 순서일 뿐이라, 그냥 첫 번째를 집으면
+        // 더 가까운 후보를 놔두고 먼 쪽으로 달려가는 문제가 있음(여러 마리 동시 스폰 시 특히 두드러짐).
+        private void AcquireNearestTarget()
         {
             var hits = Physics.OverlapSphere(transform.position, _stats.DetectRange, 1 << _monsterLayer);
+            Transform nearest = null;
+            Health nearestHealth = null;
+            float nearestSqrDist = float.MaxValue; // 지금까지 찾은 후보 중 가장 가까운 놈까지의 거리의 제곱
+
             foreach (var hit in hits)
             {
                 var health = hit.GetComponentInParent<Health>();
-                if (health != null && !health.IsDead)
+                if (health == null || health.IsDead) continue; // 죽음 애니메이션 재생 중인 시체는 후보에서 제외
+
+                // 거리 비교만 할 목적이면 sqrt가 아예 필요 없음.
+                // Vector3.sqrMagnitude는 sqrt 없이 x²+y²+z²만 계산해서 비용 훨씬 쌈
+                float sqrDist = (hit.transform.position - transform.position).sqrMagnitude; 
+                if (sqrDist < nearestSqrDist)
                 {
-                    HandleDetectionTriggerEnter(hit);
-                    return; // 살아있는 첫 후보 하나만 채택 (기존 hits[0] 정책과 동일한 범위, 죽은 것만 건너뜀)
+                    nearestSqrDist = sqrDist;
+                    nearest = hit.transform;
+                    nearestHealth = health;
                 }
+
+                if (nearest == null) return;
+                _targetM = nearest;
+                _targetMHealth = nearestHealth;
+                Debug.Log($"[CompanionTarget] 지정: {_targetM.name} healthId={_targetMHealth?.GetInstanceID()}", this);
+
+                _targetMHealth.OnDied += HandleTargetDied;
+                SafeFire(CompanionTrigger.MonsterDetected);                
             }
         }
 

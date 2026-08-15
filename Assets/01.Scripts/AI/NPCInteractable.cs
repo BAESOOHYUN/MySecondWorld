@@ -195,7 +195,10 @@ namespace MySecondWorld.AI
         }
         #endregion
 
-        #region Trigger 감지 (TriggerRelay가 자식 오브젝트에서 대신 받아서 호출)
+        #region 
+        // Trigger 감지 (TriggerRelay가 자식 오브젝트에서 대신 받아서 호출)
+        // 코드 참조가 아니라 각 NPC/Companion 프리팹의 TriggerRelay.OnTriggerEntered/OnTriggerExited(UnityEvent)
+        // 슬롯에 인스펙터로 직접 연결돼있음 — Find References로는 호출부가 안 잡힘, 프리팹에서 확인해야 함.
         public void HandlePlayerTriggerEnter(Collider other)
         {
             if (!other.CompareTag("Player")) return;
