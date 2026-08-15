@@ -10,6 +10,7 @@ namespace MySecondWorld.Move
     public class PlayerAnimationController : MonoBehaviour
     {
         [SerializeField] private Animator _animator;
+        private Mirror.NetworkAnimator _networkAnimator;
         // 클립 길이를 MovementController에 주입하기 위해 [SerializeField]
         [SerializeField] private AnimationClip _jumpStartClip;
         [SerializeField] private AnimationClip _landClip;
@@ -55,6 +56,8 @@ namespace MySecondWorld.Move
                 if (!TryGetComponent(out _animator))
                     Debug.LogError($"Animator missing on {gameObject.name}", this);
             }
+
+            _networkAnimator = GetComponent<Mirror.NetworkAnimator>();
         }
 
         private void Start()
@@ -94,11 +97,20 @@ namespace MySecondWorld.Move
         private void HandleJump()
         {
             if (_animator == null)
-                return;
+                return; 
             
-            _animator.ResetTrigger(FallTrigger);
-            _animator.ResetTrigger(LandTrigger);
-            _animator.SetTrigger(JumpTrigger);
+            if (_networkAnimator != null)
+            {
+                _networkAnimator.ResetTrigger(FallTrigger);
+                _networkAnimator.ResetTrigger(LandTrigger);
+                _networkAnimator.SetTrigger(JumpTrigger);
+            }
+            else
+            {
+                _animator.ResetTrigger(FallTrigger);
+                _animator.ResetTrigger(LandTrigger);
+                _animator.SetTrigger(JumpTrigger);
+            }
         }
 
         private void HandleFall()
@@ -106,9 +118,18 @@ namespace MySecondWorld.Move
             if (_animator == null)
                 return;
 
-            _animator.ResetTrigger(LandTrigger);
-            _animator.ResetTrigger(JumpTrigger);
-            _animator.SetTrigger(FallTrigger);
+            if (_networkAnimator != null)
+            {
+                _networkAnimator.ResetTrigger(LandTrigger);
+                _networkAnimator.ResetTrigger(JumpTrigger);
+                _networkAnimator.SetTrigger(FallTrigger);
+            }
+            else
+            {
+                _animator.ResetTrigger(LandTrigger);
+                _animator.ResetTrigger(JumpTrigger);
+                _animator.SetTrigger(FallTrigger);
+            }
         }
 
         private void HandleLand()
@@ -116,9 +137,18 @@ namespace MySecondWorld.Move
             if (_animator == null)
                 return;
 
-            _animator.ResetTrigger(FallTrigger);
-            _animator.ResetTrigger(JumpTrigger);
-            _animator.SetTrigger(LandTrigger);
+            if (_networkAnimator != null)
+            {
+                _networkAnimator.ResetTrigger(FallTrigger);
+                _networkAnimator.ResetTrigger(JumpTrigger);
+                _networkAnimator.SetTrigger(LandTrigger);
+            }
+            else
+            {
+                _animator.ResetTrigger(FallTrigger);
+                _animator.ResetTrigger(JumpTrigger);
+                _animator.SetTrigger(LandTrigger);
+            }
         }
 
         // PlayerAttackController가 입력 발생 시 직접 호출 (MessagePipe 이벤트 구독 아님 — 이번 슬라이스는 DI/이벤트 생략)
@@ -127,7 +157,10 @@ namespace MySecondWorld.Move
             if (_animator == null)
                 return;
 
-            _animator.SetTrigger(AttackTrigger);
+            if (_networkAnimator != null) 
+                _networkAnimator.SetTrigger(AttackTrigger);
+            else 
+                _animator.SetTrigger(AttackTrigger);
         }
     }
 }

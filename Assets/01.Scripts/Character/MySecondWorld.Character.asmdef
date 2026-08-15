@@ -6,6 +6,8 @@
         "UniTask",
         "MessagePipe",
         "VContainer",
+        "Mirror",
+        "Mirror.Components",
         "MySecondWorld.Utils",
         "MySecondWorld.Foundation",
         "MySecondWorld.Input"

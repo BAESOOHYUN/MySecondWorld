@@ -87,16 +87,16 @@ namespace MySecondWorld.Combat.Monster
                 case MonsterSkillId.MeleeAttack:
                     {
                         FaceTarget();
-                        if (_animator != null)
-                            _animator.SetTrigger(_meleeAttackHashes[UnityEngine.Random.Range(0, _meleeAttackHashes.Length)]);
+                        if (_networkAnimator != null)
+                            _networkAnimator.SetTrigger(_meleeAttackHashes[UnityEngine.Random.Range(0, _meleeAttackHashes.Length)]);
                         LockUntilAnimationFinishes();
                     }
                     break;
                 case MonsterSkillId.AoESlam:
                     {
                         FaceTarget();
-                        if (_animator != null)
-                            _animator.SetTrigger(_aoeSlamHash);
+                        if (_networkAnimator != null)
+                            _networkAnimator.SetTrigger(_aoeSlamHash);
                         LockUntilAnimationFinishes();
                     }
                     break;
@@ -173,12 +173,12 @@ namespace MySecondWorld.Combat.Monster
             var ct = this.GetCancellationTokenOnDestroy();
             try
             {
-                if (_animator != null)
-                _animator.SetTrigger(_collapseHash);
+                if (_networkAnimator != null)
+                _networkAnimator.SetTrigger(_collapseHash);
                 await UniTask.Delay(TimeSpan.FromSeconds(_bossStats.CollapseDuration));
 
-                if (_animator != null)
-                    _animator.SetTrigger(_reassembleHash);
+                if (_networkAnimator != null)
+                    _networkAnimator.SetTrigger(_reassembleHash);
                 await UniTask.Delay(TimeSpan.FromSeconds(_bossStats.ReassembleDuration));
 
                 //SafeFire(MonsterTrigger.TransitionComplete);
@@ -205,15 +205,15 @@ namespace MySecondWorld.Combat.Monster
             _idleBreakTimer = 0f;
             _nextIdleBreakInterval = UnityEngine.Random.Range(_bossStats.IdleBreakIntervalMin, _bossStats.IdleBreakIntervalMax);
 
-            if (_animator != null)
-                _animator.SetTrigger(_idleBreakHash);
+            if (_networkAnimator != null)
+                _networkAnimator.SetTrigger(_idleBreakHash);
         }
 
         protected override void OnPlayerFirstDetected()
         {
             // 최초 발견 시 Taunt
-            if (_animator != null)
-                _animator.SetTrigger(_tauntHash);
+            if (_networkAnimator != null)
+                _networkAnimator.SetTrigger(_tauntHash);
             PlayTauntSequence().Forget();
         }
 
