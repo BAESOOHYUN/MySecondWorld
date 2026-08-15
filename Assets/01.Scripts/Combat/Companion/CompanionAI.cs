@@ -183,6 +183,7 @@ namespace MySecondWorld.Combat.Companion
             _stateMachine.Configure(CompanionState.Attack)
                 .OnEntry(() => SetAgentStopped(true))
                 .Permit(CompanionTrigger.TargetOutOfRange, CompanionState.Chase)
+                .Permit(CompanionTrigger.MonsterLost, CompanionState.Follow)
                 .Permit(CompanionTrigger.Died, CompanionState.Dead);
 
             _stateMachine.Configure(CompanionState.Dead)
@@ -313,18 +314,24 @@ namespace MySecondWorld.Combat.Companion
             if (other.gameObject.layer != _monsterLayer) return;
             if (_stateMachine.State != CompanionState.Follow) return;
 
+            var health = other.GetComponentInParent<Health>();
+            if (health == null || health.IsDead) return; // 죽음 애니메이션 재생 중인 시체는 후보에서 제외
+
             _targetM = other.transform;
-            _targetMHealth = other.GetComponentInParent<Health>();
-            if (_targetMHealth != null)
-                _targetMHealth.OnDied += HandleTargetDied;
+            _targetMHealth = health;
+
+            Debug.Log($"[CompanionTarget] 지정: {_targetM.name} healthId={_targetMHealth?.GetInstanceID()}", this);
+            _targetMHealth.OnDied += HandleTargetDied;
             SafeFire(CompanionTrigger.MonsterDetected);
         }
 
         // 추적 중이던 타겟이 죽었을 때 — Transform은 안 사라지므로(풀링) 이 이벤트가 유일한 신호
         private void HandleTargetDied()
         {
+            Debug.Log($"[CompanionTarget] 사망 콜백 발동: {_targetM?.name}", this);
             ClearTarget();
-            SafeFire(CompanionTrigger.MonsterLost);
+            SafeFire(CompanionTrigger.MonsterLost); 
+            TryDetectNearbyMonster(); // 타겟 사망 순간 감지 범위 안에 이미 다른 몬스터가 있어도(Enter 재발화 안 됨) 즉시 재탐지
         }
 
         // 구독 해제 + 참조 정리를 한곳에 모음 — 타겟이 바뀌거나 죽거나 컴포넌트가 파괴될 때 전부 여기를 거치게 해서
@@ -335,6 +342,20 @@ namespace MySecondWorld.Combat.Companion
                 _targetMHealth.OnDied -= HandleTargetDied;
             _targetMHealth = null;
             _targetM = null;
+        }
+
+        private void TryDetectNearbyMonster()
+        {
+            var hits = Physics.OverlapSphere(transform.position, _stats.DetectRange, 1 << _monsterLayer);
+            foreach (var hit in hits)
+            {
+                var health = hit.GetComponentInParent<Health>();
+                if (health != null && !health.IsDead)
+                {
+                    HandleDetectionTriggerEnter(hit);
+                    return; // 살아있는 첫 후보 하나만 채택 (기존 hits[0] 정책과 동일한 범위, 죽은 것만 건너뜀)
+                }
+            }
         }
 
         // NavMeshAgent가 지형에 파묻히는 등으로 NavMesh 밖에 있을 때 isStopped/SetDestination을 호출하면
@@ -348,6 +369,7 @@ namespace MySecondWorld.Combat.Companion
         {
             if (_agent.isOnNavMesh) _agent.SetDestination(destination);
         }
+
         #endregion
     }
 }
