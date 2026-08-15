@@ -25,7 +25,8 @@ namespace MySecondWorld.Network
             DungeonRoomRegistry roomRegistry,
             SaveManager saveManager,
             RootItem startingGoldItem,
-            int startingGoldAmount)
+            int startingGoldAmount
+            )
         {
             _manager = manager;
             _roomRegistry = roomRegistry;
@@ -111,14 +112,19 @@ namespace MySecondWorld.Network
             bool isLocalHost = NetworkServer.localConnection != null
                             && conn == NetworkServer.localConnection;
 
-            if (!isLocalHost 
-                && zone != null 
-                && !string.IsNullOrEmpty(zone.ZoneAssetLabel?.labelString))
+            if (!isLocalHost)
             {
-                var label = zone.ZoneAssetLabel.labelString;
-                session.sentBundleLabels.Add(label);
-                conn.Send(new BundleRequiredMessage { zoneLabel = label });
-                // 번들 완료까지 대기
+                var labels = new List<string> { "character_parts" };
+
+                if (zone != null && !string.IsNullOrEmpty(zone.ZoneAssetLabel?.labelString))
+                    labels.Add(zone.ZoneAssetLabel.labelString);
+
+                foreach (var label in labels)
+                    session.sentBundleLabels.Add(label);
+
+                conn.Send(new BundleRequiredMessage { labels = labels.ToArray() });
+
+                // 번들 전부(캐릭터 파츠 + 존) 완료까지 대기 — 씬 로드/스폰은 이 아래에서만 진행됨
                 await UniTask.WaitUntil(() =>
                     _manager.IsBundleReady(conn.connectionId) || !Sessions.ContainsKey(conn.connectionId),
                     cancellationToken: _manager.Cts.Token);

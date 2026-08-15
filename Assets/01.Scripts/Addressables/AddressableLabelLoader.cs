@@ -55,7 +55,13 @@ namespace MySecondWorld.Bundle
             }
 
             if (newHandle.Status == AsyncOperationStatus.Failed)
+            {
+                // 실패한 핸들을 캐시에 남겨두면 재시도 시 "이미 로드됨"으로 오판해 재다운로드를 건너뛴다 — 반드시 정리
+                Addressables.Release(newHandle);
+                _handles.Remove(label);
+                _refCounts[label]--;
                 throw newHandle.OperationException ?? new Exception($"'{label}' 다운로드 실패");
+            }
 
             onProgress?.Invoke(1f);
             Debug.Log($"[Bundle] '{label}' 로드 완료");

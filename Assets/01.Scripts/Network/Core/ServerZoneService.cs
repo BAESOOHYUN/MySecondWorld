@@ -334,7 +334,7 @@ namespace MySecondWorld.Network
             if (!string.IsNullOrEmpty(label) && !session.sentBundleLabels.Contains(label)) // 중복 체크
             {
                 session.sentBundleLabels.Add(label);
-                conn.Send(new BundleRequiredMessage { zoneLabel = label }); // > GameNetworkManager.OnStartClient
+                conn.Send(new BundleRequiredMessage { labels = new[] { label } }); // > GameNetworkManager.OnStartClient
             }
             conn.Send(new AdditiveSceneMessage { sceneName = sceneName, load = true });
             session.loadedScenes.Add(sceneName);

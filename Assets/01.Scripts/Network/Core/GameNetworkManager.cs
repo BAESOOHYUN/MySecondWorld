@@ -73,17 +73,21 @@ namespace MySecondWorld.Network
         private SaveManager _saveManager;
         private IUIManager _uiManager;
         private ISubscriber<AddressablesProgressEvent> _progressSub;
+        private IPublisher<AddressablesProgressEvent> _progressPub;
 
         [Inject]
         private void Construct(
             AddressableLabelLoader zoneLoader,
             SaveManager saveManager,
             IUIManager uiManager,
-            ISubscriber<AddressablesProgressEvent> progressSub)
+            ISubscriber<AddressablesProgressEvent> progressSub,
+            IPublisher<AddressablesProgressEvent> progressPub
+            )
         {
             _zoneLoader = zoneLoader;
             _saveManager = saveManager;
             _progressSub = progressSub;
+            _progressPub = progressPub;
             _uiManager = uiManager;
         }
 
@@ -244,7 +248,7 @@ namespace MySecondWorld.Network
             Debug.Log("[Client] OnStartClient");
             base.OnStartClient();
             _clientSyncService = new ClientSceneSyncService(this, _zoneLoader);
-            _clientBundleService = new ClientBundleSyncService(_zoneLoader, _progressSub, _uiManager);
+            _clientBundleService = new ClientBundleSyncService(_zoneLoader, _progressSub, _progressPub, _uiManager);
             NetworkClient.RegisterHandler<BundleRequiredMessage>(msg =>
                             _clientBundleService.OnBundleRequired(msg, destroyCancellationToken).Forget());
             NetworkClient.RegisterHandler<AdditiveSceneMessage>(_clientSyncService.OnAdditiveSceneMessage);
