@@ -25,7 +25,6 @@ namespace MySecondWorld.Combat.Monster
 
         [Header("테스트용")]
         [SerializeField] private bool _autoStartForTesting;
-        [SerializeField] private string _testRoomId = "test-room";
 
         public event Action<string> OnAllWavesCleared;
 
@@ -39,7 +38,7 @@ namespace MySecondWorld.Combat.Monster
             if (!NetworkServer.active) return;
 
             if (_autoStartForTesting)
-                StartWaves(_testRoomId);
+                StartWaves(gameObject.scene.path);
         }
 
         private void OnDestroy()
@@ -96,40 +95,48 @@ namespace MySecondWorld.Combat.Monster
 
             for (int i = 0; i < wave.Monsters.Count; i++)
             {
-                var entry = wave.Monsters[i];
-                if (entry.PurePrefab == null || entry.Stats == null)
+                try
                 {
-                    Debug.LogError($"[MonsterWaveSpawner] 웨이브 {_currentWaveIndex}의 몬스터 슬롯 {i}에 PurePrefab 또는 Stats가 비어있어 스킵 on {gameObject.name}", this);
-                    continue;
+                    var entry = wave.Monsters[i];
+                    if (entry.PurePrefab == null || entry.Stats == null)
+                    {
+                        Debug.LogError($"[MonsterWaveSpawner] 웨이브 {_currentWaveIndex}의 몬스터 슬롯 {i}에 PurePrefab 또는 Stats가 비어있어 스킵 on {gameObject.name}", this);
+                        continue;
+                    }
+
+                    var spawnPoint = _spawnPoints[i % _spawnPoints.Length];
+
+                    var pool = GetOrCreatePool(entry);
+                    var instance = pool.Rent();
+
+                    // NetworkMatch — 이 웨이브의 몬스터를 같은 방(roomId)의 플레이어에게만 보이게 함
+                    // 주의: 지금은 필드 씬 기준(_roomId를 그대로 해시)만 정확함.
+                    // 던전 인스턴스별 실제 Guid roomId(DungeonRoomRegistry.AssignRoom) 연동은 아직 안 돼있음
+                    // TODO : roomId 배선이 실제로 연결되면 이 줄을 그 Guid로 교체해야 함.
+                    if (instance.TryGetComponent(out NetworkMatch match))
+                        match.matchId = SceneMatchId.GetMatchIdFromScene(_roomId);
+
+                    var monsterAI = instance.GetComponent<MonsterAI>();
+                    monsterAI.PrepareForSpawn(spawnPoint.position, spawnPoint.rotation);
+
+                    var health = instance.GetComponent<Health>();
+                    _aliveMonsters.Add(health);
+
+                    // 자기 자신을 구독 해제하는 델리게이트 — HP가 0 되는 즉시가 아니라,
+                    // 죽는 애니메이션까지 끝나고 실제로 풀에 반납된 시점에 웨이브를 넘기기 위해 OnReturnedToPool을 구독
+                    Action onReturned = null;
+                    onReturned = () =>
+                    {
+                        monsterAI.OnReturnedToPool -= onReturned;
+                        HandleMonsterDied(health);
+                    };
+                    monsterAI.OnReturnedToPool += onReturned;
+                    Debug.Log($"[WaveSpawn] 웨이브 {_currentWaveIndex} — {i + 1}/{wave.Monsters.Count} 스폰 완료: {instance.name}");
                 }
-
-                var spawnPoint = _spawnPoints[i % _spawnPoints.Length];
-
-                var pool = GetOrCreatePool(entry);
-                var instance = pool.Rent();
-
-                // NetworkMatch — 이 웨이브의 몬스터를 같은 방(roomId)의 플레이어에게만 보이게 함
-                // 주의: 지금은 필드 씬 기준(_roomId를 그대로 해시)만 정확함.
-                // 던전 인스턴스별 실제 Guid roomId(DungeonRoomRegistry.AssignRoom) 연동은 아직 안 돼있음
-                // TODO : roomId 배선이 실제로 연결되면 이 줄을 그 Guid로 교체해야 함.
-                if (instance.TryGetComponent(out NetworkMatch match))
-                    match.matchId = SceneMatchId.GetMatchIdFromScene(_roomId);
-
-                var monsterAI = instance.GetComponent<MonsterAI>();
-                monsterAI.PrepareForSpawn(spawnPoint.position, spawnPoint.rotation);
-
-                var health = instance.GetComponent<Health>();
-                _aliveMonsters.Add(health);
-
-                // 자기 자신을 구독 해제하는 델리게이트 — HP가 0 되는 즉시가 아니라,
-                // 죽는 애니메이션까지 끝나고 실제로 풀에 반납된 시점에 웨이브를 넘기기 위해 OnReturnedToPool을 구독
-                Action onReturned = null;
-                onReturned = () =>
+                catch (Exception e)
                 {
-                    monsterAI.OnReturnedToPool -= onReturned;
-                    HandleMonsterDied(health);
-                };
-                monsterAI.OnReturnedToPool += onReturned;
+                    Debug.LogError($"[WaveSpawn] 웨이브 {_currentWaveIndex} — 슬롯 {i} 스폰 실패, 이 항목만 스킵: {e}", this);
+                }
             }
         }
 
