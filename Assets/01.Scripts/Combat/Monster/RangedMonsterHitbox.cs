@@ -54,6 +54,14 @@ namespace MySecondWorld.Combat.Monster
             var targetPosition = _monsterAI.CurrentTargetPosition;
             if (targetPosition == null) return; // 타겟을 잃은 상태(사거리 이탈 등)면 발사 취소
             var aimPoint = targetPosition.Value + Vector3.up * _aimHeightOffset;
+
+            // 클라 시각 이펙트 브로드캐스트 — 실제 판정(SkillExecutor)과는 독립적인 별개 경로
+            if (Mirror.NetworkServer.active && TryGetComponent(out MonsterProjectileVisualRelay relay))
+            {
+                var dir = (aimPoint - _spawnPoint.position).normalized;
+                relay.RpcPlayProjectileVisual(_spawnPoint.position, dir, _stats.ProjectileSpeed);
+            }
+
             var ctx = new SkillContext(gameObject, Array.Empty<IDamageable>(), _stats.Attack, aimPoint);
             _skillExecutor.Execute(ctx).Forget();
         }
