@@ -3,6 +3,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using MySecondWorld.Network;
+using MySecondWorld.EditorTools;
 
 /// <summary>
 /// ZoneDefinition SO를 Inspector에서 클릭하면 자동으로 이 에디터가 표시된다
@@ -48,20 +49,14 @@ public class ZoneBoundsCalculatorEditor : Editor
         ZoneDefinitionSO zoneDef = target as ZoneDefinitionSO;
         if (zoneDef == null || zoneDef.bounds.size == Vector3.zero) return;
 
+        Vector3 expandedSize = zoneDef.bounds.size + Vector3.one * zoneDef.preloadMargin * 2;
+
         // bounds (플레이어 소속 판정 영역) — 초록색
-        Handles.color = Color.green;
-        Handles.DrawWireCube(zoneDef.bounds.center, zoneDef.bounds.size);
+        BoundsGizmoDrawer.Draw(zoneDef.bounds,
+       $"{zoneDef.name}\nbounds: {zoneDef.bounds.size}\npreload: {expandedSize}", Color.green);
 
         // bounds + preloadMargin (미리 로드 영역) — 노란색 반투명
-        Handles.color = new Color(1f, 1f, 0f, 0.5f);
-        Vector3 expandedSize = zoneDef.bounds.size + Vector3.one * zoneDef.preloadMargin * 2;
-        Handles.DrawWireCube(zoneDef.bounds.center, expandedSize);
-
-        // 라벨
-        Handles.color = Color.white;
-        Handles.Label(
-            zoneDef.bounds.center + Vector3.up * (zoneDef.bounds.size.y / 2 + 2f),
-            $"{zoneDef.name}\nbounds: {zoneDef.bounds.size}\npreload: {expandedSize}");
+        BoundsGizmoDrawer.DrawExpanded(zoneDef.bounds, zoneDef.preloadMargin, new Color(1f, 1f, 0f, 0.5f));
     }
 
     private void CalculateBounds()
