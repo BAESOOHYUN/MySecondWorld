@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Collections.Generic;
+using System.Linq;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -25,11 +26,18 @@ namespace MySecondWorld.Network
     {
         [Scene] public string defaultSubScene;           // FieldScene (마을) — 기본 스폰 존
         public ZoneDefinitionSO[] zones;                 // 모든 존 정의 (SO 배열). defaultSubScene도 포함.
+        public ZonePortalSO[] portals;                   // 월드 간 전환 지점
         public float zoneCheckInterval = 0.5f;           // 존 체크 주기 (초)
         public LayerMask groundLayer;             // 낙하 안전망 레이캐스트용 지면 레이어
 
         [Tooltip("이 Y 아래로 떨어지면 존 판정과 무관하게 마지막 안전 위치로 구조한다")]
         public float fallRescueY = -50f;
+
+        [Header("포탈 전환 페이드")]
+        [SerializeField] private ScreenFadeUI _screenFadeUI;
+        public ScreenFadeUI ScreenFadeUI => _screenFadeUI;
+        public float portalFadeDuration = 0.3f;       // FadeOut/FadeIn 각각의 지속시간
+        public float portalAckTimeoutSeconds = 15f;   // 로드완료 ack 대기 타임아웃(소프트락 방지 안전장치)
 
         [Header("신규 플레이어 시작 지급")]
         [SerializeField] private RootItem _startingGoldItem;
@@ -67,6 +75,7 @@ namespace MySecondWorld.Network
         private DungeonRoomRegistry _roomRegistry;
         private ServerSessionService _sessionService;
         private ServerZoneService _zoneService;
+        public ServerZoneService ZoneService => _zoneService;
         private ClientSceneSyncService _clientSyncService;
         private ClientBundleSyncService _clientBundleService;
         private AddressableLabelLoader _zoneLoader;
@@ -162,7 +171,28 @@ namespace MySecondWorld.Network
             // 클라이언트가 보내는 메시지 → NetworkServer.RegisterHandler (서버가 받으니까)
             NetworkServer.RegisterHandler<BundleReadyMessage>(OnBundleReadyMessage);
             NetworkServer.RegisterHandler<SceneLoadedAckMessage>(_sessionService.OnSceneLoadedAck);
+            NetworkServer.RegisterHandler<PortalSceneLoadedAckMessage>(_zoneService.OnPortalSceneLoadedAck);
             _zoneService.CheckZones(Cts.Token).Forget();
+        }
+
+        // [S1-a] 포탈/월드 설정 오타 조기 검증
+        // 서버 시작 시 1회 — worldId 오타/포탈 설정 실수를 조기에 잡아낸다
+        private void ValidatePortals()
+        {
+            foreach (var group in zones.GroupBy(z => z.WorldId))
+                Debug.Log($"[Portal] World '{group.Key}' — 존 {group.Count()}개");
+
+            foreach (var portal in portals)
+            {
+                if (portal.zoneA == null || portal.zoneB == null)
+                {
+                    Debug.LogError($"[Portal] {portal.name} — zoneA/zoneB 중 비어있는 게 있음", portal);
+                    continue;
+                }
+
+                if (portal.zoneA.WorldId == portal.zoneB.WorldId)
+                    Debug.LogError($"[Portal] {portal.name} — zoneA/zoneB가 같은 World({portal.zoneA.WorldId})임, 포탈 의미 없음", portal);
+            }
         }
 
         public override void OnStopServer()
@@ -249,12 +279,16 @@ namespace MySecondWorld.Network
             base.OnStartClient();
             _clientSyncService = new ClientSceneSyncService(this, _zoneLoader);
             _clientBundleService = new ClientBundleSyncService(_zoneLoader, _progressSub, _progressPub, _uiManager);
+
+            // 왜 바닥 드롭 아이템(FloorItem) 관련 핸들러는 없는가?
+            // 바닥 드롭 아이템(FloorItem.prefab)은 NetworkFloorItem이 프리팹에 이미 붙어있어
+            // Registered Spawnable Prefabs 리스트에만 넣으면 NetworkManager 기본 로직이 알아서 등록해준다 — 커스텀 스폰 핸들러 불필요.
+
             NetworkClient.RegisterHandler<BundleRequiredMessage>(msg =>
                             _clientBundleService.OnBundleRequired(msg, destroyCancellationToken).Forget());
             NetworkClient.RegisterHandler<AdditiveSceneMessage>(_clientSyncService.OnAdditiveSceneMessage);
             NetworkClient.RegisterHandler<SpawnReadyMessage>(_clientSyncService.OnSpawnReadyMessage);
-            // 바닥 드롭 아이템(FloorItem.prefab)은 NetworkFloorItem이 프리팹에 이미 붙어있어
-            // Spawnable Prefabs 리스트에만 넣으면 NetworkManager 기본 로직이 알아서 등록해준다 — 커스텀 스폰 핸들러 불필요.
+            NetworkClient.RegisterHandler<ScreenFadeMessage>(_clientSyncService.OnScreenFadeMessage);
         }
 
         public override void OnClientConnect()
@@ -282,6 +316,8 @@ namespace MySecondWorld.Network
         public Scene GetServerScene(string sceneName) =>
             _serverSceneHandles.TryGetValue(sceneName, out var handle)
             ? handle.Result.Scene : SceneManager.GetSceneByPath(sceneName); //폴백
+
+        #region 디버그/테스트용 — 실제 인게임 진입점 생기면 순차적으로 제거 대상
 
         // 테스트용 — RecruitCompanion() 실제 인게임 진입점(퀘스트/이벤트)이 생기면 이 메서드는 삭제
         public void DebugRecruitCompanion(NetworkConnectionToClient conn, string companionId)
@@ -326,6 +362,8 @@ namespace MySecondWorld.Network
         {
             _sessionService.GrantStartingGold(conn);
         }
+
+        #endregion
     }
 }
 

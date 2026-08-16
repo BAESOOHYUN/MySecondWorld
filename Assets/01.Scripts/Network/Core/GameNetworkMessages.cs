@@ -56,4 +56,25 @@ namespace MySecondWorld.Network
     {
         public string serverCatalogHash;
     }
+
+
+    // 던전 포탈 전환: 트리거 진입 → FadeOut 지시 → 씬스왑 → 로드완료 ack 대기 → 재스냅 → FadeIn 지시
+
+    /// <summary>
+    /// 서버 → 클라이언트 : 포탈 전환 화면 페이드 지시 (아웃/인)
+    /// </summary>
+    public struct ScreenFadeMessage : NetworkMessage
+    {
+        public bool fadeOut;   // true=페이드아웃(어두워짐), false=페이드인(밝아짐)
+        public float duration;
+    }
+
+    /// <summary>
+    /// 클라이언트 → 서버 : 포탈 전환 중 특정 씬 로드 완료 ack.
+    /// 기존 SceneLoadedAckMessage(스폰 시 카운터 기반)와는 용도가 달라 별도 메시지로 분리.
+    /// </summary>
+    public struct PortalSceneLoadedAckMessage : NetworkMessage
+    {
+        public string sceneName;
+    }
 }
