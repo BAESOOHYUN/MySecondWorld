@@ -11,9 +11,12 @@ namespace MySecondWorld.Network
     /// <summary>
     /// 서버에서 BundleRequiredMessage가 오면:
     /// AddressableLabelLoader.LoadLabelAsync() 호출 → 번들 다운로드
-    /// 진행률 AddressablesProgressEvent로 발행 → UI가 받아서 표시
+    /// (zoneLoader라는 이름과 달리 존/아이템 등 모든 라벨을 공용으로 처리하는 로더다)
+    /// 진행률은 LoadLabelAsync의 onProgress 콜백으로 AddressablesLoadingUI.UpdateProgress()를
+    /// 직접 호출해 표시한다 — AddressablesProgressEvent(MessagePipe)는 진행률 전달용이 아니라
+    /// 아래 재시도 정책의 NeedsRetry 신호 전용이다.
     /// 완료되면 BundleReadyMessage를 서버에 ACK
-    /// 
+    ///
     /// 재시도 정책: 실패 시 최대 MaxAutoRetries회까지는 NeedsRetry 이벤트로 자동 재시도.
     /// 소진되면 Retry 버튼을 띄우고, 버튼 클릭도 동일하게 NeedsRetry를 발행해 카운터를
     /// 0으로 리셋 후 같은 경로를 다시 탄다 — "짧은 시간 내 일시적 실패"는 자동으로,

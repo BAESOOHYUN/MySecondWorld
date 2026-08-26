@@ -46,11 +46,11 @@ namespace MySecondWorld.Bundle
             // 처음 로드할 때만 여기까지 옴 (플레이어A 진입 시)
             var newHandle = Addressables.DownloadDependenciesAsync(label, false); // false는 "자동 Release 안 함" 옵션
             _handles[label] = newHandle;                                          // handle 저장 (나중에 Release 때 필요)
-            
+
             // 완료될 때까지 매 프레임 진행률 폴링 — AIModelDownloader와 동일 패턴
             while (!newHandle.IsDone)
             {
-                onProgress?.Invoke(newHandle.PercentComplete);
+                onProgress?.Invoke(newHandle.GetDownloadStatus().Percent);
                 await UniTask.Yield(PlayerLoopTiming.Update, ct);
             }
 

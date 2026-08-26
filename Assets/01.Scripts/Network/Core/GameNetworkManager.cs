@@ -38,6 +38,8 @@ namespace MySecondWorld.Network
         public ScreenFadeUI ScreenFadeUI => _screenFadeUI;
         public float portalFadeDuration = 0.3f;       // FadeOut/FadeIn 각각의 지속시간
         public float portalAckTimeoutSeconds = 15f;   // 로드완료 ack 대기 타임아웃(소프트락 방지 안전장치)
+        public float portalReentryCooldownSeconds = 2f;  // 도착 직후 반대쪽 트리거 무시 시간(즉시 왕복 방지)\
+        public float portalCheckInterval = 0.1f;   // 포탈 감지 폴링 주기(zoneCheckInterval보다 훨씬 짧게 — 빠르게 지나가도 안 놓치도록)
 
         [Header("신규 플레이어 시작 지급")]
         [SerializeField] private RootItem _startingGoldItem;
@@ -173,6 +175,9 @@ namespace MySecondWorld.Network
             NetworkServer.RegisterHandler<SceneLoadedAckMessage>(_sessionService.OnSceneLoadedAck);
             NetworkServer.RegisterHandler<PortalSceneLoadedAckMessage>(_zoneService.OnPortalSceneLoadedAck);
             _zoneService.CheckZones(Cts.Token).Forget();
+            _zoneService.CheckPortals(Cts.Token).Forget();
+
+            ValidatePortals(); // 포탈 SO 설정 실수(zoneA/zoneB 누락 등) 조기 검증
         }
 
         // [S1-a] 포탈/월드 설정 오타 조기 검증

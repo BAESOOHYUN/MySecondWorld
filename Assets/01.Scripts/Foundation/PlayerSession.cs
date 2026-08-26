@@ -34,6 +34,7 @@ namespace MySecondWorld.Network
         #region 포탈 전환 상태
         public bool isTransitioningPortal;         // 포탈 페이드 전환 진행 중 (CheckZones 정기 루프/중복 트리거 가드)
         public string confirmedPortalScene;        // PortalSceneLoadedAckMessage로 확인된 씬 이름 (전환 시작 시 null로 리셋)
+        public float portalReentryCooldownUntil;   // 이 시각(Time.time) 전에는 반대쪽 포탈 트리거를 무시 (막 도착한 직후 즉시 왕복 방지)
         #endregion
 
         #region 낙하 안전망

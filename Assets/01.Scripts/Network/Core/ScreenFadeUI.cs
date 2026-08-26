@@ -16,6 +16,12 @@ namespace MySecondWorld.Network
         {
             if (_canvasGroup == null)
                 _canvasGroup = GetComponent<CanvasGroup>();
+
+            if (_canvasGroup == null)
+            {
+                Debug.LogError("[ScreenFadeUI] CanvasGroup 미연결 — 씬 배치 확인 필요", this);
+                return;
+            }
             _canvasGroup.alpha = 0f;
             _canvasGroup.blocksRaycasts = false;
         }

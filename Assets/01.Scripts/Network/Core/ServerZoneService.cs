@@ -41,7 +41,7 @@ namespace MySecondWorld.Network
                         if (!_sessionService.Sessions.ContainsKey(session.Key)) continue; // 순회 중 제거된 경우
                         if (!session.Value.isSpawned) continue;
                         if (session.Value.isTransitioningPortal) continue; // 포탈 전환 진행 중 — 정기 루프와 경합 방지
-                        
+
                         if (!NetworkServer.connections.ContainsKey(session.Key))
                         {
                             Debug.LogWarning($"[S-Loop] connections에 conn={session.Key} 없음!");
@@ -72,6 +72,52 @@ namespace MySecondWorld.Network
                 // 서버 중지 시 정상 종료
             }
         }
+
+        // [S-Loop-Portal] 포탈 감지 — 물리 OnTriggerEnter 대신 서버가 bounds로 직접 폴링(짧은 주기).
+        // 원격 클라 서버 사본은 CharacterController가 항상 꺼져있어 물리 트리거가 못 걸리기 때문(2026-08-26).
+        // OnPortalTriggerEntered 내부 가드(isTransitioningPortal/쿨다운/월드일치)가 이미 중복호출을 걸러줘서
+        // 트리거 범위 안에 있는 동안 매 틱 호출해도 안전함 — 별도 진입/이탈 추적 불필요.
+        public async UniTaskVoid CheckPortals(CancellationToken ct)
+        {
+            try
+            {
+                while (!ct.IsCancellationRequested)
+                {
+                    foreach (var session in _sessionService.Sessions.ToList())
+                    {
+                        // 방어코드
+                        if (!_sessionService.Sessions.ContainsKey(session.Key)) continue; // 우리 장부(_sessionService)에 해당 세션이 종료되거나 해서 없음, 무시.
+                        if (!session.Value.isSpawned) continue;  // 세션이 월드에 스폰안됨, 무시
+                        if (session.Value.isTransitioningPortal) continue;  // 포탈에서 이동중인 세션, 무시
+                        if (!NetworkServer.connections.TryGetValue(session.Key, out var conn) || conn.identity == null) continue; //Mirror 쪽 딕셔너리에 우리 세션이 없음, 무시
+
+                        try
+                        {
+                            Vector3 playerPos = conn.identity.transform.position;
+                            // 던전 씬이 로드되면서 각 PortalTrigger가 스스로 켜지고 꺼질 때마다 알아서 리스트를 갱신하는 방식
+                            // Active를 읽을 때는 이미 최신 상태가 보장
+                            foreach (var trigger in ZonePortalTrigger.Active)
+                            {
+                                if (trigger.Bounds.Contains(playerPos))
+                                    OnPortalTriggerEntered(conn, trigger.Portal, trigger.SourceZone);
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.LogError($"[S-Loop-Portal] conn={session.Key} 처리 중 예외 — 이 세션만 스킵: {e}");
+                        }
+                    }
+                    
+                    //"0.1초마다 내가 직접 '지금 이 플레이어 위치가 트리거 안에 있나?' 하고 계속 물어봄" — 능동적으로 확인
+                    await UniTask.Delay(TimeSpan.FromSeconds(_manager.portalCheckInterval), cancellationToken: ct);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // 서버 중지 시 정상 종료
+            }
+        }
+
 
         // 이 씬이 어느 월드에 속하는지 zones에서 해당 존을 찾아 WorldId(번들 라벨)를 읽어온다.
         // currentScene이 유일한 원본이므로 월드를 세션에 따로 저장하지 않는다(두 값이 어긋날 일 없게).
@@ -157,7 +203,11 @@ namespace MySecondWorld.Network
         // [S-Loop-2-a] 소속 씬 변경 — MoveGameObjectToScene으로 플레이어 가시성 갱신
         public void PlayerChangedScene(NetworkConnectionToClient conn, string sceneName)
         {
-            var session = _sessionService.Sessions[conn.connectionId];
+            // session = _sessionService.Sessions[conn.connectionId]처럼 인덱서로 직접 접근하면
+            // 전환 중(최대 15초) 접속이 끊긴 경우 세션이 이미 삭제된 상태라 KeyNotFoundException이 난다.
+            // TryGetValue로 세션 존재 여부부터 확인 — 없으면(접속 종료) 조용히 리턴.
+            if (!_sessionService.Sessions.TryGetValue(conn.connectionId, out var session)) return;
+
             if (session.currentScene == sceneName) return;
 
             // LeaveRoom에서 이전 씬이 필요하므로 MoveGameObjectToScene 전에 저장
@@ -274,9 +324,11 @@ namespace MySecondWorld.Network
             // 씬 이동을 먼저 — 목적지 씬으로 옮긴 뒤에 위치를 확정해야 가시성 판정이 어긋나지 않는다
             if (session.Value.currentScene != safeScene)
             {
-                SceneManager.MoveGameObjectToScene(
-                    conn.identity.gameObject, _manager.GetServerScene(safeScene));
-                session.Value.currentScene = safeScene;
+                // PlayerChangedScene 재사용
+                // 직접 MoveGameObjectToScene만 하면 UpdateDungeonMatch(matchId 갱신)가 안 불려서
+                // 포탈 ack 타임아웃 강제진행 이후 재낙하 시 matchId가 안 풀리는 문제가 있었음
+                PlayerChangedScene(conn, safeScene);
+
             }
 
             // transform.position 직접 대입은 다음 클라 스냅샷에 덮어써진다 (권한이 클라에 있음).
@@ -335,7 +387,7 @@ namespace MySecondWorld.Network
         // [S-Loop-4-a] 씬 로드 지시 — 클라이언트가 지형을 볼 수 있게 함
         public void PlayerEnteredZone(NetworkConnectionToClient conn, string sceneName)
         {
-            var session = _sessionService.Sessions[conn.connectionId];
+            if (!_sessionService.Sessions.TryGetValue(conn.connectionId, out var session)) return;
             if (session.loadedScenes.Contains(sceneName)) return;
 
             // AdditiveSceneMessage 보내기 전에 BundleRequiredMessage 먼저 전송해야 번들 다운로드가 씬 로드보다 먼저 시작됨
@@ -358,7 +410,7 @@ namespace MySecondWorld.Network
         // [S-Loop-4-b] 씬 언로드 지시 — 메모리 절약
         public void PlayerLeftZone(NetworkConnectionToClient conn, string sceneName)
         {
-            var session = _sessionService.Sessions[conn.connectionId];
+            if (!_sessionService.Sessions.TryGetValue(conn.connectionId, out var session)) return;
             if (!session.loadedScenes.Contains(sceneName)) 
                 return;
             conn.Send(new AdditiveSceneMessage { sceneName = sceneName, load = false }); // > GameNetworkManager.OnStartClient
@@ -372,6 +424,7 @@ namespace MySecondWorld.Network
         {
             if (!_sessionService.Sessions.TryGetValue(conn.connectionId, out var session)) return;
             if (session.isTransitioningPortal) return; // 이미 전환 진행 중 — 중복 트리거 무시
+            if (Time.time < session.portalReentryCooldownUntil) return; // 방금 반대편에서 갓 도착 — 재진입 쿨다운 중
 
             string currentWorld = WorldOf(session.currentScene) ?? WorldOf(_manager.defaultSubScene);
             if (currentWorld != sourceZone.WorldId) return; // 이미 전환됨 — 반대쪽 트리거가 먼저 처리함
@@ -415,9 +468,16 @@ namespace MySecondWorld.Network
                 conn.Send(new ScreenFadeMessage { fadeOut = false, duration = _manager.portalFadeDuration });  // 씬 FadeIn > GameNetworkManager.OnStartClient
                 await UniTask.Delay(TimeSpan.FromSeconds(_manager.portalFadeDuration));
             }
+            catch (Exception e)
+            {
+                Debug.LogError($"[Portal] conn={conn.connectionId} 전환 중 예외 — {e}");
+                if (NetworkServer.connections.ContainsKey(conn.connectionId)) // 접속 종료가 원인이면 여기 안 들어감
+                    conn.Send(new ScreenFadeMessage { fadeOut = false, duration = _manager.portalFadeDuration }); // 검은 화면 방치 방지
+            }
             finally
             {
                 session.isTransitioningPortal = false; // 포탈 페이드 전환 진행 끝
+                session.portalReentryCooldownUntil = Time.time + _manager.portalReentryCooldownSeconds; // 포탈 재진입 쿨다운 시작 시각 기록
             }
         }
 
