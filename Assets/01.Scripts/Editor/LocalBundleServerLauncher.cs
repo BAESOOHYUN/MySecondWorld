@@ -30,23 +30,30 @@ namespace MySecondWorld.EditorTools
                 return;
             }
 
-            _serverProcess = new Process
-            {
-                StartInfo = new ProcessStartInfo
+            try
+            { 
+                _serverProcess = new Process
                 {
-                    FileName = "python",
-                    Arguments = $"-m http.server {Port} --bind 0.0.0.0",
-                    WorkingDirectory = serverDataPath,
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                }
-            };
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = "python",
+                        Arguments = $"-m http.server {Port} --bind 0.0.0.0",
+                        WorkingDirectory = serverDataPath,
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                    }
+                };
 
-            _serverProcess.Start();
-            UnityEngine.Debug.Log($"[LocalBundleServer] 로컬 번들 서버 시작 (포트 {Port}, PID {_serverProcess.Id})");
+                _serverProcess.Start();
+                UnityEngine.Debug.Log($"[LocalBundleServer] 로컬 번들 서버 시작 (포트 {Port}, PID {_serverProcess.Id})");
 
-            AssemblyReloadEvents.beforeAssemblyReload += StopServer;
-            EditorApplication.quitting += StopServer;
+                AssemblyReloadEvents.beforeAssemblyReload += StopServer;
+                EditorApplication.quitting += StopServer;
+            }
+            catch (System.Exception e)
+            {
+                UnityEngine.Debug.LogWarning($"[LocalBundleServer] 시작 실패(python 미설치 등) — 로컬 번들 서버 없이 진행: {e.Message}");
+            }
         }
         
         private static bool IsPortInUse(int port)
