@@ -9,6 +9,7 @@ namespace MySecondWorld.UI
     // 인스펙터 사전 연결이 불가능하다. 누를 때마다 로컬 플레이어를 찾아온다.
     public class DebugButtonRelay : MonoBehaviour
     {
+        public void OnGrantWeaponTestKitClicked() => WithLocalPlayer(c => c.RequestWeaponTestKit());
         public void OnGrantGoldClicked() => WithLocalPlayer(c => c.RequestStartingGold());
         public void OnRecruitCompanionClicked() => WithLocalPlayer(c => c.RequestRecruitCompanion());
         public void OnKillCompanionClicked() => WithLocalPlayer(c => c.RequestKillCompanion());

@@ -18,6 +18,10 @@ namespace MySecondWorld.Network
         private readonly SaveManager _saveManager;
         private readonly RootItem _startingGoldItem;
         private readonly int _startingGoldAmount;
+        private readonly RootItem _testSwordItem;
+        private readonly RootItem _testRingItem;
+        private readonly RootItem _testBowItem;
+
         public Dictionary<int, PlayerSession> Sessions { get; } = new();
 
         public ServerSessionService(
@@ -25,7 +29,10 @@ namespace MySecondWorld.Network
             DungeonRoomRegistry roomRegistry,
             SaveManager saveManager,
             RootItem startingGoldItem,
-            int startingGoldAmount
+            int startingGoldAmount,
+            RootItem testSwordItem,
+            RootItem testRingItem,
+            RootItem testBowItem
             )
         {
             _manager = manager;
@@ -33,6 +40,9 @@ namespace MySecondWorld.Network
             _saveManager = saveManager;
             _startingGoldItem = startingGoldItem;
             _startingGoldAmount = startingGoldAmount;
+            _testSwordItem = testSwordItem;
+            _testRingItem = testRingItem;
+            _testBowItem = testBowItem;
         }
 
         // [S3] 세션 생성 + PrepareAndSpawn 시작
@@ -308,6 +318,28 @@ namespace MySecondWorld.Network
             inventory.DoAdd(new Cleverous.VaultInventory.RootItemStack(_startingGoldItem, _startingGoldAmount));
             Debug.Log($"[Session] conn={conn.connectionId}에게 골드 {_startingGoldAmount} 지급");
         }
+
+        // 무기 애니메이션 전환 테스트용 — Sword/Ring/Bow 1개씩 지급. 실제 인게임 획득 경로
+        // (상점/드랍)가 생기면 이 메서드는 삭제한다.
+        public void GrantWeaponTestKit(NetworkConnectionToClient conn)
+        {
+            if (conn.identity == null) return;
+
+            var inventory = conn.identity.GetComponent<Cleverous.VaultInventory.Inventory>();
+            if (inventory == null)
+            {
+                Debug.LogWarning($"[Session] conn={conn.connectionId}의 플레이어에 Inventory가 없음");
+                return;
+            }
+
+            foreach (var item in new[] { _testSwordItem, _testRingItem, _testBowItem })
+            {
+                if (item == null) continue;
+                inventory.DoAdd(new Cleverous.VaultInventory.RootItemStack(item, 1));
+            }
+            Debug.Log($"[Session] conn={conn.connectionId}에게 무기 테스트 킷 지급");
+        }
+
         #endregion
     }
 }

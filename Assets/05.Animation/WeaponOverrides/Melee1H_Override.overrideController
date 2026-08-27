@@ -7,5 +7,15 @@ AnimatorOverrideController:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Melee1H_Override
-  m_Controller: {fileID: 0}
-  m_Clips: []
+  m_Controller: {fileID: 9100000, guid: 27746c0263c863a47a6381a282ff99ab, type: 2}
+  m_Clips:
+  - m_OriginalClip: {fileID: 7400002, guid: a3422ad278cd9a94aa3da8e6bff9deea, type: 3}
+    m_OverrideClip: {fileID: 7400000, guid: f8c2d6a0ce3bc2d40b090cd67dd23862, type: 3}
+  - m_OriginalClip: {fileID: 7400000, guid: 83ed209ea436efc4aba715fe2858546f, type: 3}
+    m_OverrideClip: {fileID: 7400016, guid: 5fe51830c6e12034892d1041e85357b6, type: 3}
+  - m_OriginalClip: {fileID: 7832394241297634407, guid: d7c9fdb03cedf6f40b1254fcdd59d955,
+      type: 3}
+    m_OverrideClip: {fileID: 7400002, guid: 6d3c15f13c10feb4f89c2078fb15fdd8, type: 3}
+  - m_OriginalClip: {fileID: 1695192892109923712, guid: b3f3ac3565beb18429901d070f0eec02,
+      type: 3}
+    m_OverrideClip: {fileID: 7400016, guid: df74f516f8958a24bab217e3603c71cd, type: 3}

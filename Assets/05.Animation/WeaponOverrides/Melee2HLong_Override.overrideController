@@ -7,5 +7,17 @@ AnimatorOverrideController:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Melee2HLong_Override
-  m_Controller: {fileID: 0}
-  m_Clips: []
+  m_Controller: {fileID: 9100000, guid: 27746c0263c863a47a6381a282ff99ab, type: 2}
+  m_Clips:
+  - m_OriginalClip: {fileID: 7400002, guid: a3422ad278cd9a94aa3da8e6bff9deea, type: 3}
+    m_OverrideClip: {fileID: 7400000, guid: 22291ae6e642963408a1dd8fb1b1a101, type: 3}
+  - m_OriginalClip: {fileID: 1695192892109923712, guid: b3f3ac3565beb18429901d070f0eec02,
+      type: 3}
+    m_OverrideClip: {fileID: 7400016, guid: a1b1596375d53e54f8d6fc4a4def0dd1, type: 3}
+  - m_OriginalClip: {fileID: 7400000, guid: 83ed209ea436efc4aba715fe2858546f, type: 3}
+    m_OverrideClip: {fileID: 7400016, guid: f7ba5795a3008954b8c1a56525e85e03, type: 3}
+  - m_OriginalClip: {fileID: 7832394241297634407, guid: d7c9fdb03cedf6f40b1254fcdd59d955,
+      type: 3}
+    m_OverrideClip: {fileID: 7400002, guid: 09b44c455b7e996459a2701726b9e8c5, type: 3}
+  - m_OriginalClip: {fileID: 7400000, guid: f1613afb92638e743bace9a9392b5ee7, type: 3}
+    m_OverrideClip: {fileID: 7400000, guid: c0c34b56d500a8c4fa6649639ab98ac1, type: 3}

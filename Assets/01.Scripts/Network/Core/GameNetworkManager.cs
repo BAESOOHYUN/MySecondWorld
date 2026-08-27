@@ -44,6 +44,9 @@ namespace MySecondWorld.Network
         [Header("신규 플레이어 시작 지급")]
         [SerializeField] private RootItem _startingGoldItem;
         [SerializeField] private int _startingGoldAmount = 100;
+        [SerializeField] private RootItem _testSwordItem;
+        [SerializeField] private RootItem _testRingItem;
+        [SerializeField] private RootItem _testBowItem;
 
         [Header("동행 NPC")]
         [SerializeField] private CompanionEntry[] _companionRegistry;
@@ -167,7 +170,9 @@ namespace MySecondWorld.Network
             base.OnStartServer(); // Mirror가 onlineScene(MainScene)을 로드. 완료 후 → OnServerSceneChanged
             Cts = new CancellationTokenSource();
             _roomRegistry = new DungeonRoomRegistry();
-            _sessionService = new ServerSessionService(this, _roomRegistry, _saveManager, _startingGoldItem, _startingGoldAmount);
+            _sessionService = new ServerSessionService(
+                this, _roomRegistry, _saveManager, _startingGoldItem, _startingGoldAmount,
+                _testSwordItem, _testRingItem, _testBowItem);
             _zoneService = new ServerZoneService(this, _sessionService, _roomRegistry);
 
             // 클라이언트가 보내는 메시지 → NetworkServer.RegisterHandler (서버가 받으니까)
@@ -366,6 +371,11 @@ namespace MySecondWorld.Network
         public void DebugGrantStartingGold(NetworkConnectionToClient conn)
         {
             _sessionService.GrantStartingGold(conn);
+        }
+
+        public void DebugGrantWeaponTestKit(NetworkConnectionToClient conn)
+        {
+            _sessionService.GrantWeaponTestKit(conn);
         }
 
         #endregion

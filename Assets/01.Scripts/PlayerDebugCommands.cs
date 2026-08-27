@@ -18,6 +18,7 @@ namespace MySecondWorld.Network.Player
         public void RequestKillCompanion() { if (isOwned) CmdKillCompanion(); }
         public void RequestReviveCompanion() { if (isOwned) CmdReviveCompanion(); }
         public void RequestToggleCompanionFollow() { if (isOwned) CmdToggleCompanionFollow(); }
+        public void RequestWeaponTestKit() { if (isOwned) CmdGrantWeaponTestKit(); }
 
         #endregion
 
@@ -34,6 +35,7 @@ namespace MySecondWorld.Network.Player
             if (keyboard.f9Key.wasPressedThisFrame) RequestRecruitCompanion();
             if (keyboard.f10Key.wasPressedThisFrame) RequestKillCompanion();
             if (keyboard.f11Key.wasPressedThisFrame) RequestReviveCompanion();
+            if (keyboard.f12Key.wasPressedThisFrame) RequestWeaponTestKit();
         }
 
         #region Command (서버에서 실행)
@@ -68,6 +70,11 @@ namespace MySecondWorld.Network.Player
             Manager.DebugToggleCompanionFollow(connectionToClient);
         }
 
+        [Command]
+        private void CmdGrantWeaponTestKit()
+        {
+            Manager.DebugGrantWeaponTestKit(connectionToClient);
+        }
         #endregion
     }
 }
