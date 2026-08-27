@@ -89,12 +89,15 @@ namespace MySecondWorld.Combat
         // Attack 애니메이션 클립의 타격 프레임에 Animation Event로 연결
         public void OnAttackHit()
         {
+            if (!_weaponEquip.isLocalPlayer)
+                return;
+
             // 무기 미장착 시 맨주먹 공격력 사용
             float power = _weaponEquip.GetMainHandAttack();
             if (power <= 0f)
                 power = _unarmedAttack;
 
-            _attackAuthority.CmdResolveAttackHit(_attackPoint.position, _attackRadius, power, _targetLayerMask.value);
+            _attackAuthority.CmdResolveAttackHit(_attackPoint.position, _attackRadius, _unarmedAttack);
         }
 
         #endregion

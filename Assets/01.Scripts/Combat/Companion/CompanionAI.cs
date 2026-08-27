@@ -357,22 +357,23 @@ namespace MySecondWorld.Combat.Companion
 
                 // 거리 비교만 할 목적이면 sqrt가 아예 필요 없음.
                 // Vector3.sqrMagnitude는 sqrt 없이 x²+y²+z²만 계산해서 비용 훨씬 쌈
-                float sqrDist = (hit.transform.position - transform.position).sqrMagnitude; 
+                float sqrDist = (hit.transform.position - transform.position).sqrMagnitude;
                 if (sqrDist < nearestSqrDist)
                 {
                     nearestSqrDist = sqrDist;
                     nearest = hit.transform;
                     nearestHealth = health;
                 }
-
-                if (nearest == null) return;
-                _targetM = nearest;
-                _targetMHealth = nearestHealth;
-                Debug.Log($"[CompanionTarget] 지정: {_targetM.name} healthId={_targetMHealth?.GetInstanceID()}", this);
-
-                _targetMHealth.OnDied += HandleTargetDied;
-                SafeFire(CompanionTrigger.MonsterDetected);                
             }
+            // 루프가 다 끝난 뒤, 최종 확정된 최근접 대상 하나에 대해서만 딱 한 번 실행
+            if (nearest == null) return;
+
+            _targetM = nearest;
+            _targetMHealth = nearestHealth;
+            Debug.Log($"[CompanionTarget] 지정: {_targetM.name} healthId={_targetMHealth?.GetInstanceID()}", this);
+
+            _targetMHealth.OnDied += HandleTargetDied;
+            SafeFire(CompanionTrigger.MonsterDetected);
         }
 
         // NavMeshAgent가 지형에 파묻히는 등으로 NavMesh 밖에 있을 때 isStopped/SetDestination을 호출하면
