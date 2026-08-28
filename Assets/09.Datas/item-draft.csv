@@ -193,11 +193,6 @@ SM_Item_Mushroom_01,FantasyKingdomItems,버섯,Generic,Ingredient,Common,,Materi
 SM_Item_Mushroom_02,FantasyKingdomItems,버섯 2,Generic,Ingredient,Common,,Material,,,,,,,,,,,,버섯 2. 흔한 식재료.,,TRUE
 SM_Item_Mushroom_03,FantasyKingdomItems,버섯 3,Generic,Ingredient,Common,,Material,,,,,,,,,,,,버섯 3. 흔한 식재료.,,TRUE
 SM_Item_Nail_01,FantasyKingdomItems,못,Generic,Misc,Common,,Material,,,,,,,,,,,,못.,,FALSE
-SM_Item_Necklace_Hanging_01,FantasyKingdomItems,금십자 목걸이,Equipment,NecklaceHanging,Common,,Accessory,MagicAttack,Flat,10,,,,,,,,,가는 금사슬 끝에 작은 십자가 장식이 매달린 목걸이. 오래전 성직자들이 즐겨 걸었다고 전해진다.,목 착용 형태 아님 — 캐스터 MainHand 후보(Jewelry)에서 제외(2026-07-20). Necklace_Flat_01과 동일 아이템(포즈만 다름) — 이름/스탯/설명 동기화(2026-08-28),TRUE
-SM_Item_Necklace_Hanging_02,FantasyKingdomItems,홍보석 목걸이,Equipment,NecklaceHanging,Common,,Accessory,MagicAttack,Flat,11,Luck,Flat,1,,,,,,금사슬 끝에 붉은 원석이 물방울처럼 매달린 목걸이.,목 착용 형태 아님 — 캐스터 MainHand 후보(Jewelry)에서 제외(2026-07-20). Necklace_Flat_02와 동일 아이템(포즈만 다름) — 이름/스탯/설명 동기화(2026-08-28),TRUE
-SM_Item_Necklace_Hanging_03,FantasyKingdomItems,가죽끈 부적목걸이,Equipment,NecklaceHanging,Common,,Accessory,MagicAttack,Flat,9,Defense,Flat,2,,,,,,질긴 가죽끈에 은빛 금속 장식을 매단 목걸이. 투박하지만 손에 착 감기는 무게감이 있다.,목 착용 형태 아님 — 캐스터 MainHand 후보(Jewelry)에서 제외(2026-07-20). Necklace_Flat_03과 동일 아이템(포즈만 다름) — 이름/스탯/설명 동기화(2026-08-28),TRUE
-SM_Item_Necklace_Hanging_04,FantasyKingdomItems,가죽끈 문장목걸이,Equipment,NecklaceHanging,Common,,Accessory,MagicAttack,Flat,9,HpRegen,Flat,2,,,,,,가죽끈 끝에 은빛 문장을 매단 목걸이. 어느 가문의 상징이었는지는 알 수 없다.,목 착용 형태 아님 — 캐스터 MainHand 후보(Jewelry)에서 제외(2026-07-20). Necklace_Flat_04와 동일 아이템(포즈만 다름) — 이름/스탯/설명 동기화(2026-08-28),TRUE
-SM_Item_Necklace_Hanging_05,FantasyKingdomItems,청보석 목걸이,Equipment,NecklaceHanging,Common,,Accessory,MagicAttack,Flat,12,,,,,,,,,금사슬에 파란 보석을 물린 목걸이. 맑은 물빛을 닮은 보석이 시선을 끈다.,목 착용 형태 아님 — 캐스터 MainHand 후보(Jewelry)에서 제외(2026-07-20). Necklace_Flat_05와 동일 아이템(포즈만 다름) — 이름/스탯/설명 동기화(2026-08-28),TRUE
 SM_Item_Pan_01,FantasyKingdomItems,프라이팬,Generic,Misc,Common,,Material,,,,,,,,,,,,프라이팬.,,FALSE
 SM_Item_Parchment_01,FantasyKingdomItems,양피지,Generic,Misc,Common,,Material,,,,,,,,,,,,양피지.,,FALSE
 SM_Item_Parchment_02,FantasyKingdomItems,양피지 2,Generic,Misc,Common,,Material,,,,,,,,,,,,양피지 2.,,FALSE
