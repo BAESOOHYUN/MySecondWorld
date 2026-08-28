@@ -21,19 +21,29 @@ namespace MySecondWorld.Network
         private readonly RootItem _testSwordItem;
         private readonly RootItem _testRingItem;
         private readonly RootItem _testBowItem;
+        private readonly RootItem _testQuiverItem;
+        private readonly RootItem _testBraceletItem;
+        private readonly RootItem _testNecklaceItem;
+        private readonly RootItem _testAxeItem;
+        private readonly RootItem _testPolearmItem;
 
         public Dictionary<int, PlayerSession> Sessions { get; } = new();
 
         public ServerSessionService(
-            GameNetworkManager manager,
-            DungeonRoomRegistry roomRegistry,
-            SaveManager saveManager,
-            RootItem startingGoldItem,
-            int startingGoldAmount,
-            RootItem testSwordItem,
-            RootItem testRingItem,
-            RootItem testBowItem
-            )
+           GameNetworkManager manager,
+           DungeonRoomRegistry roomRegistry,
+           SaveManager saveManager,
+           RootItem startingGoldItem,
+           int startingGoldAmount,
+           RootItem testSwordItem,
+           RootItem testRingItem,
+           RootItem testBowItem,
+           RootItem testQuiverItem,
+           RootItem testBraceletItem,
+           RootItem testNecklaceItem,
+           RootItem testAxeItem,
+           RootItem testPolearmItem
+           )
         {
             _manager = manager;
             _roomRegistry = roomRegistry;
@@ -43,6 +53,11 @@ namespace MySecondWorld.Network
             _testSwordItem = testSwordItem;
             _testRingItem = testRingItem;
             _testBowItem = testBowItem;
+            _testQuiverItem = testQuiverItem;
+            _testBraceletItem = testBraceletItem;
+            _testNecklaceItem = testNecklaceItem;
+            _testAxeItem = testAxeItem;
+            _testPolearmItem = testPolearmItem;
         }
 
         // [S3] 세션 생성 + PrepareAndSpawn 시작
@@ -332,7 +347,8 @@ namespace MySecondWorld.Network
                 return;
             }
 
-            foreach (var item in new[] { _testSwordItem, _testRingItem, _testBowItem })
+            foreach (var item in new[] {  _testSwordItem, _testRingItem, _testBowItem,
+                _testQuiverItem, _testBraceletItem, _testNecklaceItem, _testAxeItem, _testPolearmItem})
             {
                 if (item == null) continue;
                 inventory.DoAdd(new Cleverous.VaultInventory.RootItemStack(item, 1));
