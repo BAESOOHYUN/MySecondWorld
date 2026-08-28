@@ -5,6 +5,8 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
+using UnityEditor.AddressableAssets;
+using UnityEditor.AddressableAssets.Settings;
 using Cleverous.VaultInventory;
 using Cleverous.VaultSystem;
 using MySecondWorld.Customization;
@@ -109,6 +111,9 @@ namespace MySecondWorld.Editor
             //if (GUILayout.Button("누락 프리팹 모델에서 생성"))
             //    GenerateMissingPrefabsFromModels(_csvPath);
             GUI.enabled = true;
+
+            if (GUILayout.Button("빠진 Weapon Addressable 등록 (RemoteArtPrefab)"))
+                RegisterWeaponModelsAddressable();
 
             // 커스터마이징 파츠 (그룹 B,C 아이템)
             EditorGUILayout.Space();
@@ -526,6 +531,49 @@ namespace MySecondWorld.Editor
             Debug.Log(
                 $"생성 {created}개 / 갱신 {updated}개 / 건너뜀 {skipped}개 / 아이콘 없음 {missingIcon}개 / " +
                 $"로컬 프리팹 없음 {missingArtPrefab}개 / 원격 프리팹 없음 {missingRemotePrefab}개 → {AssetOutputFolder}");
+        }
+
+        private static void RegisterWeaponModelsAddressable()
+        {
+            var settings = AddressableAssetSettingsDefaultObject.Settings;
+            if (settings == null)
+            {
+                Debug.LogError("[ItemAssetBakeHelper] AddressableAssetSettings를 찾을 수 없음");
+                return;
+            }
+
+            var group = settings.FindGroup("Remote_Weapons");
+            if (group == null)
+            {
+                Debug.LogError("[ItemAssetBakeHelper] 'Remote_Weapons' 그룹을 찾을 수 없음");
+                return;
+            }
+
+            int marked = 0, alreadyOk = 0, skippedNoRef = 0;
+
+            var guids = AssetDatabase.FindAssets("t:EquipmentItem", new[] { AssetOutputFolder });
+            foreach (var soGuid in guids)
+            {
+                var item = AssetDatabase.LoadAssetAtPath<EquipmentItem>(AssetDatabase.GUIDToAssetPath(soGuid));
+                if (item == null || item.RemoteArtPrefab == null || string.IsNullOrEmpty(item.RemoteArtPrefab.AssetGUID))
+                {
+                    skippedNoRef++;
+                    continue;
+                }
+
+                var assetGuid = item.RemoteArtPrefab.AssetGUID;
+                if (settings.FindAssetEntry(assetGuid) != null)
+                {
+                    alreadyOk++;
+                    continue;
+                }
+
+                settings.CreateOrMoveEntry(assetGuid, group);
+                marked++;
+            }
+
+            AssetDatabase.SaveAssets();
+            Debug.Log($"[ItemAssetBakeHelper] Addressable 신규 등록 {marked}개 / 이미 등록됨 {alreadyOk}개 / RemoteArtPrefab 없음 {skippedNoRef}개 → 그룹 'Remote_Weapons'");
         }
 
         private static void GenerateMissingPrefabsFromModels(string csvPath)
