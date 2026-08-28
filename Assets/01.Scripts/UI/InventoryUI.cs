@@ -7,6 +7,7 @@ using MySecondWorld.Customization;
 using MySecondWorld.Inventory.Items;
 using MySecondWorld.Save;
 using MySecondWorld.Inventory;
+using Cleverous.VaultInventory;
 
 namespace MySecondWorld.UI
 {
@@ -90,24 +91,17 @@ namespace MySecondWorld.UI
                 int capturedIndex = i;
                 var slot = Instantiate(_slotButtonPrefab, _slotContent);
 
-                bool isWeapon = stack.Source is EquipmentItem weaponItem && weaponItem.Category != WeaponCategory.None; //무기 판정
-                
-                bool isPart = !isWeapon 
-                                && stack.Source is EquipmentItem partItem
-                                && partItem.Restriction != null;// EquipmentItem이면서 Restriction이 있으면 커스터마이징 파츠로 판정.
-
                 bool isConsumable = stack.Source is ConsumableItem; // 소모품(포션 등)인지 판별
-
-
+                bool isEquippable = stack.Source is EquipmentItem eq
+                                    && eq.Category != WeaponCategory.Quiver
+                                    && (eq.Category != WeaponCategory.None || eq.Restriction != null);
                 slot.Setup(
                    stack.Source.UiIcon,
                    stack.StackSize,
-                   isPart || isWeapon,
+                   isEquippable,
                    isConsumable,
                    onDiscard: () => _inventoryProvider.Actions?.DiscardItem(capturedIndex), // UI에서 "버리기" 버튼 클릭 시 그 슬롯의 아이템을 '전량 제거'.
-                   onAction: isWeapon ? () => _inventoryProvider.WeaponActions?.EquipMainHand(((EquipmentItem)stack.Source).GetDbKey()) : isPart  // "무기면 장착"
-                                            ? () => EquipPart((EquipmentItem)stack.Source) // 커스터마이징 파츠면 "장착"
-                                            : () => _inventoryProvider.Actions?.UseItem(capturedIndex)); // : 소모품이면 "사용"
+                   onAction: ResolveEquipAction(stack.Source, capturedIndex));
 
                 _spawnedSlots.Add(slot);
             }
@@ -128,6 +122,32 @@ namespace MySecondWorld.UI
             _saveService.Save(data);
             _syncRequestPub.Publish(new CharacterAppearanceSyncRequestedEvent(data));
         }
+
+        // 클릭한 아이템 종류에 따라 실제로 무슨 액션을 실행할지 결정.
+        // 우선순위: 화살통 > 무기/액세서리 > 커스터마이징 파츠 > (그 외) 소모품 사용
+        private System.Action ResolveEquipAction(RootItem source, int slotIndex)
+        {
+            // 무기면 무기 장착
+            if (source is EquipmentItem weaponItem 
+                && weaponItem.Category != WeaponCategory.None
+                && weaponItem.Category != WeaponCategory.Quiver
+                )
+                return () =>
+                {
+                    Debug.Log($"[Equip] 무기 장착 클릭: " +
+                        $"{weaponItem.Title} dbKey={weaponItem.GetDbKey()} Category={weaponItem.Category} " +
+                        $"/ WeaponActions={(_inventoryProvider.WeaponActions != null ? "OK" : "NULL!!")}");
+                    _inventoryProvider.WeaponActions?.EquipMainHand(weaponItem.GetDbKey());
+                };
+
+            // 커스터마이징 파츠면 파츠 장착
+            if (source is EquipmentItem partItem && partItem.Restriction != null)
+                return () => EquipPart(partItem);
+
+            // 소모품이면 "사용"
+            return () =>  _inventoryProvider.Actions?.UseItem(slotIndex);
+        }
+
         private void ClearSlots()
         {
             foreach (var slot in _spawnedSlots)
