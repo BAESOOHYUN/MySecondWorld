@@ -90,11 +90,11 @@ namespace MySecondWorld.UI
                 int capturedIndex = i;
                 var slot = Instantiate(_slotButtonPrefab, _slotContent);
 
-                bool isWeapon = stack.Source is EquipmentItem weaponItem && weaponItem.Category != WeaponCategory.None;
+                bool isWeapon = stack.Source is EquipmentItem weaponItem && weaponItem.Category != WeaponCategory.None; //무기 판정
                 
                 bool isPart = !isWeapon 
                                 && stack.Source is EquipmentItem partItem
-                                && partItem.Restriction != null;// 파츠(그룹 A/B/C)인지 판별
+                                && partItem.Restriction != null;// EquipmentItem이면서 Restriction이 있으면 커스터마이징 파츠로 판정.
 
                 bool isConsumable = stack.Source is ConsumableItem; // 소모품(포션 등)인지 판별
 
@@ -105,11 +105,9 @@ namespace MySecondWorld.UI
                    isPart || isWeapon,
                    isConsumable,
                    onDiscard: () => _inventoryProvider.Actions?.DiscardItem(capturedIndex), // UI에서 "버리기" 버튼 클릭 시 그 슬롯의 아이템을 '전량 제거'.
-                   onAction: isWeapon
-                       ? () => _inventoryProvider.WeaponActions?.EquipMainHand(((EquipmentItem)stack.Source).GetDbKey())
-                       : isPart
-                           ? () => EquipPart((EquipmentItem)stack.Source)                   // "장착"
-                           : () => _inventoryProvider.Actions?.UseItem(capturedIndex));     // "사용"
+                   onAction: isWeapon ? () => _inventoryProvider.WeaponActions?.EquipMainHand(((EquipmentItem)stack.Source).GetDbKey()) : isPart  // "무기면 장착"
+                                            ? () => EquipPart((EquipmentItem)stack.Source) // 커스터마이징 파츠면 "장착"
+                                            : () => _inventoryProvider.Actions?.UseItem(capturedIndex)); // : 소모품이면 "사용"
 
                 _spawnedSlots.Add(slot);
             }

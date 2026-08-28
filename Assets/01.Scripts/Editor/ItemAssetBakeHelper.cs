@@ -479,7 +479,10 @@ namespace MySecondWorld.Editor
                         item.RemoteArtPrefab = null;
                     }
 
-                    item.MaxStackSize = itemType == "Equipment" ? 1 : 99;
+                    string csvCategory = cols[header["Category"]];
+                    item.MaxStackSize =
+                        itemType == "Equipment" ? 1                 //장비 타입이면 슬롯 최대 카운트 1
+                        : csvCategory == "Currency" ? 1000000 : 99;    // 코인 같은 재화면 100만, 그외 소모품이면 99 
 
                     switch (item)
                     {
