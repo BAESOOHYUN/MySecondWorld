@@ -384,11 +384,12 @@ namespace MySecondWorld.Editor
 
                     // Item SO 경로 찾기
                     var folder = $"{AssetOutputFolder}/{subfolder}";
-                    var assetPath = $"{folder}/{package}_{prefabName}.asset";
+                    var assetFileName = $"{package}_{prefabName}.asset";
+                    // 서브폴더로 재정리된 경우에도 기존 에셋을 찾을 수 있도록 재귀 검색
+                    var assetPath = FindExistingAssetPath(folder, assetFileName) ?? $"{folder}/{assetFileName}";
 
                     // 고아 SO 자동 삭제 코드 :
                     // ItemType이 바뀌어 폴더가 달라진 경우 — 예전 폴더에 남은 동명 SO를 찾아 삭제
-                    var assetFileName = $"{package}_{prefabName}.asset";
                     foreach (var otherSubfolder in ItemTypeSubfolders.Values)
                     {
                         if (otherSubfolder == subfolder) continue; //현재 폴더면 패스, 나머지 폴더 이어서 검색
@@ -630,6 +631,13 @@ namespace MySecondWorld.Editor
             if (!float.TryParse(valueRaw, out var value)) return; // Stat_Value 칸이 숫자로 안 읽히면(빈칸, 오타 등) 종료
 
             stats.Add(new StatModifier { Type = statType, ModifierType = modType, Value = value });
+        }
+        
+        private static string FindExistingAssetPath(string folder, string fileName)
+        {
+            if (!Directory.Exists(folder)) return null;
+            var matches = Directory.GetFiles(folder, fileName, SearchOption.AllDirectories);
+            return matches.Length > 0 ? matches[0].Replace('\\', '/') : null;
         }
 
         private static Sprite FindIcon(string package, string prefabName, Dictionary<string, Sprite> cache)
