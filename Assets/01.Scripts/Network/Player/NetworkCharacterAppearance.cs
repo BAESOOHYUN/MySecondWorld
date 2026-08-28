@@ -3,8 +3,8 @@ using UnityEngine;
 using Mirror;
 using VContainer;
 using MessagePipe;
-using MySecondWorld.Customization;
 using Cleverous.VaultInventory;
+using MySecondWorld.Customization;
 
 namespace MySecondWorld.Network
 {
@@ -93,6 +93,8 @@ namespace MySecondWorld.Network
             _inventory.Initialize(this, resetContent: true);
         }
 
+        // 서버가 클라이언트가 보낸 외형 데이터를 받았을 때, 각 파츠 인덱스마다 "이거 살 자격 있어?"를 재검증.
+        // 없으면 그 필드만 이전 값으로 되돌림. 이게 진짜 권위 있는 검증(클라 UI는 속여도 여긴 못 속임).
         [Command]
         public void CmdSetAppearance(CharacterAppearanceData data)
         {

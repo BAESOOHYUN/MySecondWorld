@@ -24,6 +24,11 @@ namespace MySecondWorld.Customization
         public IInventoryActionsProvider Actions { get; private set; }
         public void SetActions(IInventoryActionsProvider actions) => Actions = actions;
 
+        // InventoryUI가 무기/액세서리 즉시 장착을 호출하기 위해 필요
+        // NetworkWeaponEquip이 OnStartLocalPlayer에서 채워준다.(SetActions와 동일한 글루 패턴)
+        public IWeaponEquipActionsProvider WeaponActions { get; private set; }
+        public void SetWeaponActions(IWeaponEquipActionsProvider actions) => WeaponActions = actions;
+
         public bool IsOwned(EquipmentItem requiredItem)
         {
             if (requiredItem == null) return true; // 요구 아이템 없음 = 무료 착용

@@ -3,17 +3,19 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using Mirror;
+using VContainer;
 using Cleverous.VaultSystem;
 using MySecondWorld.Inventory;
 using MySecondWorld.Inventory.Items;
+using MySecondWorld.Customization;
 
 namespace MySecondWorld.Network
 {
     [RequireComponent(typeof(Cleverous.VaultInventory.Inventory))]
-    public class NetworkWeaponEquip : NetworkBehaviour
+    public class NetworkWeaponEquip : NetworkBehaviour, IWeaponEquipActionsProvider
     {
         // "미장착" 센티널. dbKey 기본값(int.MinValue, DataEntity 미등록 상태)과 동일하게 맞춰서 0을 쓰지 않는다
-        // — 0은 실제로 등록된 아이템의 정상 dbKey일 수 있다.
+        // (0은 실제로 등록된 아이템의 정상 dbKey일 수 있다.)
         private const int Unequipped = int.MinValue;
 
         // 이 Category 이외에는 MainHand 장착 자체를 거부한다(2026-07-20 스코프 조정 —
@@ -51,6 +53,13 @@ namespace MySecondWorld.Network
         private GameObject _currentArrowVisual;
         private int _equipToken; // 빠른 연속 교체 시, 먼저 시작된 느린 로드가 나중에 끝나 최신 장착을 덮어쓰는 걸 막기 위한 토큰
         private RuntimeAnimatorController _defaultController;
+        private LocalPlayerInventoryProvider _localInventoryProvider;
+
+        [Inject]
+        public void Construct(LocalPlayerInventoryProvider localInventoryProvider)
+        {
+            _localInventoryProvider = localInventoryProvider;
+        }
 
         private void Awake()
         {
@@ -58,6 +67,15 @@ namespace MySecondWorld.Network
             if (_animator != null)
                 _defaultController = _animator.runtimeAnimatorController;
         }
+
+        public override void OnStartLocalPlayer()
+        {
+            base.OnStartLocalPlayer();
+            _localInventoryProvider.SetWeaponActions(this);
+        }
+
+        // IWeaponEquipActionsProvider 구현 — InventoryUI는 이 메서드만 알면 되고, Command는 몰라도 된다
+        public void EquipMainHand(int weaponDbKey) => CmdEquipMainHand(weaponDbKey);
 
         [Command]
         public void CmdEquipMainHand(int weaponDbKey)

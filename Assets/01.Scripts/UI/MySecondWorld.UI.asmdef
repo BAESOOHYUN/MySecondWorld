@@ -23,6 +23,7 @@
         "Paroxe.PDFRenderer",
         "FlexibleColorPicker",
         "MySecondWorld.Inventory.Items",
+        "MySecondWorld.Inventory",
         "Cleverous.VaultInventory",
         "Cleverous.VaultSystem"
     ],

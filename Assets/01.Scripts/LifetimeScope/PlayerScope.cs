@@ -30,5 +30,6 @@ public class PlayerScope : LifetimeScope
         builder.RegisterComponent(GetComponent<NetworkCharacterAppearance>());
         builder.RegisterComponent(GetComponent<NetworkPlayerController>());
         builder.RegisterComponent(GetComponent<NetworkInventoryActions>());
+        builder.RegisterComponent(GetComponent<NetworkWeaponEquip>());
     }
 }
