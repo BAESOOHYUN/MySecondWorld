@@ -15,7 +15,15 @@ namespace MySecondWorld.Combat
         private SkillExecutor _skillExecutor;
         private NetworkWeaponEquip _weaponEquip;
         private const float MaxAttackReach = 4f; // 공격 반경(1.5) + 이동 오차 여유
-        private static readonly int MonsterLayerMask = LayerMask.GetMask("Monster");
+        private static int _monsterLayerMask = -1;
+
+        // 핵심은 - 1을 "아직 계산 안 함" 표시로 쓴다는 거. -1이 아니면 "이미 계산해서 저장해둔 값(_monsterLayerMask)"
+        // LayerMask.GetMask가 실제로 돌려주는 값은 항상 0 이상이라, -1은 절대 나올 수 없는 값. -1이면 "아직 캐싱 안 됨(LayerMask.GetMask("Monster")로 캐싱)"
+        private static int MonsterLayerMask =>
+             _monsterLayerMask != -1                                                    
+            ? _monsterLayerMask : (_monsterLayerMask = LayerMask.GetMask("Monster"));  
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetMonsterLayerMaskCache() => _monsterLayerMask = -1;
 
         private void Awake()
         {
@@ -45,6 +53,7 @@ namespace MySecondWorld.Combat
             // 공격력은 클라 파라미터가 아니라 서버가 들고 있는 실제 장착 무기값에서 조회
             float power = _weaponEquip.GetMainHandAttack();
             if (power <= 0f) power = unarmedAttack;
+            Debug.Log($"[Damage] 공격력 계산 — power={power} (무기 미보유 시 unarmedAttack={unarmedAttack})");
 
             // Physics.OverlapSphere : 물리 충돌이 아니라 순수 공간 질의. "그 안에 지금 걸쳐있는 콜라이더들이 뭐가 있어?"
             var candidates = Physics.OverlapSphere(attackPointPosition, attackRadius, MonsterLayerMask, QueryTriggerInteraction.Ignore) // 공격 지점 반경 안의 몬스터 레이어 콜라이더 전부 탐지(트리거 콜라이더는 무조건 무시)
