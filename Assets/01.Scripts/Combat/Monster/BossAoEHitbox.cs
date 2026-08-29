@@ -40,17 +40,12 @@ namespace MySecondWorld.Combat.Monster
         // Slam 애니메이션 클립의 충격 프레임에 Animation Event로 연결
         public void OnSlamImpact()
         {
-            // Animation Event(SendMessage)는 enabled=false여도 무시하고 호출됨 — Awake에서 참조 누락으로 꺼진 경우 방어
+            // Animation Event(SendMessage)는 enabled=false여도 무시하고 호출됨
+            // — Awake에서 참조 누락으로 꺼진 경우 방어
             if (_skillExecutor == null) return;
 
-            var candidates = Physics.OverlapSphere(_attackPoint.position, _stats.AoERadius, _targetLayerMask, QueryTriggerInteraction.Ignore)
-                .Select(c => c.GetComponentInParent<IDamageable>())
-                .Where(d => d != null)
-                .Distinct()
-                .ToList();
-
-            var ctx = new SkillContext(this.gameObject, candidates, _stats.Attack);
-            _skillExecutor.Execute(ctx).Forget();
+            SphereAttackResolver.ResolveAndExecute(
+                this.gameObject, _attackPoint.position, _stats.AoERadius, _targetLayerMask, _stats.Attack, _skillExecutor);
         }
     }
 }

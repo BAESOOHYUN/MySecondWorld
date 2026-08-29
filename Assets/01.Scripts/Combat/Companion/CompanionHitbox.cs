@@ -1,9 +1,6 @@
 using System.Collections.Generic;
-using System.Linq;
-using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Mirror;
-using MySecondWorld.Combat;
 
 namespace MySecondWorld.Combat.Companion
 {
@@ -39,16 +36,13 @@ namespace MySecondWorld.Combat.Companion
         public void OnAttackHit()
         {
             if (!isServer) return; // NetworkAnimator 복제 재생으로 클라에서도 호출됨 — 서버 인스턴스만 판정
-            if (_skillExecutor == null) return;
 
-            var candidates = Physics.OverlapSphere(_attackPoint.position, _attackRadius, _targetLayerMask, QueryTriggerInteraction.Ignore)
-                .OrderBy(c => Vector3.Distance(_attackPoint.position, c.transform.position))
-                .Select(c => c.GetComponentInParent<IDamageable>())
-                .Where(d => d != null)
-                .ToList();
+            // Animation Event(SendMessage)는 enabled=false여도 무시하고 호출됨
+            // — Awake에서 참조 누락으로 꺼진 경우 방어
+            if (_skillExecutor == null) return; 
 
-            var ctx = new SkillContext(this.gameObject, candidates, _stats.Attack);
-            _skillExecutor.Execute(ctx).Forget();
+            SphereAttackResolver.ResolveAndExecute(
+                this.gameObject, _attackPoint.position, _attackRadius, _targetLayerMask, _stats.Attack, _skillExecutor);
         }
     }
 }
