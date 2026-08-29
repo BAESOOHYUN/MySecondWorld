@@ -9,7 +9,8 @@
         "MySecondWorld.Network",
         "MySecondWorld.Character",
         "MySecondWorld.Pool",
-        "MySecondWorld.Foundation"
+        "MySecondWorld.Foundation",
+        "MySecondWorld.Inventory"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

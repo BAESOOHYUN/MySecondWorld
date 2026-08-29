@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
-using MySecondWorld.Combat.Monster;
 using MySecondWorld.Pool;
 
 namespace MySecondWorld.Combat
@@ -15,28 +14,29 @@ namespace MySecondWorld.Combat
         private readonly IGameObjectPool _pool;
 
         public ProjectileCast(GameObject projectilePrefab, Transform spawnPoint,
-            float speed, Vector3 colliderCenter, float colliderRadius)
+            float speed, Vector3 colliderCenter, float colliderRadius, LayerMask targetLayerMask
+            )
         {
             _spawnPoint = spawnPoint;
             _speed = speed;
             _pool = new GameObjectPool(
                 () => ProjectileFactory.CreatePooled(
-                    projectilePrefab, colliderCenter, colliderRadius, _pool, spawnPoint.gameObject.scene),
+                    projectilePrefab, colliderCenter, colliderRadius, targetLayerMask, _pool, spawnPoint.gameObject.scene),
                     defaultCapacity: 4, maxSize: 10);
         }
 
         public async UniTask<IReadOnlyList<IDamageable>> ResolveTargets(SkillContext ctx)
         {
             if (ctx.AimPoint == null) // 조준 지점 없음 — 발사 자체가 불가능한 상황
-                return Array.Empty<IDamageable>(); 
+                return Array.Empty<IDamageable>();
             var direction = (ctx.AimPoint.Value - _spawnPoint.position).normalized;
             var instance = _pool.Rent();
             instance.transform.SetPositionAndRotation(_spawnPoint.position, Quaternion.LookRotation(direction));
 
-            var projectile = instance.GetComponent<EnemyProjectile>();
+            var projectile = instance.GetComponent<Projectile>();
             var completionSource = new UniTaskCompletionSource<IDamageable>();
             projectile.Launch(direction, _speed, completionSource);
-            
+
             // 투사체가 실제로 맞히거나(OnTriggerEnter) 타임아웃(OnDestroy)될 때까지 대기
             var hitTarget = await completionSource.Task;
             return hitTarget == null ? Array.Empty<IDamageable>() : new List<IDamageable> { hitTarget };

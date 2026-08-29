@@ -7,7 +7,7 @@ namespace MySecondWorld.Combat.Monster
 {
     // EnemyProjectile은 순수 로컬(판정 전용)이라 서버 화면에만 보인다.
     // 이 컴포넌트는 "발사했다"는 사실만 ClientRpc로 알려서, 각 클라가 판정 없는
-    // 순수 시각 이펙트를 자기 화면에서 독립 재생하게 한다 — 히트 판정은 여전히 서버 EnemyProjectile 전담.
+    // 순수 시각 이펙트를 자기 화면에서 독립 재생하게 한다 — 히트 판정은 여전히 서버 Projectile 전담.
     public class MonsterProjectileVisualRelay : NetworkBehaviour
     {
         [SerializeField] private GameObject _visualProjectilePrefab; // RangedMonsterStatsSO.ProjectilePrefab과 동일한 순수 시각 프리팹 재사용 가능
@@ -24,7 +24,7 @@ namespace MySecondWorld.Combat.Monster
         [ClientRpc]
         public void RpcPlayProjectileVisual(Vector3 origin, Vector3 direction, float speed)
         {
-            if (isServer) return; // 호스트=서버는 EnemyProjectile 실물이 이미 있어 중복 재생 방지
+            if (isServer) return; // 호스트=서버는 Projectile 실물이 이미 있어 중복 재생 방지
             if (_visualProjectilePrefab == null) return;
             
             var pool = GetOrCreatePool();

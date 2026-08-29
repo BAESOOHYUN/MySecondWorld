@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.AI;
 using Stateless;
 using Mirror;
+using MySecondWorld.Combat.Player;
 
 namespace MySecondWorld.Combat.Companion
 {

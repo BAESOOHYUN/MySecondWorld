@@ -5,7 +5,7 @@ using UnityEngine;
 using Mirror;
 using MySecondWorld.Network;
 
-namespace MySecondWorld.Combat
+namespace MySecondWorld.Combat.Player
 {
     // 서버 권위 공격 판정 전용 NetworkBehaviour.
     // NetworkWeaponEquip(Network 어셈블리)에 두면 Network→Combat 참조가 생겨
@@ -15,6 +15,7 @@ namespace MySecondWorld.Combat
         private SkillExecutor _skillExecutor;
         private NetworkWeaponEquip _weaponEquip;
         private const float MaxAttackReach = 4f; // 공격 반경(1.5) + 이동 오차 여유
+        private const float MaxShootRange = 20f; // 원거리(투사체) _shootRange 밸런스 상한 여유 — 클라가 값을 부풀려 보내도 이 이상은 판정하지 않음
         private static int _monsterLayerMask = -1;
 
         // 핵심은 - 1을 "아직 계산 안 함" 표시로 쓴다는 거. -1이 아니면 "이미 계산해서 저장해둔 값(_monsterLayerMask)"
@@ -64,6 +65,39 @@ namespace MySecondWorld.Combat
 
             var ctx = new SkillContext(this.gameObject, candidates, power);
             _skillExecutor.Execute(ctx).Forget();
+        }
+
+        // PlayerAttackController.OnShootRelease()가 위임하는 서버 권위 원거리(투사체) 판정.
+        // 근접(CmdResolveAttackHit)과 마찬가지로 클라가 보낸 값을 그대로 믿지 않는다:
+        //   - power              → 클라 입력 무시, 서버가 NetworkWeaponEquip에서 직접 조회
+        //   - layerMask          → 클라 입력 안 받음, 서버 상수(MonsterLayerMask)로 고정
+        //   - spawnPointPosition → 자기 위치와의 거리로 검증(MaxAttackReach)
+        //   - shootRange         → 클라 값을 받되 MaxShootRange로 상한을 한 번 더 씌움
+        //   - "누구를 맞혔는가"   → 클라가 주장하는 대상을 아예 받지 않고, 서버가 같은 방향으로
+        //                          Projectile 동일한 반경의 SphereCast를 직접 쏴서 재확인한다.
+        [Command]
+        public void CmdResolveShootHit(Vector3 spawnPointPosition, Vector3 aimDirection, float shootRange, float projectileColliderRadius, float unarmedAttack)
+        {
+            // 클라가 보낸 발사 지점이 자기 캐릭터 근처인지 검증 — CmdResolveAttackHit과 동일한 방어
+            if (Vector3.Distance(transform.position, spawnPointPosition) > MaxAttackReach) return;
+            if (aimDirection.sqrMagnitude < 0.0001f) return; // 0벡터 등 이상값 방어
+
+            float power = _weaponEquip.GetMainHandAttack();
+            if (power <= 0f) power = unarmedAttack;
+
+            float clampedRange = Mathf.Min(shootRange, MaxShootRange);
+            var direction = aimDirection.normalized;
+
+            // Projectile SphereCollider 반경과 동일한 두께로 재확인 — 클라 비주얼(투사체)과
+            // 서버 판정의 "맞았다/안 맞았다" 체감이 최대한 일치하도록 맞춘다.
+            if (!Physics.SphereCast(spawnPointPosition, projectileColliderRadius, direction, out var hit, clampedRange, MonsterLayerMask, QueryTriggerInteraction.Ignore))
+                return; // 서버 재확인 결과 아무것도 안 맞음 — 클라가 뭐라고 주장했든 데미지 없음
+
+            var target = hit.collider.GetComponentInParent<IDamageable>();
+            if (target == null) return; // IDamageable 없는 콜라이더(오탐) 무시
+
+            var ctx = new SkillContext(this.gameObject, new List<IDamageable> { target }, power);
+            _skillExecutor.Execute(ctx).Forget(); // 기존 _skillExecutor 재사용 — 이미 SphereCast로 대상이 확정됐으므로 추가 캐스트 타이밍 불필요
         }
     }
 }

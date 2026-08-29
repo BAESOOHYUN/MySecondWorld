@@ -3,19 +3,18 @@ using Cysharp.Threading.Tasks;
 using MySecondWorld.Pool;
 using UnityEngine;
 
-namespace MySecondWorld.Combat.Monster
+namespace MySecondWorld.Combat
 {
     // 투사체 자체 — 등속 직선 이동 + 실제 물리 충돌(Trigger) 시점에 대상을 확정한다.
-    // 순수 프리팹엔 Rigidbody/SphereCollider가 없어서(팩토리가 동적 부착) 이동/판정에 필요한
-    // 값은 전부 코드로 채운다 — center/radius는 MonsterAI.Initialize(stats)와 동일한 방식으로
-    // RangedMonsterStatsSO 데이터를 받아 설정한다(화살촉 위치 등 모델마다 다르기 때문).
+    // 몬스터/플레이어 공용(누가 쐈는지는 이 클래스가 알 필요 없음) — 대상 레이어만 Initialize로 주입받는다.
+    // 순수 프리팹엔 Rigidbody/SphereCollider가 없어서(팩토리가 동적 부착) 이동/판정에 필요한 값은 전부 코드로 채운다.
     [RequireComponent(typeof(Rigidbody))]
     [RequireComponent(typeof(SphereCollider))]
     [RequireComponent(typeof(PooledObject))]
-    public class EnemyProjectile : MonoBehaviour
+    public class Projectile : MonoBehaviour
     {
         [SerializeField] private float _lifetime = 5f;  // 아무것도 못 맞히고 이 시간 지나면 자동 소멸
-        [SerializeField] private LayerMask _targetLayerMask; // "Player" 레이어만 지정 — Monster는 무시
+        [SerializeField] private LayerMask _targetLayerMask; // Initialize에서 주입 — 몬스터용이면 Player 레이어, 플레이어용이면 Monster 레이어
         private Rigidbody _rigidbody;
         private Vector3 _direction;
         private float _speed;
@@ -28,16 +27,6 @@ namespace MySecondWorld.Combat.Monster
             _rigidbody = GetComponent<Rigidbody>();
             _rigidbody.isKinematic = true; // MovePosition 이동 방식 전제 — RequireComponent 기본값(비-Kinematic)은 안 맞음
             // 프리팹이 순수화되며 Inspector로 못 넣게 된 값 — MonsterHitbox/BossAoEHitbox와 동일한 방식으로 코드에서 채움
-            _targetLayerMask = LayerMask.GetMask("Player");
-        }
-
-        // ProjectileFactory가 AddComponent 직후 호출 — 화살촉 위치 등 모델마다 다른 판정 위치/크기를 데이터로 주입
-        public void Initialize(Vector3 colliderCenter, float colliderRadius)
-        {
-            var collider = GetComponent<SphereCollider>();
-            collider.center = colliderCenter;
-            collider.radius = colliderRadius;
-            collider.isTrigger = true; // RequireComponent 기본값(비-Trigger)은 안 맞음
         }
 
         private void FixedUpdate()
@@ -73,6 +62,16 @@ namespace MySecondWorld.Combat.Monster
                 _completionSource?.TrySetResult(null);
 
             _lifetimeCts?.Dispose();
+        }
+
+        // ProjectileFactory가 AddComponent 직후 호출 — 화살촉 위치 등 판정 위치/크기, 그리고 '대상 레이어'를 데이터로 주입
+        public void Initialize(Vector3 colliderCenter, float colliderRadius, LayerMask targetLayerMask)
+        {
+            var collider = GetComponent<SphereCollider>();
+            collider.center = colliderCenter;
+            collider.radius = colliderRadius;
+            collider.isTrigger = true; // RequireComponent 기본값(비-Trigger)은 안 맞음
+            _targetLayerMask = targetLayerMask;
         }
 
         // ProjectileCast가 스폰 직후 호출 — 방향/속도/결과 통지 채널을 주입

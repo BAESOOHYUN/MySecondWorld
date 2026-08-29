@@ -133,6 +133,15 @@ namespace MySecondWorld.Network
             return attack;
         }
 
+        // 장착된 메인핸드 무기의 카테고리. 미장착이거나 무기가 아니면 WeaponCategory.None.
+        // PlayerAttackController가 근접/원거리 분기 판단에 사용한다.
+        public WeaponCategory GetMainHandCategory()
+        {
+            if (_mainHandDbKey == Unequipped) return WeaponCategory.None;
+            if (Vault.Get(_mainHandDbKey) is not EquipmentItem item) return WeaponCategory.None;
+            return item.Category;
+        }
+
         #region 무기 시각 적용 (private)
         private void OnMainHandChanged(int oldKey, int newKey)
         {
