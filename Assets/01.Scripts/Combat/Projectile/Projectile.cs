@@ -32,8 +32,16 @@ namespace MySecondWorld.Combat
         private bool _isFlying; // Launch() 전(노킹 대기)이나 결과 확정 후에는 false
         private bool _resolved; // 결과 확정 1회 보장 — 중복 반납/중복 통지 차단
         private Vector3 _originalLocalScale;
+        private System.Action<Vector3> _onResolved; // ProjectileRequest의 OnResolved 콜백을 부름
 
         private UniTaskCompletionSource<IDamageable> _completionSource;
+
+        // 권위 모드일 때 명중/소멸을 기다리는 채널.
+        // Launch 전에 읽으면 대기할 게 없으므로 즉시 완결된 태스크를 준다.
+        public UniTask<IDamageable> HitTask =>
+            _completionSource != null
+                ? _completionSource.Task
+                : UniTask.FromResult<IDamageable>(null);
 
         private void Awake()
         {
@@ -96,7 +104,7 @@ namespace MySecondWorld.Combat
 
         // request의 Prefab/NockSource는 "화살을 어디서 구할지"에 대한 정보라 여기선 쓰지 않는다.
         // 그건 ProjectileLauncher가 발사 전에 이미 해결하고 들어온다.
-        public UniTask<IDamageable> Launch(in ProjectileRequest request, ProjectileMode mode)
+        public void Launch(in ProjectileRequest request, ProjectileMode mode)
         {
             // 풀에서 나온 인스턴스는 직전 발사의 값을 그대로 들고 있다 — 전부 새로 채운다
             _mode = mode;
@@ -108,6 +116,7 @@ namespace MySecondWorld.Combat
             _lifetime = request.MaxLifetime;
             _elapsed = 0f;
             _resolved = false;
+            _onResolved = request.OnResolved;
 
             _completionSource = new UniTaskCompletionSource<IDamageable>();
 
@@ -117,11 +126,9 @@ namespace MySecondWorld.Combat
             t.localScale = _originalLocalScale; // 부모가 없어졌으니 로컬 = 월드
 
             // _isFlying = true를 맨 마지막에 두는 게 의도적이다.
-            // 위 대입들 사이에 프레임이 끼어들 일은 없지만,
-            // "준비가 끝나기 전엔 절대 안 움직인다"를 코드 순서로 못 박아두면
+            // 위 대입들 사이에 프레임이 끼어들 일은 없지만, "준비가 끝나기 전엔 절대 안 움직인다"를 코드 순서로 못 박아두면
             // 나중에 누가 중간에 코드를 끼워 넣어도 안전하다.
             _isFlying = true; // 값이 전부 채워진 뒤 마지막에 켠다
-            return _completionSource.Task;
         }
 
         // 이번 스텝에 "지나갈 구간"을 통째로 훑는다.
@@ -174,6 +181,9 @@ namespace MySecondWorld.Combat
             // 서버 파이프라인이 await로 매달려 있다 — 반드시 깨운다.
             // 이걸 빠뜨리면 그 스킬 실행이 영원히 완료되지 않는다.
             _completionSource?.TrySetResult(target);
+            // 실제로 맞혔을 때만 알린다. 빗나감/벽은 클라 화살이 수명으로 알아서 사라진다.
+            if (target != null)
+                _onResolved?.Invoke(_tip.position); // SnapTipTo가 이미 촉을 충돌 지점에 올려놨다
 
             ReturnToPool();
         }

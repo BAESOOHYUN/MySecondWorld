@@ -1,4 +1,3 @@
-using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Mirror;
 using UnityEngine.SceneManagement;
@@ -9,18 +8,19 @@ namespace MySecondWorld.Combat
     // "투사체 한 발 쏘기"의 단일 진입점. 플레이어·몬스터·(향후) Companion이 전부 여기로 모인다.
     public static class ProjectileLauncher
     {
-        public static UniTask<IDamageable> Launch(in ProjectileRequest request, Scene scene)
+        // 발사하고 그 투사체를 돌려준다.
+        // 결과를 기다릴 쪽(서버 판정)은 반환값의 HitTask를,
+        // 나중에 조작할 쪽(표현 화살)은 반환값 자체를 들고 있으면 된다.
+        // 두 용도가 메서드를 나눌 만큼 다르지 않다.
+        public static Projectile Launch(in ProjectileRequest request, Scene scene)
         {
             var projectile = Acquire(request, scene);
-            if (projectile == null)
-                return UniTask.FromResult<IDamageable>(null); // 발사 실패 — 대기하는 쪽이 매달리지 않게 즉시 완결
+            if (projectile == null) return null;
 
             // 이 한 줄이 "한 피어에 화살 하나"를 구조적으로 보장한다.
-            // 서버는 권위 화살만, 순수 클라는 표현 화살만 만든다 —
-            // 호스트에서 둘이 이중으로 날아가는 사고가 원리적으로 불가능해진다.
             var mode = NetworkServer.active ? ProjectileMode.Authoritative : ProjectileMode.Presentation;
-
-            return projectile.Launch(request, mode); // ③ 발사
+            projectile.Launch(request, mode);
+            return projectile;
         }
 
         // ① 화살 확보 — 손에 노킹된 게 있으면 그걸 쓰고, 없을 때만 풀에서 새로 대여한다.

@@ -17,5 +17,13 @@ namespace MySecondWorld.Combat
         public float MaxLifetime;
         public LayerMask HitMask;                   // 데미지 대상 (몬스터가 쏘면 Player, 반대면 Monster)
         public LayerMask BlockMask;                 // 벽·지형
+
+        // 명중한 순간 호출된다(빗나감·벽은 호출 안 함). 인자는 화살촉이 닿은 지점.
+        // Projectile이 Mirror를 직접 알 필요가 없도록 캐스터가 여기에 Rpc 호출을 꽂는다.
+        // (서버가 명중한 순간을 클라에 알려야 표현 화살을 같은 지점에서 정리할 수 있다.
+        //  그런데 Projectile은 네트워크를 몰라야 하므로, 콜백으로 뒤집는다.)
+        // 델리게이트를 이벤트가 아니라 필드로 둔 이유: 풀에서 재사용될 때 Launch가 매번 덮어써서
+        // 구독이 쌓이는 사고(이벤트의 고전적 누수)가 원리적으로 안 생긴다.
+        public System.Action<Vector3> OnResolved;
     }
 }

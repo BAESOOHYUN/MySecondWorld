@@ -20,8 +20,16 @@ namespace MySecondWorld.Combat
                 return;
             }
 
+            var projectile = ProjectileLauncher.Launch(ctx.Shot.Value, ctx.Caster.scene);
+            if (projectile == null)
+            {
+                ctx.SetCandidates(Array.Empty<IDamageable>());
+                return; // 발사 실패 — 대기하지 않고 빠져나온다
+            }
+
             // 발사하고, 실제로 부딪히거나 수명이 다할 때까지 여기서 멈춰 있는다.
-            var target = await ProjectileLauncher.Launch(ctx.Shot.Value, ctx.Caster.scene);
+            var target = await projectile.HitTask;
+
 
             // 대기 중에 확정된 대상으로 후보를 교체한다. 축1은 이 결과만 본다.
             // 발사 시점의 후보를 쓰지 않는 게 핵심 — 그 사이 대상이 움직이거나 죽었을 수 있다.
