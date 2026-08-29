@@ -5,7 +5,6 @@ using UnityEngine.InputSystem;
 using MySecondWorld.Network;
 using MySecondWorld.Move;
 using MySecondWorld.Inventory;
-using MySecondWorld.Pool;
 
 namespace MySecondWorld.Combat.Player
 {
@@ -23,23 +22,13 @@ namespace MySecondWorld.Combat.Player
         [SerializeField] private Transform _attackPoint;
         [SerializeField] private LayerMask _targetLayerMask;
 
-        [Header("원거리 판정 (투사체 — Bow/Staff 등 공용)")]
-        [SerializeField] private Transform _projectileSpawnPoint; // 투사체가 실제로 발사되는 지점(무기별로 다름 — Bow는 오른손 소켓 하위 활 시위 위치)
-        [SerializeField] private GameObject _projectilePrefab; // 순수 프리팹(스크립트 없음) — ProjectileVisualFactory가 스폰 시점에 ProjectileVisualMover를 붙임
+        [Header("원거리 판정")]
+        [SerializeField] private Transform _projectileSpawnPoint; // 조준 대상 탐색 기준점(대략 손 근처) — 실제 화살은 NetworkWeaponEquip이 들고 있는 걸 그대로 씀
 
-        // 공격 반경/쿨다운/투사체 속도 등 나머지 튜닝 수치는 전부 _stats(PlayerCombatStatsSO)에서 읽는다.
-
-        // 스킬 실행기 — 근접만. 원거리는 순수 비주얼이라 SkillExecutor 불필요(데미지는 서버 SphereCast가 확정).
         private SkillExecutor _skillExecutor;
 
-        // 원거리 비주얼 전용 풀 — 물리 판정 없이 시간 기반으로만 이동(호스트가 아닌 클라에서도 항상 정확히 동작).
-        private IGameObjectPool _visualPool;
-        private GameObject _pendingVisualInstance;
-
-        // 런타임 상태
         private float _nextAttackTime;
         private float _lastAttackTime = float.NegativeInfinity;
-        private Vector3? _pendingAimPoint; // OnProjectileSpawn에서 계산한 조준점 — OnShootRelease에서 재사용(재계산 시 화살 각도 스냅 방지)
 
         public bool IsInCombat => Time.time - _lastAttackTime < _stats.CombatStateDuration;
 
@@ -52,17 +41,13 @@ namespace MySecondWorld.Combat.Player
                 new InstantCast(),
                 new List<ISkillEffect> { new DamageEffect() }
                 );
-
-            _visualPool = new GameObjectPool(
-                () => ProjectileVisualFactory.CreatePooled(_projectilePrefab, _visualPool, gameObject.scene),
-                defaultCapacity: 4, maxSize: 10);
         }
 
         private void OnEnable()
         {
             if (_weaponEquip == null || _animationController == null ||
                 _attackAuthority == null || _attackAction == null || _attackPoint == null ||
-                _projectileSpawnPoint == null || _projectilePrefab == null || _stats == null)
+                _projectileSpawnPoint == null || _stats == null)
             {
                 Debug.LogError($"PlayerAttackController 참조 누락 on {this.gameObject.name}", this);
                 enabled = false;
@@ -82,7 +67,6 @@ namespace MySecondWorld.Combat.Player
         private void OnDestroy()
         {
             _skillExecutor?.Dispose();
-            _visualPool?.Dispose();
         }
 
         #endregion
@@ -118,73 +102,46 @@ namespace MySecondWorld.Combat.Player
             _attackAuthority.CmdResolveAttackHit(_attackPoint.position, _stats.AttackRadius, _stats.UnarmedAttack);
         }
 
-        // 투사체를 스폰 위치에 미리 배치만 함(비주얼 노킹 단계, 아직 안 날아감).
-        // 투사체 발사 애니메이션의 "손에 화살이 나타나는(노킹)" 프레임에 Animation Event로 연결.
-        public void OnProjectileSpawn()
-        {
-            if (!_weaponEquip.isLocalPlayer)
-                return;
+        // 화살은 NetworkWeaponEquip이 항상 들고 있는 장식용 인스턴스를 발사 시점에 그대로 넘겨받아 쓰므로
+        // 별도로 "노킹" 단계에서 스폰할 게 없다. Archer@BowShot01 클립이 이 이벤트를 계속 쏘니
+        // 리시버 없음 경고만 막는 빈 훅으로 남겨둔다.
+        public void OnProjectileSpawn() { }
 
-            if (_weaponEquip.GetMainHandCategory() != WeaponCategory.Bow)
-                return;
-
-            if (_visualPool == null)
-                return;
-
-            if (_pendingVisualInstance != null) // 직전 노킹이 발사 없이 재스폰된 경우 — 누수 방지로 먼저 반납
-            {
-                _pendingVisualInstance.transform.SetParent(null);
-                _pendingVisualInstance.GetComponent<PooledObject>().ReturnToPool();
-            }
-
-            _pendingVisualInstance = _visualPool.Rent();
-            var mover = _pendingVisualInstance.GetComponent<ProjectileVisualMover>();
-            var t = _pendingVisualInstance.transform;
-            t.SetParent(_projectileSpawnPoint, false); // 노킹 상태 — 손(스폰 포인트)의 애니메이션 움직임을 그대로 따라감
-            t.localPosition = Vector3.zero;
-            t.localRotation = Quaternion.identity;
-
-            // 부모(스폰 포인트) 본의 스케일이 원본 프리팹 스케일을 왜곡시키지 않도록 보정
-            var parentScale = _projectileSpawnPoint.lossyScale;
-            var original = mover.OriginalLocalScale;
-            t.localScale = new Vector3(original.x / parentScale.x, original.y / parentScale.y, original.z / parentScale.z);
-
-            _pendingAimPoint = FindAimPoint();
-        }
-
-        // 실제 발사 — 서버 데미지 확정(CmdResolveShootHit) + 미리 배치해둔 화살을 조준점까지만 날아가다 사라지는 순수 비주얼로 전환.
-        // 물리 충돌 판정에 의존하지 않음 — 호스트가 아닌 순수 클라이언트는 로컬에 진짜 몬스터 콜라이더가 없어
-        // 물리 판정 자체가 불가능하기 때문(실제 데미지는 서버 SphereCast가 독립적으로 확정).
+        // 실제 발사 — 서버 데미지 확정(CmdResolveShootHit) + 손에 들려있던 화살을 그대로 날림(신규 스폰 없음).
         // 투사체 발사 애니메이션(현재는 Bow만 존재 — Archer@BowShot01)의 "화살이 손을 떠나는" 프레임에 Animation Event로 연결.
         // TODO : 향후 Staff 등 다른 원거리 무기가 추가되면 아래 카테고리 체크(Bow)만 확장하면 된다.
         public void OnShootRelease()
         {
+            Debug.Log("[Shot] OnShootRelease 호출됨"); // 임시 확인용
             if (!_weaponEquip.isLocalPlayer)
                 return;
 
             if (_weaponEquip.GetMainHandCategory() != WeaponCategory.Bow)
                 return;
 
-            var aimPoint = _pendingAimPoint ?? FindAimPoint();
-            _pendingAimPoint = null;
-            var direction = (aimPoint - _projectileSpawnPoint.position).normalized;
+            var aimPoint = FindAimPoint();
 
+            var arrow = _weaponEquip.TakeCurrentArrowVisual();
+            Debug.Log($"[Shot] arrow={arrow}, aimPoint={aimPoint}"); // 추가
+            if (arrow == null)
+                return; // 예외적으로 화살이 없는 상태(무기 해제 등) — 발사 취소
+
+            var t = arrow.transform;
+            var direction = (aimPoint - t.position).normalized; // 화살의 실제 현재 위치 기준으로 방향 계산
+
+            Debug.Log($"[Shot] direction={direction}, arrowPos={t.position}"); // 추가
+            // 실제 데미지 확정 — 서버 권위(PlayerAttackAuthority.CmdResolveShootHit).
             _attackAuthority.CmdResolveShootHit(
-                _projectileSpawnPoint.position, direction, _stats.ShootRange, _stats.ProjectileColliderRadius, _stats.UnarmedAttack);
+                t.position, direction, _stats.ShootRange, _stats.ProjectileColliderRadius, _stats.UnarmedAttack);
 
-            GameObject instance = _pendingVisualInstance;
-            _pendingVisualInstance = null;
-            if (instance == null) // 드물게 OnProjectileSpawn 이벤트가 안 걸린 클립이면 지금 바로 대여
-                instance = _visualPool.Rent();
+            var mover = arrow.AddComponent<ProjectileVisualMover>();
+            t.SetParent(null); // 손에서 분리 — 이제부터 월드 기준 독립 비행
+            t.rotation = Quaternion.LookRotation(direction);
+            t.localScale = Vector3.one; // 장착 때(ResetSocketTransform)와 동일하게 "월드 스케일 1"로 복원
 
-            var mover = instance.GetComponent<ProjectileVisualMover>();
-            var t = instance.transform;
-            t.SetParent(null); // 발사 순간 손에서 분리 — 이제부터 월드 기준 독립 비행
-            t.SetPositionAndRotation(_projectileSpawnPoint.position, Quaternion.LookRotation(direction));
-            t.localScale = mover.OriginalLocalScale;
-
-            float distance = Vector3.Distance(_projectileSpawnPoint.position, aimPoint);
+            float distance = Vector3.Distance(t.position, aimPoint);
             float flightTime = distance / Mathf.Max(_stats.ProjectileSpeed, 0.01f);
+            Debug.Log($"[Shot] distance={distance}, flightTime={flightTime}"); // 추가
             mover.Setup(direction, _stats.ProjectileSpeed, flightTime);
         }
 

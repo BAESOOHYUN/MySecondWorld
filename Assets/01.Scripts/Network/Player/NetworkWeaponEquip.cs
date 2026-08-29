@@ -210,8 +210,8 @@ namespace MySecondWorld.Network
             }
 
             // Bow는 '왼손에 활 자체' + '오른손에 화살' + '등에 화살통'이 동시에 붙어야 자연스럽다
-            if (item.Category == WeaponCategory.Bow && _bowArrowPrefab != null && _rightHandSocket != null)
-                _currentArrowVisual = Instantiate(_bowArrowPrefab, _rightHandSocket);
+            if (item.Category == WeaponCategory.Bow)
+                SpawnArrowVisual();
             if (item.Category == WeaponCategory.Bow && _quiverPrefab != null && _backSocket != null)
             {
                 var quiverInstance = Instantiate(_quiverPrefab, _backSocket);
@@ -261,6 +261,23 @@ namespace MySecondWorld.Network
                 Destroy(_currentQuiverVisual);  // 풀 미사용 이유는 176번째 줄 주석 참고
                 _currentQuiverVisual = null;
             }
+        }
+
+        private void SpawnArrowVisual()
+        {
+            if (_bowArrowPrefab == null || _rightHandSocket == null) return;
+            _currentArrowVisual = Instantiate(_bowArrowPrefab, _rightHandSocket);
+            ResetSocketTransform(_currentArrowVisual.transform, _rightHandSocket);
+        }
+
+        // PlayerAttackController.OnShootRelease()가 발사 시점에 지금 들고 있는 화살을 넘겨받기 위해 호출.
+        // 넘겨준 뒤엔 손이 비어 보이지 않도록 새 장식용 화살을 즉시 다시 붙인다.
+        public GameObject TakeCurrentArrowVisual()
+        {
+            var arrow = _currentArrowVisual;
+            _currentArrowVisual = null;
+            SpawnArrowVisual();
+            return arrow;
         }
 
         #endregion

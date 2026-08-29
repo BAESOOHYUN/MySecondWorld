@@ -35,7 +35,13 @@ namespace MySecondWorld.Combat
             transform.position += _direction * _speed * Time.deltaTime;
             _timer += Time.deltaTime;
             if (_timer >= _lifetime)
-                GetComponent<PooledObject>().ReturnToPool();
+            {
+                // 풀에서 대여된 인스턴스(몬스터 쪽)면 반납, 아니면(장비 시스템에서 넘어온 화살) 그냥 파괴
+                if (TryGetComponent(out PooledObject pooled))
+                    pooled.ReturnToPool();
+                else
+                    Destroy(gameObject);
+            }
         }
 
     }
