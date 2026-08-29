@@ -15,20 +15,20 @@ namespace MySecondWorld.Combat
         // 축2가 "대기 중에 대상을 확정하는" 종류라면 SetCandidates로 덮어쓴다.
         public IReadOnlyList<IDamageable> Candidates { get; private set; }
 
-        // 투사체 등 발사형 스킬의 조준 목표 지점. 즉시발동(InstantCast) 스킬은 사용하지 않아 기본값 null.
-        public Vector3? AimPoint { get; }
+        // 투사체 스킬의 발사 정보. 즉시발동(InstantCast) 스킬은 사용하지 않아 기본값 null.
+        public ProjectileRequest? Shot { get; }
 
         public SkillContext(
             GameObject caster,
             IReadOnlyList<IDamageable> candidates,
             float power,
-            Vector3? aimPoint = null
+            ProjectileRequest? shot = null
             )
         {
             Caster = caster;
             Candidates = candidates;
             Power = power;
-            AimPoint = aimPoint;
+            Shot = shot;
         }
 
         // 축2 전용 — 대기가 끝난 시점에 확정된 대상으로 후보를 교체한다.
