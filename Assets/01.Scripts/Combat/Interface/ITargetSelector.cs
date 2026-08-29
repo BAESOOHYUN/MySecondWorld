@@ -10,6 +10,6 @@ namespace MySecondWorld.Combat
 
         // ctx는 캐스터 위치 등 부가 정보용으로 유지(향후 CircleAoESelector 등이 쓸 수 있도록).
         // 실제 판정 대상은 resolvedCandidates(캐스트 타이밍이 확정한 목록)로 명시적으로 분리해서 받는다.
-        IEnumerable<IDamageable> GetTargets(SkillContext ctx, IReadOnlyList<IDamageable> resolvedCandidates);
+        IEnumerable<IDamageable> GetTargets(SkillContext ctx);
     }
 }

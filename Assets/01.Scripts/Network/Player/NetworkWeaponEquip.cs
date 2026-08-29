@@ -36,7 +36,6 @@ namespace MySecondWorld.Network
         [SerializeField] private Transform _backSocket; // 화살통 — 등/어깨 본
 
         [Header("궁수 전용")]
-        [SerializeField] private GameObject _bowArrowPrefab; // Bow 장착 시 오른손에 항상 붙는 화살 — 특정 소유 아이템과 무관한 고정 시각 프롭
         [SerializeField] private GameObject _quiverPrefab; // 화살통 — 특정 소유 아이템과 무관한 고정 시각 프롭(화살과 동일 패턴)
 
 
@@ -49,7 +48,6 @@ namespace MySecondWorld.Network
         private int _mainHandDbKey = Unequipped;
         private bool _currentVisualIsAddressable;
         private GameObject _currentVisual;
-        private GameObject _currentArrowVisual;
         private GameObject _currentQuiverVisual;
 
         private Cleverous.VaultInventory.Inventory _inventory;
@@ -209,9 +207,7 @@ namespace MySecondWorld.Network
                 Debug.LogWarning($"[Equip] ArtPrefab도 RemoteArtPrefab도 사용 불가 — 시각 오브젝트 없음 (ArtPrefab null, RemoteArtPrefab valid={item.RemoteArtPrefab?.RuntimeKeyIsValid()})");
             }
 
-            // Bow는 '왼손에 활 자체' + '오른손에 화살' + '등에 화살통'이 동시에 붙어야 자연스럽다
-            if (item.Category == WeaponCategory.Bow)
-                SpawnArrowVisual();
+            // Bow는 '등에 화살통'이 동시에 붙어야 자연스럽다
             if (item.Category == WeaponCategory.Bow && _quiverPrefab != null && _backSocket != null)
             {
                 var quiverInstance = Instantiate(_quiverPrefab, _backSocket);
@@ -250,34 +246,11 @@ namespace MySecondWorld.Network
                 _currentVisual = null;
             }
 
-            if (_currentArrowVisual != null)
-            {
-                Destroy(_currentArrowVisual);   // 풀 미사용 이유는 176번째 줄 주석 참고
-                _currentArrowVisual = null;
-            }
-
             if (_currentQuiverVisual != null)
             {
                 Destroy(_currentQuiverVisual);  // 풀 미사용 이유는 176번째 줄 주석 참고
                 _currentQuiverVisual = null;
             }
-        }
-
-        private void SpawnArrowVisual()
-        {
-            if (_bowArrowPrefab == null || _rightHandSocket == null) return;
-            _currentArrowVisual = Instantiate(_bowArrowPrefab, _rightHandSocket);
-            ResetSocketTransform(_currentArrowVisual.transform, _rightHandSocket);
-        }
-
-        // PlayerAttackController.OnShootRelease()가 발사 시점에 지금 들고 있는 화살을 넘겨받기 위해 호출.
-        // 넘겨준 뒤엔 손이 비어 보이지 않도록 새 장식용 화살을 즉시 다시 붙인다.
-        public GameObject TakeCurrentArrowVisual()
-        {
-            var arrow = _currentArrowVisual;
-            _currentArrowVisual = null;
-            SpawnArrowVisual();
-            return arrow;
         }
 
         #endregion

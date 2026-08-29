@@ -15,6 +15,11 @@ namespace MySecondWorld.Combat
         [SerializeField] private float _moveSpeed = 3.5f;
         [SerializeField] private float _deathDuration = 1.5f; // Death 애니메이션 재생 후 비활성화까지 대기시간
 
+        [Header("스킬")]
+        // 몬스터/보스/Companion은 런타임 AddComponent로 조립돼 인스펙터 할당이 불가능하다.
+        // 그래서 스킬 에셋 참조를 컴포넌트가 아니라 스탯 SO가 들고 있는다.
+        [SerializeField] private SkillDefinition _attackSkill;
+
         public float MaxHP => _maxHP;
         public float Attack => _attack;
         public float AttackRange => _attackRange;
@@ -22,5 +27,6 @@ namespace MySecondWorld.Combat
         public float DetectRange => _detectRange;
         public float MoveSpeed => _moveSpeed;
         public float DeathDuration => _deathDuration;
+        public SkillDefinition AttackSkill => _attackSkill;
     }
 }

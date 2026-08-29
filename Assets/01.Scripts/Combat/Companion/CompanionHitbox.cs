@@ -14,7 +14,6 @@ namespace MySecondWorld.Combat.Companion
         [SerializeField] private LayerMask _targetLayerMask;
         [SerializeField] private CompanionStatsSO _stats;
 
-        private SkillExecutor _skillExecutor;
 
         private void Awake()
         {
@@ -25,24 +24,25 @@ namespace MySecondWorld.Combat.Companion
                 return;
             }
 
+            if (_stats.AttackSkill == null)
+            {
+                Debug.LogError($"CompanionHitbox: {_stats.name}에 AttackSkill 미할당", _stats);
+                enabled = false;
+                return;
+            }
+
             _targetLayerMask = LayerMask.GetMask("Monster");
-            _skillExecutor = new SkillExecutor(
-                new SingleTargetSelector(),
-                new InstantCast(),
-                new List<ISkillEffect> { new DamageEffect() });
         }
 
         // Attack 애니메이션 클립의 타격 프레임에 Animation Event로 연결
         public void OnAttackHit()
         {
             if (!isServer) return; // NetworkAnimator 복제 재생으로 클라에서도 호출됨 — 서버 인스턴스만 판정
-
-            // Animation Event(SendMessage)는 enabled=false여도 무시하고 호출됨
-            // — Awake에서 참조 누락으로 꺼진 경우 방어
-            if (_skillExecutor == null) return; 
+            if (_stats == null || _stats.AttackSkill == null) return;
 
             SphereAttackResolver.ResolveAndExecute(
-                this.gameObject, _attackPoint.position, _attackRadius, _targetLayerMask, _stats.Attack, _skillExecutor);
+                this.gameObject, _attackPoint.position, _attackRadius, _targetLayerMask,
+                _stats.Attack, _stats.AttackSkill);
         }
     }
 }

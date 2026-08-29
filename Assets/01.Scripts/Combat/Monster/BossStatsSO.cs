@@ -11,6 +11,7 @@ namespace MySecondWorld.Combat.Monster
         [SerializeField] private float[] _phaseHpThresholds = { 0.5f };
         [SerializeField] private float _aoeRadius = 3f;
         [SerializeField] private float _aoeCooldown = 4f;
+        [SerializeField] private SkillDefinition _aoeSkill;
 
         [Header("페이즈 전환 연출 (Collapse -> Reassemble)")]
         [SerializeField] private float _collapseDuration = 1.5f;
@@ -43,6 +44,7 @@ namespace MySecondWorld.Combat.Monster
         public IReadOnlyList<float> PhaseHpThresholds => _phaseHpThresholds;
         public float AoERadius => _aoeRadius;
         public float AoECooldown => _aoeCooldown;
+        public SkillDefinition AoESkill => _aoeSkill;
         public float CollapseDuration => _collapseDuration;
         public float ReassembleDuration => _reassembleDuration;
         public float IdleBreakIntervalMin => _idleBreakIntervalMin;
@@ -60,6 +62,7 @@ namespace MySecondWorld.Combat.Monster
         public float TauntDuration => _tauntDuration;
         public float MeleeAttackDuration => _meleeAttackDuration;
         public float AoESlamDuration => _aoeSlamDuration;
+
         #endregion
     }
 }

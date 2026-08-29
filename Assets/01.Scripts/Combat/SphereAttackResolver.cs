@@ -5,13 +5,13 @@ using UnityEngine;
 namespace MySecondWorld.Combat
 {
     // MonsterHitbox/CompanionHitbox/PlayerAttackAuthority가 공통으로 쓰던
-    // "OverlapSphere 스캔 → IDamageable 후보 추출 → SkillContext 구성 → SkillExecutor.Execute" 시퀀스를 추출.
+    // "OverlapSphere 스캔 → IDamageable 후보 추출 → SkillContext 구성 → ISkill.Execute" 시퀀스를 추출.
     // 베이스 클래스(MonoBehaviour/NetworkBehaviour)나 네트워크 가드(isServer, MaxAttackReach 등)는
     // 호출부마다 달라서 그대로 각자 유지하고, 이 5줄짜리 반복 로직만 공용화한다.
     public static class SphereAttackResolver
     {
         public static void ResolveAndExecute(GameObject caster, Vector3 attackPoint, float attackRadius,
-            LayerMask targetLayerMask, float power, SkillExecutor skillExecutor)
+            LayerMask targetLayerMask, float power, ISkill skill)
         {
             // Physics.OverlapSphere : 물리 충돌이 아니라 순수 공간 질의. "그 안에 지금 걸쳐있는 콜라이더들이 뭐가 있어?"
             var candidates = Physics.OverlapSphere(attackPoint, attackRadius, targetLayerMask, QueryTriggerInteraction.Ignore) // 공격 지점 반경 안의 몬스터 레이어 콜라이더 전부 탐지(트리거 콜라이더는 무조건 무시)
@@ -22,7 +22,7 @@ namespace MySecondWorld.Combat
                 .ToList();                                          // 지연 평가를 여기서 즉시 실행해 리스트로 확정 (Candidates가 인덱스 접근 필요)
 
             var ctx = new SkillContext(caster, candidates, power);
-            skillExecutor.Execute(ctx).Forget();
+            skill.Execute(ctx).Forget();
         }
     }
 }
