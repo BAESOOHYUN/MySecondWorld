@@ -52,29 +52,4 @@ namespace MySecondWorld.Combat.Monster
             return newPool;
         }
     }
-
-    // 순수 시각 이펙트 전용 — 판정 없이 등속 직선 이동만 (클라 로컬에서만 존재, 네트워크 무관)
-    public class ProjectileVisualMover : MonoBehaviour
-    {
-        private Vector3 _direction;
-        private float _speed;
-        private float _lifetime;
-        private float _timer;
-
-        public void Setup(Vector3 direction, float speed, float lifetime)
-        {
-            _direction = direction;
-            _speed = speed;
-            _lifetime = lifetime;
-            _timer = 0f;
-        }
-        private void Update()
-        {
-            transform.position += _direction * _speed * Time.deltaTime;
-            _timer += Time.deltaTime;
-            if (_timer >= _lifetime)
-                GetComponent<PooledObject>().ReturnToPool();
-        }
-    }
-
 }

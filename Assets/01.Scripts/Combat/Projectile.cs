@@ -16,21 +16,34 @@ namespace MySecondWorld.Combat
         [SerializeField] private float _lifetime = 5f;  // 아무것도 못 맞히고 이 시간 지나면 자동 소멸
         [SerializeField] private LayerMask _targetLayerMask; // Initialize에서 주입 — 몬스터용이면 Player 레이어, 플레이어용이면 Monster 레이어
         private Rigidbody _rigidbody;
+        private SphereCollider _collider;
+
+        private Vector3 _originalLocalScale; // 프리팹 원본 스케일. 부모 본 스케일과 무관하게 항상 같은 크기로 보이도록 보정할 때 기준값
         private Vector3 _direction;
         private float _speed;
         private bool _resolved;
+        // Launch()~명중/타임아웃까지만 true. Spawn()만 되고 아직 Launch() 전인 "노킹" 상태나,
+        // 풀에서 막 대여돼 이전 발사 값이 남아있는 상태에서 FixedUpdate가 잘못 움직이는 것을 막는 게이트.
+        private bool _isFlying;
         private UniTaskCompletionSource<IDamageable> _completionSource;
         private CancellationTokenSource _lifetimeCts; // Launch마다 재발급 — 명중 시 타임아웃 취소용
+
+        // ProjectileCast가 부모(본) 스케일 보정에 사용
+        public Vector3 OriginalLocalScale => _originalLocalScale;
+
 
         private void Awake()
         {
             _rigidbody = GetComponent<Rigidbody>();
             _rigidbody.isKinematic = true; // MovePosition 이동 방식 전제 — RequireComponent 기본값(비-Kinematic)은 안 맞음
-            // 프리팹이 순수화되며 Inspector로 못 넣게 된 값 — MonsterHitbox/BossAoEHitbox와 동일한 방식으로 코드에서 채움
+            _collider = GetComponent<SphereCollider>();
+            _originalLocalScale = transform.localScale; // Instantiate 직후(아직 부모 없음) 원본 스케일 저장
         }
 
         private void FixedUpdate()
         {
+            if (!_isFlying) return; // Launch() 전(노킹 대기 중)이거나 이미 명중/반납된 상태면 이동하지 않음
+
             // Kinematic Rigidbody는 MovePosition으로 이동해야 Trigger 판정이 물리 스텝과 어긋나지 않는다
             _rigidbody.MovePosition(_rigidbody.position + _direction * _speed * Time.fixedDeltaTime);
         }
@@ -45,9 +58,12 @@ namespace MySecondWorld.Combat
             if ((_targetLayerMask.value & (1 << other.gameObject.layer)) == 0) return;
             var target = other.GetComponentInParent<IDamageable>();
             if (target == null) return; // IDamageable 없는 콜라이더(지형 등)는 무시하고 계속 비행
+
+            Debug.Log($"[Projectile] {other.name}(레이어:{LayerMask.LayerToName(other.gameObject.layer)})에 명중"); // 임시 디버그 로그
             // TODO : 벽 통과 문제 분기
 
             _resolved = true;
+            _isFlying = false;
             _completionSource.TrySetResult(target);
             _lifetimeCts?.Cancel();  // 타임아웃 쪽 Return과 중복 반납되는 것 방지 (collectionCheck: true라 이중 Return은 즉시 예외)
             ReturnToPool();
@@ -67,10 +83,10 @@ namespace MySecondWorld.Combat
         // ProjectileFactory가 AddComponent 직후 호출 — 화살촉 위치 등 판정 위치/크기, 그리고 '대상 레이어'를 데이터로 주입
         public void Initialize(Vector3 colliderCenter, float colliderRadius, LayerMask targetLayerMask)
         {
-            var collider = GetComponent<SphereCollider>();
-            collider.center = colliderCenter;
-            collider.radius = colliderRadius;
-            collider.isTrigger = true; // RequireComponent 기본값(비-Trigger)은 안 맞음
+            _collider.center = colliderCenter;
+            _collider.radius = colliderRadius;
+            _collider.isTrigger = true; // RequireComponent 기본값(비-Trigger)은 안 맞음
+            _collider.enabled = false; // 스폰(노킹) 직후엔 판정 없음 — Launch()에서 켬
             _targetLayerMask = targetLayerMask;
         }
 
@@ -81,13 +97,14 @@ namespace MySecondWorld.Combat
             _speed = speed;
             _completionSource = completionSource;
             _resolved = false; // 재사용 대비 리셋
+            _isFlying = true; // 지금부터 이동 시작
+            _collider.enabled = true; // 지금부터 트리거 판정 시작
 
             _lifetimeCts?.Dispose(); // 직전 발사분 토큰 정리
             _lifetimeCts = new CancellationTokenSource();
             LifetimeTimeoutAsync(_lifetimeCts.Token).Forget();
         }
 
-        // Destroy(gameObject, _lifetime) 예약 파괴를 대체 — 풀링 대상은 Destroy 대신 시간 기반 반납이 필요
         private async UniTaskVoid LifetimeTimeoutAsync(CancellationToken ct)
         {
             bool canceled = await UniTask.Delay(
@@ -97,12 +114,15 @@ namespace MySecondWorld.Combat
             if (canceled) return; // 명중해서 취소된 경우 — 여기선 아무것도 안 함
 
             _resolved = true;
+            _isFlying = false;
             _completionSource.TrySetResult(null); // 아무도 못 맞힘으로 확정
             ReturnToPool();
         }
 
         private void ReturnToPool()
         {
+            _isFlying = false; // 반납 시 정지(위에서 이미 꺼졌겠지만 방어적으로)
+            _collider.enabled = false; // 다음 대여 때도 Launch() 전까지 오탐 방지
             GetComponent<PooledObject>().ReturnToPool();
         }
     }
