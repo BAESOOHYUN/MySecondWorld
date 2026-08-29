@@ -3,16 +3,8 @@ using UnityEngine;
 namespace MySecondWorld.Combat.Monster
 {
     [CreateAssetMenu(fileName = "MonsterStatsSO", menuName = "Combat/Monster Stats")]
-    public class MonsterStatsSO : ScriptableObject
+    public class MonsterStatsSO : CombatantStatsSO
     {
-        [SerializeField] private float _maxHP = 100f;
-        [SerializeField] private float _attack = 10f;
-        [SerializeField] private float _attackRange = 2f;
-        [SerializeField] private float _attackCooldown = 1.5f;
-        [SerializeField] private float _detectRange = 8f;
-        [SerializeField] private float _moveSpeed = 3.5f;
-        [SerializeField] private float _deathDuration = 1.5f; // Death 애니메이션 재생 후 비활성화까지 대기시간
-
         // MonsterFactory가 Hitbox의 attackPoint를 찾을 때 쓰는 자식 소켓 이름.
         // 리그마다 본 이름이 달라서(예: 방패를 든 몹은 "ShieldBoneR") 몬스터별로 다르게 지정한다.
         [SerializeField] private string _attackPointSocketName = "AttackPoint";
@@ -24,17 +16,12 @@ namespace MySecondWorld.Combat.Monster
         [SerializeField] private float _bodyColliderHeight = 1.9f;
 
         #region Property
-        public float MaxHP => _maxHP;
-        public float Attack => _attack;
-        public float AttackRange => _attackRange;
-        public float AttackCooldown => _attackCooldown;
-        public float DetectRange => _detectRange;
-        public float MoveSpeed => _moveSpeed;
-        public float DeathDuration => _deathDuration;
+       
         public string AttackPointSocketName => _attackPointSocketName;
         public Vector3 BodyColliderCenter => _bodyColliderCenter;
         public float BodyColliderRadius => _bodyColliderRadius;
         public float BodyColliderHeight => _bodyColliderHeight;
+
         #endregion
     }
 }

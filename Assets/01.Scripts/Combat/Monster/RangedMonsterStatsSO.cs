@@ -5,9 +5,8 @@ namespace MySecondWorld.Combat.Monster
     [CreateAssetMenu(fileName = "RangedMonsterStatsSO", menuName = "Combat/Ranged Monster Stats")]
     public class RangedMonsterStatsSO : MonsterStatsSO
     {
-        // MaxHP/Attack/AttackRange(사격 사거리로 재해석)
-        // AttackCooldown(발사 쿨다운으로 재해석)
-        // DetectRange/MoveSpeed는 베이스 그대로 재사용.
+        // 상속받아 그대로 쓰는 필드: MaxHP, Attack, DetectRange, MoveSpeed (의미도 그대로)
+        // 상속받되 의미가 달라지는 필드: AttackRange(→ 사격 사거리), AttackCooldown(→ 발사 쿨다운)
         [SerializeField] private float _retreatDistance = 3f; // 이 거리보다 가까워지면 후퇴
         [SerializeField] private float _projectileSpeed = 15f;
         [SerializeField] private GameObject _projectilePrefab; // 순수 프리팹(스크립트 없음) — MonsterFactory가 RangedMonsterHitbox에 주입, 몹마다 다른 투사체를 쓸 수 있어 데이터로 관리
