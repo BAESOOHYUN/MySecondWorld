@@ -1,6 +1,5 @@
 using Cysharp.Threading.Tasks;
 using UnityEngine;
-using Mirror;
 
 namespace MySecondWorld.Combat.Monster
 {
