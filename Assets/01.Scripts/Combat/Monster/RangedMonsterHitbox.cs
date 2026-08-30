@@ -53,8 +53,13 @@ namespace MySecondWorld.Combat.Monster
             _relay = GetComponent<NetworkProjectileRelay>(); // 프리팹에 미리 붙어있어야 한다
         }
 
+        // 같은 클립의 Draw 프레임 이벤트. 몬스터는 손에 화살을 들지 않고
+        // 발사 순간 풀에서 대여하므로 할 일이 없다.
+        // "receiver 없음" 경고만 막기 위한 빈 훅이다.
+        public void OnAttackNock() { }
+
         // Shoot 애니메이션 클립의 발사 프레임에 Animation Event로 연결
-        public void OnShootRelease()
+        public void OnAttackRelease()
         {
             // Animation Event(SendMessage)는 enabled=false여도 호출된다 — Awake에서 꺼진 경우 방어
             if (_relay == null || _stats == null || _stats.AttackSkill == null) return;
