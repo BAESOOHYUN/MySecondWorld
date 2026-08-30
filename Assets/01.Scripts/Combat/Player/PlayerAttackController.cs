@@ -21,6 +21,10 @@ namespace MySecondWorld.Combat.Player
 
         [Header("근접 판정")]
         [SerializeField] private Transform _attackPoint;
+
+        [Header("조준")]
+        [Tooltip("조준·회전 대상 탐색용 레이어. 근접·원거리 공통이다.\n" +
+              "실제 데미지 판정 레이어는 서버가 따로 정한다(클라 값을 믿지 않음).")]
         [SerializeField] private LayerMask _targetLayerMask;
 
         [Header("원거리 판정")]
@@ -42,6 +46,10 @@ namespace MySecondWorld.Combat.Player
         private float _nextAttackTime;
         private float _lastAttackTime = float.NegativeInfinity;
 
+        // 입력 시점에 확정한 조준 방향. 발사까지 유지해서 모든 피어가 같은 방향을 쓰게 한다.
+        // 발사 때 다시 계산하면 그 사이 대상이 움직여 원격 화면과 실제 궤적이 어긋난다.
+        private Vector3 _pendingAimDirection;
+
         public bool IsInCombat => Time.time - _lastAttackTime < _stats.CombatStateDuration;
 
         #endregion
@@ -52,7 +60,7 @@ namespace MySecondWorld.Combat.Player
         {
             if (_weaponEquip == null || _animationController == null ||
                 _attackAuthority == null || _attackAction == null || _attackPoint == null ||
-                _projectileSpawnPoint == null || _stats == null)
+                _projectileSpawnPoint == null || _stats == null || _relay == null)
             {
                 Debug.LogError($"PlayerAttackController 참조 누락 on {this.gameObject.name}", this);
                 enabled = false;
@@ -80,11 +88,21 @@ namespace MySecondWorld.Combat.Player
             if (!_weaponEquip.isLocalPlayer) return; // 원격 플레이어 — 내 입력에 반응하면 안 됨
             if (!IsReadyToAttack()) return;
 
-            // 조준 방향은 '입력 시점'에 보낸다. 발사 프레임까지 0.3~0.6초 여유가 생겨
-            // 원격 피어가 자기 발사 프레임에 이 값을 읽어 쓸 수 있다.
-            // 발사 프레임에 보내면 왕복 지연만큼 늦게 도착해 남의 화면에서 화살이 늦게 떠난다.
-            if (_weaponEquip.GetMainHandCategory() == WeaponCategory.Bow)
-                _attackAuthority.CmdSetAimDirection(ComputeAimDirection());
+
+            bool isBow = _weaponEquip.GetMainHandCategory() == WeaponCategory.Bow;
+
+            // 회전을 먼저 — 몸이 향한 뒤에 조준을 계산해야 둘이 같은 곳을 본다.
+            // (대상이 없어 정면으로 쏘는 경우, 회전 없이 계산하면 엉뚱한 방향이 잡힌다)
+            FaceAttackTarget(isBow ? _stats.ShootRange : _stats.MeleeFacingRange);
+
+            if (isBow)
+            {
+                // 조준은 '입력 시점'에 확정한다. 발사 프레임까지 0.3~0.6초 여유가 생겨
+                // 원격 피어가 자기 발사 프레임에 이 값을 읽어 쓸 수 있다.
+                // 발사 프레임에 보내면 왕복 지연만큼 늦게 도착해 남의 화면에서 화살이 늦게 떠난다.
+                _pendingAimDirection = ComputeAimDirection();
+                _attackAuthority.CmdSetAimDirection(_pendingAimDirection);
+            }
 
             _attackToken++;
             _attackStartTime = Time.time;
@@ -96,7 +114,7 @@ namespace MySecondWorld.Combat.Player
 
         #endregion
 
-        #region 공격 회차 
+        #region 공격 회차
 
         private bool IsReadyToAttack()
         {
@@ -175,12 +193,12 @@ namespace MySecondWorld.Combat.Player
         {
             // 로컬은 지금 조준을 다시 계산하고, 원격은 SyncVar로 받은 방향을 쓴다.
             var direction = _weaponEquip.isLocalPlayer
-                ? ComputeAimDirection()
-                : _attackAuthority.AimDirection;
+             ? _pendingAimDirection
+             : _attackAuthority.AimDirection;
 
             if (direction.sqrMagnitude < 0.0001f) return;
 
-            var origin = _nockPoint != null ? _nockPoint.MuzzlePosition : _projectileSpawnPoint.position;
+            var origin = AimOrigin;
 
             if (_weaponEquip.isLocalPlayer)
                 _attackAuthority.CmdRequestShoot(origin, direction);
@@ -206,27 +224,63 @@ namespace MySecondWorld.Combat.Player
 
         #endregion
 
-        #region 조준
+        #region 조준 (※ 클릭 타겟팅 도입 시 이 리전을 교체한다)
 
-        private Vector3 ComputeAimDirection()
-        {
-            var origin = _nockPoint != null ? _nockPoint.MuzzlePosition : _projectileSpawnPoint.position;
-            return (FindAimPoint() - origin).normalized;
-        }
 
-        // Phase 2(클릭 지속 타겟팅) 도입 전까지의 임시 조준 로직 —
-        // 발사 순간 _shootRange 반경 내 가장 가까운 몬스터를 즉석으로 찾아 조준점으로 삼는다.
-        // 대상이 없으면 캐릭터 정면으로 발사(빗나감 확정이지만 애니메이션은 자연스럽게 끝남).
-        private Vector3 FindAimPoint()
+        // 조준·발사의 공통 기준점. 손에 화살이 있으면 그 위치, 없으면 폴백 스폰 포인트.
+        // 탐색과 발사가 서로 다른 점에서 재던 기존 불일치를 여기로 통일한다.
+        // FindAimPoint()가 대상 탐색과 조준점 계산을 같이 하고 있는데, LookAt은 대상만 필요
+        private Vector3 AimOrigin =>
+            _nockPoint != null ? _nockPoint.MuzzlePosition : _projectileSpawnPoint.position;
+
+        // 사거리 안에서 가장 가까운 대상. 없으면 null.
+        private Transform FindNearestTarget(float range)
         {
-            var nearest = Physics.OverlapSphere(_projectileSpawnPoint.position, _stats.ShootRange, _targetLayerMask, QueryTriggerInteraction.Ignore)
-                .OrderBy(c => Vector3.Distance(_projectileSpawnPoint.position, c.transform.position))
+            var nearest = Physics.OverlapSphere(AimOrigin, range, _targetLayerMask, QueryTriggerInteraction.Ignore)
+                .OrderBy(c => Vector3.Distance(AimOrigin, c.transform.position))
                 .FirstOrDefault();
 
-            if (nearest == null)
-                return _projectileSpawnPoint.position + transform.forward * _stats.ShootRange;
+            return nearest != null ? nearest.transform : null;
+        }
 
-            return nearest.transform.position + Vector3.up * _stats.AimHeightOffset;
+        // 조준점 = 사거리 안에서 가장 가까운 대상의 몸통 높이.
+        //
+        // 호출 시점은 '발사 순간'이 아니라 '공격 입력 시점'이다(_pendingAimDirection).
+        // 그래야 원격 피어가 자기 발사 프레임에 같은 방향을 쓸 수 있고,
+        // 조준이 버튼을 누르는 순간에 확정돼 쏘는 도중 대상을 따라가지 않는다.
+        //
+        // 대상이 없으면 정면으로 쏜다 — 빗나감은 확정이지만 애니메이션은 자연스럽게 끝난다.
+        // 발사 자체를 취소하면 입력이 씹힌 것처럼 느껴진다.
+        //
+        // ※ AimHeightOffset이 고정값이라 대상 크기를 반영하지 못한다(보스는 낮게, 작은 몹은 높게 겨눈다).
+        private Vector3 FindAimPoint()
+        {
+            var target = FindNearestTarget(_stats.ShootRange);
+            if (target == null)
+                return AimOrigin + transform.forward * _stats.ShootRange; // 대상 없음 — 정면으로
+
+            return target.position + Vector3.up * _stats.AimHeightOffset;
+        }
+
+        private Vector3 ComputeAimDirection() => (FindAimPoint() - AimOrigin).normalized;
+
+        // 공격 입력 시점에 대상 쪽으로 즉시 회전한다.
+        //
+        // 수평 성분만 쓰는 건 MonsterAI.RotateTowardsTarget()과 같은 이유다 —
+        // y까지 반영하면 위/아래 적을 볼 때 캐릭터가 앞뒤로 넘어진 것처럼 기운다.
+        //
+        // 대상이 없으면 아무것도 하지 않는다(지금 보는 방향 유지).
+        // 억지로 정면을 향해 돌리면 허공을 쏠 때 캐릭터가 홱 도는 게 더 이상하다.
+        private void FaceAttackTarget(float searchRange)
+        {
+            var target = FindNearestTarget(searchRange);
+            if (target == null) return;
+
+            Vector3 lookDirection = target.position - transform.position;
+            lookDirection.y = 0f;
+
+            if (lookDirection.sqrMagnitude > 0.001f)
+                transform.rotation = Quaternion.LookRotation(lookDirection);
         }
 
         #endregion

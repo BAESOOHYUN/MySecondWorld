@@ -2,14 +2,24 @@ using UnityEngine;
 
 namespace MySecondWorld.Combat.Player
 {
-    // 플레이어 공격 판정 튜닝 수치. PlayerAttackController(클라 입력/예측)만 참조하고,
-    // PlayerAttackAuthority(서버)는 이 값들을 직접 읽지 않고 Command 파라미터로 전달받은 값만 쓰므로
-    // 두 컴포넌트가 같은 SO를 참조해야 한다는 정합성 제약은 없다.
+    // 플레이어 공격 튜닝 수치.
+    //
+    // 클라(PlayerAttackController)와 서버(PlayerAttackAuthority)가 함께 읽는다.
+    // Phase 5에서 서버가 투사체 수치를 직접 읽게 됐다 — 클라가 보낸 값을 믿으면 조작 여지가 생긴다.
+    // 따라서 두 컴포넌트는 반드시 같은 에셋을 참조해야 한다.
+    // 특히 서버 연사 제한이 AttackCooldown 기준이라, 어긋나면 정상 플레이가 서버에서 막힌다.
+    //
+    // 클라 전용 값: MeleeFacingRange / AimHeightOffset / CombatStateDuration / AttackTimeout
     [CreateAssetMenu(fileName = "PlayerCombatStatsSO", menuName = "Combat/Player Combat Stats")]
     public class PlayerCombatStatsSO : ScriptableObject
     {
+        #region Inspector
+
         [Header("근접 판정")]
-        [SerializeField] private float _attackRadius = 1.5f;
+        [Tooltip("근접 공격 시 이 반경 안의 가장 가까운 대상 쪽으로 몸을 돌린다.\n" +
+          "공격 반경(AttackRadius)보다 조금 넉넉해야 '살짝 빗나간 위치의 적'에게도 돌아선다.")]
+        [SerializeField] private float _attackRadius = 1.5f; // 공격 반경
+        [SerializeField] private float _meleeFacingRange = 3f; // 회전 반경은  공격 반경보다 넉넉하게
         [SerializeField] private float _unarmedAttack = 10f; // 무기 미장착(맨주먹) 시 기본 공격력
         [SerializeField] private float _attackCooldown = 0.8f;
 
@@ -28,7 +38,11 @@ namespace MySecondWorld.Combat.Player
         // 애니메이션이 끊겨 이벤트가 씹혔을 때 공격이 영구히 잠기는 걸 막는 안전장치.
         [SerializeField] private float _attackTimeout = 1.5f;
 
+        #endregion
+
+        #region Property
         public float AttackRadius => _attackRadius;
+        public float MeleeFacingRange => _meleeFacingRange;
         public float UnarmedAttack => _unarmedAttack;
         public float AttackCooldown => _attackCooldown;
         public float ProjectileSpeed => _projectileSpeed;
@@ -38,5 +52,7 @@ namespace MySecondWorld.Combat.Player
         public float AimHeightOffset => _aimHeightOffset;
         public float CombatStateDuration => _combatStateDuration;
         public float AttackTimeout => _attackTimeout;
+
+        #endregion
     }
 }
