@@ -24,6 +24,11 @@ namespace MySecondWorld.Combat
         // 두 발이 동시에 떠 있는 경우가 사실상 없다. 겹치더라도 이전 화살은 수명으로 사라진다.
         private Projectile _lastPresentation;
 
+        // 이 피어가 방금 띄운 표현 화살을 등록한다. 명중 Rpc가 오면 이 화살을 그 지점에서 정리한다.
+        // 몬스터는 RpcLaunchPresentation이 내부에서 직접 채우고, 플레이어는 컨트롤러가 이걸 호출한다.
+        public void TrackPresentation(Projectile projectile) => _lastPresentation = projectile;
+
+
         [ClientRpc]
         public void RpcLaunchPresentation(Vector3 origin, Vector3 direction, float speed, float lifetime)
         {
@@ -49,7 +54,7 @@ namespace MySecondWorld.Combat
 
             // 런처가 NetworkServer.active를 보고 Presentation 모드로 만든다.
             // 반환된 UniTask는 아무도 기다리지 않는다 — 클라엔 데미지 파이프라인이 없다.
-            _lastPresentation = ProjectileLauncher.Launch(request, gameObject.scene);
+            TrackPresentation(ProjectileLauncher.Launch(request, gameObject.scene));
             _lastPresentation = null; // 아래 주석 참고
         }
 

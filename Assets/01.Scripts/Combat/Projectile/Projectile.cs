@@ -33,7 +33,6 @@ namespace MySecondWorld.Combat
         private bool _resolved; // 결과 확정 1회 보장 — 중복 반납/중복 통지 차단
         private Vector3 _originalLocalScale;
         private System.Action<Vector3> _onResolved; // ProjectileRequest의 OnResolved 콜백을 부름
-
         private UniTaskCompletionSource<IDamageable> _completionSource;
 
         // 권위 모드일 때 명중/소멸을 기다리는 채널.
@@ -83,14 +82,14 @@ namespace MySecondWorld.Combat
         // 손 소켓에 정지 상태로 붙인다. 이 상태에서는 이동도 판정도 하지 않는다.
         // 회전 오프셋을 밖에서 받는 이유: 노킹 자세와 비행 방향은 별개 문제이기 때문.
         // (발사 시 LookRotation이 회전을 통째로 덮어쓰므로 비행은 루트 +Z가 지배한다)
-        public void Nock(Transform socket, Quaternion localRotation)
+        public void Nock(Transform socket, Vector3 localPosition, Quaternion localRotation)
         {
             _isFlying = false;
             _resolved = false;
 
             var t = transform;
             t.SetParent(socket, false);
-            t.localPosition = Vector3.zero;
+            t.localPosition = localPosition;
             t.localRotation = localRotation;
 
             // 캐릭터 본은 FBX 임포트 스케일 때문에 1이 아닌 경우가 많다.
@@ -198,5 +197,9 @@ namespace MySecondWorld.Combat
             else
                 Destroy(gameObject); // 풀 밖에서 만들어진 예외적 인스턴스
         }
+
+        // 발사되지 않은 채(노킹 상태) 회수될 때 쓴다. 무기 해제 / 사망 / 씬 전환 등.
+        // Resolve를 재사용하는 이유: 반납 경로가 하나로 유지돼야 상태 정리가 어긋나지 않는다.
+        public void DespawnWithoutHit() => Resolve(null);
     }
 }

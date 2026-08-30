@@ -55,6 +55,13 @@ namespace MySecondWorld.Network
         private RuntimeAnimatorController _defaultController;
         private LocalPlayerInventoryProvider _localInventoryProvider;
 
+        // 메인핸드 시각 오브젝트가 적용된 뒤 발행. 인자는 방금 장착된 카테고리(해제 시 None).
+        // Combat 어셈블리의 타입을 쓰지 않는 게 중요하다 — 여기서 ArrowNockPoint를 직접 참조하면
+        // Network → Combat 참조가 생겨 기존 Combat → Network 참조와 순환이 된다.
+        // 이벤트로 뒤집으면 Combat 쪽이 일방적으로 구독하므로 방향이 하나로 유지된다.
+        public event System.Action<WeaponCategory> OnMainHandVisualApplied;
+
+
         [Inject]
         public void Construct(LocalPlayerInventoryProvider localInventoryProvider)
         {
@@ -159,9 +166,11 @@ namespace MySecondWorld.Network
                 Debug.Log("[Equip] ApplyMainHandVisual — 해제 처리");
                 if (_animator != null)
                     _animator.runtimeAnimatorController = _defaultController;
+                // 해제 경로
+                OnMainHandVisualApplied?.Invoke(WeaponCategory.None);
                 return;
             }
-
+            // 1. Vault에서 아이템 조회 
             if (Vault.Get(dbKey) is not EquipmentItem item)
             {
                 Debug.LogWarning($"[Equip] ApplyMainHandVisual — dbKey={dbKey} EquipmentItem 아님, 중단");
@@ -172,7 +181,7 @@ namespace MySecondWorld.Network
             Debug.Log($"[Equip] ApplyMainHandVisual — item={item.Title} Category={item.Category} socket={(socket != null ? socket.name : "NULL!!")}");
 
             if (socket == null) return;
-
+            // 2. Instantiate → 소켓에 부착
             if (item.ArtPrefab != null)
             {
                 Debug.Log($"[Equip] ArtPrefab 경로로 Instantiate: {item.ArtPrefab.name}");
@@ -221,6 +230,8 @@ namespace MySecondWorld.Network
                 if (controller != null)
                     _animator.runtimeAnimatorController = controller;
             }
+            // 장착 성공 경로
+            OnMainHandVisualApplied?.Invoke(item.Category);
         }
 
         private Transform GetSocket(WeaponCategory category)

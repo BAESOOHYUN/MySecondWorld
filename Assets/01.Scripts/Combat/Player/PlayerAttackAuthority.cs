@@ -1,6 +1,8 @@
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Mirror;
 using MySecondWorld.Network;
+using MySecondWorld.Inventory;
 
 namespace MySecondWorld.Combat.Player
 {
@@ -9,22 +11,51 @@ namespace MySecondWorld.Combat.Player
     // 기존 Combat→Network 참조와 순환 참조가 되므로, Combat 어셈블리 안에 별도로 둔다.
     public class PlayerAttackAuthority : NetworkBehaviour
     {
-        [SerializeField] private SkillDefinition _meleeSkill; // 플레이어는 프리팹 컴포넌트라 인스펙터 할당 가능
+        [Header("스킬")]
+        [Tooltip("근접 공격 스킬. 보통 Skill_MeleeAttack.")]
+        [SerializeField] private SkillDefinition _meleeSkill;
+
+        [Tooltip("원거리 공격 스킬. 보통 Skill_RangedShoot (축2가 ProjectileCastSO).")]
+        [SerializeField] private SkillDefinition _rangedSkill;
+
+        [Header("수치")]
+        [Tooltip("서버 판정용 수치. 클라가 보낸 값을 믿지 않으려면 서버가 직접 읽어야 한다.\n" +
+                 "PlayerAttackController와 같은 에셋을 써도 되지만, 일치해야 하는 제약은 없다.")]
+        [SerializeField] private PlayerCombatStatsSO _stats;
+
+        // 캐싱
         private NetworkWeaponEquip _weaponEquip;
+        private ArrowNockPoint _nockPoint;             // 호스트에서 손 화살을 그대로 쏘기 위해 필요
+        private NetworkProjectileRelay _relay;         // 투사체 프리팹 소유 + 명중 Rpc
+
+        // 동기화
+        // 원격 피어가 자기 발사 프레임에 읽는 조준 방향.
+        // 발사 프레임이 아니라 '공격 입력 시점'에 채워지므로 애니메이션 길이만큼 도착 여유가 있다.
+        [SyncVar] private Vector3 _aimDirection;
+        public Vector3 AimDirection => _aimDirection;
+
+        // 서버 전용 상태
+        private float _serverNextShootTime; // 서버측 연사 제한. 클라 게이트를 믿지 않고 따로 잰다
+
+        // 검증 상수
         private const float MaxAttackReach = 4f; // 공격 반경(1.5) + 이동 오차 여유
-        private static int _monsterLayerMask = -1;
 
         // 핵심은 - 1을 "아직 계산 안 함" 표시로 쓴다는 거. -1이 아니면 "이미 계산해서 저장해둔 값(_monsterLayerMask)"
         // LayerMask.GetMask가 실제로 돌려주는 값은 항상 0 이상이라, -1은 절대 나올 수 없는 값. -1이면 "아직 캐싱 안 됨(LayerMask.GetMask("Monster")로 캐싱)"
+        private static int _monsterLayerMask = -1;
         private static int MonsterLayerMask =>
              _monsterLayerMask != -1                                                    
-            ? _monsterLayerMask : (_monsterLayerMask = LayerMask.GetMask("Monster"));  
+            ? _monsterLayerMask : (_monsterLayerMask = LayerMask.GetMask("Monster")); 
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetMonsterLayerMaskCache() => _monsterLayerMask = -1;
+
 
         private void Awake()
         {
             _weaponEquip = GetComponent<NetworkWeaponEquip>();
+            _nockPoint = GetComponent<ArrowNockPoint>();
+            _relay = GetComponent<NetworkProjectileRelay>();
 
             if (_meleeSkill == null)
                 Debug.LogError($"PlayerAttackAuthority: _meleeSkill 미할당 on {gameObject.name}", this);
@@ -53,6 +84,58 @@ namespace MySecondWorld.Combat.Player
 
             SphereAttackResolver.ResolveAndExecute(
                 this.gameObject, attackPointPosition, attackRadius, MonsterLayerMask, power, _meleeSkill);
+        }
+
+        // 공격 입력 시점에 호출된다. 발사보다 먼저 도착해야 원격 피어가 제 방향으로 쏜다.
+        [Command]
+        public void CmdSetAimDirection(Vector3 direction)
+        {
+            if (direction.sqrMagnitude < 0.0001f) return;
+            _aimDirection = direction.normalized;
+        }
+
+        // 발사 프레임에 로컬 플레이어가 호출한다. 여기서 실제 데미지 파이프라인이 돈다.
+        //
+        // 클라 파라미터 검증 원칙은 근접(CmdResolveAttackHit)과 동일하다:
+        //   power / 투사체 수치 / 레이어 → 클라 입력을 아예 안 받고 서버가 자기 데이터로 채운다
+        //   origin                      → 자기 캐릭터 근처인지 거리로 검증
+        //   발사 간격                    → 클라 게이트를 믿지 않고 서버가 따로 잰다
+        [Command]
+        public void CmdRequestShoot(Vector3 origin, Vector3 direction)
+        {
+            if (_rangedSkill == null || _stats == null || _relay == null) return;
+            if (Time.time < _serverNextShootTime) return;
+            if (Vector3.Distance(transform.position, origin) > MaxAttackReach) return;
+            if (direction.sqrMagnitude < 0.0001f) return;
+            if (_weaponEquip.GetMainHandCategory() != WeaponCategory.Bow) return; // 서버가 무기를 재확인
+
+            // 네트워크 지연 흔들림을 감안해 클라 쿨다운보다 10% 느슨하게 — 정상 플레이가 막히면 안 된다
+            _serverNextShootTime = Time.time + _stats.AttackCooldown * 0.9f;
+
+            float power = _weaponEquip.GetMainHandAttack();
+            if (power <= 0f) power = _stats.UnarmedAttack;
+
+            var request = new ProjectileRequest
+            {
+                Prefab = _relay.ProjectilePrefab,
+                // 호스트면 손에 든 화살을 그대로 쏜다. 전용 서버는 손 화살이 없어 풀에서 대여된다.
+                NockSource = _nockPoint,
+                Origin = origin,
+                Direction = direction.normalized,
+                Speed = _stats.ProjectileSpeed,
+                SweepRadius = _stats.ProjectileSweepRadius,
+                MaxLifetime = _stats.ShootRange / Mathf.Max(_stats.ProjectileSpeed, 0.01f) + 0.3f,
+                HitMask = MonsterLayerMask,
+                BlockMask = _stats.BlockLayerMask,
+                OnResolved = point =>
+                {
+                    if (_relay != null && _relay.netIdentity != null)
+                        _relay.RpcConfirmHit(point);
+                },
+            };
+
+            var ctx = new SkillContext(gameObject, System.Array.Empty<IDamageable>(), power, request);
+            _rangedSkill.Execute(ctx).Forget();
         }
     }
 }

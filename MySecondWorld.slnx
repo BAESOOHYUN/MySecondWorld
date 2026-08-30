@@ -52,8 +52,8 @@
   <Project Path="Unity.Splines.Editor.csproj" />
   <Project Path="Unity.PerformanceTesting.csproj" />
   <Project Path="Unity.TextMeshPro.csproj" />
-  <Project Path="UniTask.Linq.csproj" />
   <Project Path="CFXRDemo.csproj" />
+  <Project Path="UniTask.Linq.csproj" />
   <Project Path="MySecondWorld.ScriptableObject.csproj" />
   <Project Path="Unity.TextMeshPro.Editor.csproj" />
   <Project Path="MySecondWorld.Inventory.csproj" />
