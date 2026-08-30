@@ -18,7 +18,14 @@ namespace MySecondWorld.Pool
                 createFunc: createFunc,
                 actionOnGet: obj => obj.SetActive(true),
                 actionOnRelease: obj => obj.SetActive(false),
-                actionOnDestroy: obj => UnityEngine.Object.Destroy(obj),
+                actionOnDestroy: obj =>
+                {
+                    // 플레이 모드를 빠져나오는 중에도 이 콜백이 온다(씬 언로드 → 풀 Dispose).
+                    // 그 시점엔 이미 에디트 모드라 Destroy가 거부되고, 어차피 씬 오브젝트는
+                    // 유니티가 통째로 정리하므로 여기서 할 일이 없다.
+                    if (!Application.isPlaying) return;
+                    UnityEngine.Object.Destroy(obj);
+                },
                 collectionCheck: true, // 개발중 true (이중 Return 시 예외로 즉시 발각), ★빌드시 false로 되돌림
                 defaultCapacity: defaultCapacity,
                 maxSize: maxSize
