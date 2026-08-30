@@ -16,10 +16,11 @@ namespace MySecondWorld.Combat.Player
         #region Inspector
 
         [Header("근접 판정")]
+        [SerializeField] private float _attackRadius = 1.5f; // 공격 반경
+
         [Tooltip("근접 공격 시 이 반경 안의 가장 가까운 대상 쪽으로 몸을 돌린다.\n" +
           "공격 반경(AttackRadius)보다 조금 넉넉해야 '살짝 빗나간 위치의 적'에게도 돌아선다.")]
-        [SerializeField] private float _attackRadius = 1.5f; // 공격 반경
-        [SerializeField] private float _meleeFacingRange = 3f; // 회전 반경은  공격 반경보다 넉넉하게
+        [SerializeField] private float _meleeFacingRange = 3f; // 회전 반경은 공격 반경보다 넉넉하게
         [SerializeField] private float _unarmedAttack = 10f; // 무기 미장착(맨주먹) 시 기본 공격력
         [SerializeField] private float _attackCooldown = 0.8f;
 
@@ -34,7 +35,7 @@ namespace MySecondWorld.Combat.Player
 
         [Header("전투 상태")]
         [SerializeField] private float _combatStateDuration = 3f; // 마지막 공격 후 이 시간 동안 "전투 중"으로 간주
-        // 데드락 방지 타임아웃.공격을 시작하고 이 시간 안에 발사(타격) 이벤트가 안 오면 그 회차를 강제 종료한다.
+        // 데드락 방지 타임아웃 공격을 시작하고 이 시간 안에 발사(타격) 이벤트가 안 오면 그 회차를 강제 종료한다.
         // 애니메이션이 끊겨 이벤트가 씹혔을 때 공격이 영구히 잠기는 걸 막는 안전장치.
         [SerializeField] private float _attackTimeout = 1.5f;
 

@@ -14,7 +14,13 @@ namespace MySecondWorld.Move
         // 클립 길이를 MovementController에 주입하기 위해 [SerializeField]
         [SerializeField] private AnimationClip _jumpStartClip;
         [SerializeField] private AnimationClip _landClip;
-        
+        private const string AttackTag = "Attack";
+
+        // 공격 스테이트 재생 중인가.
+        // Override Controller가 클립만 바꾸고 스테이트/태그는 베이스 것을 쓰므로 무기 5종에 모두 통한다.
+        public bool IsAttacking =>
+            _animator != null && _animator.GetCurrentAnimatorStateInfo(0).IsTag(AttackTag);
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void InitStatics()
         {

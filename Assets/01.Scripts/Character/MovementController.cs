@@ -36,6 +36,10 @@ namespace MySecondWorld.Move
         public bool IsGrounded { get; private set; } = true;
         public float JumpStartDuration { get; set; } // PlayerAnimationController에서 클립 길이 주입
         public float LandDuration { get; set; }       // PlayerAnimationController에서 클립 길이 주입
+        
+        // 공격 회차 중 회전 잠금. Combat 쪽에서 켜고 끈다.
+        // Character는 Combat을 참조하지 않으므로(순환 방지) 플래그를 밖에서 밀어넣는 구조다.
+        public bool RotationLocked { get; set; }
 
         // Private State
         private Vector3 _inputDirection;
@@ -144,7 +148,9 @@ namespace MySecondWorld.Move
 
             // 부드러운 캐릭터 회전
             Quaternion targetRotation = Quaternion.Euler(0f, targetAngle, 0f);
-            transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, Time.deltaTime * _rotationSpeed);
+            // Combat 쪽에서 유도. 궁수 전투중 이동시 회전 방향 안틀어지게.
+            if (!RotationLocked)
+                transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, Time.deltaTime * _rotationSpeed);
         }
 
         //CharacterController.isgrounded로 지면 탐지가 불안정. SphereCast, _groundLayer로 지면 탐지.

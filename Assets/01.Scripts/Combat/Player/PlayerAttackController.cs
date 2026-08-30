@@ -18,6 +18,7 @@ namespace MySecondWorld.Combat.Player
         [SerializeField] private PlayerAnimationController _animationController;
         [SerializeField] private InputActionReference _attackAction;
         [SerializeField] private PlayerCombatStatsSO _stats;
+        [SerializeField] private MovementController _movement;
 
         [Header("근접 판정")]
         [SerializeField] private Transform _attackPoint;
@@ -52,15 +53,32 @@ namespace MySecondWorld.Combat.Player
 
         public bool IsInCombat => Time.time - _lastAttackTime < _stats.CombatStateDuration;
 
+        // 공격이 진행 중인가 = 몸 회전을 잠글 것인가.
+        // 발사(타격) 전까지만 true. 타임아웃도 함께 보므로 이벤트가 씹혀도 잠금이 영구히 남지 않는다.
+        private bool IsAttackRoundOpen
+        {
+            get
+            {
+                // 안전장치 — 어떤 경우에도 여기서 무조건 풀린다
+                if (Time.time - _attackStartTime >= _stats.AttackTimeout) return false;
+
+                // 입력 ~ 발사: 아직 Attack 스테이트로 전이 중일 수 있어 토큰이 책임진다
+                if (_releasedToken != _attackToken) return true;
+
+                // 발사 ~ 클립 종료: 활을 내리는 동작까지 애니메이터가 책임진다
+                return _animationController.IsAttacking;
+            }
+        }
+
         #endregion
 
         #region Unity 생명주기
 
         private void OnEnable()
-        {
+        {        
             if (_weaponEquip == null || _animationController == null ||
                 _attackAuthority == null || _attackAction == null || _attackPoint == null ||
-                _projectileSpawnPoint == null || _stats == null || _relay == null)
+                _projectileSpawnPoint == null || _stats == null || _relay == null || _movement == null)
             {
                 Debug.LogError($"PlayerAttackController 참조 누락 on {this.gameObject.name}", this);
                 enabled = false;
@@ -70,6 +88,16 @@ namespace MySecondWorld.Combat.Player
             _attackAction.action.Enable();
             _attackAction.action.performed += OnAttackInput;
             _weaponEquip.OnMainHandVisualApplied += HandleMainHandChanged;
+        }
+
+        private void Update()
+        {
+            if (!_weaponEquip.isLocalPlayer) return;
+
+            // 켜고 끄는 지점을 여러 곳에 두면(입력/CloseRound/AbortAttack/OnDisable)
+            // 한 곳만 빠뜨려도 잠금이 남는다. 상태에서 유도하면 그럴 일이 없다.
+            if (_movement != null)
+                _movement.RotationLocked = IsAttackRoundOpen;
         }
 
         private void OnDisable()
@@ -87,7 +115,6 @@ namespace MySecondWorld.Combat.Player
         {
             if (!_weaponEquip.isLocalPlayer) return; // 원격 플레이어 — 내 입력에 반응하면 안 됨
             if (!IsReadyToAttack()) return;
-
 
             bool isBow = _weaponEquip.GetMainHandCategory() == WeaponCategory.Bow;
 
