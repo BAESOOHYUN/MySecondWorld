@@ -10,7 +10,8 @@
         "MySecondWorld.Character",
         "MySecondWorld.Pool",
         "MySecondWorld.Foundation",
-        "MySecondWorld.Inventory"
+        "MySecondWorld.Inventory",
+        "MySecondWorld.Interaction"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

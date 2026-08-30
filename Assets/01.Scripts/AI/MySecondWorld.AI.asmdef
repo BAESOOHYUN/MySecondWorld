@@ -14,7 +14,8 @@
         "MySecondWorld.Foundation",
         "MySecondWorld.Input",
         "MySecondWorld.Inventory.Items",
-        "MySecondWorld.Combat"
+        "MySecondWorld.Combat",
+        "MySecondWorld.Interaction"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

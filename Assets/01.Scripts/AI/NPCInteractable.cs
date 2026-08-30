@@ -7,6 +7,7 @@ using MessagePipe;
 using VContainer;
 using System.Collections.Generic;
 using MySecondWorld.Inventory.Items;
+using MySecondWorld.Interaction;
 
 namespace MySecondWorld.AI
 {
@@ -15,7 +16,7 @@ namespace MySecondWorld.AI
     /// Stateless 상태 머신으로 4개 상태를 명시적으로 관리한다.
     /// </summary>
     [RequireComponent(typeof(Collider))]
-    public class NPCInteractable : MonoBehaviour
+    public class NPCInteractable : MonoBehaviour, ITapTargetable
     {
         #region 상태 머신 정의
         private enum NpcState
@@ -73,15 +74,12 @@ namespace MySecondWorld.AI
         [Header("상점")]
         [Tooltip("이 NPC가 판매하는 아이템 목록 — 비워두면 상점 선택 시 빈 카탈로그가 열림")]
         [SerializeField] private List<EquipmentItem> _shopCatalog;
-
-        [Header("NPC Interaction")]
-        [Tooltip("NPC 레이어마스크 — 'NPC' 레이어를 지정하세요")]
-        [SerializeField] private LayerMask _npcLayerMask;
         #endregion
 
         #region 필드 — 주입 의존성
-        [Inject] private TouchEventListener _touchEventListener; 
-        private readonly RaycastHit[] _clickHitsBuffer = new RaycastHit[4]; // 한 클릭에 겹칠 수 있는 NPC 수 상한
+        [Inject] private TapTargetResolver _tapTargetResolver;
+
+        // 아래 것들은 Construct(초기화 region)가 채운다.
         private INPCMenuUI _menuUI;
         private INPCDialogueUI _dialogueUI;
         private IShopUI _shopUI;
@@ -89,13 +87,19 @@ namespace MySecondWorld.AI
         #endregion
 
         #region 필드 — 상태
+        // 전역 공유 — 지금 공유 UI(Menu/Dialogue/Shop)를 차지하고 있는 NPC.
+        // 인스턴스 상태가 아니라서 맨 위에 따로 둔다.
+        private static NPCInteractable _activeInteraction;
+
         private StateMachine<NpcState, NpcTrigger> _stateMachine;
-        private static NPCInteractable s_activeInteraction; // 지금 공유 UI(Menu/Dialogue/Shop)를 차지하고 있는 NPC — 전역 공유
         private CancellationTokenSource _cts;
         private string _pendingInput;      // Submit 시 입력 텍스트를 임시 저장(Generating 진입 시 꺼내 씀)
         private bool _playerInProximity;   // 플레이어가 지금 물리적으로 범위 안에 있는지(ForceReset 후 즉시 복구용)
+        private Bounds _localBounds;       // 탭 판정용 — Start에서 최초 1회 산출 후 고정
+        private bool _tapTargetReady;      // 바운드 계산 + 리졸버 주입이 끝났는지
         #endregion
 
+        #region 식별자
         // GUID는 NPCBrain → SystemPromptSO에서 읽는다
         private string NpcGuid
         {
@@ -109,8 +113,9 @@ namespace MySecondWorld.AI
                 return _brain.SystemPrompt?.NpcGuid ?? _brain.name;
             }
         }
+        #endregion
 
-        #region 유니티 생명주기
+        #region 초기화
         // MessagePipe 방식에선 응답 완료 시점을 NPCInteractable이 직접 알 수 없다.
         // 해결책: NPCResponseReceivedEvent를 NPCInteractable도 구독한다.
         // 응답이 도착하면 상태 머신을 ResponseReceived-> Talking으로 전이시킨다.
@@ -138,7 +143,9 @@ namespace MySecondWorld.AI
                 })
                 .AddTo(destroyCancellationToken);
         }
+        #endregion
 
+        #region 유니티 생명주기
         private void Awake()
         {
             _highlightUI?.SetActive(false);
@@ -154,39 +161,32 @@ namespace MySecondWorld.AI
                 return;
             }
 
-            _touchEventListener.OnTap.Subscribe(screenPos =>
+            if (_dialogueUI == null)
             {
-                if (Camera.main == null)
-                    return;
+                Debug.LogError($"[NPCInteractable] {name}: NPCDialogueUI이 연결되지 않았습니다. 컴포넌트를 비활성화합니다.");
+                enabled = false;
+                return;
+            }
 
-                Ray ray = Camera.main.ScreenPointToRay(screenPos);
-                int hitCount = Physics.RaycastNonAlloc(ray, _clickHitsBuffer, Mathf.Infinity, _npcLayerMask, QueryTriggerInteraction.Collide);
-                if (hitCount == 0)
-                    return;
-
-                // 레이에 닿은 후보들 중, 실제 클릭 지점(화면 좌표)에 가장 가까운 NPC를 고른다
-                NPCInteractable closest = null;
-                float closestScreenDist = float.MaxValue;
-                for (int i = 0; i < hitCount; i++)
-                {
-                    var candidate = _clickHitsBuffer[i].collider.GetComponentInParent<NPCInteractable>();
-                    if (candidate == null) continue;
-
-                    Vector2 candidateScreenPos = Camera.main.WorldToScreenPoint(candidate.transform.position);
-                    float dist = Vector2.Distance(candidateScreenPos, screenPos);
-                    if (dist < closestScreenDist)
-                    {
-                        closestScreenDist = dist;
-                        closest = candidate;
-                    }
-                }
-
-                closest?.Interact();
-            })
-            .AddTo(destroyCancellationToken);
+            // Awake가 아니라 Start인 이유: VContainer 주입이 끝난 뒤여야 _tapTargetResolver를 쓸 수 있고,
+            // 렌더러도 이 시점엔 확실히 준비돼 있다.
+            _localBounds = TapBoundsUtility.CalculateLocalBounds(transform);
+            _tapTargetReady = true;
+            _tapTargetResolver?.Register(this);
         }
 
-        private void OnDisable() => ForceReset();
+        // Start 이후에 껐다 켠 경우를 위해 — 최초 1회는 Start가 등록한다.
+        private void OnEnable()
+        {
+            if (_tapTargetReady)
+                _tapTargetResolver?.Register(this);
+        }
+
+        private void OnDisable()
+        {
+            _tapTargetResolver?.Unregister(this);
+            ForceReset();
+        }
 
         private void OnDestroy()
         {
@@ -195,7 +195,7 @@ namespace MySecondWorld.AI
         }
         #endregion
 
-        #region 
+        #region 근접 트리거 감지
         // Trigger 감지 (TriggerRelay가 자식 오브젝트에서 대신 받아서 호출)
         // 코드 참조가 아니라 각 NPC/Companion 프리팹의 TriggerRelay.OnTriggerEntered/OnTriggerExited(UnityEvent)
         // 슬롯에 인스펙터로 직접 연결돼있음 — Find References로는 호출부가 안 잡힘, 프리팹에서 확인해야 함.
@@ -279,8 +279,8 @@ namespace MySecondWorld.AI
         // Idle 진입 시 항상 정리
         private void OnEnterIdle()
         {
-            if (s_activeInteraction == this)
-                s_activeInteraction = null;
+            if (_activeInteraction == this)
+                _activeInteraction = null;
 
             _brain?.OnConversationEnded();  // _cts.Cancel() 전 — destroyCancellationToken 살아있어야 함
             _cts?.Cancel();
@@ -295,9 +295,9 @@ namespace MySecondWorld.AI
         private void OnEnterMenu()
         {
             // 새 NPC가 Menu에 진입하는 순간, 이전에 활성화돼있던 다른 NPC를 강제로 정리
-            if (s_activeInteraction != null && s_activeInteraction != this)
-                s_activeInteraction.ForceReset();
-            s_activeInteraction = this;
+            if (_activeInteraction != null && _activeInteraction != this)
+                _activeInteraction.ForceReset();
+            _activeInteraction = this;
 
             _cts?.Cancel();
             _cts?.Dispose();
@@ -377,11 +377,11 @@ namespace MySecondWorld.AI
         // "대화창이 열려있냐/닫혀있냐" 라는 UI 레벨 상태로, 이걸 CompanionAI한테 알려줘서 이동을 잠깐 멈추게 하는 용도
         protected virtual void OnConversationStateChanged(bool paused) { }
 
-        // 다른 NPC가 공유 UI를 새로 차지할 때(s_activeInteraction 경유), 또는 자기 자신이 비활성화될 때(OnDisable) 호출되는 강제 정리
+        // 다른 NPC가 공유 UI를 새로 차지할 때(_activeInteraction 경유), 또는 자기 자신이 비활성화될 때(OnDisable) 호출되는 강제 정리
         public void ForceReset()
         {
-            if (s_activeInteraction == this)
-                s_activeInteraction = null;
+            if (_activeInteraction == this)
+                _activeInteraction = null;
 
             _brain?.OnConversationEnded();
             _dialogueUI?.Close();
@@ -398,6 +398,17 @@ namespace MySecondWorld.AI
 
         #endregion
 
+        #region ITapTargetable
+        public Transform Anchor => transform;
+        public Bounds LocalBounds => _localBounds;
+
+        // NPC는 몬스터와 달리 사망 상태가 없다. 켜져 있으면 항상 고를 수 있다.
+        public bool IsSelectable => isActiveAndEnabled;
+
+        // 결정 ⑥ — 판정 규칙만 리졸버로 통일하고, 탭 이후 동작은 기존 그대로(즉시 Menu)를 유지한다.
+        public void OnTapped() => Interact();
+        #endregion
+
         #region 입력 처리
         private void OnPlayerSubmit(string userInput)
         {
@@ -408,7 +419,7 @@ namespace MySecondWorld.AI
             SafeFire(NpcTrigger.Submit);
         }
 
-        // 클릭/탭으로 외부에서 직접 호출 (TouchEventListener의 Raycast 결과)
+        // 탭 판정의 승자로 뽑혔을 때 OnTapped가 부른다. UI 버튼 등 외부에서 직접 불러도 된다.
         public virtual void Interact()
         {
             if (OnUIChecker.IsInputFieldFocused())

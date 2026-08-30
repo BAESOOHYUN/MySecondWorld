@@ -18,7 +18,7 @@ namespace MySecondWorld.AI
     {
         private LLMAgent _llmAgent; // (undreamai/LLMForUnity)
         private NPCSystemPromptSO _systemPrompt;
-        private static bool s_isExitingPlayMode = false;
+        private static bool _isExitingPlayMode = false;
 #if UNITY_EDITOR
         // 에디터 로드 시 1회 실행 — PlayMode 상태 변화 감지 이벤트 사전 등록
         [InitializeOnLoadMethod]
@@ -27,9 +27,9 @@ namespace MySecondWorld.AI
             EditorApplication.playModeStateChanged += state =>
             {
                 if(state == PlayModeStateChange.ExitingPlayMode)
-                    s_isExitingPlayMode = true;    // ← "종료 중" 플래그 ON
+                    _isExitingPlayMode = true;    // ← "종료 중" 플래그 ON
                 else if (state == PlayModeStateChange.EnteredEditMode)
-                    s_isExitingPlayMode = false;   // ← Edit Mode 진입 후 리셋
+                    _isExitingPlayMode = false;   // ← Edit Mode 진입 후 리셋
             };
         }
 #endif
@@ -64,8 +64,8 @@ namespace MySecondWorld.AI
 
         private void OnDestroy()
         {
-            if (s_isExitingPlayMode) return; // Play Mode 종료 중 → s_isExitingPlayMode = true → CancelRequests() 스킵 → 에디터 안 뻗음
-            _llmAgent?.CancelRequests(); // 게임 중 NPC Destroy(예: 씬 전환) → s_isExitingPlayMode = false → CancelRequests() 정상 실행
+            if (_isExitingPlayMode) return; // Play Mode 종료 중 → _isExitingPlayMode = true → CancelRequests() 스킵 → 에디터 안 뻗음
+            _llmAgent?.CancelRequests(); // 게임 중 NPC Destroy(예: 씬 전환) → _isExitingPlayMode = false → CancelRequests() 정상 실행
         }
 
         public void SetSystemPrompt(string prompt)
@@ -82,7 +82,7 @@ namespace MySecondWorld.AI
             
             ct.Register(() =>
             {
-                if (!s_isExitingPlayMode)
+                if (!_isExitingPlayMode)
                     _llmAgent.CancelRequests();
             });
 
@@ -104,15 +104,15 @@ namespace MySecondWorld.AI
     }
 }
 
-// ── s_isExitingPlayMode 존재 이유 ───────────────────────────────────────────
+// ── _isExitingPlayMode 존재 이유 ───────────────────────────────────────────
 // 문제: Play 종료 시 LLMInitializer.CleanupNative()가 native handle을 먼저 해제한 뒤
 //       OnDestroy()의 CancelRequests()가 해제된 handle에 접근(dangling pointer)
 //       → LLM_Cancel() P/Invoke → access violation → 에디터 강제종료 💥
 //
 // 해결:
 // ■ 버튼 클릭
-//   ├─ ExitingPlayMode  → s_isExitingPlayMode = true
+//   ├─ ExitingPlayMode  → _isExitingPlayMode = true
 //   ├─ CleanupNative()  → native handle 해제
-//   └─ OnDestroy()      → s_isExitingPlayMode == true → CancelRequests() 스킵 ✅
-//      EnteredEditMode  → s_isExitingPlayMode = false (다음 실행 준비)
+//   └─ OnDestroy()      → _isExitingPlayMode == true → CancelRequests() 스킵 ✅
+//      EnteredEditMode  → _isExitingPlayMode = false (다음 실행 준비)
 // ────────────────────────────────────────────────────────────────────────────

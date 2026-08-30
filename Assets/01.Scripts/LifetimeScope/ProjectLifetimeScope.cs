@@ -10,6 +10,7 @@ using MySecondWorld.Save;
 using MySecondWorld.Bundle;
 using MySecondWorld.Customization;
 using MySecondWorld.Network.Web;
+using MySecondWorld.Interaction;
 
 /// <summary>
 /// VContainerSettings에 등록되어 앱 시작 시 자동 인스턴스화되는 최상위 LifetimeScope.
@@ -45,6 +46,7 @@ public class ProjectLifetimeScope : LifetimeScope
 
         builder.RegisterComponent(_uiManager).As<UIManager>().As<IUIManager>();
         builder.RegisterComponentInHierarchy<TouchEventListener>();
+        builder.RegisterComponentInHierarchy<TapTargetResolver>();
         builder.RegisterComponentInHierarchy<GameNetworkManager>();
         builder.RegisterComponentInHierarchy<PlayerAuthenticator>();
         builder.RegisterComponentInHierarchy<LoginUI>();
