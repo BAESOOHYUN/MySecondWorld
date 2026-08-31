@@ -71,7 +71,7 @@ namespace MySecondWorld.Combat.Player
         //   - layerMask   → 클라 입력을 아예 안 받음, 서버 상수(MonsterLayerMask)로 고정
         //   - attackPoint → 공격 지점 자체는 클라만 아는 정보라 완전히 없앨 수 없어, 대신 자기 위치와의 거리로 검증
         [Command]
-        public void CmdResolveAttackHit(Vector3 attackPointPosition, float attackRadius, float unarmedAttack)
+        public void CmdResolveAttackHit(Vector3 attackPointPosition, float attackRadius, float unarmedAttack, uint preferredNetId)
         {
             if (_meleeSkill == null) return; // 인스펙터 미할당 방어 — Command에서 예외가 나면 Mirror가 연결을 끊는다
             // 클라가 보낸 공격 위치가 클라 자신의 캐릭터 근처인지 검증 — 너무 멀면 조작 의심, 무시
@@ -82,8 +82,14 @@ namespace MySecondWorld.Combat.Player
             if (power <= 0f) power = unarmedAttack;
             Debug.Log($"[Damage] 공격력 계산 — power={power} (무기 미보유 시 unarmedAttack={unarmedAttack})");
 
+            // 클라가 보낸 netId는 "누굴 노렸나"일 뿐이다. 그 대상이 실제로 공격 구체 안에 있는지는
+            // OverlapSphere가 판단하므로, 이 값으로 먼 대상을 때리는 조작은 불가능하다.
+            Transform preferred = null;
+            if (preferredNetId != 0 && NetworkServer.spawned.TryGetValue(preferredNetId, out var identity))
+                preferred = identity.transform;
+
             SphereAttackResolver.ResolveAndExecute(
-                this.gameObject, attackPointPosition, attackRadius, MonsterLayerMask, power, _meleeSkill);
+                this.gameObject, attackPointPosition, attackRadius, MonsterLayerMask, power, _meleeSkill, preferred);
         }
 
         // 공격 입력 시점에 호출된다. 발사보다 먼저 도착해야 원격 피어가 제 방향으로 쏜다.

@@ -15,7 +15,6 @@ namespace MySecondWorld.AI
     /// 플레이어 근접 감지 → 대화 시작/종료 흐름 제어
     /// Stateless 상태 머신으로 4개 상태를 명시적으로 관리한다.
     /// </summary>
-    [RequireComponent(typeof(Collider))]
     public class NPCInteractable : MonoBehaviour, ITapTargetable
     {
         #region 상태 머신 정의
@@ -77,7 +76,6 @@ namespace MySecondWorld.AI
         #endregion
 
         #region 필드 — 주입 의존성
-        [Inject] private TapTargetResolver _tapTargetResolver;
 
         // 아래 것들은 Construct(초기화 region)가 채운다.
         private INPCMenuUI _menuUI;
@@ -95,8 +93,6 @@ namespace MySecondWorld.AI
         private CancellationTokenSource _cts;
         private string _pendingInput;      // Submit 시 입력 텍스트를 임시 저장(Generating 진입 시 꺼내 씀)
         private bool _playerInProximity;   // 플레이어가 지금 물리적으로 범위 안에 있는지(ForceReset 후 즉시 복구용)
-        private Bounds _localBounds;       // 탭 판정용 — Start에서 최초 1회 산출 후 고정
-        private bool _tapTargetReady;      // 바운드 계산 + 리졸버 주입이 끝났는지
         #endregion
 
         #region 식별자
@@ -168,23 +164,12 @@ namespace MySecondWorld.AI
                 return;
             }
 
-            // Awake가 아니라 Start인 이유: VContainer 주입이 끝난 뒤여야 _tapTargetResolver를 쓸 수 있고,
-            // 렌더러도 이 시점엔 확실히 준비돼 있다.
-            _localBounds = TapBoundsUtility.CalculateLocalBounds(transform);
-            _tapTargetReady = true;
-            _tapTargetResolver?.Register(this);
-        }
-
-        // Start 이후에 껐다 켠 경우를 위해 — 최초 1회는 Start가 등록한다.
-        private void OnEnable()
-        {
-            if (_tapTargetReady)
-                _tapTargetResolver?.Register(this);
+            // 판정 캡슐은 이미 있는 몸통 콜라이더를 그대로 베껴 만든다.
+            BuildTapCollider();
         }
 
         private void OnDisable()
         {
-            _tapTargetResolver?.Unregister(this);
             ForceReset();
         }
 
@@ -199,9 +184,20 @@ namespace MySecondWorld.AI
         // Trigger 감지 (TriggerRelay가 자식 오브젝트에서 대신 받아서 호출)
         // 코드 참조가 아니라 각 NPC/Companion 프리팹의 TriggerRelay.OnTriggerEntered/OnTriggerExited(UnityEvent)
         // 슬롯에 인스펙터로 직접 연결돼있음 — Find References로는 호출부가 안 잡힘, 프리팹에서 확인해야 함.
+
+        // 플레이어 몸에 콜라이더가 여러 개면(CharacterController + Collider 등) Enter/Exit가 각각 들어온다.
+        // 개수를 세지 않으면 하나만 빠져나가도 "범위 이탈"로 처리돼, 반경 안에 서 있는데도 Idle로 떨어진다.
+        private readonly HashSet<Collider> _playerColliders = new();
+
         public void HandlePlayerTriggerEnter(Collider other)
         {
             if (!other.CompareTag("Player")) return;
+
+            //Debug.Log($"[NPCInteractable] {name}: Enter ← {other.name} (누적 {_playerColliders.Count + 1})", this);
+
+            // 첫 콜라이더가 들어올 때만 상태를 바꾼다.
+            if (!_playerColliders.Add(other) || _playerColliders.Count > 1) return;
+
             _playerInProximity = true;
             _highlightUI?.SetActive(true);
             SafeFire(NpcTrigger.PlayerEntered);
@@ -210,6 +206,12 @@ namespace MySecondWorld.AI
         public void HandlePlayerTriggerExit(Collider other)
         {
             if (!other.CompareTag("Player")) return;
+
+            //Debug.Log($"[NPCInteractable] {name}: Exit ← {other.name} (남은 {_playerColliders.Count - 1})", this);
+
+            // 마지막 하나가 나갈 때만 이탈로 친다.
+            if (!_playerColliders.Remove(other) || _playerColliders.Count > 0) return;
+
             _playerInProximity = false;
             _highlightUI?.SetActive(false);
             SafeFire(NpcTrigger.PlayerLeft);
@@ -383,6 +385,8 @@ namespace MySecondWorld.AI
             if (_activeInteraction == this)
                 _activeInteraction = null;
 
+            _playerColliders.Clear();
+
             _brain?.OnConversationEnded();
             _dialogueUI?.Close();
             _shopUI?.Close();
@@ -400,13 +404,52 @@ namespace MySecondWorld.AI
 
         #region ITapTargetable
         public Transform Anchor => transform;
-        public Bounds LocalBounds => _localBounds;
 
         // NPC는 몬스터와 달리 사망 상태가 없다. 켜져 있으면 항상 고를 수 있다.
         public bool IsSelectable => isActiveAndEnabled;
 
-        // 결정 ⑥ — 판정 규칙만 리졸버로 통일하고, 탭 이후 동작은 기존 그대로(즉시 Menu)를 유지한다.
+        // 판정 규칙만 리졸버로 통일하고, 탭 이후 동작은 기존 그대로(즉시 Menu)를 유지한다.
         public void OnTapped() => Interact();
+
+        // NPC/컴패니언은 몸통 콜라이더가 이미 있으므로 그 치수를 그대로 쓴다.
+        // 손으로 재면 프리팹마다 어긋나고, 렌더러 바운드로 재면 상자가 몸보다 커진다
+        // (컴패니언이 옆 NPC의 클릭을 가로채던 원인).
+        private void BuildTapCollider()
+        {
+            int layer = LayerMask.NameToLayer("TapTarget");
+            if (layer < 0)
+            {
+                Debug.LogError($"[NPCInteractable] 'TapTarget' 레이어가 없습니다 — {name}", this);
+                return;
+            }
+
+            var go = new GameObject("TapCollider");
+            go.transform.SetParent(transform, false);
+            go.layer = layer;
+
+            var capsule = go.AddComponent<CapsuleCollider>();
+            capsule.isTrigger = true;
+
+            if (TryGetComponent(out CharacterController cc))
+            {
+                capsule.center = cc.center;
+                capsule.radius = cc.radius;
+                capsule.height = cc.height;
+            }
+            else if (TryGetComponent(out CapsuleCollider body))
+            {
+                capsule.center = body.center;
+                capsule.radius = body.radius;
+                capsule.height = body.height;
+            }
+            else
+            {
+                Debug.LogWarning($"[NPCInteractable] {name}: 몸통 콜라이더를 못 찾아 기본 크기 사용", this);
+                capsule.center = new Vector3(0f, 0.9f, 0f);
+                capsule.radius = 0.3f;
+                capsule.height = 1.8f;
+            }
+        }
         #endregion
 
         #region 입력 처리
@@ -422,6 +465,8 @@ namespace MySecondWorld.AI
         // 탭 판정의 승자로 뽑혔을 때 OnTapped가 부른다. UI 버튼 등 외부에서 직접 불러도 된다.
         public virtual void Interact()
         {
+            //Debug.Log($"[NPCInteractable] {name}: Interact 진입 — 상태={_stateMachine.State}, " +
+            //          $"입력필드포커스={OnUIChecker.IsInputFieldFocused()}", this);
             if (OnUIChecker.IsInputFieldFocused())
                 return;
             SafeFire(NpcTrigger.Interact);
@@ -448,6 +493,7 @@ namespace MySecondWorld.AI
             else
                 Debug.Log($"[NPCInteractable] {name}: 전이 무시: {_stateMachine.State} + {trigger}", this);
         }
+
         #endregion
     }
 }

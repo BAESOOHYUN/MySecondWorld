@@ -70,6 +70,10 @@ namespace MySecondWorld.Combat.Player
             }
         }
 
+        // 탭으로 고른 대상. PlayerTapAttack이 설정한다.
+        // 비어 있으면 기존 자동 최근접 그대로 동작한다(회귀 안전장치).
+        public Transform SelectedTarget { get; set; }
+
         #endregion
 
         #region Unity 생명주기
@@ -110,8 +114,11 @@ namespace MySecondWorld.Combat.Player
         #endregion
 
         #region 입력
+        private void OnAttackInput(InputAction.CallbackContext ctx) => TryAttack();
 
-        private void OnAttackInput(InputAction.CallbackContext ctx)
+        // 탭 공격과 공격 입력이 반드시 같은 경로를 지나게 하려고 분리했다.
+        // 쿨다운·회차 토큰을 우회하는 두 번째 경로가 생기면 연사 방지가 무너진다.
+        public void TryAttack()
         {
             if (!_weaponEquip.isLocalPlayer) return; // 원격 플레이어 — 내 입력에 반응하면 안 됨
             if (!IsReadyToAttack()) return;
@@ -198,8 +205,13 @@ namespace MySecondWorld.Combat.Player
             if (!CloseRound()) return;
             if (!_weaponEquip.isLocalPlayer) return;
 
+            // "누굴 노렸는지"만 알려준다. 실제로 때릴 수 있는지는 서버의 구체 판정이 정한다.
+            uint preferredNetId = 0;
+            if (IsSelectionUsable() && SelectedTarget.TryGetComponent(out NetworkIdentity identity))
+                preferredNetId = identity.netId;
+
             _attackAuthority.CmdResolveAttackHit(
-                _attackPoint.position, _stats.AttackRadius, _stats.UnarmedAttack);
+                _attackPoint.position, _stats.AttackRadius, _stats.UnarmedAttack, preferredNetId);
         }
 
         // 활 발사(화살이 손을 떠나는) 프레임.
@@ -282,7 +294,7 @@ namespace MySecondWorld.Combat.Player
         // ※ AimHeightOffset이 고정값이라 대상 크기를 반영하지 못한다(보스는 낮게, 작은 몹은 높게 겨눈다).
         private Vector3 FindAimPoint()
         {
-            var target = FindNearestTarget(_stats.ShootRange);
+            var target = FindAttackTarget(_stats.ShootRange);
             if (target == null)
                 return AimOrigin + transform.forward * _stats.ShootRange; // 대상 없음 — 정면으로
 
@@ -300,7 +312,7 @@ namespace MySecondWorld.Combat.Player
         // 억지로 정면을 향해 돌리면 허공을 쏠 때 캐릭터가 홱 도는 게 더 이상하다.
         private void FaceAttackTarget(float searchRange)
         {
-            var target = FindNearestTarget(searchRange);
+            var target = FindAttackTarget(searchRange);   // ← 탭으로 고른 놈을 향해 돌게 하는 지점
             if (target == null) return;
 
             Vector3 lookDirection = target.position - transform.position;
@@ -308,6 +320,48 @@ namespace MySecondWorld.Combat.Player
 
             if (lookDirection.sqrMagnitude > 0.001f)
                 transform.rotation = Quaternion.LookRotation(lookDirection);
+        }
+
+        // 선택 대상이 사거리 안이면 그놈, 밖이면 기존 자동 최근접.
+        // 조준·회전·근접 우선순위가 전부 이 한 곳을 지나므로 여기만 바꾸면 전부 따라온다.
+        //
+        // TODO(재설계): 사거리 밖이면 '최근접으로 폴백'이 아니라 '선택 대상을 향해 이동'이어야 한다.
+        //   지금은 멀리 있는 놈을 찍어도 눈앞의 다른 놈을 치게 된다.
+        //   자동 접근을 넣을 때 같이 정해야 할 것:
+        //     - 언제 멈추나 (IsInAttackRange 진입 시)
+        //     - 수동 이동 입력이 들어오면 취소하나
+        //     - 경로가 막히면 어떻게 하나 (NavMesh 실패 처리)
+        //   플레이어 이동은 CharacterController 직접 제어라 NavMeshAgent가 없다 — 경로 탐색 수단부터 결정 필요.
+        private Transform FindAttackTarget(float range)
+        {
+            if (IsSelectionUsable() &&
+                (SelectedTarget.position - AimOrigin).sqrMagnitude <= range * range)
+                return SelectedTarget;
+
+            return FindNearestTarget(range);
+        }
+
+        // 풀에 반납된 몬스터는 파괴되지 않고 비활성화만 되는 경우가 있다(호스트).
+        // != null 만으로는 못 거르기 때문에 활성 여부까지 본다 —
+        // 이걸 빼면 재사용된 다른 몬스터로 선택이 옮겨붙는다.
+        private bool IsSelectionUsable() =>
+            SelectedTarget != null && SelectedTarget.gameObject.activeInHierarchy;
+
+        // 탭 공격이 헛스윙을 걸지 않게 하는 사거리 검사.
+        //
+        // ※ 이 검사는 FaceAttackTarget(몸 회전)보다 먼저 실행된다.
+        //    _attackPoint는 플레이어 앞 자식이라 바라보는 방향에 따라 위치가 바뀌므로,
+        //    그 좌표를 그대로 쓰면 옆·뒤에 있는 대상이 전부 사거리 밖으로 나온다.
+        //    대신 "몸을 돌린 뒤의 도달 거리"를 미리 계산해서 방향과 무관하게 판단한다.
+        public bool IsInAttackRange(Transform target)
+        {
+            if (target == null) return false;
+
+            if (_weaponEquip.GetMainHandCategory() == WeaponCategory.Bow)
+                return (target.position - AimOrigin).sqrMagnitude <= _stats.ShootRange * _stats.ShootRange;
+
+            float reach = Vector3.Distance(transform.position, _attackPoint.position) + _stats.AttackRadius;
+            return (target.position - transform.position).sqrMagnitude <= reach * reach;
         }
 
         #endregion

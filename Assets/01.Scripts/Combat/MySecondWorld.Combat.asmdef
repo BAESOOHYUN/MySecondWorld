@@ -11,7 +11,8 @@
         "MySecondWorld.Pool",
         "MySecondWorld.Foundation",
         "MySecondWorld.Inventory",
-        "MySecondWorld.Interaction"
+        "MySecondWorld.Interaction",
+        "R3.Unity"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
