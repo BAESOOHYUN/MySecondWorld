@@ -44,7 +44,6 @@
   <Project Path="NativeFilePicker.Runtime.csproj" />
   <Project Path="MySecondWorld.Network.csproj" />
   <Project Path="Unity.UnifiedRayTracing.Runtime.csproj" />
-  <Project Path="MySecondWorld.Interaction.csproj" />
   <Project Path="Unity.AI.Navigation.Editor.ConversionSystem.csproj" />
   <Project Path="Unity.Cinemachine.csproj" />
   <Project Path="Unity.Burst.CodeGen.csproj" />
@@ -115,6 +114,7 @@
   <Project Path="R3.Unity.TextMeshPro.csproj" />
   <Project Path="ParrelSync.csproj" />
   <Project Path="Unity.Profiling.Core.csproj" />
+  <Project Path="MySecondWorld.Interaction.csproj" />
   <Project Path="Unity.DedicatedServer.MultiplayerRoles.csproj" />
   <Project Path="CFXREditor.csproj" />
   <Project Path="Unity.DedicatedServer.MultiplayerRoles.Editor.csproj" />

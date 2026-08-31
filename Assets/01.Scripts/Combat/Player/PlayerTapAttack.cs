@@ -45,8 +45,6 @@ namespace MySecondWorld.Combat.Player
             Select(monster);
 
             bool inRange = _attackController.IsInAttackRange(monster.Anchor);
-            float dist = Vector3.Distance(transform.position, monster.Anchor.position);
-            //Debug.Log($"[PlayerTapAttack] {monster.name} 선택 — 사거리안={inRange} 거리={dist:F2}m", this);
 
             if (!inRange) return;
 

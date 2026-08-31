@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using Mirror;
 using UnityEngine;
+using MySecondWorld.Foundation;
 
 namespace MySecondWorld.Combat.Monster
 {
@@ -10,15 +12,18 @@ namespace MySecondWorld.Combat.Monster
     /// </summary>
     [RequireComponent(typeof(NetworkIdentity))]
     [DisallowMultipleComponent]
-    public class MonsterServerState : NetworkBehaviour
+    public class MonsterServerState : NetworkBehaviour, IHealthView
     {
+        // 비율이 아니라 절대값 두 개를 나른다 — "78/100" 같은 숫자 표시가 필요해서다.
+        // MaxHP는 MonsterStatsSO(서버 전용)에서 오므로 클라가 알 방법이 이것뿐이다.
+        [SyncVar(hook = nameof(OnHPValueChanged))]
+        private float _currentHP;
+
+        [SyncVar(hook = nameof(OnHPValueChanged))]
+        private float _maxHP = 1f;   // 0이면 UI의 나눗셈이 터진다
+
         [SyncVar(hook = nameof(OnAliveChanged))]
         private bool _isAlive = true;
-
-        // 비율로 나르는 이유: MaxHP는 MonsterStatsSO에서 오는데 그 Initialize가 서버에서만 돈다.
-        // 클라 사본의 Health._maxHP는 서버 값과 같다는 보장이 없다.
-        [SyncVar(hook = nameof(OnHPChanged))]
-        private float _hpNormalized = 1f;
 
         // 몸통 캡슐 치수. 클라 사본엔 MonsterAI도 MonsterStatsSO도 없어서
         // 자기 몸 크기를 알 방법이 이것뿐이다 — 탭 판정 캡슐을 이 값으로 만든다.
@@ -27,14 +32,33 @@ namespace MySecondWorld.Combat.Monster
         [SyncVar] private float _bodyRadius;
         [SyncVar] private float _bodyHeight;
 
-        private Health _health;
         private MonsterTapTarget _tapTarget;
+        private Health _health;
 
+        public Transform Anchor => transform;
+        public float CurrentHP => _currentHP;
+        public float MaxHP => _maxHP;
         public bool IsAlive => _isAlive;
-        public float HPNormalized => _hpNormalized;
 
-        public event Action<float> HPChanged;   // 3단계 HP바 UI가 구독
-        public event Action Died;               // 4단계 선택 해제가 구독
+        public event Action HPChanged;
+        public event Action Died;
+
+        // 클라이언트에 살아있는 몬스터 목록. HP바를 몇 개 띄울지 UI가 알아야 해서 노출한다.
+        private static readonly List<MonsterServerState> _activeOnClient = new();
+        public static IReadOnlyList<MonsterServerState> ActiveOnClient => _activeOnClient;
+
+        public static event Action<MonsterServerState> ClientSpawned;
+        public static event Action<MonsterServerState> ClientDespawned;
+
+        // Domain Reload가 꺼져 있어 목록과 구독이 플레이 세션을 넘어 살아남는다.
+        // 초기화 안 하면 두 번째 플레이에서 파괴된 몬스터가 목록에 쌓인다.
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics()
+        {
+            _activeOnClient.Clear();
+            ClientSpawned = null;
+            ClientDespawned = null;
+        }
 
         private void Awake() => _tapTarget = GetComponent<MonsterTapTarget>();
 
@@ -42,21 +66,23 @@ namespace MySecondWorld.Combat.Monster
         {
             // 풀에서 재사용된 인스턴스는 직전 개체의 값을 들고 있다. 스폰마다 되돌린다.
             _isAlive = true;
-            _hpNormalized = 1f;
 
-            // MonsterAI.Initialize가 스탯 SO 값으로 이미 맞춰놓은 캡슐을 그대로 읽는다.
+            _health = GetComponent<Health>();   // MonsterFactory가 서버에서 붙인 것
+            if (_health == null)
+            {
+                Debug.LogError($"[MonsterServerState] Health를 찾지 못했습니다 — {name}", this);
+                return;
+            }
+
+            // Health.OnEnable이 이미 CurrentHP를 MaxHP로 채운 뒤다.
+            _maxHP = _health.MaxHP;
+            _currentHP = _health.CurrentHP;
+
             if (TryGetComponent(out CapsuleCollider body))
             {
                 _bodyCenter = body.center;
                 _bodyRadius = body.radius;
                 _bodyHeight = body.height;
-            }
-
-            _health = GetComponent<Health>();   // 서버에서 MonsterFactory가 붙인 것
-            if (_health == null)
-            {
-                Debug.LogError($"[MonsterServerState] Health를 찾지 못했습니다 — {name}", this);
-                return;
             }
 
             _health.OnDamaged += HandleDamaged;
@@ -75,20 +101,33 @@ namespace MySecondWorld.Combat.Monster
         // SyncVar 초기값은 스폰 메시지에 함께 오므로 여기서 바로 쓸 수 있다.
         public override void OnStartClient()
         {
-            if (_tapTarget == null) return;
-            _tapTarget.BuildTapCollider(_bodyCenter, _bodyRadius, _bodyHeight);
-            _tapTarget.SetTappable(_isAlive);
+            if (_tapTarget != null)
+            {
+                _tapTarget.BuildTapCollider(_bodyCenter, _bodyRadius, _bodyHeight);
+                _tapTarget.SetTappable(_isAlive);
+            }
+
+            // 풀 재사용 시 같은 인스턴스가 다시 스폰되므로 중복 등록을 막는다.
+            if (!_activeOnClient.Contains(this))
+            {
+                _activeOnClient.Add(this);
+                ClientSpawned?.Invoke(this);
+            }
+        }
+
+        public override void OnStopClient()
+        {
+            if (_activeOnClient.Remove(this))
+                ClientDespawned?.Invoke(this);
         }
 
         [Server]
-        private void HandleDamaged(float newCurrentHP)
-        {
-            if (_health.MaxHP > 0f)
-                _hpNormalized = newCurrentHP / _health.MaxHP;
-        }
+        private void HandleDamaged(float newCurrentHP) => _currentHP = newCurrentHP;
 
         [Server]
         private void HandleDied() => _isAlive = false;
+
+        private void OnHPValueChanged(float oldValue, float newValue) => HPChanged?.Invoke();
 
         private void OnAliveChanged(bool oldValue, bool newValue)
         {
@@ -96,7 +135,5 @@ namespace MySecondWorld.Combat.Monster
             _tapTarget?.SetTappable(newValue);
             if (!newValue) Died?.Invoke();
         }
-
-        private void OnHPChanged(float oldValue, float newValue) => HPChanged?.Invoke(newValue);
     }
 }

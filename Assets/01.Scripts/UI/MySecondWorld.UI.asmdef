@@ -25,7 +25,9 @@
         "MySecondWorld.Inventory.Items",
         "MySecondWorld.Inventory",
         "Cleverous.VaultInventory",
-        "Cleverous.VaultSystem"
+        "Cleverous.VaultSystem",
+        "MySecondWorld.Interaction",
+        "MySecondWorld.Combat"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

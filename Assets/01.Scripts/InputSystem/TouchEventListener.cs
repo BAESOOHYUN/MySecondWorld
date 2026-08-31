@@ -209,7 +209,7 @@ public class TouchEventListener : MonoBehaviour, IInputAxisOwner
         // 현재 위치 UI 판정 (매 프레임)
         isPriPositionOnUI = OnUIChecker.IsPointerOverUIObject(new Vector2(PriPositionX.Value, PriPositionY.Value));
         isSecPositionOnUI = OnUIChecker.IsPointerOverUIObject(new Vector2(SecPositionX.Value, SecPositionY.Value));
-        //UICheckDebug();
+        UICheckDebug();
 
         if (deviceType == DeviceType.PC && !isPriPositionOnUI)
             OnZoom?.Invoke(Zoom.Value);
