@@ -35,9 +35,15 @@ namespace MySecondWorld.Combat.Player
 
         private void HandleTargetTapped(ITapTargetable target)
         {
-            // 몬스터가 아니면(NPC·빈 곳) 선택을 건드리지 않는다.
-            // 결정 ②: 빈 곳 탭으로 해제하지 않는다 — 카메라 조작 중 오인 해제 방지.
-            if (target is not MonsterTapTarget monster) return;
+            if (target == null) return; // 빈 곳 탭 → 유지 (카메라 조작 중 오인 해제 방지)
+
+            // 다른 대상(NPC 등)을 고르면 몬스터 선택은 푼다.
+            // 안 그러면 대화하러 간 사이에도 조준이 남아, 공격 입력이 엉뚱한 데로 나간다.
+            if (target is not MonsterTapTarget monster)
+            {
+                ClearSelection();
+                return;
+            }
 
             Select(monster);
 

@@ -27,7 +27,7 @@ namespace MySecondWorld.Combat.Monster
         // 판정 캡슐을 끄는 것만으로 이미 걸러지지만, 이중 안전장치로 남긴다.
         public bool IsSelectable => isActiveAndEnabled && (_serverState == null || _serverState.IsAlive);
 
-        public void OnTapped() => Debug.Log($"[MonsterTapTarget] 탭 승자: {name}", this);
+        public void OnTapped() {}
 
         private void Awake() => _serverState = GetComponent<MonsterServerState>();
 

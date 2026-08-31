@@ -41,9 +41,13 @@ namespace MySecondWorld.UI
 
         private void HandleTargetTapped(ITapTargetable target)
         {
-            if (target is not MonsterTapTarget monster) return;
+            // PlayerTapAttack의 선택 규칙과 같아야 조준점과 실제 선택이 어긋나지 않는다.
+            // 빈 곳 탭은 유지, 다른 대상 선택은 해제(결정 ②).
+            if (target == null) return;
 
             Clear();
+            if (target is not MonsterTapTarget monster) return;
+
             _follow.SetTarget(monster.Anchor);
 
             if (!monster.TryGetComponent(out _state)) return;

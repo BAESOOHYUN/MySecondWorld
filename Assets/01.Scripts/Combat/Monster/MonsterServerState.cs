@@ -78,11 +78,18 @@ namespace MySecondWorld.Combat.Monster
             _maxHP = _health.MaxHP;
             _currentHP = _health.CurrentHP;
 
+            // MonsterAI의 RequireComponent가 스폰 전에 붙여주므로 지금 경로에선 항상 있다.
+            // 다른 경로로 스폰하게 되면 조용히 폴백 크기로 떨어지므로 알려준다.
             if (TryGetComponent(out CapsuleCollider body))
             {
                 _bodyCenter = body.center;
                 _bodyRadius = body.radius;
                 _bodyHeight = body.height;
+            }
+            else
+            {
+                Debug.LogWarning($"[MonsterServerState] CapsuleCollider가 없어 탭 판정 캡슐이 " +
+                                 $"기본 크기로 만들어집니다 — {name}", this);
             }
 
             _health.OnDamaged += HandleDamaged;

@@ -89,6 +89,11 @@ namespace MySecondWorld.AI
         // 인스턴스 상태가 아니라서 맨 위에 따로 둔다.
         private static NPCInteractable _activeInteraction;
 
+        // Domain Reload가 꺼져 있어 static이 플레이 세션을 넘어 살아남는다.
+        // 파괴된 객체는 Unity의 fake-null 덕에 자연 복구되지만, 그건 우연이지 보장이 아니다.
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() => _activeInteraction = null;
+
         private StateMachine<NpcState, NpcTrigger> _stateMachine;
         private CancellationTokenSource _cts;
         private string _pendingInput;      // Submit 시 입력 텍스트를 임시 저장(Generating 진입 시 꺼내 씀)
