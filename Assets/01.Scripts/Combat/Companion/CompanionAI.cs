@@ -176,7 +176,7 @@ namespace MySecondWorld.Combat.Companion
                 .Permit(CompanionTrigger.Died, CompanionState.Dead);
 
             _stateMachine.Configure(CompanionState.Chase)
-                .OnEntry(() => { SetAgentStopped(false); _agent.updateRotation = true; })
+                .OnEntry(() => { _followPaused = false; SetAgentStopped(false); _agent.updateRotation = true; })
                 .Permit(CompanionTrigger.MonsterLost, CompanionState.Follow)
                 .Permit(CompanionTrigger.TargetInRange, CompanionState.Attack)
                 .Permit(CompanionTrigger.Died, CompanionState.Dead);
@@ -196,6 +196,7 @@ namespace MySecondWorld.Combat.Companion
         //  owner가 일정 거리 이상 움직였을 때만 재계산하여 이동
         private void UpdateFollow()
         {
+            SetAgentStopped(_followPaused); // 매 프레임 강제 — 다른 경로에서 풀려도 다시 잡음
             if (_followPaused) return;
 
             float distance = Vector3.Distance(transform.position, _owner.position);
@@ -204,7 +205,7 @@ namespace MySecondWorld.Combat.Companion
             if (Vector3.Distance(_owner.position, _lastFollowTarget) < FollowRecalcThreshold) return;
 
             _lastFollowTarget = _owner.position;
-            SetAgentDestination(_owner.position); // owner 위치로 이동
+            SetAgentDestination(_owner.position);
         }
 
         private void UpdateChase()

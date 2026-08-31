@@ -31,7 +31,12 @@ namespace MySecondWorld.Network
         // (아이템 드롭, 상호작용 거리 체크)에 쓰이는 값
         public Transform MyTransform => transform;
 
-        
+        // "외형 적용 완료" 신호. portrait 캡쳐에 필요
+        public static event System.Action LocalAppearanceReady;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() => LocalAppearanceReady = null; // Domain Reload OFF 대응
+
         private IPublisher<RequestOpenCustomizeUIEvent> _openUIPublisher;
 
         [Inject]
@@ -125,8 +130,15 @@ namespace MySecondWorld.Network
         private void OnAppearanceChanged(CharacterAppearanceData old, CharacterAppearanceData next)
         {
 #if !UNITY_SERVER
-            _customizer.ApplyAppearance(next).Forget(); // 파츠 프리팹 Instantiate — 렌더링용
+            ApplyAndNotify(next).Forget();
 #endif 
+        }
+
+
+        private async Cysharp.Threading.Tasks.UniTaskVoid ApplyAndNotify(CharacterAppearanceData next)
+        {
+            await _customizer.ApplyAppearance(next); // 파츠 로딩 다 끝날 때까지 여기서 기다림
+            if (isLocalPlayer) LocalAppearanceReady?.Invoke();
         }
 
         private static int Clamp(int value, int count)

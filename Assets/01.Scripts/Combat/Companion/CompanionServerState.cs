@@ -10,18 +10,19 @@ namespace MySecondWorld.Combat.Companion
     [RequireComponent(typeof(NetworkMatch))]
     public class CompanionServerState : NetworkBehaviour, ICompanionServerState, IHealthView
     {
-        // 비율이 아니라 절대값 두 개를 나른다 — "78/100" 숫자 표시가 필요해서다.
         [SyncVar(hook = nameof(OnHPChanged))]
         private float _currentHP;
 
         [SyncVar(hook = nameof(OnHPChanged))]
-        private float _maxHP = 1f;   // 0이면 UI의 나눗셈이 터진다
+        private float _maxHP = 1f;
 
         [SyncVar(hook = nameof(OnAliveChanged))]
         private bool _isAlive = true;
 
-        // 컴패니언은 소유권 없이 스폰되므로(NetworkServer.Spawn에 conn 미전달),
-        // 클라이언트가 "내 컴패니언"을 가릴 단서가 이것뿐이다.
+        // 소환/소환해제 — 생사와 별개다. 죽은 채로 소환해제하면 다음에 다시 불러도 죽은 채로 나온다.
+        [SyncVar(hook = nameof(OnPresentChanged))]
+        private bool _isPresent = true;
+
         [SyncVar(hook = nameof(OnOwnerChanged))]
         private uint _ownerNetId;
 
@@ -31,19 +32,15 @@ namespace MySecondWorld.Combat.Companion
         public float CurrentHP => _currentHP;
         public float MaxHP => _maxHP;
         public bool IsAlive => _isAlive;
+        public bool IsPresent => _isPresent;
 
-        public event Action HPChanged;   // 값 없이 통보만 — 현재/최대를 UI가 다시 읽는다
-
-        // 사망·소환해제는 디스폰이 아니라 SetActive(false)라서 OnStopClient가 안 불린다.
-        // UI가 바를 숨기려면 이 신호가 필요하다.
+        public event Action HPChanged;
         public event Action<bool> AliveChanged;
 
         public static CompanionServerState LocalCompanion { get; private set; }
         public static event Action<CompanionServerState> LocalCompanionReady;
         public static event Action LocalCompanionLost;
 
-        // Domain Reload OFF — static이 플레이 세션을 넘어 살아남으면 파괴된 객체를 가리키고,
-        // 구독도 그대로 남아 지난 세션의 UI가 계속 불린다.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
         {
@@ -79,7 +76,6 @@ namespace MySecondWorld.Combat.Companion
 
         #region ICompanionServerState — 서버 전용 조작
 
-        // CompanionFactory가 서버에서만 호출 — CompanionAI 쪽으로 위임(같은 Combat 어셈블리라 직접 참조 가능)
         [Server]
         public void Initialize(Transform ownerTransform)
         {
@@ -89,7 +85,8 @@ namespace MySecondWorld.Combat.Companion
             GetComponent<CompanionAI>().Initialize(ownerTransform);
         }
 
-        // CompanionAI.PlayDeathSequence()가 죽음 애니메이션 재생 완료 후 호출
+        // CompanionAI.PlayDeathSequence()가 사망 애니메이션 재생 완료 후 호출 — 실전투 사망.
+        // 재접속 시 "죽은 채로 재소환"을 재현할 때도 재사용한다(애니메이션 없이 즉시).
         [Server]
         public void MarkDead() => _isAlive = false;
 
@@ -98,13 +95,12 @@ namespace MySecondWorld.Combat.Companion
         {
             if (_isAlive) return;
 
-            // Warp 전에 먼저 켜야 NavMeshAgent가 동작함(Health.OnEnable()도 여기서 같이 실행돼 CurrentHP가 MaxHP로 리셋됨)
-            this.gameObject.SetActive(true);
             var ai = GetComponent<CompanionAI>();
             ai.Warp(position);
             ai.ResetForRevive();
             _currentHP = _health.MaxHP;
             _isAlive = true;
+            _isPresent = true; // 소환해제된 채로 부활 요청이 와도 보이도록
         }
 
         [Server]
@@ -115,9 +111,21 @@ namespace MySecondWorld.Combat.Companion
             else ai.PauseFollow();
         }
 
-        // 테스트용 즉사기
+        // 디버그 키 전용 즉사 — Health 데미지 → 사망 애니메이션까지 다 거치는 "진짜 죽음"
         [Server]
         public void DebugKill() => GetComponent<Health>().TakeDamage(99999f);
+
+        // 초상화 클릭 소환해제 — 생사와 무관하게 그냥 감춘다. 애니메이션도 HP 변화도 없다.
+        [Server]
+        public void Dismiss() => _isPresent = false;
+
+        // 초상화 클릭 재소환 — 감췄던 걸 내 위치로 다시 보여준다. 죽어있었다면 죽은 채로 나온다.
+        [Server]
+        public void Summon(Vector3 position)
+        {
+            GetComponent<CompanionAI>().Warp(position);
+            _isPresent = true;
+        }
 
         [Server]
         private void HandleDamaged(float newCurrentHP) => _currentHP = newCurrentHP;
@@ -128,32 +136,45 @@ namespace MySecondWorld.Combat.Companion
 
         private void OnHPChanged(float oldValue, float newValue) => HPChanged?.Invoke();
 
+        // 생사만 담당 — 화면에서 감추는 건 OnPresentChanged 몫이다.
+        // 죽으면 그 자리에 쓰러진 채 남아있어야 하므로 여기선 렌더러/콜라이더를 건드리지 않는다.
         private void OnAliveChanged(bool oldValue, bool newValue)
         {
-            // SetActive(false)보다 먼저 알린다 — 나중에 자식 UI가 구독해도 안전하도록.
             AliveChanged?.Invoke(newValue);
 
-            this.gameObject.SetActive(newValue);
-
-            if (!isServer) return; // AI 판단은 서버 전용 — 클라이언트 로컬 사본은 절대 켜면 안 됨
+            if (!isServer) return; // AI 판단은 서버 전용
 
             var ai = GetComponent<CompanionAI>();
             var hitbox = GetComponent<CompanionHitbox>();
-            if (ai != null) ai.enabled = newValue;
-            if (hitbox != null) hitbox.enabled = newValue;
+            bool activeState = newValue && _isPresent;
+            if (ai != null) ai.enabled = activeState;
+            if (hitbox != null) hitbox.enabled = activeState;
         }
 
-        // Initialize가 Spawn 뒤에 불리므로 _ownerNetId는 스폰 메시지가 아니라 나중에 도착한다.
-        // OnStartClient 한 번만으로는 놓치기 때문에 훅에서도 다시 본다.
+        // 화면 표시만 담당 — gameObject는 항상 active로 유지한다.
+        // SetActive(false)로 껐다 켜면 Health.OnEnable()이 HP를 리셋해버려서 "죽은 채 재소환"이 깨진다.
+        private void OnPresentChanged(bool oldValue, bool newValue)
+        {
+            foreach (var r in GetComponentsInChildren<Renderer>(true))
+                r.enabled = newValue;
+            foreach (var c in GetComponentsInChildren<Collider>(true))
+                c.enabled = newValue;
+
+            if (!isServer) return;
+
+            var ai = GetComponent<CompanionAI>();
+            var hitbox = GetComponent<CompanionHitbox>();
+            bool activeState = newValue && _isAlive;
+            if (ai != null) ai.enabled = activeState;
+            if (hitbox != null) hitbox.enabled = activeState;
+        }
+
         private void OnOwnerChanged(uint oldValue, uint newValue) => TryMarkLocal();
 
         #endregion
 
         #region "내 컴패니언" 판정
 
-        // 로컬 플레이어가 컴패니언보다 늦게 스폰될 수 있다. 그 경우 OnStartClient 시점엔
-        // NetworkClient.localPlayer가 null이라 판정이 조용히 실패하고, 훅도 이미 지나가서
-        // 다시 볼 기회가 없어진다 — HP바가 영원히 안 붙는다. 준비될 때까지 기다렸다 판정한다.
         private async UniTaskVoid WaitForLocalPlayerThenMark()
         {
             try
@@ -164,7 +185,6 @@ namespace MySecondWorld.Combat.Companion
             }
             catch (OperationCanceledException)
             {
-                // 기다리는 중 파괴됨 — 정상 흐름
             }
         }
 

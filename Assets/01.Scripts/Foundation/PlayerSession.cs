@@ -54,8 +54,10 @@ namespace MySecondWorld.Network
         #endregion
 
         #region 동행 NPC
-        public string[] recruitedCompanionIds = Array.Empty<string>(); // SaveData 왕복용 — RemovePlayer 저장 시 유실 방지
+        public string[] recruitedCompanionIds = Array.Empty<string>(); // RemovePlayer 저장 시 유실 방지 - SaveData 왕복용
         public NetworkIdentity companionIdentity;   // 현재 스폰된 동행 NPC (없으면 null)
+        public bool companionAlive = true; // 소환된 컴패니언 생존/소환해제 상태 — SaveData 왕복용
+        public bool companionPresent = true; // 소환된 컴패니언 소환/소환해제 상태 — SaveData 왕복용
         #endregion
     }
 }

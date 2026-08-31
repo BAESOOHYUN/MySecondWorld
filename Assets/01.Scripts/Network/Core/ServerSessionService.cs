@@ -7,6 +7,7 @@ using UnityEngine.SceneManagement;
 using Mirror;
 using Cleverous.VaultInventory;
 using MySecondWorld.Save;
+using MySecondWorld.Combat.Companion;
 
 namespace MySecondWorld.Network
 {
@@ -117,6 +118,8 @@ namespace MySecondWorld.Network
                 spawnScene = saveData.Value.lastSceneNames[0];
                 spawnPosition = saveData.Value.lastPosition;
                 session.recruitedCompanionIds = saveData.Value.recruitedCompanionIds ?? Array.Empty<string>();
+                session.companionAlive = saveData.Value.companionAlive;
+                session.companionPresent = saveData.Value.companionPresent;
             }
             else
             {
@@ -217,13 +220,20 @@ namespace MySecondWorld.Network
                 conn.identity.GetComponent<NetworkMatch>().matchId = SceneMatchId.GetMatchIdFromScene(session.currentScene);
             }
 
-            // 이미 영입된 companion 자동 재소환 (MVP("Minimum Viable Product"(최소 기능 제품)): 1마리만)
-            if (session.recruitedCompanionIds != null && session.recruitedCompanionIds.Length > 0)
+            // 이미 영입된 companion 자동 재소환
+            // (MVP("Minimum Viable Product"(최소 기능 제품)): 1마리만, 소환해제 상태면 스킵)
+            if (session.recruitedCompanionIds != null && session.recruitedCompanionIds.Length > 0 && session.companionPresent)
             {
                 var companionId = session.recruitedCompanionIds[0];
-                var prefab = _manager.GetCompanionPrefab(companionId);
+                var prefab = _manager.CompanionService.GetPrefab(companionId);
                 if (prefab != null)
+                {
                     SpawnCompanionFor(session, conn, prefab);
+                    // 마지막 접속 때 죽어있었으면 애니메이션 없이 바로 죽은 채로 재현
+                    if (!session.companionAlive && session.companionIdentity != null &&
+                        session.companionIdentity.TryGetComponent(out ICompanionServerState serverState))
+                        serverState.MarkDead();
+                }
                 else
                     Debug.LogWarning($"[Session] companionId '{companionId}'에 매칭되는 프리팹이 레지스트리에 없음");
             }
@@ -248,7 +258,9 @@ namespace MySecondWorld.Network
                         {
                             lastSceneNames = new string[] { session.currentScene },
                             lastPosition = posToSave,
-                            recruitedCompanionIds = session.recruitedCompanionIds
+                            recruitedCompanionIds = session.recruitedCompanionIds,
+                            companionAlive = session.companionAlive,
+                            companionPresent = session.companionPresent
                         });
                     }
                 }
@@ -279,12 +291,15 @@ namespace MySecondWorld.Network
                 prefab, conn.identity.transform.position, Quaternion.identity, conn.identity.transform);
             if (companion == null) return;
 
-            // 최초 스폰 시 씬 위치 동일하게 맞춤
             SceneManager.MoveGameObjectToScene(companion, conn.identity.gameObject.scene);
 
             session.companionIdentity = companion.GetComponent<NetworkIdentity>();
             if (companion.TryGetComponent(out NetworkMatch companionMatch))
                 companionMatch.matchId = conn.identity.GetComponent<NetworkMatch>().matchId;
+
+            // 실전투 사망/부활 등 생사가 바뀔 때마다 세션에 자동 기록 — 재접속 시 그대로 재현하기 위함
+            if (companion.TryGetComponent(out ICompanionServerState serverState))
+                serverState.AliveChanged += alive => session.companionAlive = alive;
         }
 
         // 퀘스트/이벤트 시스템이 나중에 호출할 진입점 — "누가 언제 부르는지"는 이 메서드 책임 밖
@@ -294,6 +309,9 @@ namespace MySecondWorld.Network
             if (session.companionIdentity != null) return; // MVP: 이미 있으면 무시
             
             SpawnCompanionFor(session, conn, speciesPrefab);
+            session.companionAlive = true;
+            session.companionPresent = true;
+
             if (session.companionIdentity == null) return; // 스폰 실패
 
             // recruitedCompanionIds는 "이 플레이어가 지금까지 영입한 companion들의 ID 목록"

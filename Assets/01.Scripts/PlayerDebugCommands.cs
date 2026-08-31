@@ -1,5 +1,4 @@
 using Mirror;
-using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace MySecondWorld.Network.Player
@@ -14,10 +13,7 @@ namespace MySecondWorld.Network.Player
         #region 버튼 진입점 (DebugButtonRelay가 호출)
 
         public void RequestStartingGold() { if (isOwned) CmdGrantStartingGold(); }
-        public void RequestRecruitCompanion() { if (isOwned) CmdRecruitCompanion("Ari"); }
-        public void RequestKillCompanion() { if (isOwned) CmdKillCompanion(); }
-        public void RequestReviveCompanion() { if (isOwned) CmdReviveCompanion(); }
-        public void RequestToggleCompanionFollow() { if (isOwned) CmdToggleCompanionFollow(); }
+
         public void RequestWeaponTestKit() { if (isOwned) CmdGrantWeaponTestKit(); }
 
         #endregion
@@ -31,10 +27,6 @@ namespace MySecondWorld.Network.Player
             if (keyboard == null) return;
 
             if (keyboard.f7Key.wasPressedThisFrame) RequestStartingGold();
-            if (keyboard.f8Key.wasPressedThisFrame) RequestToggleCompanionFollow();
-            if (keyboard.f9Key.wasPressedThisFrame) RequestRecruitCompanion();
-            if (keyboard.f10Key.wasPressedThisFrame) RequestKillCompanion();
-            if (keyboard.f11Key.wasPressedThisFrame) RequestReviveCompanion();
             if (keyboard.f12Key.wasPressedThisFrame) RequestWeaponTestKit();
         }
 
@@ -44,30 +36,6 @@ namespace MySecondWorld.Network.Player
         private void CmdGrantStartingGold()
         {
             Manager.DebugGrantStartingGold(connectionToClient);
-        }
-
-        [Command]
-        private void CmdRecruitCompanion(string companionId)
-        {
-            Manager.DebugRecruitCompanion(connectionToClient, companionId);
-        }
-
-        [Command]
-        private void CmdKillCompanion()
-        {
-            Manager.DebugKillCompanion(connectionToClient);
-        }
-
-        [Command]
-        private void CmdReviveCompanion()
-        {
-            Manager.DebugReviveCompanion(connectionToClient);
-        }
-
-        [Command]
-        private void CmdToggleCompanionFollow()
-        {
-            Manager.DebugToggleCompanionFollow(connectionToClient);
         }
 
         [Command]

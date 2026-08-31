@@ -11,10 +11,6 @@ namespace MySecondWorld.UI
     {
         public void OnGrantWeaponTestKitClicked() => WithLocalPlayer(c => c.RequestWeaponTestKit());
         public void OnGrantGoldClicked() => WithLocalPlayer(c => c.RequestStartingGold());
-        public void OnRecruitCompanionClicked() => WithLocalPlayer(c => c.RequestRecruitCompanion());
-        public void OnKillCompanionClicked() => WithLocalPlayer(c => c.RequestKillCompanion());
-        public void OnReviveCompanionClicked() => WithLocalPlayer(c => c.RequestReviveCompanion());
-        public void OnToggleFollowClicked() => WithLocalPlayer(c => c.RequestToggleCompanionFollow());
 
         private void WithLocalPlayer(System.Action<PlayerDebugCommands> action)
         {
