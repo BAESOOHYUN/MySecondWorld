@@ -10,9 +10,9 @@ namespace MySecondWorld.UI
     /// IHealthView 구현체면 몬스터·플레이어·컴패니언 뭐든 붙는다.
     ///
     /// 붙는 방식은 셋이라 이 클래스는 Bind/Unbind만 하고 누가 물려주는지는 모른다:
-    ///   · 몬스터   — MonsterHpBarLayer가 스폰마다 물려줌
-    ///   · 플레이어 — LocalPlayerHealthBinder
-    ///   · 컴패니언 — ParentHealthBinder (자기 부모에서 찾음)
+    ///   · 몬스터   — MonsterHealthBarSpawner가 스폰마다 물려줌 (월드 추적)
+    ///   · 플레이어 — LocalPlayerHealthBinder (화면 고정)
+    ///   · 컴패니언 — LocalCompanionHealthBinder (화면 고정, 소환/해제 시 숨김)
     /// </summary>
     public class HealthBarUI : MonoBehaviour
     {

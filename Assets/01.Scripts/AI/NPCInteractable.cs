@@ -193,8 +193,6 @@ namespace MySecondWorld.AI
         {
             if (!other.CompareTag("Player")) return;
 
-            //Debug.Log($"[NPCInteractable] {name}: Enter ← {other.name} (누적 {_playerColliders.Count + 1})", this);
-
             // 첫 콜라이더가 들어올 때만 상태를 바꾼다.
             if (!_playerColliders.Add(other) || _playerColliders.Count > 1) return;
 
@@ -206,8 +204,6 @@ namespace MySecondWorld.AI
         public void HandlePlayerTriggerExit(Collider other)
         {
             if (!other.CompareTag("Player")) return;
-
-            //Debug.Log($"[NPCInteractable] {name}: Exit ← {other.name} (남은 {_playerColliders.Count - 1})", this);
 
             // 마지막 하나가 나갈 때만 이탈로 친다.
             if (!_playerColliders.Remove(other) || _playerColliders.Count > 0) return;

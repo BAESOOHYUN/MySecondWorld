@@ -7,20 +7,10 @@ namespace MySecondWorld.Combat.Monster
     {
         [SerializeField] private Transform _attackPoint;
         [SerializeField] private BossStatsSO _stats;
-        [SerializeField] private LayerMask _targetLayerMask;
-
-
-        // MonsterFactory가 AddComponent 직후(비활성 상태에서) 호출한다. Initialize와 Awake 순서 이유는 MonsterAI.Initialize 참고.
-        public void Initialize(Transform attackPoint, BossStatsSO stats)
-        {
-            _attackPoint = attackPoint;
-            _stats = stats;
-            _targetLayerMask = LayerMask.GetMask("Player");
-        }
+        private LayerMask _targetLayerMask;
 
         private void Awake()
         {
-
             if (_attackPoint == null || _stats == null)
             {
                 Debug.LogError($"BossAoEHitbox 참조 누락(_attackPoint 또는 _stats) on {this.gameObject.name}", this);
@@ -36,6 +26,14 @@ namespace MySecondWorld.Combat.Monster
                 enabled = false;
                 return;
             }
+        }
+
+        // MonsterFactory가 AddComponent 직후(비활성 상태에서) 호출한다. Initialize와 Awake 순서 이유는 MonsterAI.Initialize 참고.
+        public void Initialize(Transform attackPoint, BossStatsSO stats)
+        {
+            _attackPoint = attackPoint;
+            _stats = stats;
+            _targetLayerMask = LayerMask.GetMask("Player", "NPC");   // 컴패니언이 NPC 레이어라 같이 훑는다
         }
 
         // Slam 애니메이션 클립의 충격 프레임에 Animation Event로 연결

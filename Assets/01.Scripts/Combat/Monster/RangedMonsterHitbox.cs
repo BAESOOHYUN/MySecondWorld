@@ -17,7 +17,6 @@ namespace MySecondWorld.Combat.Monster
         [SerializeField] private Transform _spawnPoint;
         [SerializeField] private float _aimHeightOffset = 1.4f; // 플레이어 피벗이 발밑이라 가슴 높이로 보정
 
-
         private void Awake()
         {
             if (_monsterAI == null || _stats == null || _spawnPoint == null)
@@ -88,7 +87,7 @@ namespace MySecondWorld.Combat.Monster
                 Speed = _stats.ProjectileSpeed,
                 SweepRadius = _stats.ProjectileSweepRadius,
                 MaxLifetime = lifetime,
-                HitMask = LayerMask.GetMask("Player"),
+                HitMask = LayerMask.GetMask("Player", "NPC"),
                 BlockMask = _stats.BlockLayerMask,
                 // 명중 순간 클라에 알려 표현 화살을 같은 지점에서 정리한다.
                 // 몬스터가 이미 죽어 디스폰됐으면 Rpc가 예외를 내므로 null 검사가 필요하다.

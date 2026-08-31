@@ -27,7 +27,6 @@ namespace MySecondWorld.Combat.Player
                 return;
             }
 
-            //Debug.Log("[PlayerTapAttack] 탭 구독 시작", this);
 
             resolver.OnTargetTapped
                 .Subscribe(HandleTargetTapped)
@@ -36,20 +35,19 @@ namespace MySecondWorld.Combat.Player
 
         private void HandleTargetTapped(ITapTargetable target)
         {
-            if (target is not MonsterTapTarget monster)
-            {
-                //Debug.Log($"[PlayerTapAttack] 몬스터 아님 — 무시 ({(target == null ? "빈 곳" : target.Anchor.name)})", this);
-                return;
-            }
+            // 몬스터가 아니면(NPC·빈 곳) 선택을 건드리지 않는다.
+            // 결정 ②: 빈 곳 탭으로 해제하지 않는다 — 카메라 조작 중 오인 해제 방지.
+            if (target is not MonsterTapTarget monster) return;
 
             Select(monster);
 
-            bool inRange = _attackController.IsInAttackRange(monster.Anchor);
-
-            if (!inRange) return;
+            // 사거리 밖이면 선택만 하고 공격은 걸지 않는다 — 헛스윙 방지.
+            // 다가가서 공격하면 이미 선택돼 있으니 그놈이 맞는다.
+            if (!_attackController.IsInAttackRange(monster.Anchor)) return;
 
             _attackController.TryAttack();
         }
+
         private void OnDisable() => ClearSelection();
 
         private void Select(MonsterTapTarget monster)

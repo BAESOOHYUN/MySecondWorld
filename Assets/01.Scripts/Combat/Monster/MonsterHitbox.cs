@@ -8,17 +8,8 @@ namespace MySecondWorld.Combat.Monster
     {
         [SerializeField] private Transform _attackPoint;
         [SerializeField] private float _attackRadius = 1.5f;
-        [SerializeField] private LayerMask _targetLayerMask; // "맞을 수 있는" 대상 레이어
         [SerializeField] private MonsterStatsSO _stats;
-
-
-        // MonsterFactory가 AddComponent 직후(비활성 상태에서) 호출한다. Initialize와 Awake 순서 이유는 MonsterAI.Initialize 참고.
-        public void Initialize(Transform attackPoint, MonsterStatsSO stats)
-        {
-            _attackPoint = attackPoint;
-            _stats = stats;
-            _targetLayerMask = LayerMask.GetMask("Player");
-        }
+        private LayerMask _targetLayerMask; // "맞을 수 있는" 대상 레이어
 
         private void Awake()
         {
@@ -35,6 +26,14 @@ namespace MySecondWorld.Combat.Monster
                 enabled = false;
                 return;
             }
+        }
+
+        // MonsterFactory가 AddComponent 직후(비활성 상태에서) 호출한다. Initialize와 Awake 순서 이유는 MonsterAI.Initialize 참고.
+        public void Initialize(Transform attackPoint, MonsterStatsSO stats)
+        {
+            _attackPoint = attackPoint;
+            _stats = stats;
+            _targetLayerMask = LayerMask.GetMask("Player", "NPC");   // 컴패니언이 NPC 레이어라 같이 훑는다
         }
 
         // Attack 애니메이션 클립의 타격 프레임에 Animation Event로 연결

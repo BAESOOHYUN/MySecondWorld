@@ -7,8 +7,9 @@ using MySecondWorld.Interaction;
 namespace MySecondWorld.UI
 {
     /// <summary>
-    /// 탭으로 고른 몬스터 위에 조준점과 HP바를 띄운다. 캔버스에 하나만 둔다.
+    /// 탭으로 고른 몬스터 위에 조준점을 띄운다. 캔버스에 하나만 둔다.
     /// 선택은 항상 한 명이므로 인스턴스도 하나면 된다.
+    /// HP바는 MonsterHealthBarSpawner가 몬스터마다 따로 붙인다 — 여기서 다루지 않는다.
     /// 
     /// PlayerTapAttack이 이걸 호출하지 않고 리졸버를 직접 구독하는 이유:
     /// 전투(Combat)가 UI를 알면 UI→Combat과 맞물려 순환 참조가 된다.
