@@ -36,6 +36,11 @@ namespace MySecondWorld.Combat.Monster
         private Health _health;
 
         public Transform Anchor => transform;
+
+        // 몸통 중심의 월드 좌표. 원거리 조준점으로 쓴다 — 피벗(발밑)에 고정 오프셋을 더하면
+        // 몬스터 종류마다 어긋난다(슬라임은 머리 위로, 드래곤은 발목으로).
+        public Vector3 BodyCenterWorld => transform.TransformPoint(_bodyCenter);
+
         public float CurrentHP => _currentHP;
         public float MaxHP => _maxHP;
         public bool IsAlive => _isAlive;

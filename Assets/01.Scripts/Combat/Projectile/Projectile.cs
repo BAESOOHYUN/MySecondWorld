@@ -26,6 +26,8 @@ namespace MySecondWorld.Combat
         private float _sweepRadius;
         private LayerMask _hitMask;
         private LayerMask _blockMask;
+        private Transform _homingTarget;
+        private float _homingTurnRateDegPerSec;
         private float _lifetime;
         private float _elapsed;
 
@@ -57,6 +59,16 @@ namespace MySecondWorld.Combat
         private void Update()
         {
             if (!_isFlying) return;
+
+            // 유도 — 게이지가 찬 만큼 매 프레임 대상 쪽으로 방향을 꺾는다. 아래 판정(TrySweep)과 달리 모드를 가리지 않는다:
+            // 권위 화살의 궤적은 물론, 내 로컬 미리보기 화살도 같이 꺾어야 눈에 보이는 궤적이 실제 명중과 비슷해진다.
+            // 원격 피어가 보는 '남의 화살'만 / 직선으로 날다가 RpcConfirmHit로 명중 지점에 스냅되는 기존 오차 허용 방식을 그대로 쓴다.
+            if (_homingTarget != null && _homingTurnRateDegPerSec > 0f)
+            {
+                Vector3 toTarget = (_homingTarget.position - transform.position).normalized;
+                _direction = Vector3.RotateTowards(
+                    _direction, toTarget, _homingTurnRateDegPerSec * Mathf.Deg2Rad * Time.deltaTime, 0f).normalized;
+            }
 
             float step = _speed * Time.deltaTime;
 
@@ -112,6 +124,8 @@ namespace MySecondWorld.Combat
             _sweepRadius = request.SweepRadius;
             _hitMask = request.HitMask;
             _blockMask = request.BlockMask;
+            _homingTarget = request.HomingTarget;
+            _homingTurnRateDegPerSec = request.HomingTurnRateDegPerSec;
             _lifetime = request.MaxLifetime;
             _elapsed = 0f;
             _resolved = false;

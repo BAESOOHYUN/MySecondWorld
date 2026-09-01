@@ -115,7 +115,8 @@ namespace MySecondWorld.Move
             if (GetCameraYAngle == null)
             {
                 // 카메라 없어도 Speed 0 발행해서 모션 고착 방지
-                _moveDirection = Vector3.zero;
+                _moveDirection = Vector3.zero; 
+                InputMagnitude = 0f;
                 _speedPublisher?.Publish(new PlayerSpeedChangedEvent { Speed = 0 });
                 return;
             }
@@ -128,6 +129,7 @@ namespace MySecondWorld.Move
                 // 이동 방향·속도를 0으로 초기화하고 함수 종료
                 _moveDirection = Vector3.zero;
                 _inputDirection = Vector3.zero;
+                InputMagnitude = 0f;
                 _speedPublisher.Publish(new PlayerSpeedChangedEvent { Speed = 0 });
                 return;
             }
@@ -136,6 +138,7 @@ namespace MySecondWorld.Move
             float animSpeed = IsGrounded ? rawInput.magnitude : 0f;
             _speedPublisher.Publish(new PlayerSpeedChangedEvent { Speed = animSpeed });
             _inputDirection = rawInput.normalized;
+            InputMagnitude = rawInput.magnitude; // 조준 게이지 드레인 판정 등 "지금 움직이려는 입력이 있나"에 쓰인다
 
             // 카메라 Y축 회전만 추출해서 이동 방향 계산 (pitch 영향 없음)
             float cameraAngle = GetCameraYAngle();

@@ -37,6 +37,13 @@ namespace MySecondWorld.Combat.Player
         // 서버 전용 상태
         private float _serverNextShootTime; // 서버측 연사 제한. 클라 게이트를 믿지 않고 따로 잰다
 
+        // 조준 게이지 — 서버가 직접 시간을 재서 만든다. 클라가 보낸 값을 그대로 믿으면
+        // "언제나 100%를 보낸다"는 조작이 가능해진다.
+        private bool _isAiming;
+        private float _aimGaugeServer;      // 0~1. CmdBeginAim ~ CmdEndAim/CmdRequestShoot 사이에만 갱신
+        private uint _aimTargetNetId;
+        private Vector3 _aimLastPosition;   // 이동 감지용 — 서버가 직접 관측한 이전 프레임 위치
+
         // 검증 상수
         private const float MaxAttackReach = 4f; // 공격 반경(1.5) + 이동 오차 여유
 
@@ -59,6 +66,21 @@ namespace MySecondWorld.Combat.Player
 
             if (_meleeSkill == null)
                 Debug.LogError($"PlayerAttackAuthority: _meleeSkill 미할당 on {gameObject.name}", this);
+        }
+
+        // 조준 게이지:
+        // ④ 이동 중엔 서서히 감소, 멈춰 있으면 서서히 충전
+        // — 서버가 직접 관측한 위치 변화로 판단한다. 클라가 "나 안 움직였어요"라고 보낸 값을 믿지 않는다.
+        private void Update()
+        {
+            if (!isServer || !_isAiming || _stats == null) return;
+
+            float moved = Vector3.Distance(transform.position, _aimLastPosition);
+            _aimLastPosition = transform.position;
+
+            _aimGaugeServer = moved > 0.01f
+                ? Mathf.Clamp01(_aimGaugeServer - _stats.AimGaugeDrainRate * Time.deltaTime)
+                : Mathf.Clamp01(_aimGaugeServer + Time.deltaTime / _stats.AimChargeDuration);
         }
 
         // PlayerAttackController.OnAttackHit()이 위임하는 서버 권위 판정.
@@ -100,6 +122,32 @@ namespace MySecondWorld.Combat.Player
             _aimDirection = direction.normalized;
         }
 
+        // 홀드 시작 시 호출된다. 게이지는 여기서부터 서버 시간으로 직접 잰다.
+        [Command]
+        public void CmdBeginAim(uint targetNetId)
+        {
+            if (_stats == null) return;
+            if (_weaponEquip.GetMainHandCategory() != WeaponCategory.Bow) return;
+
+            _isAiming = true;
+            _aimGaugeServer = 0f;
+            _aimTargetNetId = targetNetId;
+            _aimLastPosition = transform.position;
+        }
+
+        // 무기 교체 등으로 홀드가 강제로 접힐 때. 발사로 이어지지 않는다.
+        [Command]
+        public void CmdCancelAim()
+        {
+            _isAiming = false;
+            _aimGaugeServer = 0f;
+        }
+
+        // 버튼을 뗀 시점 — 게이지 값은 얼려두고 갱신만 멈춘다.
+        // 실제 발사(CmdRequestShoot)는 애니메이션의 발사 프레임에서 별도로 온다.
+        [Command]
+        public void CmdEndAim() => _isAiming = false;
+
         // 발사 프레임에 로컬 플레이어가 호출한다. 여기서 실제 데미지 파이프라인이 돈다.
         //
         // 클라 파라미터 검증 원칙은 근접(CmdResolveAttackHit)과 동일하다:
@@ -117,6 +165,20 @@ namespace MySecondWorld.Combat.Player
 
             // 네트워크 지연 흔들림을 감안해 클라 쿨다운보다 10% 느슨하게 — 정상 플레이가 막히면 안 된다
             _serverNextShootTime = Time.time + _stats.AttackCooldown * 0.9f;
+
+            // 게이지는 여기서 확정하고 닫는다 — 다음 CmdBeginAim이 올 때까지 0으로 둔다.
+            float gauge = _aimGaugeServer;
+            _isAiming = false;
+            _aimGaugeServer = 0f;
+
+            // ③ 후반에 급격히 강해지는 곡선 — 지수를 키워 앞부분은 완만하게, 100%에 가까울수록 가파르게.
+            float homingStrength = Mathf.Pow(gauge, _stats.HomingCurveExponent);
+            float turnRate = homingStrength * _stats.HomingMaxTurnRate;
+            float damageMultiplier = Mathf.Lerp(1f, _stats.ChargeDamageMultiplierMax, homingStrength);
+
+            Transform homingTarget = null;
+            if (_aimTargetNetId != 0 && NetworkServer.spawned.TryGetValue(_aimTargetNetId, out var targetIdentity))
+                homingTarget = targetIdentity.transform;
 
             float power = _weaponEquip.GetMainHandAttack();
             if (power <= 0f) power = _stats.UnarmedAttack;

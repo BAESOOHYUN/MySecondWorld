@@ -29,6 +29,8 @@ namespace MySecondWorld.Move
             LandTrigger = Animator.StringToHash(nameof(LandTrigger));
             Speed = Animator.StringToHash(nameof(Speed));
             AttackTrigger = Animator.StringToHash(nameof(AttackTrigger));
+            AimLoadTrigger = Animator.StringToHash(nameof(AimLoadTrigger));
+            AimReleaseTrigger = Animator.StringToHash(nameof(AimReleaseTrigger));
         }
 
         private static int JumpTrigger = Animator.StringToHash(nameof(JumpTrigger));
@@ -36,6 +38,8 @@ namespace MySecondWorld.Move
         private static int LandTrigger = Animator.StringToHash(nameof(LandTrigger));
         private static int Speed = Animator.StringToHash(nameof(Speed));
         private static int AttackTrigger = Animator.StringToHash(nameof(AttackTrigger));
+        private static int AimLoadTrigger = Animator.StringToHash(nameof(AimLoadTrigger));
+        private static int AimReleaseTrigger = Animator.StringToHash(nameof(AimReleaseTrigger));
 
         private ISubscriber<PlayerJumpedEvent> _jumpSubscriber;
         private ISubscriber<PlayerFalledEvent> _fallSubscriber;
@@ -167,6 +171,28 @@ namespace MySecondWorld.Move
                 _networkAnimator.SetTrigger(AttackTrigger);
             else 
                 _animator.SetTrigger(AttackTrigger);
+        }
+
+        // 홀드 조준 — 누르는 순간. Load 재생 시작, 끝나면 애니메이터가 자동으로 Hold 루프로 넘어간다.
+        public void HandleAimLoad()
+        {
+            if (_animator == null) return;
+
+            if (_networkAnimator != null)
+                _networkAnimator.SetTrigger(AimLoadTrigger);
+            else
+                _animator.SetTrigger(AimLoadTrigger);
+        }
+
+        // 홀드 조준 — 손을 뗀 순간. Load/Hold 어느 단계에서 와도 Any State 전환으로 즉시 끊고 넘어간다.
+        public void HandleAimRelease()
+        {
+            if (_animator == null) return;
+
+            if (_networkAnimator != null)
+                _networkAnimator.SetTrigger(AimReleaseTrigger);
+            else
+                _animator.SetTrigger(AimReleaseTrigger);
         }
     }
 }

@@ -51,6 +51,9 @@ namespace MySecondWorld.Combat.Player
             // 다가가서 공격하면 이미 선택돼 있으니 그놈이 맞는다.
             if (!_attackController.IsInAttackRange(monster.Anchor)) return;
 
+            // 활은 탭=선택 전용이다(① 결정) — 발사는 액션 버튼을 놓는 순간(릴리즈) 나간다.
+            if (_attackController.IsBowEquipped) return;
+
             _attackController.TryAttack();
         }
 

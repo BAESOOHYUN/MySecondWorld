@@ -18,6 +18,10 @@ namespace MySecondWorld.Combat
         public LayerMask HitMask;                   // 데미지 대상 (몬스터가 쏘면 Player, 반대면 Monster)
         public LayerMask BlockMask;                 // 벽·지형
 
+        // 유도(homing). Target이 null이거나 TurnRate가 0이면 유도 없이 직선 비행(게이지 0%와 동일).
+        public Transform HomingTarget;
+        public float HomingTurnRateDegPerSec;
+
         // 명중한 순간 호출된다(빗나감·벽은 호출 안 함). 인자는 화살촉이 닿은 지점.
         // Projectile이 Mirror를 직접 알 필요가 없도록 캐스터가 여기에 Rpc 호출을 꽂는다.
         // (서버가 명중한 순간을 클라에 알려야 표현 화살을 같은 지점에서 정리할 수 있다.

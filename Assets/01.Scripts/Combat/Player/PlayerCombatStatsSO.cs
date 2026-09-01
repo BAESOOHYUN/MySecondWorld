@@ -33,6 +33,22 @@ namespace MySecondWorld.Combat.Player
         [SerializeField] private float _shootRange = 15f;
         [SerializeField] private float _aimHeightOffset = 1.4f;
 
+        [Header("원거리 조준 게이지 (홀드 충전 — 활 전용)")]
+        [Tooltip("홀드 시작부터 게이지 100%까지 걸리는 시간(초).")]
+        [SerializeField] private float _aimChargeDuration = 1.2f;
+
+        [Tooltip("게이지 100%일 때 화살이 초당 최대 몇 도(deg)까지 방향을 꺾어 대상을 쫓는가.")]
+        [SerializeField] private float _homingMaxTurnRate = 180f;
+
+        [Tooltip("게이지 진행도를 유도 강도로 바꾸는 지수. 1=선형, 클수록 후반에 급격히 강해진다.")]
+        [SerializeField] private float _homingCurveExponent = 2.5f;
+
+        [Tooltip("게이지 100%일 때 데미지 배수.")]
+        [SerializeField] private float _chargeDamageMultiplierMax = 1.5f;
+
+        [Tooltip("조준 중 이동할 때 초당 게이지 감소량(0~1 비율 기준). 1이면 1초 만에 완전히 빠진다.")]
+        [SerializeField] private float _aimGaugeDrainRate = 1f;
+
         [Header("전투 상태")]
         [SerializeField] private float _combatStateDuration = 3f; // 마지막 공격 후 이 시간 동안 "전투 중"으로 간주
         // 데드락 방지 타임아웃 공격을 시작하고 이 시간 안에 발사(타격) 이벤트가 안 오면 그 회차를 강제 종료한다.
@@ -53,6 +69,12 @@ namespace MySecondWorld.Combat.Player
         public float AimHeightOffset => _aimHeightOffset;
         public float CombatStateDuration => _combatStateDuration;
         public float AttackTimeout => _attackTimeout;
+
+        public float AimChargeDuration => _aimChargeDuration;
+        public float HomingMaxTurnRate => _homingMaxTurnRate;
+        public float HomingCurveExponent => _homingCurveExponent;
+        public float ChargeDamageMultiplierMax => _chargeDamageMultiplierMax;
+        public float AimGaugeDrainRate => _aimGaugeDrainRate;
 
         #endregion
     }
