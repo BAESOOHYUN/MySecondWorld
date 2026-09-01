@@ -291,6 +291,7 @@ namespace MySecondWorld.Network
                 prefab, conn.identity.transform.position, Quaternion.identity, conn.identity.transform);
             if (companion == null) return;
 
+            // 최초 스폰 시 씬 위치 동일하게 맞춤
             SceneManager.MoveGameObjectToScene(companion, conn.identity.gameObject.scene);
 
             session.companionIdentity = companion.GetComponent<NetworkIdentity>();
