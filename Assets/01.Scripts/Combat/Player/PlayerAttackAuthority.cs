@@ -78,6 +78,10 @@ namespace MySecondWorld.Combat.Player
             float moved = Vector3.Distance(transform.position, _aimLastPosition);
             _aimLastPosition = transform.position;
 
+            // 포탈 전환 등으로 한 프레임에 크게 튄 경우는 "이동"으로 치지 않는다 —
+            // 그대로 두면 텔레포트하는 순간 게이지가 통째로 날아간다.
+            if (moved > 5f) return;
+
             _aimGaugeServer = moved > 0.01f
                 ? Mathf.Clamp01(_aimGaugeServer - _stats.AimGaugeDrainRate * Time.deltaTime)
                 : Mathf.Clamp01(_aimGaugeServer + Time.deltaTime / _stats.AimChargeDuration);
@@ -128,6 +132,7 @@ namespace MySecondWorld.Combat.Player
         {
             if (_stats == null) return;
             if (_weaponEquip.GetMainHandCategory() != WeaponCategory.Bow) return;
+            if (Time.time < _serverNextShootTime) return; // 쿨다운 중엔 홀드 자체를 허용 안 함
 
             _isAiming = true;
             _aimGaugeServer = 0f;
@@ -182,6 +187,7 @@ namespace MySecondWorld.Combat.Player
 
             float power = _weaponEquip.GetMainHandAttack();
             if (power <= 0f) power = _stats.UnarmedAttack;
+            power *= damageMultiplier; //  게이지가 데미지에 영향을 줌
 
             var request = new ProjectileRequest
             {
@@ -195,6 +201,8 @@ namespace MySecondWorld.Combat.Player
                 MaxLifetime = _stats.ShootRange / Mathf.Max(_stats.ProjectileSpeed, 0.01f) + 0.3f,
                 HitMask = MonsterLayerMask,
                 BlockMask = _stats.BlockLayerMask,
+                HomingTarget = homingTarget,
+                HomingTurnRateDegPerSec = turnRate,
                 OnResolved = point =>
                 {
                     if (_relay != null && _relay.netIdentity != null)

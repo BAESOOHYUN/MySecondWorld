@@ -50,7 +50,6 @@ namespace MySecondWorld.Combat.Player
         // 활 홀드 조준 상태. 실제 판정에 쓰이는 게이지는 서버(PlayerAttackAuthority)가 직접
         // 시간을 재서 관리한다 — 여기 값들은 로컬 UI/미리보기 예측치일 뿐이다.
         private bool _isCharging;
-        private float _chargeStartTime;
         private Transform _pendingHomingTarget;   // 홀드 시작 시점에 고정한 유도 대상
         private float _pendingHomingTurnRate;      // 릴리즈 순간 굳힌 값(로컬 표현 화살용)
 
@@ -233,7 +232,6 @@ namespace MySecondWorld.Combat.Player
             }
 
             _isCharging = true;
-            _chargeStartTime = Time.time;
             AimGauge01 = 0f;
             _pendingHomingTarget = target;
 
