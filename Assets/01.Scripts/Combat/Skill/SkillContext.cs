@@ -18,6 +18,12 @@ namespace MySecondWorld.Combat
         // 투사체 스킬의 발사 정보. 즉시발동(InstantCast) 스킬은 사용하지 않아 기본값 null.
         public ProjectileRequest? Shot { get; }
 
+        // 스플래시 판정의 폭심지/반경. 값이 없으면(null) 스플래시가 아니므로
+        // SplashDamageEffectSO는 감쇠 없이 Power를 그대로 적용한다.
+        public Vector3? Epicenter { get; private set; }
+        public float SplashRadius { get; private set; }
+
+
         public SkillContext(
             GameObject caster,
             IReadOnlyList<IDamageable> candidates,
@@ -33,5 +39,11 @@ namespace MySecondWorld.Combat
 
         // 축2 전용 — 대기가 끝난 시점에 확정된 대상으로 후보를 교체한다.
         public void SetCandidates(IReadOnlyList<IDamageable> candidates) => Candidates = candidates;
+
+        public void SetEpicenter(Vector3 point, float radius)
+        {
+            Epicenter = point;
+            SplashRadius = radius;
+        }
     }
 }
