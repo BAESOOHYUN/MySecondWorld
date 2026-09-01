@@ -31,6 +31,7 @@ namespace MySecondWorld.Combat.Player
         [SerializeField] private float _projectileSweepRadius = 0.15f;
         [SerializeField] private LayerMask _blockLayerMask; // 벽·지형 — 맞으면 데미지 없이 소멸
         [SerializeField] private float _shootRange = 15f;
+        [SerializeField] private float _splashRadius = 0f;
         [SerializeField] private float _aimHeightOffset = 1.4f;
 
         [Header("원거리 조준 게이지 (홀드 충전 — 활 전용)")]
@@ -66,6 +67,7 @@ namespace MySecondWorld.Combat.Player
         public float ProjectileSweepRadius => _projectileSweepRadius;
         public LayerMask BlockLayerMask => _blockLayerMask;
         public float ShootRange => _shootRange;
+        public float SplashRadius => _splashRadius;
         public float AimHeightOffset => _aimHeightOffset;
         public float CombatStateDuration => _combatStateDuration;
         public float AttackTimeout => _attackTimeout;

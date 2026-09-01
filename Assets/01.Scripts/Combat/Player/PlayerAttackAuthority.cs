@@ -201,6 +201,7 @@ namespace MySecondWorld.Combat.Player
                 MaxLifetime = _stats.ShootRange / Mathf.Max(_stats.ProjectileSpeed, 0.01f) + 0.3f,
                 HitMask = MonsterLayerMask,
                 BlockMask = _stats.BlockLayerMask,
+                SplashRadius = _stats.SplashRadius,
                 HomingTarget = homingTarget,
                 HomingTurnRateDegPerSec = turnRate,
                 OnResolved = point =>
