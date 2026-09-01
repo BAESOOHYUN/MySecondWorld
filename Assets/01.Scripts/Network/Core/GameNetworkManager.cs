@@ -122,7 +122,7 @@ namespace MySecondWorld.Network
         public override void Start()
         {
             base.Start();
-#if UNITY_SERVER
+#if UNITY_SERVER && !UNITY_EDITOR
             Debug.Log("[Server] 헤드리스 모드 감지 (UNITY_SERVER) -> StartServer() 자동 실행");
             StartServer();
 #endif
@@ -340,7 +340,7 @@ namespace MySecondWorld.Network
 
         public void ToggleHost(bool isOn)
         {
-#if UNITY_SERVER
+#if UNITY_SERVER && !UNITY_EDITOR
             // 서버 빌드에서는 StartServer()가 자동 구동되므로 Host 토글 무시
             return;
 #else
@@ -351,7 +351,7 @@ namespace MySecondWorld.Network
 
         public void ToggleClient(bool isOn)
         {
-#if UNITY_SERVER
+#if UNITY_SERVER && !UNITY_EDITOR
             return;
 #else
             if (isOn) StartClient();

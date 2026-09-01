@@ -18,15 +18,15 @@ namespace MySecondWorld.Editor
             "Assets/00.Scenes/MainScene.unity"
         };
 
-        [MenuItem("Tools/Build/1. Addressables 번들 빌드 (Remote)")]
+        [MenuItem("Tools/Build/1. Linux 전용 Addressables 번들 빌드 (Remote)")]
         public static void BuildAddressablesRemote()
         {
-            Debug.Log("[Build] Addressables 번들 빌드 시작...");
+            Debug.Log("[Build] StandaloneLinux64 타겟으로 전환 중...");
+            EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Standalone, BuildTarget.StandaloneLinux64);
 
-            //Window > Asset Management > Addressables > Groups 창 열기
-            // → 상단 메뉴의 Build > New Build > Default Build Script 실행시 실제 실행되는게 바로 이 함수 
+            Debug.Log("[Build] Linux용 Addressables 번들 빌드 시작...");
             AddressableAssetSettings.BuildPlayerContent();
-            Debug.Log("[Build] Addressables 번들 빌드 완료! (ServerData/ 폴더 확인)");
+            Debug.Log("[Build] Linux용 Addressables 번들 빌드 완료! (ServerData/StandaloneLinux64/ 생성됨)");
         }
 
         [MenuItem("Tools/Build/2. Linux Dedicated Server 빌드 (Headless)")]
@@ -47,7 +47,7 @@ namespace MySecondWorld.Editor
                 scenes = StartupScenes,
                 // ② 빌드 결과물이 나올 위치 (Builds/Server/MySecondWorld.x86_64)
                 locationPathName = ServerBuildPath,
-                // ③ 타겟 OS: 64비트 리눅스 실행 파일 형식으로 컴파일 >>>>>>>>>>>>>>> 아래 StandaloneLinux64 쓰는 이유 상세 설명
+                // ③ 타겟 OS: 64비트 리눅스 실행 파일 형식으로 컴파일
                 target = BuildTarget.StandaloneLinux64,
                 // ④ ★ 가장 핵심: 'Headless Server' 모드로 빌드 지정
                 // 모니터 화면 그리기(DirectX/Vulkan), 스피커 사운드 재생 등을 엔진 레벨에서 완전히 도려내고,
@@ -55,6 +55,7 @@ namespace MySecondWorld.Editor
                 subtarget = (int)StandaloneBuildSubtarget.Server,
                 options = BuildOptions.None
             };
+
             // ⑤ 유니티의 실제 빌드 엔진을 돌려서 컴파일 시작!
             BuildReport report = BuildPipeline.BuildPlayer(buildPlayerOptions);
             // ⑥ 빌드가 성공했는지, 용량은 얼마인지, 에러는 없는지 결과표(Summary)를 받아서 콘솔에 출력
@@ -71,7 +72,7 @@ namespace MySecondWorld.Editor
             }
         }
 
-        [MenuItem("Tools/Build/3. [ALL-IN-ONE] 번들 + Linux 서버 일괄 빌드")]
+        [MenuItem("Tools/Build/3. [ALL-IN-ONE] Linux 번들 + Linux 서버 일괄 빌드")]
         public static void BuildAll()
         {
             BuildAddressablesRemote();

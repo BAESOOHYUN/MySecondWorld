@@ -120,12 +120,19 @@ namespace MySecondWorld.UI
 
         private void Start()
         {
+#if UNITY_SERVER
+            // 헤드리스 서버에서는 UI 초기화 및 텍스처 로드를 원천 차단
+            gameObject.SetActive(false);
+            enabled = false;
+            return;
+#else
             _lastPartsTab = _partsTabEntries.Length > 0 ? _partsTabEntries[0].Part : default;
             _lastAccessoryTab = _accessoryTabEntries.Length > 0 ? _accessoryTabEntries[0].Part : default;
             RegisterButtons();
             InitColorRows();
             _colorPicker.gameObject.SetActive(false);
             StartupAsync().Forget();
+#endif
         }
 
         private void OnDestroy()

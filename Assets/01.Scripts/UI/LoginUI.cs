@@ -6,12 +6,15 @@ namespace MySecondWorld.Network
 {
     public class LoginUI : MonoBehaviour
     {
-        private const string PrefKeyServerIp = "lastServerIp";
+        // ── 서버 IP 상수 ──
+        private const string CloudServerIp = "54.79.190.139";    // AWS 시드니 서버
+        private const string LocalPcIp     = "192.168.219.109";  // 내 컴퓨터 로컬 IP
 
+        [Header("입력 및 버튼")]
         [SerializeField] private TMP_InputField _localPlayerNameInput;
-        [SerializeField] private TMP_InputField _serverIpInput;
-        [SerializeField] private Toggle _hostToggle;
-        [SerializeField] private Toggle _clientToggle;
+        [SerializeField] private Toggle _hostToggle;         // Host (에디터 전용)
+        [SerializeField] private Toggle _cloudClientToggle;  // AWS 클라우드 접속
+        [SerializeField] private Toggle _localClientToggle;  // 내 PC 로컬 접속
         [SerializeField] private Button _playerPrefsDeleteAll;
         [SerializeField] private MonoBehaviour _networkManagerRaw;
         private IGameNetworkManager _networkManager => _networkManagerRaw as IGameNetworkManager;
@@ -20,17 +23,14 @@ namespace MySecondWorld.Network
         {
             _localPlayerNameInput.onValueChanged.AddListener(OnNameChanged);
 
-            if (_serverIpInput != null)
-            {
-                _serverIpInput.text = PlayerPrefs.GetString(PrefKeyServerIp, "127.0.0.1");
-                _serverIpInput.onValueChanged.AddListener(OnServerIpChanged);
-            }
-
             if (_hostToggle != null)
                 _hostToggle.onValueChanged.AddListener(OnToggleHost);
 
-            if (_clientToggle != null)
-                _clientToggle.onValueChanged.AddListener(OnToggleClient);
+            if (_cloudClientToggle != null)
+                _cloudClientToggle.onValueChanged.AddListener(isOn => OnToggleClient(isOn, CloudServerIp));
+
+            if (_localClientToggle != null)
+                _localClientToggle.onValueChanged.AddListener(isOn => OnToggleClient(isOn, LocalPcIp));
 
             if (_playerPrefsDeleteAll != null)
                 _playerPrefsDeleteAll.onClick.AddListener(PlayerPrefsDeleteAll);
@@ -38,55 +38,47 @@ namespace MySecondWorld.Network
             if (_networkManager != null)
                 _networkManager.OnClientStopped += ResetClientUI;
 
-            // [플랫폼별 UI 및 기본 이름 분기]
+            // [플랫폼별 버튼 노출 제어]
 #if UNITY_EDITOR
             _localPlayerNameInput.text = "payu 1";
-            if (_hostToggle != null) _hostToggle.gameObject.SetActive(true);
-            if (_clientToggle != null) _clientToggle.gameObject.SetActive(false); // 에디터는 Host만 노출
+            if (_hostToggle != null) _hostToggle.gameObject.SetActive(true);               // 에디터: Host 노출
+            if (_cloudClientToggle != null) _cloudClientToggle.gameObject.SetActive(true); // 에디터: AWS 노출
+            if (_localClientToggle != null) _localClientToggle.gameObject.SetActive(false); // 에디터: 로컬접속 불필요
 #elif UNITY_ANDROID || UNITY_IOS
             _localPlayerNameInput.text = "payu 2";
-            if (_hostToggle != null) _hostToggle.gameObject.SetActive(false);     // 모바일은 Host 숨김
-            if (_clientToggle != null) _clientToggle.gameObject.SetActive(true);  // 모바일은 Client만 노출
-#else
-            if (_hostToggle != null) _hostToggle.gameObject.SetActive(false);
-            if (_clientToggle != null) _clientToggle.gameObject.SetActive(true);
+            if (_hostToggle != null) _hostToggle.gameObject.SetActive(false);              // 모바일: Host 숨김
+            if (_cloudClientToggle != null) _cloudClientToggle.gameObject.SetActive(true); // 모바일: AWS 노출
+            if (_localClientToggle != null) _localClientToggle.gameObject.SetActive(true); // 모바일: 내 PC 노출
 #endif
+            OnNameChanged(_localPlayerNameInput.text);
         }
 
         private void OnDestroy()
         {
             if (_localPlayerNameInput != null) _localPlayerNameInput.onValueChanged.RemoveListener(OnNameChanged);
-            if (_serverIpInput != null) _serverIpInput.onValueChanged.RemoveListener(OnServerIpChanged);
             if (_hostToggle != null) _hostToggle.onValueChanged.RemoveListener(OnToggleHost);
-            if (_clientToggle != null) _clientToggle.onValueChanged.RemoveListener(OnToggleClient);
             if (_playerPrefsDeleteAll != null) _playerPrefsDeleteAll.onClick.RemoveListener(PlayerPrefsDeleteAll);
             if (_networkManager != null) _networkManager.OnClientStopped -= ResetClientUI;
         }
 
-        private void OnServerIpChanged(string ip)
-        {
-            if (!string.IsNullOrWhiteSpace(ip) && _networkManager != null)
-            {
-                _networkManager.SetServerAddress(ip.Trim());
-            }
-        }
-
         private void ResetClientUI()
         {
-            if (_clientToggle != null)
-                _clientToggle.SetIsOnWithoutNotify(false);
+            if (_cloudClientToggle != null) _cloudClientToggle.SetIsOnWithoutNotify(false);
+            if (_localClientToggle != null) _localClientToggle.SetIsOnWithoutNotify(false);
+
             bool hasName = !string.IsNullOrEmpty(_localPlayerNameInput.text);
             if (_hostToggle != null) _hostToggle.interactable = hasName;
-            if (_clientToggle != null) _clientToggle.interactable = hasName;
+            if (_cloudClientToggle != null) _cloudClientToggle.interactable = hasName;
+            if (_localClientToggle != null) _localClientToggle.interactable = hasName;
             _localPlayerNameInput.interactable = true;
-            if (_serverIpInput != null) _serverIpInput.interactable = true;
         }
 
         private void OnNameChanged(string name)
         {
             bool hasName = !string.IsNullOrEmpty(name);
             if (_hostToggle != null) _hostToggle.interactable = hasName;
-            if (_clientToggle != null) _clientToggle.interactable = hasName;
+            if (_cloudClientToggle != null) _cloudClientToggle.interactable = hasName;
+            if (_localClientToggle != null) _localClientToggle.interactable = hasName;
         }
 
         private void OnToggleHost(bool isOn)
@@ -95,31 +87,24 @@ namespace MySecondWorld.Network
                 SetPlayerName(_localPlayerNameInput.text);
 
             _networkManager.ToggleHost(isOn);
-            if (_clientToggle != null) _clientToggle.interactable = false;
+            if (_cloudClientToggle != null) _cloudClientToggle.interactable = !isOn;
+            if (_localClientToggle != null) _localClientToggle.interactable = !isOn;
         }
 
-        private void OnToggleClient(bool isOn)
+        private void OnToggleClient(bool isOn, string targetIp)
         {
             if (isOn)
             {
                 SetPlayerName(_localPlayerNameInput.text);
-
-                if (_serverIpInput != null && !string.IsNullOrWhiteSpace(_serverIpInput.text))
-                {
-                    string targetIp = _serverIpInput.text.Trim();
-                    PlayerPrefs.SetString(PrefKeyServerIp, targetIp);
-                    PlayerPrefs.Save();
-                    _networkManager.SetServerAddress(targetIp);
-                    _serverIpInput.interactable = false;
-                }
-            }
-            else
-            {
-                if (_serverIpInput != null) _serverIpInput.interactable = true;
+                _networkManager.SetServerAddress(targetIp);
+                Debug.Log($"[Login] Connecting to '{targetIp}'...");
             }
 
             _networkManager.ToggleClient(isOn);
-            if (_hostToggle != null) _hostToggle.interactable = false;
+
+            if (_hostToggle != null) _hostToggle.interactable = !isOn;
+            if (_cloudClientToggle != null && targetIp != CloudServerIp) _cloudClientToggle.interactable = !isOn;
+            if (_localClientToggle != null && targetIp != LocalPcIp) _localClientToggle.interactable = !isOn;
         }
 
         public void SetPlayerName(string username)

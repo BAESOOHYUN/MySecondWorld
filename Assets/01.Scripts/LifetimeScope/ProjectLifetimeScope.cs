@@ -30,8 +30,8 @@ public class ProjectLifetimeScope : LifetimeScope
 
         var options = builder.RegisterMessagePipe(o => o.InstanceLifetime = InstanceLifetime.Singleton);
       
-#if !UNITY_SERVER
-        // Web 리소스 시스템 (클라이언트 전용)
+#if !UNITY_SERVER || UNITY_EDITOR
+        // Web 리소스 시스템 (클라이언트 및 에디터 전용)
         builder.Register<WebResourceDownloader>(Lifetime.Singleton);
         builder.Register<TextureMemoryCache>(Lifetime.Singleton);
         builder.Register<AudioClipMemoryCache>(Lifetime.Singleton);
@@ -57,7 +57,6 @@ public class ProjectLifetimeScope : LifetimeScope
             builder.Register<IDeviceCapability, NetworkDeviceCapability>(Lifetime.Singleton);
         //                "IDeviceCapability 요청이 오면 NetworkDeviceCapability 인스턴스 줘" -> NPCLifetimeScope
         else
-
             builder.Register<IDeviceCapability, LocalDeviceCapability>(Lifetime.Singleton);
 #endif
 
