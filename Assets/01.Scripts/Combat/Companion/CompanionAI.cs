@@ -90,7 +90,7 @@ namespace MySecondWorld.Combat.Companion
             if (_detectionTrigger == null) _detectionTrigger = GetComponent<SphereCollider>();
 
             // Health.OnEnable()보다 먼저 실행돼야 MaxHP가 정확히 반영됨 (MonsterAI와 동일 순서 근거)
-            _health.Initialize(_stats.MaxHP);
+            _health.Initialize(_stats.MaxHP, CombatFaction.Monster);
             _agent.speed = _stats.MoveSpeed;
 
             var rb = GetComponent<Rigidbody>();

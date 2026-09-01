@@ -5,5 +5,6 @@ namespace MySecondWorld.Combat
     {
         void TakeDamage(float amount);
         bool IsDead { get; }
+        CombatFaction Faction { get; }
     }
 }

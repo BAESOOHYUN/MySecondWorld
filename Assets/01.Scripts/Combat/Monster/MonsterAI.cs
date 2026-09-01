@@ -81,7 +81,7 @@ namespace MySecondWorld.Combat.Monster
 
             // Health.OnEnable()보다 먼저 실행돼야 MaxHP가 정확히 반영됨
             // (같은 오브젝트의 모든 컴포넌트는 Awake가 전부 끝난 뒤에야 OnEnable이 실행되므로 안전)
-            _health.Initialize(_stats.MaxHP);
+            _health.Initialize(_stats.MaxHP, CombatFaction.Monster);
             _agent.speed = _stats.MoveSpeed;
 
             // RequireComponent가 기본값(isKinematic=false, useGravity=true)으로 방금 새로 붙인 것이므로
