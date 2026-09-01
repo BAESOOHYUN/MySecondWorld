@@ -11,6 +11,7 @@ namespace MySecondWorld.Combat.Monster
         [SerializeField] private float[] _phaseHpThresholds = { 0.5f };
         [SerializeField] private float _aoeRadius = 3f;
         [SerializeField] private float _aoeCooldown = 4f;
+        [SerializeField] private SkillDefinition _aoeSkill;
 
         [Header("페이즈 전환 연출 (Collapse -> Reassemble)")]
         [SerializeField] private float _collapseDuration = 1.5f;
@@ -34,10 +35,16 @@ namespace MySecondWorld.Combat.Monster
         [SerializeField] private float _locomotionIdleValue = 0f;
         [SerializeField] private float _locomotionMaxValue = 1f;
 
+        [Header("모션 잠금 시간 (재생 중 이동/판단 멈춤)")]
+        [SerializeField] private float _tauntDuration = 1.5f;
+        [SerializeField] private float _meleeAttackDuration = 1f;
+        [SerializeField] private float _aoeSlamDuration = 1.5f;
+
         #region Property
         public IReadOnlyList<float> PhaseHpThresholds => _phaseHpThresholds;
         public float AoERadius => _aoeRadius;
         public float AoECooldown => _aoeCooldown;
+        public SkillDefinition AoESkill => _aoeSkill;
         public float CollapseDuration => _collapseDuration;
         public float ReassembleDuration => _reassembleDuration;
         public float IdleBreakIntervalMin => _idleBreakIntervalMin;
@@ -52,6 +59,10 @@ namespace MySecondWorld.Combat.Monster
         public string LocomotionParam => _locomotionParam;
         public float LocomotionIdleValue => _locomotionIdleValue;
         public float LocomotionMaxValue => _locomotionMaxValue;
+        public float TauntDuration => _tauntDuration;
+        public float MeleeAttackDuration => _meleeAttackDuration;
+        public float AoESlamDuration => _aoeSlamDuration;
+
         #endregion
     }
 }

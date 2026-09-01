@@ -59,6 +59,7 @@ namespace MySecondWorld.AI
             ILLMService llmService
             )
         {
+#if !UNITY_SERVER
             _responsePub = responsePub;
             _thinkingPub = thinkingPub;
             _dialoguePub = dialoguePub;
@@ -87,6 +88,14 @@ namespace MySecondWorld.AI
                     }
                 })
                 .AddTo(destroyCancellationToken);
+#endif
+        }
+
+        private void Awake()
+        {
+#if UNITY_SERVER
+    enabled = false;
+#endif
         }
 
         private void Start()

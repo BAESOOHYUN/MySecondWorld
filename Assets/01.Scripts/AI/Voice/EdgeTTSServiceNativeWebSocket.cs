@@ -29,14 +29,33 @@ namespace MySecondWorld.AI.Voice
 
         private readonly List<WebSocket> _activeConnections = new();
 
+        private void Awake()
+        {
+#if UNITY_SERVER
+    enabled = false;
+#endif
+        }
+
         private void Update()
         {
             // 백그라운드 수신 메시지를 메인 스레드로 전달
             // WebGL 예외. WebGL은 브라우저의 JavaScript WebSocket을 쓰기 때문에 처음부터 메인 스레드에서 동작해서 Dispatch가 필요 없다.
 #if !UNITY_WEBGL || UNITY_EDITOR
-            foreach (var ws in _activeConnections)
-                ws.DispatchMessageQueue();
+            // 콜백(OnMessage → finally)이 _activeConnections를 수정할 수 있어 역순 인덱스로 순회
+            for (int i = _activeConnections.Count - 1; i >= 0; i--)
+            {
+                if (i < _activeConnections.Count)
+                    _activeConnections[i].DispatchMessageQueue();
+            }
 #endif
+        }
+        private void OnDestroy()
+        {
+            for (int i = _activeConnections.Count - 1; i >= 0; i--)
+            {
+                try { _ = _activeConnections[i].Close(); } catch { }
+            }
+            _activeConnections.Clear();
         }
 
         public async UniTask<AudioClip> FetchAsync(string text, CancellationToken ct = default)

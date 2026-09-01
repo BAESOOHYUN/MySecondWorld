@@ -10,10 +10,17 @@ namespace MySecondWorld.Move
     public class PlayerAnimationController : MonoBehaviour
     {
         [SerializeField] private Animator _animator;
+        private Mirror.NetworkAnimator _networkAnimator;
         // 클립 길이를 MovementController에 주입하기 위해 [SerializeField]
         [SerializeField] private AnimationClip _jumpStartClip;
         [SerializeField] private AnimationClip _landClip;
-        
+        private const string AttackTag = "Attack";
+
+        // 공격 스테이트 재생 중인가.
+        // Override Controller가 클립만 바꾸고 스테이트/태그는 베이스 것을 쓰므로 무기 5종에 모두 통한다.
+        public bool IsAttacking =>
+            _animator != null && _animator.GetCurrentAnimatorStateInfo(0).IsTag(AttackTag);
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void InitStatics()
         {
@@ -22,6 +29,8 @@ namespace MySecondWorld.Move
             LandTrigger = Animator.StringToHash(nameof(LandTrigger));
             Speed = Animator.StringToHash(nameof(Speed));
             AttackTrigger = Animator.StringToHash(nameof(AttackTrigger));
+            AimLoadTrigger = Animator.StringToHash(nameof(AimLoadTrigger));
+            AimReleaseTrigger = Animator.StringToHash(nameof(AimReleaseTrigger));
         }
 
         private static int JumpTrigger = Animator.StringToHash(nameof(JumpTrigger));
@@ -29,6 +38,8 @@ namespace MySecondWorld.Move
         private static int LandTrigger = Animator.StringToHash(nameof(LandTrigger));
         private static int Speed = Animator.StringToHash(nameof(Speed));
         private static int AttackTrigger = Animator.StringToHash(nameof(AttackTrigger));
+        private static int AimLoadTrigger = Animator.StringToHash(nameof(AimLoadTrigger));
+        private static int AimReleaseTrigger = Animator.StringToHash(nameof(AimReleaseTrigger));
 
         private ISubscriber<PlayerJumpedEvent> _jumpSubscriber;
         private ISubscriber<PlayerFalledEvent> _fallSubscriber;
@@ -55,6 +66,8 @@ namespace MySecondWorld.Move
                 if (!TryGetComponent(out _animator))
                     Debug.LogError($"Animator missing on {gameObject.name}", this);
             }
+
+            _networkAnimator = GetComponent<Mirror.NetworkAnimator>();
         }
 
         private void Start()
@@ -94,11 +107,20 @@ namespace MySecondWorld.Move
         private void HandleJump()
         {
             if (_animator == null)
-                return;
+                return; 
             
-            _animator.ResetTrigger(FallTrigger);
-            _animator.ResetTrigger(LandTrigger);
-            _animator.SetTrigger(JumpTrigger);
+            if (_networkAnimator != null)
+            {
+                _networkAnimator.ResetTrigger(FallTrigger);
+                _networkAnimator.ResetTrigger(LandTrigger);
+                _networkAnimator.SetTrigger(JumpTrigger);
+            }
+            else
+            {
+                _animator.ResetTrigger(FallTrigger);
+                _animator.ResetTrigger(LandTrigger);
+                _animator.SetTrigger(JumpTrigger);
+            }
         }
 
         private void HandleFall()
@@ -106,9 +128,18 @@ namespace MySecondWorld.Move
             if (_animator == null)
                 return;
 
-            _animator.ResetTrigger(LandTrigger);
-            _animator.ResetTrigger(JumpTrigger);
-            _animator.SetTrigger(FallTrigger);
+            if (_networkAnimator != null)
+            {
+                _networkAnimator.ResetTrigger(LandTrigger);
+                _networkAnimator.ResetTrigger(JumpTrigger);
+                _networkAnimator.SetTrigger(FallTrigger);
+            }
+            else
+            {
+                _animator.ResetTrigger(LandTrigger);
+                _animator.ResetTrigger(JumpTrigger);
+                _animator.SetTrigger(FallTrigger);
+            }
         }
 
         private void HandleLand()
@@ -116,9 +147,18 @@ namespace MySecondWorld.Move
             if (_animator == null)
                 return;
 
-            _animator.ResetTrigger(FallTrigger);
-            _animator.ResetTrigger(JumpTrigger);
-            _animator.SetTrigger(LandTrigger);
+            if (_networkAnimator != null)
+            {
+                _networkAnimator.ResetTrigger(FallTrigger);
+                _networkAnimator.ResetTrigger(JumpTrigger);
+                _networkAnimator.SetTrigger(LandTrigger);
+            }
+            else
+            {
+                _animator.ResetTrigger(FallTrigger);
+                _animator.ResetTrigger(JumpTrigger);
+                _animator.SetTrigger(LandTrigger);
+            }
         }
 
         // PlayerAttackController가 입력 발생 시 직접 호출 (MessagePipe 이벤트 구독 아님 — 이번 슬라이스는 DI/이벤트 생략)
@@ -127,7 +167,32 @@ namespace MySecondWorld.Move
             if (_animator == null)
                 return;
 
-            _animator.SetTrigger(AttackTrigger);
+            if (_networkAnimator != null) 
+                _networkAnimator.SetTrigger(AttackTrigger);
+            else 
+                _animator.SetTrigger(AttackTrigger);
+        }
+
+        // 홀드 조준 — 누르는 순간. Load 재생 시작, 끝나면 애니메이터가 자동으로 Hold 루프로 넘어간다.
+        public void HandleAimLoad()
+        {
+            if (_animator == null) return;
+
+            if (_networkAnimator != null)
+                _networkAnimator.SetTrigger(AimLoadTrigger);
+            else
+                _animator.SetTrigger(AimLoadTrigger);
+        }
+
+        // 홀드 조준 — 손을 뗀 순간. Load/Hold 어느 단계에서 와도 Any State 전환으로 즉시 끊고 넘어간다.
+        public void HandleAimRelease()
+        {
+            if (_animator == null) return;
+
+            if (_networkAnimator != null)
+                _networkAnimator.SetTrigger(AimReleaseTrigger);
+            else
+                _animator.SetTrigger(AimReleaseTrigger);
         }
     }
 }

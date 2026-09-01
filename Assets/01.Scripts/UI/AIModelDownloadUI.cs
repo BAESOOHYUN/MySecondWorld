@@ -22,6 +22,13 @@ namespace MySecondWorld.UI
             sub.Subscribe(OnProgress).AddTo(destroyCancellationToken);
         }
 
+        private void Awake()
+        {
+#if UNITY_SERVER
+    enabled = false;
+#endif
+        }
+
         public void OnProgress(AIModelDownloadProgressEvent evt)
         {
             _canvas.SetActive(true);

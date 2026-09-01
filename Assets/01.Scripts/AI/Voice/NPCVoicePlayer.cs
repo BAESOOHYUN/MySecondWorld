@@ -33,6 +33,8 @@ namespace MySecondWorld.AI.Voice
             IPublisher<NPCSentenceStartedEvent> sentenceStartedPub
             )
         {
+
+#if !UNITY_SERVER
             _promptSO = promptSO;
             _tts = tts;
             _speakFinishedPub = speakFinishedPub;
@@ -55,6 +57,14 @@ namespace MySecondWorld.AI.Voice
                 _sources[0].Stop();
                 _sources[1].Stop();
             }).AddTo(destroyCancellationToken);
+#endif
+        }
+
+        private void Awake()
+        {
+#if UNITY_SERVER
+    enabled = false;
+#endif
         }
 
         private async UniTaskVoid PlayQueue(CancellationToken ct)

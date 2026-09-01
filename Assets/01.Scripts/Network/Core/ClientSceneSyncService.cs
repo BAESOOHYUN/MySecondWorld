@@ -42,7 +42,6 @@ namespace MySecondWorld.Network
         // 번들 해제:  PlayerLeftZone(Zone 완전 이탈 시 1회)
 
         // [C2-a] 씬 로드 + 완료 카운터 증가
-        // TODO: 데디케이티드 서버 전환 시 변경 필요
         private async UniTask LoadAdditiveScene(string sceneName)
         {
             Debug.Log($"[Client] LoadAdditiveScene: {sceneName}");
@@ -65,6 +64,7 @@ namespace MySecondWorld.Network
             _completedSceneLoads++; // ACK 판정용: 씬이 몇 개나 로드되었나?
 
             Debug.Log($"[Client] 씬 로드 완료: {sceneName}, completed={_completedSceneLoads}");
+            NetworkClient.Send(new PortalSceneLoadedAckMessage { sceneName = sceneName }); // 포탈 전환 ack — 기존 스폰 카운터 로직과 별개로 항상 전송
             CheckAndSendSpawnAck();
         }
 
@@ -113,6 +113,21 @@ namespace MySecondWorld.Network
                 _expectedSceneLoads = 0;
                 _completedSceneLoads = 0;
             }
+        }
+
+        // [C5] 서버 지시로 화면 페이드 재생 (포탈 전환용)
+        public void OnScreenFadeMessage(ScreenFadeMessage msg)
+        {
+            if (_manager.ScreenFadeUI == null)
+            {
+                Debug.LogWarning("[Client] ScreenFadeUI 미연결 — 페이드 스킵 (씬 배치 확인 필요)");
+                return;
+            }
+
+            if (msg.fadeOut)
+                _manager.ScreenFadeUI.FadeOut(msg.duration).Forget();
+            else
+                _manager.ScreenFadeUI.FadeIn(msg.duration).Forget();
         }
     }
 }

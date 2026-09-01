@@ -46,6 +46,8 @@ Temporary Items
 /Packages/com.youngwoocho02.unity-cli-connector/
 
 *_BackUpThisFolder_ButDontShipItWithYourGame/
+*_BurstDebugInformation_DoNotShip/
+*.symbols.zip
 
 # unity model asset igonore temp 
 /Assets/[Mm]odels/
@@ -195,9 +197,11 @@ Thumbs.db
 *.wmv
 
 #Plastic SCM
-plastic.wktree
-plastic.workspace
+.plastic/
 
 # Unity 로컬 Cache Server/Accelerator 캐시가 루트에 잘못 생성된 폴더
 # (32자리 16진수 폴더명 + 내부 pathname 파일 = 원본 에셋 경로 매핑)
 /[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]/
+
+# LLMUnity 네이티브 빌드 산출물 (플랫폼별 바이너리, 수 GB — 버전관리 대상 아님)
+/LLMUnityBuild/

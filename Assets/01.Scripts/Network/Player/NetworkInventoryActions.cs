@@ -16,7 +16,7 @@ namespace MySecondWorld.Network
     [RequireComponent(typeof(Cleverous.VaultInventory.Inventory))]
     public class NetworkInventoryActions : NetworkBehaviour, IInventoryActionsProvider
     {
-        [SerializeField] private NetworkFloorItem _floorItemPrefab; // 버리기 시 바닥에 스폰할 프리팹
+        [SerializeField] private GameObject _floorItemPrefab; // 버리기 시 바닥에 스폰할 순수 프리팹 (스크립트는 FloorItemFactory가 스폰 시점에 부착)
         private LocalPlayerInventoryProvider _localInventoryProvider;
         private Cleverous.VaultInventory.Inventory _inventory;
         private IUseInventory _useInventory;
@@ -64,11 +64,13 @@ namespace MySecondWorld.Network
             var item = stack.Source;
             int stackSize = stack.StackSize;
 
+            // 인벤토리에서 빼기 전에 먼저 스폰 성공 여부부터 확인 — 실패 시 아이템이 증발하는 것 방지
+            var floorItem = FloorItemFactory.Create(_floorItemPrefab, transform.position, Quaternion.identity);
+            if (floorItem == null) return; // 프리팹 구성 오류 — FloorItemFactory가 이미 에러 로그를 남김
+            floorItem.Initialize(item, stackSize);
+
             // 전량 버리기(간단 구현 — 부분 버리기는 범위 밖)
             _inventory.DoTake(slotIndex, stack.StackSize);
-
-            var floorItem = Instantiate(_floorItemPrefab, transform.position, Quaternion.identity);
-            floorItem.Initialize(item, stackSize);
 
             // 런타임 스폰 오브젝트는 GameNetworkManager의 자동 matchId 세팅을 안 거치므로 직접 복사
             if (TryGetComponent(out NetworkMatch myMatch) && floorItem.TryGetComponent(out NetworkMatch floorMatch))
@@ -87,8 +89,13 @@ namespace MySecondWorld.Network
             if (Vault.Get(receiveItemDbKey) is not Cleverous.VaultInventory.RootItem receiveItem) return;
             if (!_inventory.Contains(payItem, 1)) return; // 대가 아이템 미보유 → 거부(물물교환, 재화 시스템 없음)
 
+            // 받을 아이템을 먼저 넣어보고, 실제로 들어갔을 때만 대가를 지불한다.
+            // DoAdd(amount=1)는 전부 들어가거나(0 반환) 전혀 안 들어가거나(1 반환) 둘 중 하나뿐이고,
+            // 실패 시 Content를 건드리지 않으므로 이 순서가 안전하다 — "지불했는데 못 받는" 상태를 막는다.
+            int leftover = _inventory.DoAdd(new RootItemStack(receiveItem, 1));
+            if (leftover > 0) return; // 자리 없음 — 아무 것도 지불되지 않은 채로 거부
+
             _inventory.DoTake(payItem, 1);
-            _inventory.DoAdd(new Cleverous.VaultInventory.RootItemStack(receiveItem, 1));
         }
 
         [Command] // 소모품 사용

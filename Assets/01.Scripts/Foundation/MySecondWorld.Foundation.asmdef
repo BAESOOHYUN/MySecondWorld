@@ -1,7 +1,10 @@
 {
     "name": "MySecondWorld.Foundation",
     "rootNamespace": "",
-    "references": [],
+    "references": [
+        "Mirror",
+        "MySecondWorld.ScriptableObject"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

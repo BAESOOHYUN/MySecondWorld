@@ -63,12 +63,6 @@ SM_Item_Bottle_Clear_Labelled_04,FantasyKingdomItems,분홍 물약 4,Consumable,
 SM_Item_Bottle_Clear_Labelled_05,FantasyKingdomItems,분홍 물약 5,Consumable,Potion,Common,,Consumable,,,,,,,,,,,,분홍 물약 5. 흔한 물약.,,TRUE
 SM_Item_Bottle_Clear_Labelled_06,FantasyKingdomItems,분홍 물약 6,Consumable,Potion,Common,,Consumable,,,,,,,,,,,,분홍 물약 6. 흔한 물약.,,TRUE
 SM_Item_Bowl_01,FantasyKingdomItems,나무 그릇,Generic,Misc,Common,,Material,,,,,,,,,,,,나무 그릇.,,FALSE
-SM_Item_Bracelet_01,FantasyKingdomItems,팔찌,Equipment,Bracelet,Common,,Accessory,,,,,,,,,,,,팔찌. 흔한 장신구.,,TRUE
-SM_Item_Bracelet_02,FantasyKingdomItems,팔찌 2,Equipment,Bracelet,Common,,Accessory,,,,,,,,,,,,팔찌 2. 흔한 장신구.,,TRUE
-SM_Item_Bracelet_03,FantasyKingdomItems,팔찌 3,Equipment,Bracelet,Common,,Accessory,,,,,,,,,,,,팔찌 3. 흔한 장신구.,,TRUE
-SM_Item_Bracelet_04,FantasyKingdomItems,팔찌 4,Equipment,Bracelet,Common,,Accessory,,,,,,,,,,,,팔찌 4. 흔한 장신구.,,TRUE
-SM_Item_Bracelet_05,FantasyKingdomItems,팔찌 5,Equipment,Bracelet,Common,,Accessory,,,,,,,,,,,,팔찌 5. 흔한 장신구.,,TRUE
-SM_Item_Bracelet_06,FantasyKingdomItems,팔찌 6,Equipment,Bracelet,Common,,Accessory,,,,,,,,,,,,팔찌 6. 흔한 장신구.,,TRUE
 SM_Item_Bread_01,FantasyKingdomItems,빵,Consumable,Food,Common,,Consumable,,,,,,,,,,,,빵. 흔한 요리.,,TRUE
 SM_Item_Bread_02,FantasyKingdomItems,빵 2,Consumable,Food,Common,,Consumable,,,,,,,,,,,,빵 2. 흔한 요리.,,TRUE
 SM_Item_Bread_03,FantasyKingdomItems,빵 3,Consumable,Food,Common,,Consumable,,,,,,,,,,,,빵 3. 흔한 요리.,,TRUE
@@ -199,16 +193,6 @@ SM_Item_Mushroom_01,FantasyKingdomItems,버섯,Generic,Ingredient,Common,,Materi
 SM_Item_Mushroom_02,FantasyKingdomItems,버섯 2,Generic,Ingredient,Common,,Material,,,,,,,,,,,,버섯 2. 흔한 식재료.,,TRUE
 SM_Item_Mushroom_03,FantasyKingdomItems,버섯 3,Generic,Ingredient,Common,,Material,,,,,,,,,,,,버섯 3. 흔한 식재료.,,TRUE
 SM_Item_Nail_01,FantasyKingdomItems,못,Generic,Misc,Common,,Material,,,,,,,,,,,,못.,,FALSE
-SM_Item_Necklace_Flat_01,FantasyKingdomItems,목걸이,Equipment,Necklace,Common,,Accessory,,,,,,,,,,,,목걸이. 흔한 장신구.,,TRUE
-SM_Item_Necklace_Flat_02,FantasyKingdomItems,목걸이 2,Equipment,Necklace,Common,,Accessory,,,,,,,,,,,,목걸이 2. 흔한 장신구.,,TRUE
-SM_Item_Necklace_Flat_03,FantasyKingdomItems,목걸이 3,Equipment,Necklace,Common,,Accessory,,,,,,,,,,,,목걸이 3. 흔한 장신구.,,TRUE
-SM_Item_Necklace_Flat_04,FantasyKingdomItems,목걸이 4,Equipment,Necklace,Common,,Accessory,,,,,,,,,,,,목걸이 4. 흔한 장신구.,,TRUE
-SM_Item_Necklace_Flat_05,FantasyKingdomItems,목걸이 5,Equipment,Necklace,Common,,Accessory,,,,,,,,,,,,목걸이 5. 흔한 장신구.,,TRUE
-SM_Item_Necklace_Hanging_01,FantasyKingdomItems,펜던트 목걸이,Equipment,NecklaceHanging,Common,,Accessory,,,,,,,,,,,,펜던트 목걸이. 흔한 장신구.,목 착용 형태 아님 — 캐스터 MainHand 후보(Jewelry)에서 제외(2026-07-20),TRUE
-SM_Item_Necklace_Hanging_02,FantasyKingdomItems,펜던트 목걸이 2,Equipment,NecklaceHanging,Common,,Accessory,,,,,,,,,,,,펜던트 목걸이 2. 흔한 장신구.,목 착용 형태 아님 — 캐스터 MainHand 후보(Jewelry)에서 제외(2026-07-20),TRUE
-SM_Item_Necklace_Hanging_03,FantasyKingdomItems,펜던트 목걸이 3,Equipment,NecklaceHanging,Common,,Accessory,,,,,,,,,,,,펜던트 목걸이 3. 흔한 장신구.,목 착용 형태 아님 — 캐스터 MainHand 후보(Jewelry)에서 제외(2026-07-20),TRUE
-SM_Item_Necklace_Hanging_04,FantasyKingdomItems,펜던트 목걸이 4,Equipment,NecklaceHanging,Common,,Accessory,,,,,,,,,,,,펜던트 목걸이 4. 흔한 장신구.,목 착용 형태 아님 — 캐스터 MainHand 후보(Jewelry)에서 제외(2026-07-20),TRUE
-SM_Item_Necklace_Hanging_05,FantasyKingdomItems,펜던트 목걸이 5,Equipment,NecklaceHanging,Common,,Accessory,,,,,,,,,,,,펜던트 목걸이 5. 흔한 장신구.,목 착용 형태 아님 — 캐스터 MainHand 후보(Jewelry)에서 제외(2026-07-20),TRUE
 SM_Item_Pan_01,FantasyKingdomItems,프라이팬,Generic,Misc,Common,,Material,,,,,,,,,,,,프라이팬.,,FALSE
 SM_Item_Parchment_01,FantasyKingdomItems,양피지,Generic,Misc,Common,,Material,,,,,,,,,,,,양피지.,,FALSE
 SM_Item_Parchment_02,FantasyKingdomItems,양피지 2,Generic,Misc,Common,,Material,,,,,,,,,,,,양피지 2.,,FALSE
@@ -233,16 +217,6 @@ SM_Item_Pouch_01,FantasyKingdomItems,주머니,Generic,Misc,Common,,Material,,,,
 SM_Item_Pouch_02,FantasyKingdomItems,주머니 2,Generic,Misc,Common,,Material,,,,,,,,,,,,주머니 2.,,FALSE
 SM_Item_Powder_01,FantasyKingdomItems,가루,Generic,Misc,Common,,Material,,,,,,,,,,,,가루.,,FALSE
 SM_Item_Pretzel_01,FantasyKingdomItems,프레첼,Consumable,Food,Common,,Consumable,,,,,,,,,,,,프레첼. 흔한 요리.,,TRUE
-SM_Item_Ring_01,FantasyKingdomItems,반지,Equipment,Ring,Common,,Accessory,,,,,,,,,,,,반지. 흔한 장신구.,,TRUE
-SM_Item_Ring_02,FantasyKingdomItems,반지 2,Equipment,Ring,Common,,Accessory,,,,,,,,,,,,반지 2. 흔한 장신구.,,TRUE
-SM_Item_Ring_03,FantasyKingdomItems,반지 3,Equipment,Ring,Common,,Accessory,,,,,,,,,,,,반지 3. 흔한 장신구.,,TRUE
-SM_Item_Ring_04,FantasyKingdomItems,반지 4,Equipment,Ring,Common,,Accessory,,,,,,,,,,,,반지 4. 흔한 장신구.,,TRUE
-SM_Item_Ring_05,FantasyKingdomItems,반지 5,Equipment,Ring,Common,,Accessory,,,,,,,,,,,,반지 5. 흔한 장신구.,,TRUE
-SM_Item_Ring_06,FantasyKingdomItems,반지 6,Equipment,Ring,Common,,Accessory,,,,,,,,,,,,반지 6. 흔한 장신구.,,TRUE
-SM_Item_Ring_07,FantasyKingdomItems,반지 7,Equipment,Ring,Common,,Accessory,,,,,,,,,,,,반지 7. 흔한 장신구.,,TRUE
-SM_Item_Ring_08,FantasyKingdomItems,반지 8,Equipment,Ring,Common,,Accessory,,,,,,,,,,,,반지 8. 흔한 장신구.,,TRUE
-SM_Item_Ring_09,FantasyKingdomItems,반지 9,Equipment,Ring,Common,,Accessory,,,,,,,,,,,,반지 9. 흔한 장신구.,,TRUE
-SM_Item_Ring_10,FantasyKingdomItems,반지 10,Equipment,Ring,Common,,Accessory,,,,,,,,,,,,반지 10. 흔한 장신구.,,TRUE
 SM_Item_Roast_Fish_01,FantasyKingdomItems,Roast_Fish,Consumable,Food,Common,,Consumable,,,,,,,,,,,,Roast_Fish. 흔한 요리.,,TRUE
 SM_Item_Roast_Turkey_01,FantasyKingdomItems,Roast_Turkey,Consumable,Food,Common,,Consumable,,,,,,,,,,,,Roast_Turkey. 흔한 요리.,,TRUE
 SM_Item_Rock_01,FantasyKingdomItems,돌,Generic,Misc,Common,,Material,,,,,,,,,,,,돌.,,FALSE

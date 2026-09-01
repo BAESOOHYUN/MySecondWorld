@@ -23,12 +23,13 @@ public class PlayerScope : LifetimeScope
         builder.RegisterMessageBroker<PlayerSpeedChangedEvent>(options);
         builder.RegisterMessageBroker<CharacterAppearanceChangedEvent>(options);
 
-        builder.RegisterComponentInHierarchy<MovementController>();
-        builder.RegisterComponentInHierarchy<PlayerAnimationController>();
-        builder.RegisterComponentInHierarchy<ThirdPersonCameraController>();
-        builder.RegisterComponentInHierarchy<ObservableCharacterCustomizer>();
-        builder.RegisterComponentInHierarchy<NetworkCharacterAppearance>();
-        builder.RegisterComponentInHierarchy<NetworkPlayerController>();
-        builder.RegisterComponentInHierarchy<NetworkInventoryActions>();
+        builder.RegisterComponent(GetComponent<MovementController>());
+        builder.RegisterComponent(GetComponent<PlayerAnimationController>());
+        builder.RegisterComponent(GetComponentInChildren<ThirdPersonCameraController>());
+        builder.RegisterComponent(GetComponent<ObservableCharacterCustomizer>());
+        builder.RegisterComponent(GetComponent<NetworkCharacterAppearance>());
+        builder.RegisterComponent(GetComponent<NetworkPlayerController>());
+        builder.RegisterComponent(GetComponent<NetworkInventoryActions>());
+        builder.RegisterComponent(GetComponent<NetworkWeaponEquip>());
     }
 }

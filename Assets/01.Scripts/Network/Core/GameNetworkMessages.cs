@@ -34,19 +34,19 @@ namespace MySecondWorld.Network
     //                 └→ 서버: spawn 허용
 
     /// <summary>
-    /// 서버 → 클라이언트 : "이 Zone 번들 지금 다운로드해"
+    /// 서버 → 클라이언트 : "이 라벨들 지금 다운로드해"
     /// </summary>
     public struct BundleRequiredMessage : NetworkMessage
     {
-        public string zoneLabel;
+        public string[] labels;
     }
 
     /// <summary>
-    /// 클라이언트 → 서버 : "번들 다운로드 완료, spawn 허용해도 됨"
+    /// 클라이언트 → 서버 : "라벨들 다운로드 완료, spawn 허용해도 됨"
     /// </summary>
     public struct BundleReadyMessage : NetworkMessage
     {
-        public string zoneLabel;
+        public string[] labels;
     }
 
     /// <summary>
@@ -55,5 +55,26 @@ namespace MySecondWorld.Network
     public struct CatalogHashMessage : NetworkMessage
     {
         public string serverCatalogHash;
+    }
+
+
+    // 던전 포탈 전환: 트리거 진입 → FadeOut 지시 → 씬스왑 → 로드완료 ack 대기 → 재스냅 → FadeIn 지시
+
+    /// <summary>
+    /// 서버 → 클라이언트 : 포탈 전환 화면 페이드 지시 (아웃/인)
+    /// </summary>
+    public struct ScreenFadeMessage : NetworkMessage
+    {
+        public bool fadeOut;   // true=페이드아웃(어두워짐), false=페이드인(밝아짐)
+        public float duration;
+    }
+
+    /// <summary>
+    /// 클라이언트 → 서버 : 포탈 전환 중 특정 씬 로드 완료 ack.
+    /// 기존 SceneLoadedAckMessage(스폰 시 카운터 기반)와는 용도가 달라 별도 메시지로 분리.
+    /// </summary>
+    public struct PortalSceneLoadedAckMessage : NetworkMessage
+    {
+        public string sceneName;
     }
 }

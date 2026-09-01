@@ -4,7 +4,12 @@ using Cleverous.VaultInventory;
 
 namespace MySecondWorld.Network
 {
-    [RequireComponent(typeof(Collider))]
+    // NetworkBehaviour(NetworkMatch)는 Instantiate 이후 런타임에 AddComponent로 못 붙인다 —
+    // NetworkIdentity.Awake()가 그 시점에 존재하는 NetworkBehaviour만 한 번 스캔해서 netIdentity를 채워주기 때문
+    // (Assets/Plugins/Mirror/Core/NetworkIdentity.cs:297 InitializeNetworkBehaviours 참고, 재스캔 API는 internal이라 접근 불가).
+    // 그래서 RequireComponent는 "런타임 동적 부착"이 아니라 "프리팹 에디터 작업 시 빠뜨리지 않게 하는 안전장치"로만 기능한다.
+    [RequireComponent(typeof(SphereCollider))]
+    [RequireComponent(typeof(NetworkMatch))]
     public class NetworkFloorItem : NetworkBehaviour
     {
         [SerializeField] private RootItem _item;

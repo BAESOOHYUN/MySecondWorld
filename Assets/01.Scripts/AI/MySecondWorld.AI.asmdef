@@ -13,7 +13,9 @@
         "MySecondWorld.ScriptableObject",
         "MySecondWorld.Foundation",
         "MySecondWorld.Input",
-        "MySecondWorld.Inventory.Items"
+        "MySecondWorld.Inventory.Items",
+        "MySecondWorld.Combat",
+        "MySecondWorld.Interaction"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

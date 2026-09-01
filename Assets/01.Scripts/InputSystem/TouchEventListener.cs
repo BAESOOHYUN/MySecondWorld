@@ -23,6 +23,7 @@ public class TouchEventListener : MonoBehaviour, IInputAxisOwner
     public event Action OnSecEndDrag;
     public event Action<float> OnZoom;
 
+    // Awake에서 실행 플랫폼으로 자동 결정한다. 인스펙터에서 바꿔도 실행 시 덮어써진다.
     public DeviceType deviceType;
 
     // 터치 시작 좌표가 UI 위였는지 여부 (터치 시작 프레임에 1회만 판정)
@@ -144,6 +145,13 @@ public class TouchEventListener : MonoBehaviour, IInputAxisOwner
         axes.Add(new() { DrivenAxis = () => ref SecPositionY, Name = nameof(SecPositionY), Hint = IInputAxisOwner.AxisDescriptor.Hints.Y });
 
         axes.Add(new() { DrivenAxis = () => ref Zoom, Name = nameof(Zoom), Hint = IInputAxisOwner.AxisDescriptor.Hints.Y });
+    }
+
+    private void Awake()
+    {
+        // 인스펙터 수동 설정에 의존하면 빌드마다 바꿔줘야 하고, 깜빡하면 폰에서 PC 프로파일로 돌아간다
+        // (회전/줌 속도, 드래그 임계값이 전부 어긋남).
+        deviceType = Application.isMobilePlatform ? DeviceType.Mobile : DeviceType.PC;
     }
 
     private void Start()

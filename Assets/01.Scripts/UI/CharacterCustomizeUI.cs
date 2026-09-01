@@ -566,6 +566,9 @@ namespace MySecondWorld.UI
                 && IsPartOwnedSelf(mirror, gender, index);
         }
 
+
+        // 커스터마이징 UI에서 썸네일을 그릴 때, 그 파츠 후보가 요구하는 아이템을 플레이어가 갖고 있는지 확인해서
+        // 없으면 자물쇠 아이콘(SetLocked)을 씌움. 클라이언트 쪽 "미리 보여주되 잠금 표시"용.
         private bool IsPartOwnedSelf(PartType part, Gender gender, int index)
         {
             var requiredItem = _keyTable.GetRequiredItem(part, gender, index);

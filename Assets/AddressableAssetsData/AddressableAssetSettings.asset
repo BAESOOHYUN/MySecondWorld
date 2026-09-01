@@ -15,7 +15,7 @@ MonoBehaviour:
   m_DefaultGroup: d79ab3afdd2844841ab127b9da93bfa6
   m_currentHash:
     serializedVersion: 2
-    Hash: 5a1766a15a364c9aa47e05b2d465204e
+    Hash: eed151349ca88601e3b308a2e169cd3c
   m_OptimizeCatalogSize: 0
   m_BuildRemoteCatalog: 1
   m_BundleLocalCatalog: 0
@@ -54,7 +54,7 @@ MonoBehaviour:
   m_RemoteCatalogBuildPath:
     m_Id: 'ServerData/[BuildTarget]'
   m_RemoteCatalogLoadPath:
-    m_Id: 'http://192.168.219.107:8080/[BuildTarget]'
+    m_Id: 'http://192.168.219.110:8080/[BuildTarget]'
   m_ContentStateBuildPathProfileVariableName: <default settings path>
   m_CustomContentStateBuildPath: 
   m_ContentStateBuildPath: 
@@ -79,7 +79,7 @@ MonoBehaviour:
       - m_Id: 30c5da4bb9325a649ad9ccb3f30a57e9
         m_Value: 'ServerData/[BuildTarget]'
       - m_Id: 748ff5e913c5ac34196603658119888b
-        m_Value: 'http://192.168.219.107:8080/[BuildTarget]'
+        m_Value: 'http://192.168.219.109:8080/[BuildTarget]'
       - m_Id: a8cb9f85bfe430f44a001c2496d07c51
         m_Value: '[UnityEditor.EditorUserBuildSettings.activeBuildTarget]'
       - m_Id: f2be624f2297a61419560d9207be6ef5

@@ -3,8 +3,8 @@ using UnityEngine;
 using Mirror;
 using VContainer;
 using MessagePipe;
-using MySecondWorld.Customization;
 using Cleverous.VaultInventory;
+using MySecondWorld.Customization;
 
 namespace MySecondWorld.Network
 {
@@ -31,7 +31,12 @@ namespace MySecondWorld.Network
         // (아이템 드롭, 상호작용 거리 체크)에 쓰이는 값
         public Transform MyTransform => transform;
 
-        
+        // "외형 적용 완료" 신호. portrait 캡쳐에 필요
+        public static event System.Action LocalAppearanceReady;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() => LocalAppearanceReady = null; // Domain Reload OFF 대응
+
         private IPublisher<RequestOpenCustomizeUIEvent> _openUIPublisher;
 
         [Inject]
@@ -79,6 +84,22 @@ namespace MySecondWorld.Network
             _inventory.Initialize(this, resetContent: true);
         }
 
+        public override void OnStartClient()
+        {
+            base.OnStartClient();
+
+            Debug.Log($"[Inv] OnStartClient isServer={isServer} " +
+                      $"IsInitialized={_inventory.IsInitialized}");
+
+            // 호스트는 OnStartServer에서 이미 초기화됨.
+            // 여기서 또 부르면 resetContent:true가 서버가 채워둔 내용을 지운다.
+            if (isServer) return;
+
+            _inventory.Initialize(this, resetContent: true);
+        }
+
+        // 서버가 클라이언트가 보낸 외형 데이터를 받았을 때, 각 파츠 인덱스마다 "이거 살 자격 있어?"를 재검증.
+        // 없으면 그 필드만 이전 값으로 되돌림. 이게 진짜 권위 있는 검증(클라 UI는 속여도 여긴 못 속임).
         [Command]
         public void CmdSetAppearance(CharacterAppearanceData data)
         {
@@ -108,7 +129,16 @@ namespace MySecondWorld.Network
 
         private void OnAppearanceChanged(CharacterAppearanceData old, CharacterAppearanceData next)
         {
-            _customizer.ApplyAppearance(next).Forget();
+#if !UNITY_SERVER
+            ApplyAndNotify(next).Forget();
+#endif 
+        }
+
+
+        private async Cysharp.Threading.Tasks.UniTaskVoid ApplyAndNotify(CharacterAppearanceData next)
+        {
+            await _customizer.ApplyAppearance(next); // 파츠 로딩 다 끝날 때까지 여기서 기다림
+            if (isLocalPlayer) LocalAppearanceReady?.Invoke();
         }
 
         private static int Clamp(int value, int count)

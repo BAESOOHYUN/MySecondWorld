@@ -12,9 +12,11 @@ namespace MySecondWorld.UI
         [SerializeField] private Canvas _canvas;   // 이 오브젝트의 Canvas — GameObject 자체는 항상 활성 유지
         [SerializeField] private Button _talkButton;
         [SerializeField] private Button _shopButton;
+        [SerializeField] private Button _closeButton;
 
         public Observable<Unit> OnSelectTalk => _talkButton.OnClickAsObservable().AsUnitObservable();
         public Observable<Unit> OnSelectShop => _shopButton.OnClickAsObservable().AsUnitObservable();
+        public Observable<Unit> OnClose => _closeButton.OnClickAsObservable().AsUnitObservable();
 
         private void Start() => _canvas.enabled = false;
 

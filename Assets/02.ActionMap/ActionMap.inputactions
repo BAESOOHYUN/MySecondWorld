@@ -268,24 +268,6 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "Inateract",
-                    "type": "Button",
-                    "id": "35221d19-36db-4e69-9e76-5d8f24a98685",
-                    "expectedControlType": "",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                },
-                {
-                    "name": "Cancel",
-                    "type": "Button",
-                    "id": "40b228e6-f10a-4e5b-bc78-e3402ad5e462",
-                    "expectedControlType": "",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                },
-                {
                     "name": "Attack",
                     "type": "Button",
                     "id": "8e8cca6e-23bd-4a44-83c4-54031c5286ea",
@@ -436,39 +418,6 @@
                     "processors": "",
                     "groups": "",
                     "action": "Jump",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "e939db99-86fa-46f3-b4f6-fa1fb8931cdf",
-                    "path": "<Gamepad>/buttonSouth",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Inateract",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "ebf45a44-7ec1-4b5e-92ab-8b2557b3db1d",
-                    "path": "<Keyboard>/#(N)",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Inateract",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "eea78790-9cf9-495c-a399-2c6c9e85f1dd",
-                    "path": "<Keyboard>/escape",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Cancel",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },

@@ -13,6 +13,9 @@ public class AIModelDownloadLifetimeScope : LifetimeScope
 
     protected override void Configure(IContainerBuilder builder)
     {
+#if UNITY_SERVER
+    return; // 서버 빌드에서는 LLM/STT 다운로드 자체가 불필요
+#endif
         var options = builder.RegisterMessagePipe();
         builder.RegisterMessageBroker<AIModelDownloadProgressEvent>(options);
         builder.Register<AIModelDownloader>(Lifetime.Singleton);

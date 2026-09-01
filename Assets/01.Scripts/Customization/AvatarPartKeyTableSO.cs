@@ -111,6 +111,7 @@ namespace MySecondWorld.Customization
             return (index >= 0 && index < combined.Count) ? combined[index] : string.Empty;
         }
 
+        // "이 파츠 후보를 쓰려면 인벤토리에 어떤 아이템을 갖고 있어야 하는가"를 조회하는 함수
         // GetCandidates/GetAssetReference와 동일 순서(전용 + AllGender)로 요구 아이템 반환
         // null이면 해당 인덱스는 무료 착용(요구 아이템 없음)
         public EquipmentItem GetRequiredItem(PartType part, Gender gender, int index)
@@ -122,6 +123,33 @@ namespace MySecondWorld.Customization
                 entry.MaleRequiredItems : entry.FemaleRequiredItems;
             var combined = genderList.Concat(entry.AllGenderRequiredItems).ToList();
             return (index >= 0 && index < combined.Count) ? combined[index] : null;
+        }
+
+        // 아이템 → (PartType, index) 역방향 조회. 인벤토리 "장착" 버튼에서 사용.
+        // GetRequiredItem과 반대 방향 — 못 찾으면 false.
+        // "이 아이템이 어느 PartType 소속인지조차 모르는" 역방향 조회라서 entry를 하나씩 열어보면서
+        // 그 안의 RequiredItems 리스트에 이 아이템이 있는지 뒤지는 수밖에 없다.
+        public bool TryFindPartIndex(EquipmentItem item, Gender gender, out PartType part, out int index)
+        {
+            // "이 아이템을 얻으면 어느 파츠 슬롯이 풀리는가"를 조회.
+            foreach (var entry in Entries) //25개의 PartsType 상자
+            {
+                var genderList = gender == Gender.Male ? entry.MaleRequiredItems : entry.FemaleRequiredItems;
+                // combined에서 item을 찾음
+                var combined = genderList.Concat(entry.AllGenderRequiredItems).ToList();
+                int i = combined.IndexOf(item);
+                // 그 아이템이 어느 상자(파츠)안에 있는지 찾음
+                if (i >= 0)
+                {
+                    part = entry.PartType;
+                    index = i;
+                    return true;
+                }
+            }
+
+            part = default;
+            index = -1;
+            return false;
         }
 
 #if UNITY_EDITOR

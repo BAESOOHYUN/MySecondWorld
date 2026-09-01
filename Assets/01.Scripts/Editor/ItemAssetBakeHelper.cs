@@ -5,6 +5,8 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
+using UnityEditor.AddressableAssets;
+using UnityEditor.AddressableAssets.Settings;
 using Cleverous.VaultInventory;
 using Cleverous.VaultSystem;
 using MySecondWorld.Customization;
@@ -109,6 +111,9 @@ namespace MySecondWorld.Editor
             //if (GUILayout.Button("누락 프리팹 모델에서 생성"))
             //    GenerateMissingPrefabsFromModels(_csvPath);
             GUI.enabled = true;
+
+            if (GUILayout.Button("빠진 Weapon Addressable 등록 (RemoteArtPrefab)"))
+                RegisterWeaponModelsAddressable();
 
             // 커스터마이징 파츠 (그룹 B,C 아이템)
             EditorGUILayout.Space();
@@ -384,11 +389,12 @@ namespace MySecondWorld.Editor
 
                     // Item SO 경로 찾기
                     var folder = $"{AssetOutputFolder}/{subfolder}";
-                    var assetPath = $"{folder}/{package}_{prefabName}.asset";
+                    var assetFileName = $"{package}_{prefabName}.asset";
+                    // 서브폴더로 재정리된 경우에도 기존 에셋을 찾을 수 있도록 재귀 검색
+                    var assetPath = FindExistingAssetPath(folder, assetFileName) ?? $"{folder}/{assetFileName}";
 
                     // 고아 SO 자동 삭제 코드 :
                     // ItemType이 바뀌어 폴더가 달라진 경우 — 예전 폴더에 남은 동명 SO를 찾아 삭제
-                    var assetFileName = $"{package}_{prefabName}.asset";
                     foreach (var otherSubfolder in ItemTypeSubfolders.Values)
                     {
                         if (otherSubfolder == subfolder) continue; //현재 폴더면 패스, 나머지 폴더 이어서 검색
@@ -478,7 +484,10 @@ namespace MySecondWorld.Editor
                         item.RemoteArtPrefab = null;
                     }
 
-                    item.MaxStackSize = itemType == "Equipment" ? 1 : 99;
+                    string csvCategory = cols[header["Category"]];
+                    item.MaxStackSize =
+                        itemType == "Equipment" ? 1                 //장비 타입이면 슬롯 최대 카운트 1
+                        : csvCategory == "Currency" ? 1000000 : 99;    // 코인 같은 재화면 100만, 그외 소모품이면 99 
 
                     switch (item)
                     {
@@ -522,6 +531,49 @@ namespace MySecondWorld.Editor
             Debug.Log(
                 $"생성 {created}개 / 갱신 {updated}개 / 건너뜀 {skipped}개 / 아이콘 없음 {missingIcon}개 / " +
                 $"로컬 프리팹 없음 {missingArtPrefab}개 / 원격 프리팹 없음 {missingRemotePrefab}개 → {AssetOutputFolder}");
+        }
+
+        private static void RegisterWeaponModelsAddressable()
+        {
+            var settings = AddressableAssetSettingsDefaultObject.Settings;
+            if (settings == null)
+            {
+                Debug.LogError("[ItemAssetBakeHelper] AddressableAssetSettings를 찾을 수 없음");
+                return;
+            }
+
+            var group = settings.FindGroup("Remote_Weapons");
+            if (group == null)
+            {
+                Debug.LogError("[ItemAssetBakeHelper] 'Remote_Weapons' 그룹을 찾을 수 없음");
+                return;
+            }
+
+            int marked = 0, alreadyOk = 0, skippedNoRef = 0;
+
+            var guids = AssetDatabase.FindAssets("t:EquipmentItem", new[] { AssetOutputFolder });
+            foreach (var soGuid in guids)
+            {
+                var item = AssetDatabase.LoadAssetAtPath<EquipmentItem>(AssetDatabase.GUIDToAssetPath(soGuid));
+                if (item == null || item.RemoteArtPrefab == null || string.IsNullOrEmpty(item.RemoteArtPrefab.AssetGUID))
+                {
+                    skippedNoRef++;
+                    continue;
+                }
+
+                var assetGuid = item.RemoteArtPrefab.AssetGUID;
+                if (settings.FindAssetEntry(assetGuid) != null)
+                {
+                    alreadyOk++;
+                    continue;
+                }
+
+                settings.CreateOrMoveEntry(assetGuid, group);
+                marked++;
+            }
+
+            AssetDatabase.SaveAssets();
+            Debug.Log($"[ItemAssetBakeHelper] Addressable 신규 등록 {marked}개 / 이미 등록됨 {alreadyOk}개 / RemoteArtPrefab 없음 {skippedNoRef}개 → 그룹 'Remote_Weapons'");
         }
 
         private static void GenerateMissingPrefabsFromModels(string csvPath)
@@ -630,6 +682,13 @@ namespace MySecondWorld.Editor
             if (!float.TryParse(valueRaw, out var value)) return; // Stat_Value 칸이 숫자로 안 읽히면(빈칸, 오타 등) 종료
 
             stats.Add(new StatModifier { Type = statType, ModifierType = modType, Value = value });
+        }
+        
+        private static string FindExistingAssetPath(string folder, string fileName)
+        {
+            if (!Directory.Exists(folder)) return null;
+            var matches = Directory.GetFiles(folder, fileName, SearchOption.AllDirectories);
+            return matches.Length > 0 ? matches[0].Replace('\\', '/') : null;
         }
 
         private static Sprite FindIcon(string package, string prefabName, Dictionary<string, Sprite> cache)

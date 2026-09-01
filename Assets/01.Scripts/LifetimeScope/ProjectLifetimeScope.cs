@@ -9,6 +9,8 @@ using MySecondWorld.AI;
 using MySecondWorld.Save;
 using MySecondWorld.Bundle;
 using MySecondWorld.Customization;
+using MySecondWorld.Network.Web;
+using MySecondWorld.Interaction;
 
 /// <summary>
 /// VContainerSettings에 등록되어 앱 시작 시 자동 인스턴스화되는 최상위 LifetimeScope.
@@ -24,6 +26,8 @@ public class ProjectLifetimeScope : LifetimeScope
     [SerializeField] private CharacterAppearanceSO _defaultAppearanceSO;
     protected override void Configure(IContainerBuilder builder)
     {
+        ServerModeFlag.Set(_useServerMode);
+
         var options = builder.RegisterMessagePipe(o => o.InstanceLifetime = InstanceLifetime.Singleton);
         builder.RegisterMessageBroker<AuthStateChangedEvent>(options);
         builder.RegisterMessageBroker<CharacterAppearanceSavedEvent>(options);
@@ -33,9 +37,16 @@ public class ProjectLifetimeScope : LifetimeScope
         builder.Register<SaveManager>(Lifetime.Singleton);
         builder.Register<CharacterSaveService>(Lifetime.Singleton);
         builder.Register<LocalPlayerInventoryProvider>(Lifetime.Singleton);
+        // Web 리소스 시스템
+        builder.Register<WebResourceDownloader>(Lifetime.Singleton);
+        builder.Register<TextureMemoryCache>(Lifetime.Singleton);
+        builder.Register<AudioClipMemoryCache>(Lifetime.Singleton);
+        builder.Register<DiskCacheService>(Lifetime.Singleton);
+        builder.Register<IWebResourceService, WebResourceService>(Lifetime.Singleton);
 
         builder.RegisterComponent(_uiManager).As<UIManager>().As<IUIManager>();
         builder.RegisterComponentInHierarchy<TouchEventListener>();
+        builder.RegisterComponentInHierarchy<TapTargetResolver>();
         builder.RegisterComponentInHierarchy<GameNetworkManager>();
         builder.RegisterComponentInHierarchy<PlayerAuthenticator>();
         builder.RegisterComponentInHierarchy<LoginUI>();

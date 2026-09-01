@@ -11,28 +11,43 @@ namespace MySecondWorld.Network
     /// <summary>
     /// 서버에서 BundleRequiredMessage가 오면:
     /// AddressableLabelLoader.LoadLabelAsync() 호출 → 번들 다운로드
-    /// 진행률 AddressablesProgressEvent로 발행 → UI가 받아서 표시
+    /// (zoneLoader라는 이름과 달리 존/아이템 등 모든 라벨을 공용으로 처리하는 로더다)
+    /// 진행률은 LoadLabelAsync의 onProgress 콜백으로 AddressablesLoadingUI.UpdateProgress()를
+    /// 직접 호출해 표시한다 — AddressablesProgressEvent(MessagePipe)는 진행률 전달용이 아니라
+    /// 아래 재시도 정책의 NeedsRetry 신호 전용이다.
     /// 완료되면 BundleReadyMessage를 서버에 ACK
+    ///
+    /// 재시도 정책: 실패 시 최대 MaxAutoRetries회까지는 NeedsRetry 이벤트로 자동 재시도.
+    /// 소진되면 Retry 버튼을 띄우고, 버튼 클릭도 동일하게 NeedsRetry를 발행해 카운터를
+    /// 0으로 리셋 후 같은 경로를 다시 탄다 — "짧은 시간 내 일시적 실패"는 자동으로,
+    /// "사용자가 뭔가 고친 뒤 다시" 는 버튼으로 담당을 나눈 것.
     /// </summary>
     public class ClientBundleSyncService
     {
-        private string _lastFailedLabel;
+        private const int MaxAutoRetries = 3;
+        private static readonly TimeSpan RetryDelay = TimeSpan.FromSeconds(2);
+        private int _retryCount;
+        private string[] _lastFailedLabels;
         private IDisposable _retrySubscription;
         private readonly AddressableLabelLoader _zoneLoader;
+        private readonly IPublisher<AddressablesProgressEvent> _progressPub;
         private IUIManager _uiManager;
 
         public ClientBundleSyncService (
             AddressableLabelLoader zoneLoader,
             ISubscriber<AddressablesProgressEvent> progressSub,
-            IUIManager uiManager)
+            IPublisher<AddressablesProgressEvent> progressPub,
+            IUIManager uiManager
+            )
         {
             _zoneLoader = zoneLoader;
+            _progressPub = progressPub;
             _retrySubscription = progressSub.Subscribe(async evt =>
             {
-                if (!evt.NeedsRetry || string.IsNullOrEmpty(_lastFailedLabel))
+                if (!evt.NeedsRetry || _lastFailedLabels == null || _lastFailedLabels.Length == 0)
                     return;
 
-                await OnBundleRequired(new BundleRequiredMessage { zoneLabel = _lastFailedLabel }, CancellationToken.None);
+                await OnBundleRequired(new BundleRequiredMessage { labels = _lastFailedLabels }, CancellationToken.None);
             });
             _uiManager = uiManager;
         }
@@ -47,24 +62,46 @@ namespace MySecondWorld.Network
             uiObj?.SetActive(true);
             var addressableUI =uiObj?.GetComponent<AddressablesLoadingUI>();
 
-            //재귀처럼 보이지만 아님. SetRetryCallback은 콜백을 지금 실행하는 게 아니라 등록하는 것
+            // 버튼 클릭 = 자동재시도와 동일한 경로(NeedsRetry 발행)를 타되, 카운터를 리셋해서
+            // "그 사이에 사용자가 뭔가 고쳤을 수 있다(와이파이 재연결, 로컬 서버 재기동 등)"는
+            // 전제로 다시 MaxAutoRetries회를 새로 준다.
             addressableUI?.SetRetryCallback(() =>
-                                OnBundleRequired(new BundleRequiredMessage { zoneLabel = _lastFailedLabel}, default).Forget());
-            
+            {
+                _retryCount = 0;
+                _progressPub.Publish(new AddressablesProgressEvent { NeedsRetry = true });
+            });
             addressableUI?.UpdateProgress(0f);
-            
+
             // try-catch는 번들 다운로드 실패 시 재시도 기능을 위한 것
             try
             {
-                await _zoneLoader.LoadLabelAsync(msg.zoneLabel, ct); //번들 다운로드
+                // 라벨 여러 개를 순서대로 받되, 진행률은 전체 대비 비율로 합쳐서 표시
+                for (int i = 0; i < msg.labels.Length; i++)
+                {
+                    int index = i;
+                    // 진행률 콜백 전달 — 다운로드 도중 UI가 실시간으로 갱신됨
+                    await _zoneLoader.LoadLabelAsync(msg.labels[i], ct, p => addressableUI?.UpdateProgress((index + p) / msg.labels.Length));
+                }
                 addressableUI?.UpdateProgress(1f);
-                NetworkClient.Send(new BundleReadyMessage { zoneLabel = msg.zoneLabel }); // > GameNetworkManager.OnStartServer
+                _retryCount = 0;
+                NetworkClient.Send(new BundleReadyMessage { labels = msg.labels }); // > GameNetworkManager.OnStartServer
             }
             catch (Exception e)
             {
-                Debug.LogError($"[Bundle] 다운로드 실패: {e.Message}");
-                _lastFailedLabel = msg.zoneLabel;
-                addressableUI?.UpdateProgress(0f, isError:true);
+                Debug.LogError($"[Bundle] 다운로드 실패({_retryCount + 1}/{MaxAutoRetries + 1}회차): {e.Message}");
+                _lastFailedLabels = msg.labels;
+
+                if (_retryCount < MaxAutoRetries)
+                {
+                    _retryCount++;
+                    await UniTask.Delay(RetryDelay, cancellationToken: ct);
+                    _progressPub.Publish(new AddressablesProgressEvent { NeedsRetry = true });
+                }
+                else
+                {
+                    // 자동재시도 소진 — 사용자 개입 필요, Retry 버튼 노출
+                    addressableUI?.UpdateProgress(0f, isError: true);
+                }
             }
         }
     }
@@ -88,7 +125,7 @@ namespace MySecondWorld.Network
 //
 //LoadLabelAsync 실패(CDN 연결 실패, 파일 없음 등)
 //  └→ catch
-//       └→ _lastFailedLabel 저장
+//       └→ _lastFailedLabels 저장
 //       └→ IsError = true 발행
 //            └→ AddressablesLoadingUI에서 RetryButton 표시
 //                 └→ 클릭 시 저장된 _lastFailedLabel로 재시도

@@ -4,5 +4,7 @@ namespace MySecondWorld.Combat
     public interface IDamageable
     {
         void TakeDamage(float amount);
+        bool IsDead { get; }
+        CombatFaction Faction { get; }
     }
 }
