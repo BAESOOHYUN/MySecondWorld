@@ -11,13 +11,14 @@ namespace MySecondWorld.Combat
         // 발사하고 그 투사체를 돌려준다.
         // 결과를 기다릴 쪽(서버 판정)은 반환값의 HitTask를,
         // 나중에 조작할 쪽(표현 화살)은 반환값 자체를 들고 있으면 된다.
-        // 두 용도가 메서드를 나눌 만큼 다르지 않다.
         public static Projectile Launch(in ProjectileRequest request, Scene scene)
         {
             var projectile = Acquire(request, scene);
             if (projectile == null) return null;
 
             // 이 한 줄이 "한 피어에 화살 하나"를 구조적으로 보장한다.
+            // 서버(NetworkServer.active == true)라면 → Authoritative 모드 → 서버가 판정(충돌, 데미지 등)을 책임짐.
+            // 클라이언트라면 → Presentation 모드   → 단순히 시각적 표현(화살 날아가는 연출)만 담당.
             var mode = NetworkServer.active ? ProjectileMode.Authoritative : ProjectileMode.Presentation;
             projectile.Launch(request, mode);
             return projectile;

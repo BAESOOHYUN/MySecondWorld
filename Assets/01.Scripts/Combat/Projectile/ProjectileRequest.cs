@@ -18,6 +18,10 @@ namespace MySecondWorld.Combat
         public LayerMask HitMask;                   // 데미지 대상 (몬스터가 쏘면 Player, 반대면 Monster)
         public LayerMask BlockMask;                 // 벽·지형
 
+        // 0이면 스플래시 없음(단일 타겟 폴백). 0보다 크면 ProjectileSplashCastSO가
+        // 명중 지점을 중심으로 이 반경만큼 재-OverlapSphere 한다.
+        public float SplashRadius;
+
         // 유도(homing). Target이 null이거나 TurnRate가 0이면 유도 없이 직선 비행(게이지 0%와 동일).
         public Transform HomingTarget;
         public float HomingTurnRateDegPerSec;

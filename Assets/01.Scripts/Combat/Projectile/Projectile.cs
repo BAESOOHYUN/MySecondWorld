@@ -44,6 +44,12 @@ namespace MySecondWorld.Combat
                 ? _completionSource.Task
                 : UniTask.FromResult<IDamageable>(null);
 
+        // Resolve() 시점 _tip은 이미 충돌 지점으로 옮겨져 있다. await HitTask 재개가
+        // TrySetResult 안에서 동기적으로 일어나 ReturnToPool()보다 먼저 실행되므로
+        // 호출부가 읽을 때 폐기(재사용)되지 않은 값이 보장된다.
+        public Vector3 LastHitPoint => _tip.position;
+
+
         private void Awake()
         {
             // 프리팹 원본 스케일. 손 본에 붙일 때 부모 스케일을 상쇄하는 기준값이 된다.
