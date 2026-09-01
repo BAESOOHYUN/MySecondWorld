@@ -23,6 +23,7 @@
   <Project Path="UnityEngine.TestRunner.csproj" />
   <Project Path="Unity.Burst.csproj" />
   <Project Path="Edgegap.csproj" />
+  <Project Path="com.IvanMurzak.Unity.MCP.Editor.csproj" />
   <Project Path="Paroxe.PDFRenderer.csproj" />
   <Project Path="Unity.XR.Interaction.Toolkit.csproj" />
   <Project Path="MessagePipe.csproj" />
@@ -34,6 +35,7 @@
   <Project Path="Unity.XR.Interaction.Toolkit.Editor.csproj" />
   <Project Path="Assembly-CSharp.csproj" />
   <Project Path="Unity.XR.CoreUtils.csproj" />
+  <Project Path="com.IvanMurzak.Unity.MCP.Runtime.csproj" />
   <Project Path="UniTask.csproj" />
   <Project Path="MySecondWorld.Combat.csproj" />
   <Project Path="Unity.Searcher.Editor.csproj" />
@@ -59,6 +61,7 @@
   <Project Path="MySecondWorld.Inventory.csproj" />
   <Project Path="Unity.Burst.Editor.csproj" />
   <Project Path="VContainer.Editor.csproj" />
+  <Project Path="Extensions.Unity.PlayerPrefsEx.csproj" />
   <Project Path="Unity.Rider.Editor.csproj" />
   <Project Path="Assembly-CSharp-Editor.csproj" />
   <Project Path="Unity.AI.Navigation.Updater.csproj" />
@@ -104,6 +107,7 @@
   <Project Path="com.whisper.unity.editor.csproj" />
   <Project Path="UniTask.TextMeshPro.csproj" />
   <Project Path="UnityCliConnector.Editor.csproj" />
+  <Project Path="com.IvanMurzak.Unity.MCP.DependencyResolver.csproj" />
   <Project Path="MySecondWorld.LifetimeScope.csproj" />
   <Project Path="MySecondWorld.Pool.csproj" />
   <Project Path="SimpleFileBrowser.Runtime.csproj" />
@@ -115,6 +119,7 @@
   <Project Path="ParrelSync.csproj" />
   <Project Path="Unity.Profiling.Core.csproj" />
   <Project Path="MySecondWorld.Interaction.csproj" />
+  <Project Path="com.IvanMurzak.Unity.MCP.TestFiles.csproj" />
   <Project Path="Unity.DedicatedServer.MultiplayerRoles.csproj" />
   <Project Path="CFXREditor.csproj" />
   <Project Path="Unity.DedicatedServer.MultiplayerRoles.Editor.csproj" />
