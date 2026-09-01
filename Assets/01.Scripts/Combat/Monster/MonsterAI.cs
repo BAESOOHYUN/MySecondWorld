@@ -61,6 +61,10 @@ namespace MySecondWorld.Combat.Monster
         // 콜라이더가 여러 개인 대상이 하나씩 나가도 완전히 나가기 전엔 후보에서 지워지지 않게 한다.
         private readonly Dictionary<Transform, int> _targetRefCounts = new Dictionary<Transform, int>();
 
+        // root별 사망 구독 해제용 델리게이트. Action으로 감싸는 이유는 람다가 캡처한
+        // Health 인스턴스와 핸들러를 -=로 정확히 짝지어 해제해야 이벤트 누수가 안 나기 때문.
+        private readonly Dictionary<Transform, Action> _targetDeathUnsubscribers = new Dictionary<Transform, Action>();
+
         // RangedMonsterHitbox가 조준점으로 읽어감. 타겟이 없으면 null.
         public Vector3? CurrentTargetPosition => _target != null ? (Vector3?)_target.position : null;
 
@@ -152,6 +156,23 @@ namespace MySecondWorld.Combat.Monster
             _targetRefCounts.TryGetValue(root, out int count);
             _targetRefCounts[root] = count + 1;
 
+            // 이 root가 처음 들어온 콜라이더라면 사망 구독을 새로 건다(콜라이더 여러 개가 겹쳐 들어와도 한 번만)
+            if (count == 0)
+            {
+                var health = other.GetComponentInParent<Health>();
+                if (health != null)
+                {
+                    void OnTargetRemoved() => HandleTargetDied(root);
+                    health.OnDied += OnTargetRemoved;
+                    health.OnBecameUntargetable += OnTargetRemoved;
+                    _targetDeathUnsubscribers[root] = () =>
+                    {
+                        health.OnDied -= OnTargetRemoved;
+                        health.OnBecameUntargetable -= OnTargetRemoved;
+                    };
+                }
+            }
+
             if (_target == null)
                 _target = root;
 
@@ -177,7 +198,10 @@ namespace MySecondWorld.Combat.Monster
             // 카운트가 0이 되면 → 완전히 나간 것으로 판단하고 Dictionary에서 제거
             count -= 1;
             if (count <= 0)
+            {
                 _targetRefCounts.Remove(root);
+                UnsubscribeDeath(root);
+            }
             else
                 _targetRefCounts[root] = count;
 
@@ -191,6 +215,52 @@ namespace MySecondWorld.Combat.Monster
             {
                 SafeFire(MonsterTrigger.PlayerLost);
                 _target = null;
+            }
+        }
+
+        #endregion
+
+        #region 표적추적
+
+        private Transform ChooseNearestTarget()
+        {
+            Transform nearest = null;
+            float nearestSqrDist = float.MaxValue;
+            foreach (var candidate in _targetRefCounts.Keys)
+            {
+                float sqrDist = (candidate.position - transform.position).sqrMagnitude;
+                if (sqrDist < nearestSqrDist)
+                {
+                    nearestSqrDist = sqrDist;
+                    nearest = candidate;
+                }
+            }
+            return nearest;
+        }
+
+
+        // 표적이 물리적으로 트리거를 나가지 않아도(죽은 채로 그 자리에 있어도) 후보에서 완전히 제거한다
+        private void HandleTargetDied(Transform root)
+        {
+            _targetRefCounts.Remove(root);
+            UnsubscribeDeath(root);
+
+            if (_target == root)
+                _target = ChooseNearestTarget();
+
+            if (_targetRefCounts.Count == 0)
+            {
+                SafeFire(MonsterTrigger.PlayerLost);
+                _target = null;
+            }
+        }
+
+        private void UnsubscribeDeath(Transform root)
+        {
+            if (_targetDeathUnsubscribers.TryGetValue(root, out var unsubscribe))
+            {
+                unsubscribe?.Invoke();
+                _targetDeathUnsubscribers.Remove(root);
             }
         }
 
@@ -247,6 +317,9 @@ namespace MySecondWorld.Combat.Monster
                 Debug.LogWarning($"[MonsterAI] Warp 실패 — spawnPoint가 NavMesh 밖에 있을 수 있음 on {gameObject.name}", this);
             this.transform.rotation = rotation;
             _target = null;
+            foreach (var unsubscribe in _targetDeathUnsubscribers.Values)
+                unsubscribe?.Invoke();
+            _targetDeathUnsubscribers.Clear();
             _targetRefCounts.Clear(); // 풀 재사용 시 이전 생애의 후보 잔재를 남기지 않는다
             _actionLocked = false;
             // 쿨다운/패턴 상태 완전 초기화
@@ -364,6 +437,7 @@ namespace MySecondWorld.Combat.Monster
             if (lookDirection.sqrMagnitude > 0.001f)
                 transform.rotation = Quaternion.LookRotation(lookDirection);
         }
+
         #endregion
 
         #region 사망 처리
@@ -461,22 +535,6 @@ namespace MySecondWorld.Combat.Monster
 
         // 그냥 발동만 시키고 잊어도 되는 경우(공격류)용 — FaceTarget()이 이미 isStopped를 관리해주기 때문에 별도 뒤처리 불필요.
         protected void LockUntilAnimationFinishes() => WaitForCurrentAnimationToFinish().Forget();
-
-        private Transform ChooseNearestTarget()
-        {
-            Transform nearest = null;
-            float nearestSqrDist = float.MaxValue;
-            foreach (var candidate in _targetRefCounts.Keys)
-            {
-                float sqrDist = (candidate.position - transform.position).sqrMagnitude;
-                if (sqrDist < nearestSqrDist)
-                {
-                    nearestSqrDist = sqrDist;
-                    nearest = candidate;
-                }
-            }
-            return nearest;
-        }
 
         #endregion
 

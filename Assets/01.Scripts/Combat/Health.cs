@@ -15,6 +15,13 @@ namespace MySecondWorld.Combat
         public event Action OnDied;
         public event Action<float> OnDamaged; // 데미지로 CurrentHP가 바뀔 때마다 새 CurrentHP 값을 실어 발행
 
+        // 죽지 않았어도 "지금은 공격 대상이 될 수 없음" 상태(소환해제 등)를 알리는 이벤트.
+        // MonsterAI가 OnDied와 동일하게 처리해 표적에서 즉시 뺀다.
+        public event Action OnBecameUntargetable;
+        private bool _isTargetable = true;
+        public bool IsTargetable => _isTargetable;
+
+
         private void OnEnable()
         {
             CurrentHP = _maxHP;
@@ -33,6 +40,14 @@ namespace MySecondWorld.Combat
             _maxHP = maxHP;
             CurrentHP = maxHP;
             _faction = faction;
+        }
+
+        public void SetTargetable(bool targetable)
+        {
+            if (_isTargetable == targetable) return;
+            _isTargetable = targetable;
+            if (!targetable)
+                OnBecameUntargetable?.Invoke();
         }
 
         public void TakeDamage(float damage)

@@ -160,6 +160,9 @@ namespace MySecondWorld.Combat.Companion
             foreach (var c in GetComponentsInChildren<Collider>(true))
                 c.enabled = newValue;
 
+            if (_health == null) _health = GetComponent<Health>();
+                _health.SetTargetable(newValue); // 서버/클라 상관없이 즉시 반영
+
             if (!isServer) return;
 
             var ai = GetComponent<CompanionAI>();
