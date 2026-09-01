@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AI;
@@ -55,6 +56,10 @@ namespace MySecondWorld.Combat.Monster
         private readonly AIContext _aiContext = new AIContext();
         private Transform _target;
         private bool _actionLocked;
+
+        // 진입한 유효 대상의 루트 Transform → 콜라이더 개수 참조카운트.
+        // 콜라이더가 여러 개인 대상이 하나씩 나가도 완전히 나가기 전엔 후보에서 지워지지 않게 한다.
+        private readonly Dictionary<Transform, int> _targetRefCounts = new Dictionary<Transform, int>();
 
         // RangedMonsterHitbox가 조준점으로 읽어감. 타겟이 없으면 null.
         public Vector3? CurrentTargetPosition => _target != null ? (Vector3?)_target.position : null;
@@ -134,20 +139,59 @@ namespace MySecondWorld.Combat.Monster
 
         private void OnTriggerEnter(Collider other)
         {
-            if (!other.CompareTag("Player")) return;
-            _target = other.transform;
+            // 태그가 아니라 Faction으로 판별 — 플레이어든 컴패니언이든 "플레이어 편"이면 전부 유효 대상
+            var damageable = other.GetComponentInParent<IDamageable>();
+            if (damageable == null || damageable.Faction != CombatFaction.Player) return;
 
-            bool wasIdle = _stateMachine.State == MonsterState.Idle;
-            SafeFire(MonsterTrigger.PlayerDetected);
-            if (wasIdle)
-                OnPlayerFirstDetected();
+            bool wasEmpty = _targetRefCounts.Count == 0;
+            var root = other.transform.root;
+
+            // Key: 대상의 루트 Transform(즉, 플레이어/컴패니언 전체 오브젝트)
+            // Value: 그 루트에 속한 콜라이더가 현재 Trigger 안에 몇 개 들어와 있는지 카운트
+            // 같은 플레이어의 여러 콜라이더가 들어오면 카운트가 계속 올라감
+            _targetRefCounts.TryGetValue(root, out int count);
+            _targetRefCounts[root] = count + 1;
+
+            if (_target == null)
+                _target = root;
+
+            if (wasEmpty)
+            {
+                bool wasIdle = _stateMachine.State == MonsterState.Idle;
+                SafeFire(MonsterTrigger.PlayerDetected);
+                if (wasIdle)
+                    OnPlayerFirstDetected();
+            }
         }
 
         private void OnTriggerExit(Collider other)
         {
-            if (!other.CompareTag("Player")) return;
-            SafeFire(MonsterTrigger.PlayerLost);
-            _target = null;
+            var damageable = other.GetComponentInParent<IDamageable>();
+            if (damageable == null || damageable.Faction != CombatFaction.Player) return;
+
+            var root = other.transform.root;
+            if (!_targetRefCounts.TryGetValue(root, out int count)) return;
+
+            // 플레이어 편 콜라이더가 나가면:
+            // 해당 루트 Transform의 카운트를 -1
+            // 카운트가 0이 되면 → 완전히 나간 것으로 판단하고 Dictionary에서 제거
+            count -= 1;
+            if (count <= 0)
+                _targetRefCounts.Remove(root);
+            else
+                _targetRefCounts[root] = count;
+
+            // 현재 타겟(_target)이 그 루트였고 _targetRefCounts에서 콜라이더가 다 빠져나갔다면,
+            // 다른 후보를 다시 선택(ChooseNearestTarget)
+            if (!_targetRefCounts.ContainsKey(root) && _target == root)
+                _target = ChooseNearestTarget();
+
+            // 전원 나갔을 때만 해제 — 기존엔 "누구 하나 나가면 무조건 해제"였다
+            if (_targetRefCounts.Count == 0)
+            {
+                SafeFire(MonsterTrigger.PlayerLost);
+                _target = null;
+            }
         }
 
         #endregion
@@ -203,6 +247,7 @@ namespace MySecondWorld.Combat.Monster
                 Debug.LogWarning($"[MonsterAI] Warp 실패 — spawnPoint가 NavMesh 밖에 있을 수 있음 on {gameObject.name}", this);
             this.transform.rotation = rotation;
             _target = null;
+            _targetRefCounts.Clear(); // 풀 재사용 시 이전 생애의 후보 잔재를 남기지 않는다
             _actionLocked = false;
             // 쿨다운/패턴 상태 완전 초기화
             // (BossAI는 이 메서드를 오버라이드해 Phase 0으로 돌아감)
@@ -416,6 +461,23 @@ namespace MySecondWorld.Combat.Monster
 
         // 그냥 발동만 시키고 잊어도 되는 경우(공격류)용 — FaceTarget()이 이미 isStopped를 관리해주기 때문에 별도 뒤처리 불필요.
         protected void LockUntilAnimationFinishes() => WaitForCurrentAnimationToFinish().Forget();
+
+        private Transform ChooseNearestTarget()
+        {
+            Transform nearest = null;
+            float nearestSqrDist = float.MaxValue;
+            foreach (var candidate in _targetRefCounts.Keys)
+            {
+                float sqrDist = (candidate.position - transform.position).sqrMagnitude;
+                if (sqrDist < nearestSqrDist)
+                {
+                    nearestSqrDist = sqrDist;
+                    nearest = candidate;
+                }
+            }
+            return nearest;
+        }
+
         #endregion
 
         #region 하위 클래스(BossAI 등) 확장 지점
