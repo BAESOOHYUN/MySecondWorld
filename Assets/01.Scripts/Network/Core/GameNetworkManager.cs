@@ -24,7 +24,8 @@ namespace MySecondWorld.Network
     // Mirror 진입점. 콜백 수신 후 각 서비스에 위임한다.
     public class GameNetworkManager : NetworkManager, IGameNetworkManager
     {
-        #region 인스펙터 — 존/포탈
+        #region 인스펙터 설정
+        [Header("존 / 포탈")]
         [Scene] public string defaultSubScene;           // FieldScene (마을) — 기본 스폰 존
         public ZoneDefinitionSO[] zones;                 // 모든 존 정의 (SO 배열). defaultSubScene도 포함.
         public ZonePortalSO[] portals;                   // 월드 간 전환 지점
@@ -33,19 +34,15 @@ namespace MySecondWorld.Network
 
         [Tooltip("이 Y 아래로 떨어지면 존 판정과 무관하게 마지막 안전 위치로 구조한다")]
         public float fallRescueY = -50f;
-        #endregion
 
-        #region 인스펙터 — 포탈 전환 페이드
         [Header("포탈 전환 페이드")]
         [SerializeField] private ScreenFadeUI _screenFadeUI;
         public ScreenFadeUI ScreenFadeUI => _screenFadeUI;
-        public float portalFadeDuration = 0.3f;       // FadeOut/FadeIn 각각의 지속시간
-        public float portalAckTimeoutSeconds = 15f;   // 로드완료 ack 대기 타임아웃(소프트락 방지 안전장치)
+        public float portalFadeDuration = 0.3f;          // FadeOut/FadeIn 각각의 지속시간
+        public float portalAckTimeoutSeconds = 15f;      // 로드완료 ack 대기 타임아웃(소프트락 방지 안전장치)
         public float portalReentryCooldownSeconds = 2f;  // 도착 직후 반대쪽 트리거 무시 시간(즉시 왕복 방지)
-        public float portalCheckInterval = 0.1f;   // 포탈 감지 폴링 주기(zoneCheckInterval보다 훨씬 짧게 — 빠르게 지나가도 안 놓치도록)
-        #endregion
+        public float portalCheckInterval = 0.1f;         // 포탈 감지 폴링 주기(zoneCheckInterval보다 훨씬 짧게 — 빠르게 지나가도 안 놓치도록)
 
-        #region 인스펙터 — 신규 플레이어 시작 지급
         [Header("신규 플레이어 시작 지급")]
         [SerializeField] private RootItem _startingGoldItem;
         [SerializeField] private int _startingGoldAmount = 100;
@@ -57,23 +54,19 @@ namespace MySecondWorld.Network
         [SerializeField] private RootItem _testNecklaceItem;
         [SerializeField] private RootItem _testAxeItem;
         [SerializeField] private RootItem _testPolearmItem;
-        #endregion
 
-        #region 인스펙터 — 동행 NPC
         [Header("동행 NPC")]
         [SerializeField] private CompanionAdminService.CompanionEntry[] _companionRegistry;
         #endregion
 
-        #region 런타임 상태
+        #region 런타임 상태 및 서비스 프로퍼티
         public bool ServerReady { get; private set; }    // 서버 씬 프리로드 완료 여부
         public CancellationTokenSource Cts { get; private set; }
 
         private readonly Dictionary<string, AsyncOperationHandle<SceneInstance>> _serverSceneHandles = new();
         private readonly HashSet<int> _bundleReadyConnIds = new(); // 번들 준비 완료된 connectionId 목록
         public bool IsBundleReady(int connId) => _bundleReadyConnIds.Contains(connId);
-        #endregion
 
-        #region 서비스
         private DungeonRoomRegistry _roomRegistry;
         private ServerSessionService _sessionService;
         private CompanionAdminService _companionService;
@@ -88,15 +81,24 @@ namespace MySecondWorld.Network
 
         public CompanionAdminService CompanionService => _companionService;
         public ServerZoneService ZoneService => _zoneService;
+
+        public event System.Action OnClientStopped;
+
+        public string NetworkAddress
+        {
+            get => networkAddress;
+            set => networkAddress = value;
+        }
         #endregion
 
+        #region 의존성 주입 (VContainer)
         [Inject]
         private void Construct(
             AddressableLabelLoader zoneLoader,
             SaveManager saveManager,
-            IUIManager uiManager,
             ISubscriber<AddressablesProgressEvent> progressSub,
-            IPublisher<AddressablesProgressEvent> progressPub
+            IPublisher<AddressablesProgressEvent> progressPub,
+            IUIManager uiManager = null
             )
         {
             _zoneLoader = zoneLoader;
@@ -105,21 +107,34 @@ namespace MySecondWorld.Network
             _progressPub = progressPub;
             _uiManager = uiManager;
         }
+        #endregion
 
-#if UNITY_EDITOR
+        #region 유니티 생명주기
         // 클라이언트만 도는 케이스에서도 ExitingPlayMode 정리가 보장되도록 Awake에서 등록.
         public override void Awake()
         {
             base.Awake();
+#if UNITY_EDITOR
             EditorApplication.playModeStateChanged += OnEditorPlayModeStateChanged;
+#endif
+        }
+
+        public override void Start()
+        {
+            base.Start();
+#if UNITY_SERVER
+            Debug.Log("[Server] 헤드리스 모드 감지 (UNITY_SERVER) -> StartServer() 자동 실행");
+            StartServer();
+#endif
         }
 
         public override void OnDestroy()
         {
+#if UNITY_EDITOR
             EditorApplication.playModeStateChanged -= OnEditorPlayModeStateChanged;
+#endif
             base.OnDestroy();
         }
-#endif
 
 #if UNITY_EDITOR
         private void OnEditorPlayModeStateChanged(PlayModeStateChange state)
@@ -148,22 +163,9 @@ namespace MySecondWorld.Network
             }
         }
 #endif
-
-        #region UI단
-        public void ToggleHost(bool isOn)
-        {
-            if (isOn) StartHost();
-            else StopHost();
-        }
-
-        public void ToggleClient(bool isOn)
-        {
-            if (isOn) StartClient();
-            else StopClient();
-        }
         #endregion
 
-        #region 서버 측
+        #region 서버 측 로직
         // [S1] 서버 시작: 핸들러 등록 + 코루틴 시작
         public override void OnStartServer()
         {
@@ -277,10 +279,22 @@ namespace MySecondWorld.Network
             _sessionService?.RemovePlayer(conn);
             base.OnServerDisconnect(conn);
         }
+
+        private void OnBundleReadyMessage(NetworkConnectionToClient conn, BundleReadyMessage msg)
+        {
+            _bundleReadyConnIds.Add(conn.connectionId);
+        }
+
+        // 씬 접근용 메서드
+        public Scene GetServerScene(string sceneName) =>
+            _serverSceneHandles.TryGetValue(sceneName, out var handle)
+            ? handle.Result.Scene : SceneManager.GetSceneByPath(sceneName); //폴백
+
         #endregion
 
-        #region 클라이언트 측
 
+        #region 클라이언트 및 UI 제어
+        
         public event System.Action OnClientStopped;
 
         // [C1] 클라이언트 시작: 서비스 생성 + 핸들러 등록
@@ -316,22 +330,39 @@ namespace MySecondWorld.Network
             Debug.LogWarning("[Client] OnClientDisconnect — 연결 끊김 또는 타임아웃");
             OnClientStopped?.Invoke();
         }
-        #endregion
 
-        // IsBundleReady(int connId) => _bundleReadyConnIds.Contains(connId);
-        // ServerSessionService.PrepareAndSpawn의 WaitUntil이 IsBundleReady 감지 → 씬 로드 지시로 진행
-        private void OnBundleReadyMessage(NetworkConnectionToClient conn, BundleReadyMessage msg)
+        public void SetServerAddress(string address)
         {
-            _bundleReadyConnIds.Add(conn.connectionId);
+            if (!string.IsNullOrEmpty(address))
+            {
+                networkAddress = address.Trim();
+                Debug.Log($"[Network] Server address updated to '{networkAddress}'");
+            }
         }
 
-        // 씬 접근용 메서드
-        public Scene GetServerScene(string sceneName) =>
-            _serverSceneHandles.TryGetValue(sceneName, out var handle)
-            ? handle.Result.Scene : SceneManager.GetSceneByPath(sceneName); //폴백
+        public void ToggleHost(bool isOn)
+        {
+#if UNITY_SERVER
+            // 서버 빌드에서는 StartServer()가 자동 구동되므로 Host 토글 무시
+            return;
+#else
+            if (isOn) StartHost();
+            else StopHost();
+#endif
+        }
 
-        #region 디버그/테스트용 — 실제 인게임 진입점 생기면 순차적으로 제거 대상
+        public void ToggleClient(bool isOn)
+        {
+#if UNITY_SERVER
+            return;
+#else
+            if (isOn) StartClient();
+            else StopClient();
+#endif
+        }
+        #endregion
 
+        #region 디버그 / 테스트용
         // 테스트용 — 기존 계정(isNewPlayer=false)에도 강제로 시작 골드를 지급한다.
         // 누를 때마다 누적 지급되므로 디버그 전용.
         public void DebugGrantStartingGold(NetworkConnectionToClient conn)
@@ -343,7 +374,6 @@ namespace MySecondWorld.Network
         {
             _sessionService.GrantWeaponTestKit(conn);
         }
-
         #endregion
     }
 }

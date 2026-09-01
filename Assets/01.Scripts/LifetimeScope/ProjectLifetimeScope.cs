@@ -29,26 +29,20 @@ public class ProjectLifetimeScope : LifetimeScope
         ServerModeFlag.Set(_useServerMode);
 
         var options = builder.RegisterMessagePipe(o => o.InstanceLifetime = InstanceLifetime.Singleton);
-        builder.RegisterMessageBroker<AuthStateChangedEvent>(options);
-        builder.RegisterMessageBroker<CharacterAppearanceSavedEvent>(options);
-        builder.RegisterMessageBroker<CharacterAppearanceSyncRequestedEvent>(options);
-        builder.RegisterMessageBroker<RequestOpenCustomizeUIEvent>(options);
-
-        builder.Register<SaveManager>(Lifetime.Singleton);
-        builder.Register<CharacterSaveService>(Lifetime.Singleton);
-        builder.Register<LocalPlayerInventoryProvider>(Lifetime.Singleton);
-        // Web 리소스 시스템
+      
+#if !UNITY_SERVER
+        // Web 리소스 시스템 (클라이언트 전용)
         builder.Register<WebResourceDownloader>(Lifetime.Singleton);
         builder.Register<TextureMemoryCache>(Lifetime.Singleton);
         builder.Register<AudioClipMemoryCache>(Lifetime.Singleton);
         builder.Register<DiskCacheService>(Lifetime.Singleton);
         builder.Register<IWebResourceService, WebResourceService>(Lifetime.Singleton);
 
-        builder.RegisterComponent(_uiManager).As<UIManager>().As<IUIManager>();
+        if (_uiManager != null)
+            builder.RegisterComponent(_uiManager).As<UIManager>().As<IUIManager>();
+
         builder.RegisterComponentInHierarchy<TouchEventListener>();
         builder.RegisterComponentInHierarchy<TapTargetResolver>();
-        builder.RegisterComponentInHierarchy<GameNetworkManager>();
-        builder.RegisterComponentInHierarchy<PlayerAuthenticator>();
         builder.RegisterComponentInHierarchy<LoginUI>();
         builder.RegisterComponentInHierarchy<MenuUI>();
         builder.RegisterComponentInHierarchy<ChatUI>();
@@ -58,15 +52,28 @@ public class ProjectLifetimeScope : LifetimeScope
         builder.RegisterComponentInHierarchy<ShopUI>().As<IShopUI>();
         builder.RegisterComponentInHierarchy<NPCMenuUI>().As<INPCMenuUI>();
 
-        builder.RegisterInstance(_avatarPartKeyTable);
-        builder.RegisterInstance(_defaultAppearanceSO);
-
         // 앱 전체 수명 동안 필요 — 형제 스코프(AIModelDownload, NPC) 모두 접근 가능
         if (_useServerMode)
             builder.Register<IDeviceCapability, NetworkDeviceCapability>(Lifetime.Singleton);
         //                "IDeviceCapability 요청이 오면 NetworkDeviceCapability 인스턴스 줘" -> NPCLifetimeScope
         else
+
             builder.Register<IDeviceCapability, LocalDeviceCapability>(Lifetime.Singleton);
+#endif
+
+        builder.RegisterMessageBroker<AuthStateChangedEvent>(options);
+        builder.RegisterMessageBroker<CharacterAppearanceSavedEvent>(options);
+        builder.RegisterMessageBroker<CharacterAppearanceSyncRequestedEvent>(options);
+        builder.RegisterMessageBroker<RequestOpenCustomizeUIEvent>(options);
+
+        builder.Register<SaveManager>(Lifetime.Singleton);
+        builder.Register<CharacterSaveService>(Lifetime.Singleton);
+        builder.Register<LocalPlayerInventoryProvider>(Lifetime.Singleton);
+
+        builder.RegisterComponentInHierarchy<GameNetworkManager>();
+        builder.RegisterComponentInHierarchy<PlayerAuthenticator>();
+        builder.RegisterInstance(_avatarPartKeyTable);
+        builder.RegisterInstance(_defaultAppearanceSO);
 
         builder.Register<AddressableLabelLoader>(Lifetime.Singleton);
         builder.RegisterEntryPoint<AddressablesService>(Lifetime.Singleton).AsSelf();

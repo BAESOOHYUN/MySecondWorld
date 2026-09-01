@@ -1,72 +1,84 @@
+using System;
+using System.IO;
 using UnityEngine;
 
 namespace MySecondWorld.Save
 {
     /// <summary>
-    /// PlayerPrefs 기반 세이브 서비스.
-    /// VContainer에 Singleton으로 등록됨. 직접 new 하지 말 것.
-    /// 향후 서버 DB 교체 시 이 클래스 내부만 교체한다.
+    /// 서버 전용 JSON 세이브 관리자 (Singleton).
+    /// 유저별 데이터(위치, 씬, 컴패니언 등)를 saves/{playerId}.json 파일로 안전하게 보관합니다.
     /// </summary>
     public class SaveManager
     {
-        private const string KeyScenes = "save_scenes_";
-        private const string KeyPosX = "save_pos_x_";
-        private const string KeyPosY = "save_pos_y_";
-        private const string KeyPosZ = "save_pos_z_";
-        private const string KeyCompanions = "save_companions_";
-        private const string KeyCompanionAlive = "save_companion_alive_";
-        private const string KeyCompanionPresent = "save_companion_present_";
-        private const char SceneSep = '|';
+        private readonly string _saveDirectory;
 
-        /// <param name="playerId">플레이어 식별자 (netId 등). 키 충돌 방지용.</param>
+        public SaveManager()
+        {
+            // 에디터/서버 공통: 데이터 저장 경로 아래 saves 폴더
+            string basePath = !string.IsNullOrEmpty(Application.persistentDataPath)
+                ? Application.persistentDataPath
+                : AppDomain.CurrentDomain.BaseDirectory;
+
+            _saveDirectory = Path.Combine(basePath, "saves");
+
+            if (!Directory.Exists(_saveDirectory))
+                Directory.CreateDirectory(_saveDirectory);
+        }
+
+        private string GetFilePath(string playerId)
+        {
+            string sanitized = string.Join("_", playerId.Split(Path.GetInvalidFileNameChars()));
+            return Path.Combine(_saveDirectory, $"{sanitized}.json");
+        }
+
         public void Save(string playerId, SaveData data)
         {
-            PlayerPrefs.SetString(KeyScenes + playerId, string.Join(SceneSep, data.lastSceneNames ?? System.Array.Empty<string>()));
-            PlayerPrefs.SetFloat(KeyPosX + playerId, data.lastPosition.x);
-            PlayerPrefs.SetFloat(KeyPosY + playerId, data.lastPosition.y);
-            PlayerPrefs.SetFloat(KeyPosZ + playerId, data.lastPosition.z);
-            PlayerPrefs.SetString(KeyCompanions + playerId, string.Join(SceneSep, data.recruitedCompanionIds ?? System.Array.Empty<string>()));
-            PlayerPrefs.SetInt(KeyCompanionAlive + playerId, data.companionAlive ? 1 : 0);
-            PlayerPrefs.SetInt(KeyCompanionPresent + playerId, data.companionPresent ? 1 : 0);
-            PlayerPrefs.Save();
+            try
+            {
+                string path = GetFilePath(playerId);
+                string json = JsonUtility.ToJson(data, true); // 보기 편하게 들여쓰기 포맷
+                File.WriteAllText(path, json);
+                Debug.Log($"[Save] 저장 완료 ({playerId}) -> {path}");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[Save] 저장 실패 ({playerId}): {ex.Message}");
+            }
         }
 
         public SaveData? Load(string playerId)
         {
-
-            if (!PlayerPrefs.HasKey(KeyScenes + playerId))
-                return null;
-
-            return new SaveData
+            try
             {
-                lastSceneNames = PlayerPrefs.GetString(KeyScenes + playerId)
-                    .Split(SceneSep, System.StringSplitOptions.RemoveEmptyEntries),
-                lastPosition = new Vector3(
-                    PlayerPrefs.GetFloat(KeyPosX + playerId),
-                    PlayerPrefs.GetFloat(KeyPosY + playerId),
-                    PlayerPrefs.GetFloat(KeyPosZ + playerId)),
-                recruitedCompanionIds = PlayerPrefs.GetString(KeyCompanions + playerId)
-                    .Split(SceneSep, System.StringSplitOptions.RemoveEmptyEntries),
-                // 예전 세이브엔 이 키가 없다 — 없으면 true(기존 동작: 항상 살아서 재소환)로 간주
-                companionAlive = !PlayerPrefs.HasKey(KeyCompanionAlive + playerId) || PlayerPrefs.GetInt(KeyCompanionAlive + playerId) == 1,
-                companionPresent = !PlayerPrefs.HasKey(KeyCompanionPresent + playerId) || PlayerPrefs.GetInt(KeyCompanionPresent + playerId) == 1,
-            };
+                string path = GetFilePath(playerId);
+                if (!File.Exists(path))
+                    return null;
+
+                string json = File.ReadAllText(path);
+                if (string.IsNullOrEmpty(json))
+                    return null;
+
+                return JsonUtility.FromJson<SaveData>(json);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[Save] 로드 실패 ({playerId}): {ex.Message}");
+                return null;
+            }
         }
 
-        // 현재 미사용.
-        // -회원 탈퇴
-        // -새 게임 시작(세이브 초기화)
-        // -테스트/디버그용 리셋
         public void Delete(string playerId)
         {
-            PlayerPrefs.DeleteKey(KeyScenes + playerId);
-            PlayerPrefs.DeleteKey(KeyPosX + playerId);
-            PlayerPrefs.DeleteKey(KeyPosY + playerId);
-            PlayerPrefs.DeleteKey(KeyPosZ + playerId);
-            PlayerPrefs.DeleteKey(KeyCompanions + playerId);
-            PlayerPrefs.DeleteKey(KeyCompanionAlive + playerId);
-            PlayerPrefs.DeleteKey(KeyCompanionPresent + playerId);
-            PlayerPrefs.Save();
+            try
+            {
+                string path = GetFilePath(playerId);
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[Save] 삭제 실패 ({playerId}): {ex.Message}");
+            }
         }
     }
 }

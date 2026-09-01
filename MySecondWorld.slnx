@@ -28,9 +28,9 @@
   <Project Path="Unity.XR.Interaction.Toolkit.csproj" />
   <Project Path="MessagePipe.csproj" />
   <Project Path="VContainer.csproj" />
-  <Project Path="Unity.VisualStudio.Editor.csproj" />
   <Project Path="Unity.InputSystem.csproj" />
   <Project Path="Mirror.Components.csproj" />
+  <Project Path="Unity.VisualStudio.Editor.csproj" />
   <Project Path="PPv2URPConverters.csproj" />
   <Project Path="Unity.XR.Interaction.Toolkit.Editor.csproj" />
   <Project Path="Assembly-CSharp.csproj" />
