@@ -32,6 +32,11 @@ namespace MySecondWorld.Combat.Player
         [SerializeField] private LayerMask _blockLayerMask; // 벽·지형 — 맞으면 데미지 없이 소멸
         [SerializeField] private float _shootRange = 15f;
         [SerializeField] private float _splashRadius = 0f;
+
+        [Tooltip("게이지가 이 값 이상일 때만 풀차징 스플래시가 터진다. 0~1.")]
+        [SerializeField, Range(0f, 1f)] private float _splashChargeThreshold = 0.9f;
+        public float SplashChargeThreshold => _splashChargeThreshold;
+
         [SerializeField] private float _aimHeightOffset = 1.4f;
 
         [Header("원거리 조준 게이지 (홀드 충전 — 활 전용)")]

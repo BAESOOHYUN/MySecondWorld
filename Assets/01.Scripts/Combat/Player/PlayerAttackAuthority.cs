@@ -181,6 +181,9 @@ namespace MySecondWorld.Combat.Player
             float turnRate = homingStrength * _stats.HomingMaxTurnRate;
             float damageMultiplier = Mathf.Lerp(1f, _stats.ChargeDamageMultiplierMax, homingStrength);
 
+            // 완충 임계치를 넘겼을 때만 "팡" — 그 아래는 스플래시 없는 단일 타겟 화살 그대로.
+            float splashRadius = homingStrength >= _stats.SplashChargeThreshold ? _stats.SplashRadius : 0f;
+
             Transform homingTarget = null;
             if (_aimTargetNetId != 0 && NetworkServer.spawned.TryGetValue(_aimTargetNetId, out var targetIdentity))
                 homingTarget = targetIdentity.transform;
@@ -201,7 +204,7 @@ namespace MySecondWorld.Combat.Player
                 MaxLifetime = _stats.ShootRange / Mathf.Max(_stats.ProjectileSpeed, 0.01f) + 0.3f,
                 HitMask = MonsterLayerMask,
                 BlockMask = _stats.BlockLayerMask,
-                SplashRadius = _stats.SplashRadius,
+                SplashRadius = splashRadius,   // 완충 아니면 0 → 단일 타겟 폴백 그대로 유지
                 HomingTarget = homingTarget,
                 HomingTurnRateDegPerSec = turnRate,
                 OnResolved = point =>
