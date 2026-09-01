@@ -294,8 +294,6 @@ namespace MySecondWorld.Network
 
 
         #region 클라이언트 및 UI 제어
-        
-        public event System.Action OnClientStopped;
 
         // [C1] 클라이언트 시작: 서비스 생성 + 핸들러 등록
         // 서버가 보내는 메시지 → NetworkClient.RegisterHandler (클라이언트가 받으니까)
