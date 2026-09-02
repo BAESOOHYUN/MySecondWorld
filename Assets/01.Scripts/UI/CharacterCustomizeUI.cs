@@ -97,7 +97,6 @@ namespace MySecondWorld.UI
         private readonly Dictionary<ColorTarget, ColorChannelRow> _colorRows = new();
         private readonly HashSet<PartType> _pendingParts = new();
         private bool _isOpeningPicker;
-        private bool _openedDuringStartup;
 
         [Inject]
         public void Construct(AvatarPartKeyTableSO keyTable,
@@ -114,24 +113,30 @@ namespace MySecondWorld.UI
             _saveRequestPub = saveRequestPub;
             openUISub.Subscribe(_ => Open()).AddTo(destroyCancellationToken);
 
-            // 프리뷰 커스터마이저에 수동으로 의존성 전달
-            _previewCustomizer.Construct(keyTable, defaultAppearanceSO);
+            _previewCustomizer ??= GetComponentInChildren<LocalCharacterCustomizer>(true) ?? FindAnyObjectByType<LocalCharacterCustomizer>();
+            _previewCustomizer?.Construct(keyTable, defaultAppearanceSO);
+        }
+
+        private bool _isInitialized;
+
+        private void Awake()
+        {
+#if !UNITY_SERVER
+            enabled = true;
+            EnsureInitialized();
+#endif
         }
 
         private void Start()
         {
 #if UNITY_SERVER
-            // 헤드리스 서버에서는 UI 초기화 및 텍스처 로드를 원천 차단
             gameObject.SetActive(false);
             enabled = false;
             return;
 #else
-            _lastPartsTab = _partsTabEntries.Length > 0 ? _partsTabEntries[0].Part : default;
-            _lastAccessoryTab = _accessoryTabEntries.Length > 0 ? _accessoryTabEntries[0].Part : default;
-            RegisterButtons();
-            InitColorRows();
-            _colorPicker.gameObject.SetActive(false);
-            StartupAsync().Forget();
+            EnsureInitialized();
+            // 시작 시에는 캔버스를 닫아두고, 플레이어 스폰 시 Open() 호출로 단일 진입 로드
+            gameObject.SetActive(false);
 #endif
         }
 
@@ -141,24 +146,48 @@ namespace MySecondWorld.UI
                 Addressables.Release(_atlasHandle);
         }
 
-        private async UniTaskVoid StartupAsync()
+        private async UniTask<SpriteAtlas> EnsureAtlasLoadedAsync()
         {
-            _atlasHandle = Addressables.LoadAssetAsync<SpriteAtlas>(_keyTable.ThumbnailAtlas);
-            _thumbnailAtlas = await _atlasHandle.ToUniTask();
-            await ReloadFromSave();
-            if (!_openedDuringStartup)
-                gameObject.SetActive(false);
+            if (_thumbnailAtlas != null) return _thumbnailAtlas;
+            try
+            {
+                if (!_atlasHandle.IsValid())
+                    _atlasHandle = Addressables.LoadAssetAsync<SpriteAtlas>(_keyTable.ThumbnailAtlas);
+                _thumbnailAtlas = await _atlasHandle.ToUniTask();
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[CustomizeUI] SpriteAtlas 로드 실패: {ex.Message}");
+            }
+            return _thumbnailAtlas;
         }
 
-        public void OpenForFirstLaunch() => gameObject.SetActive(true);
+        private void EnsureInitialized()
+        {
+            if (_isInitialized) return;
+            _isInitialized = true;
+
+            _lastPartsTab = _partsTabEntries.Length > 0 ? _partsTabEntries[0].Part : default;
+            _lastAccessoryTab = _accessoryTabEntries.Length > 0 ? _accessoryTabEntries[0].Part : default;
+            RegisterButtons();
+            InitColorRows();
+            if (_colorPicker != null)
+                _colorPicker.gameObject.SetActive(false);
+        }
+
+        public void OpenForFirstLaunch()
+        {
+            Open();
+        }
 
         // 패널을 열 때마다 호출 — 저장된 외형으로 다시 초기화한다.
         // (저장 안 하고 닫았다가 다시 열면 편집 중이던 미저장 상태가 그대로 남아있던 버그 수정)
+        // 아틀라스 로드 + 슬롯 갱신이 안전하게 단일 실행됨
         public void Open()
         {
-            _openedDuringStartup = true;
+            EnsureInitialized();
             gameObject.SetActive(true);
-            ReloadFromSave().Forget();
+            ReloadFromSave().Forget(); 
         }
 
 
@@ -173,50 +202,65 @@ namespace MySecondWorld.UI
         // 버튼 등록
         private void RegisterButtons()
         {
-            _maleButton.onClick.AddListener(() => SetGender(Gender.Male));
-            _femaleButton.onClick.AddListener(() => SetGender(Gender.Female));
+            if (_maleButton != null)
+                _maleButton.onClick.AddListener(() => SetGender(Gender.Male));
+            if (_femaleButton != null)
+                _femaleButton.onClick.AddListener(() => SetGender(Gender.Female));
 
-            _partsTopTab.onValueChanged.AddListener(isOn => { if (isOn) ShowTopTab(0); });
-            _accessoryTopTab.onValueChanged.AddListener(isOn => { if (isOn) ShowTopTab(1); });
-            _colorTopTab.onValueChanged.AddListener(isOn => { if (isOn) ShowTopTab(2); });
+            if (_partsTopTab != null)
+                _partsTopTab.onValueChanged.AddListener(isOn => { if (isOn) ShowTopTab(0); });
+            if (_accessoryTopTab != null)
+                _accessoryTopTab.onValueChanged.AddListener(isOn => { if (isOn) ShowTopTab(1); });
+            if (_colorTopTab != null)
+                _colorTopTab.onValueChanged.AddListener(isOn => { if (isOn) ShowTopTab(2); });
 
-            foreach (var entry in _partsTabEntries)
+            if (_partsTabEntries != null)
             {
-                var part = entry.Part;
-                entry.Toggle?.onValueChanged.AddListener(isOn =>
+                foreach (var entry in _partsTabEntries)
                 {
-                    if (isOn) 
-                    { 
-                        _lastPartsTab = part; 
-                        SwitchTab(part); 
-                    }
-                });
-            }
-            foreach (var entry in _accessoryTabEntries)
-            {
-                var part = entry.Part;
-                entry.Toggle?.onValueChanged.AddListener(isOn =>
-                {
-                    if (isOn) 
-                    { 
-                        _lastAccessoryTab = part;
-                        SwitchTab(part); 
-                    }
-                });
+                    var part = entry.Part;
+                    entry.Toggle?.onValueChanged.AddListener(isOn =>
+                    {
+                        if (isOn) 
+                        { 
+                            _lastPartsTab = part; 
+                            SwitchTab(part); 
+                        }
+                    });
+                }
             }
 
-            _colorPicker.onColorChange.AddListener(color =>
+            if (_accessoryTabEntries != null)
             {
-                if (_isOpeningPicker) return;
-                _previewCustomizer.SetColor(_activeColorTarget, color);
-                if (_colorRows.TryGetValue(_activeColorTarget, out var row))
-                    row.UpdatePreview(color);
-            });
+                foreach (var entry in _accessoryTabEntries)
+                {
+                    var part = entry.Part;
+                    entry.Toggle?.onValueChanged.AddListener(isOn =>
+                    {
+                        if (isOn) 
+                        { 
+                            _lastAccessoryTab = part;
+                            SwitchTab(part); 
+                        }
+                    });
+                }
+            }
 
-            _saveButton.onClick.AddListener(OnSaveClicked);
-            _randomButton.onClick.AddListener(() => ApplyRandom().Forget());
-            _resetButton.onClick.AddListener(() => ResetToDefault().Forget());
-            _exitButton.onClick.AddListener(Close);
+            if (_colorPicker != null)
+            {
+                _colorPicker.onColorChange.AddListener(color =>
+                {
+                    if (_isOpeningPicker) return;
+                    _previewCustomizer?.SetColor(_activeColorTarget, color);
+                    if (_colorRows.TryGetValue(_activeColorTarget, out var row))
+                        row.UpdatePreview(color);
+                });
+            }
+
+            if (_saveButton != null) _saveButton.onClick.AddListener(OnSaveClicked);
+            if (_randomButton != null) _randomButton.onClick.AddListener(() => ApplyRandom().Forget());
+            if (_resetButton != null) _resetButton.onClick.AddListener(() => ResetToDefault().Forget());
+            if (_exitButton != null) _exitButton.onClick.AddListener(Close);
         }
 
         // 탭 전환
@@ -551,7 +595,7 @@ namespace MySecondWorld.UI
         {
             foreach (PartType part in System.Enum.GetValues(typeof(PartType)))
             {
-                if (data[part] <= 0) continue; // 맨몸(0)/없음(-1)은 항상 무료라 검증 불필요
+                if (data[part] <= 0) continue;  // 0번(맨몸) 및 -1(없음)만 무료 통과
                 if (IsPartOwned(part, data.Gender, data[part])) continue; // 이미 정당하게 소유한 아이템이면 검증 불필요.
 
                 int fallbackIndex = fallback.HasValue ? fallback.Value[part] : 0; // fallback 값이 있으면 fallback으로 되돌림. 없으면 0
@@ -578,6 +622,7 @@ namespace MySecondWorld.UI
         // 없으면 자물쇠 아이콘(SetLocked)을 씌움. 클라이언트 쪽 "미리 보여주되 잠금 표시"용.
         private bool IsPartOwnedSelf(PartType part, Gender gender, int index)
         {
+            if (index <= 0) return true; // 0번(맨몸) 및 -1(없음)만 기본 해금
             var requiredItem = _keyTable.GetRequiredItem(part, gender, index);
             return requiredItem == null || _inventoryProvider.IsOwned(requiredItem);
         }
@@ -600,6 +645,8 @@ namespace MySecondWorld.UI
 
         private async UniTask ReloadFromSave()
         {
+            await EnsureAtlasLoadedAsync();
+
             var saved = ValidateOwnership(_saveService.Load()); // fallback 없음(이미 저장된 값 자체가 오염된 경우) → 자기 자신 정화, 실패 시 맨몸(0)
             _currentGender = saved.Gender;
             InitIndices(saved); // 디폴트 SO 대신 저장된 외형으로 인덱스 캐시 채움
@@ -607,7 +654,8 @@ namespace MySecondWorld.UI
             UpdateFacialHairTabVisibility();
             ShowTopTab(0); // 파츠 탭(0) 먼저
 
-            await _previewCustomizer.ApplyAppearance(saved); // 프리뷰 캐릭터에 저장된 외형 반영
+            if (_previewCustomizer != null)
+                await _previewCustomizer.ApplyAppearance(saved); // 프리뷰 캐릭터에 저장된 외형 반영
             SyncIndicesFromCustomizer(); // 상호배제 캐스케이드 결과로 _currentIndices 재동기화
             UpdateThumbnailSelection();
             RefreshColorRows(); // 색상 스와치/피커도 저장된 색으로 갱신

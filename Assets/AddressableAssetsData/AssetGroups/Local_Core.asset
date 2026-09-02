@@ -16,7 +16,22 @@ MonoBehaviour:
   m_GUID: d79ab3afdd2844841ab127b9da93bfa6
   m_SerializeEntries:
   - m_GUID: 8e6004a678cddb74e89cb91a0a868eaf
-    m_Address: Assets/06.ScriptableObject/CharacterPartThumbnails Sprite Atlas.spriteatlas
+    m_Address: Assets/08.Atlas/CharacterPartThumbnails Sprite Atlas.spriteatlas
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b5fd3eeaec9edba4789338aafabe2a54
+    m_Address: Assets/08.Atlas/ItemsThumbnails Sprite Atlas.spriteatlas
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: dd400008e3444f8489bec4a36e569417
+    m_Address: Assets/08.Atlas/WeaponThumbnails Sprite Atlas.spriteatlas
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f8ffe1fd001dfa14a865439728bac86f
+    m_Address: Assets/08.Atlas/CharacterPresetThumbnails Sprite Atlas.spriteatlas
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

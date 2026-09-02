@@ -5,6 +5,7 @@ using VContainer;
 using MessagePipe;
 using Cleverous.VaultInventory;
 using MySecondWorld.Customization;
+using MySecondWorld.Save;
 
 namespace MySecondWorld.Network
 {
@@ -19,6 +20,7 @@ namespace MySecondWorld.Network
         private ObservableCharacterCustomizer _customizer;
         private AvatarPartKeyTableSO _avatarPartKeyTable;
         private LocalPlayerInventoryProvider _localInventoryProvider;
+        private CharacterSaveService _saveService;
         private Cleverous.VaultInventory.Inventory _inventory;
 
         // IUseInventory 구현 — Inventory 컴포넌트가 "누가 이 인벤토리의 주인인지" 알아야 해서 필요
@@ -44,11 +46,14 @@ namespace MySecondWorld.Network
             ObservableCharacterCustomizer customizer,
             AvatarPartKeyTableSO avatarPartKeyTable,
             LocalPlayerInventoryProvider localInventoryProvider,
-            IObjectResolver resolver)
+            CharacterSaveService saveService,
+            IObjectResolver resolver
+            )
         {
             _customizer = customizer;
             _avatarPartKeyTable = avatarPartKeyTable;
             _localInventoryProvider = localInventoryProvider;
+            _saveService = saveService;
 
             // Root.Resolve를 쓰는 이유 :
             // PlayerScope의 MessagePipe 로컬 등록이 이 이벤트 타입을 가로채서,
@@ -103,28 +108,52 @@ namespace MySecondWorld.Network
         [Command]
         public void CmdSetAppearance(CharacterAppearanceData data)
         {
-            var t = _avatarPartKeyTable;
-
-            // IsDefined 이 값이 enum에 실제로 정의된 값인지 검증 (해킹 등으로 이상한 값 들어올 가능성 방어)
-            if (!System.Enum.IsDefined(typeof(Gender), data.Gender))
-                data.Gender = _appearance.Gender;
-
-            foreach (PartType part in System.Enum.GetValues(typeof(PartType)))
+            try
             {
-                int count = t.GetCount(part, data.Gender);
-                data[part] = Clamp(data[part], count);
+                // 1. 성별 enum 유효성 검증
+                // IsDefined 이 값이 enum에 실제로 정의된 값인지 검증 (해킹 등으로 이상한 값 들어올 가능성 방어)
+                if (!System.Enum.IsDefined(typeof(Gender), data.Gender))
+                    data.Gender = _appearance.Gender;
 
-                // 그룹 A/B/C를 구분하지 않고 그냥 "맨몸(0)이 아닌 인덱스를 요청했나"
-                if (data[part] != 0)
+                var t = _avatarPartKeyTable;
+
+                // [핵심 방어] _avatarPartKeyTable이 유효할 때만 인덱스 범위 및 아이템 소유 검증 수행
+                if (t != null)
                 {
-                    // 그룹 A 파츠는 RequiredItems가 비어있어 requiredItem이 항상 null → 아래 체크가 자동으로 스킵된다.
-                    var requiredItem = t.GetRequiredItem(part, data.Gender, data[part]);
-                    if (requiredItem != null && 
-                        !(_inventory?.Contains(requiredItem, 1) ?? false))
-                        data[part] = _appearance[part]; // 미소유 → 이전 값으로 되돌림
+                    foreach (PartType part in System.Enum.GetValues(typeof(PartType)))
+                    {
+                        int count = t.GetCount(part, data.Gender);
+                        data[part] = Clamp(data[part], count);
+
+                        // 기본 파츠(0)나 미착용(-1)이 아닌 경우 인벤토리 소유권 검증
+                        // 그룹 A/B/C를 구분하지 않고 그냥 "맨몸(0)이 아닌 인덱스를 요청했나"
+                        if (data[part] != 0)
+                        {
+                            // 그룹 A 파츠는 RequiredItems가 비어있어 requiredItem이 항상 null → 아래 체크가 자동으로 스킵된다.
+                            var requiredItem = t.GetRequiredItem(part, data.Gender, data[part]);
+                            if (requiredItem != null &&
+                                 !(_inventory?.Contains(requiredItem, 1) ?? false))
+                            {
+                                data[part] = _appearance[part]; // 미소유 → 이전 값으로 롤백
+                            }
+                        }
+                    }
+                }            
+                else
+                {
+                    Debug.LogWarning("[NetAppearance] [Server] _avatarPartKeyTable이 null이므로 파츠 유효성 검증을 건너뜁니다.");
                 }
+                // 🛡️ 2. 어떤 예외가 있더라도 서버의 SyncVar에 확실하게 대입!
+                _appearance = data;
+                Debug.Log($"[NetAppearance] [Server] _appearance 동기화 성공! Gender={data.Gender}, Head={data.Head}, Torso={data.Torso}");
             }
-            _appearance = data; // 여기서 대입하며 [SyncVar] 훅 발동 → OnAppearanceChanged 실행
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[NetAppearance] [Server] CmdSetAppearance 처리 중 예외 발생: {ex}");
+                // 예외가 발생하더라도 최소한 데이터는 대입하여 SyncVar 전송 보장
+                // 여기서 대입하며 [SyncVar] 훅 발동 → OnAppearanceChanged 실행
+                _appearance = data;
+            }
         }
 
         private void OnAppearanceChanged(CharacterAppearanceData old, CharacterAppearanceData next)
@@ -152,6 +181,15 @@ namespace MySecondWorld.Network
             base.OnStartLocalPlayer();
 
             _localInventoryProvider.SetLocal(_inventory);
+
+            // 로컬에 저장된 외형 데이터가 있으면 즉시 서버로 동기화 요청
+            if (_saveService != null)
+            {
+                var saved = _saveService.Load();
+                CmdSetAppearance(saved);
+            }
+
+            // 최초 접속(미커스터마이징) 유저면 커스터마이즈 UI 오픈
             if (!PlayerPrefs.HasKey(PrefKeyCustomized))
                 _openUIPublisher.Publish(new RequestOpenCustomizeUIEvent());
         }

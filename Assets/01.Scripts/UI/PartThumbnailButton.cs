@@ -24,6 +24,7 @@ namespace MySecondWorld.UI
             Index = index;
             _thumbnail.sprite = sprite != null ? sprite : _noneSprite; // null이면 X 아이콘
             _thumbnail.enabled = sprite != null; // 못 받은 슬롯은 빈칸 처리
+            _thumbnail.enabled = _thumbnail.sprite != null; // 스프라이트가 배정되어 있으면 Image 활성화
             _button.onClick.RemoveAllListeners();
             _button.onClick.AddListener(() => onClick?.Invoke(Part, Index));
         }

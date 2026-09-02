@@ -9,6 +9,7 @@ using MySecondWorld.Move;
 using MySecondWorld.CameraSystem;
 using MySecondWorld.Save;
 using MySecondWorld.Bundle;
+using MySecondWorld.Customization;
 
 namespace MySecondWorld.Network.Player
 {
@@ -28,7 +29,8 @@ namespace MySecondWorld.Network.Player
         public void Construct(CharacterSaveService saveService,
                               NetworkCharacterAppearance networkAppearance,
                               AddressableLabelLoader assetLoader,
-                              GameNetworkManager networkManager)
+                              GameNetworkManager networkManager
+            )
         {
             _saveService = saveService;
             _networkAppearance = networkAppearance;
@@ -71,13 +73,33 @@ namespace MySecondWorld.Network.Player
         private async UniTaskVoid InitializeAppearanceAsync()
         {
             var ct = this.GetCancellationTokenOnDestroy();
-            // 1. character_parts 레이블의 720개 파츠 프리팹을 메모리에 올림
+
+            //Debug.Log("[NetPlayerController] 1. character_parts 로드 대기 중...");
+            //// 1. character_parts 레이블의 720개 파츠 프리팹을 메모리에 올림
+            //await _assetLoader.LoadLabelAsync("character_parts", ct);
+            //// 2. PlayerPrefs에서 JSON 꺼냄 → CharacterAppearanceData로 역직렬화
+            //var data = _saveService.Load();
+            //Debug.Log($"[NetPlayerController] 2. 세이브 로드 완료: Gender={data.Gender}, Head={data.Head}, Torso={data.Torso}");
+            //Debug.Log("[NetPlayerController] 3. CmdSetAppearance 전송 중...");
+            //// 3. [Command] → 서버로 전송 _appearance = data
+            //_networkAppearance.CmdSetAppearance(data);
+            //// 4. [SyncVar hook] → 변경 감지 → OnAppearanceChanged 실행
+
+            // 1. character_parts 에셋번들 로드 대기
             await _assetLoader.LoadLabelAsync("character_parts", ct);
-            // 2. PlayerPrefs에서 JSON 꺼냄 → CharacterAppearanceData로 역직렬화
-            var data = _saveService.Load();
-            // 3. [Command] → 서버로 전송 _appearance = data
-            _networkAppearance.CmdSetAppearance(data);
-            // 4. [SyncVar hook] → 변경 감지 → OnAppearanceChanged 실행
+            // 2. PlayerPrefs에서 세이브 외형 로드
+            var data = _saveService != null ? _saveService.Load() : default;
+            // 3. [핵심] 내 로컬 화면에 즉시 파츠 25개 직접 조립! (서버 핑/SyncVar 지연 없이 즉시 렌더링)
+            var customizer = GetComponent<ObservableCharacterCustomizer>();
+            if (customizer != null)
+            {
+                await customizer.ApplyAppearance(data);
+            }
+            // 4. 다른 플레이어들에게 보여주기 위해 서버로 외형 동기화 전송
+            if (_networkAppearance != null)
+            {
+                _networkAppearance.CmdSetAppearance(data);
+            }
         }
 
         // FieldScene(defaultSubScene)이 실제로 로드 완료될 때까지 이동/중력 활성화를 지연 —

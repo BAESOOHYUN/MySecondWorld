@@ -1,4 +1,5 @@
 using MessagePipe;
+using UnityEngine;
 using VContainer;
 
 namespace MySecondWorld.Customization
@@ -9,8 +10,16 @@ namespace MySecondWorld.Customization
         private IPublisher<CharacterAppearanceChangedEvent> _publisher;
         
         [Inject]
-        public void InjectPublisher(IPublisher<CharacterAppearanceChangedEvent> publisher)
+        public void Construct(
+            AvatarPartKeyTableSO avatarPartKeyTable,
+            CharacterAppearanceSO defaultAppearanceSO,
+            IPublisher<CharacterAppearanceChangedEvent> publisher
+            )
         {
+
+            Debug.Log($"[ObservableCustomizer] Construct 호출! Table={(avatarPartKeyTable != null ? "OK" : "NULL")}, DefaultSO={(defaultAppearanceSO != null ? "OK" : "NULL")}");
+            // 부모의 AvatarPartKeyTableSO 및 DefaultAppearanceSO 주입 보장!
+            base.Construct(avatarPartKeyTable, defaultAppearanceSO);
             _publisher = publisher;
         }
 

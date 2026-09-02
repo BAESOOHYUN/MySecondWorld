@@ -61,17 +61,29 @@ namespace MySecondWorld.Customization
         // 전체 외형 "통째로 다시" 교체 (로그인 시 / 랜덤 / 불러오기)
         public async UniTask ApplyAppearance(CharacterAppearanceData data)
         {
+            Debug.Log($"[CustomizerBase] ApplyAppearance 시작! Gender={data.Gender}, Head={data.Head}, Torso={data.Torso}, Hair={data.Hair}, Table={(_avatarPartKeyTable != null ? "OK" : "NULL")}, PartRoot={(_partRoot != null ? _partRoot.name : "NULL")}");
+
             await _appearanceLock.WaitAsync(); //레이스컨디션을 막음
             try
             {
                 _currentAppearance = data;                  // desired 통째로 교체
                 _lastSelectedIndexByPartAndSubtype.Clear(); // 세션 캐시 리셋 (기존과 동일)
 
+                if (_avatarPartKeyTable == null)
+                {
+                    Debug.LogError($"[{name}] AvatarPartKeyTableSO가 null이라 외형을 로드할 수 없습니다!");
+                    return;
+                }
+
                 // ApplyDirectSelectionRules(Stage1/Type-2)는 호출하지 않는다 — 2026-07-18 확정.
                 // 로드된 데이터가 설령 앞뒤가 안 맞아도(예: 예전에 억제된 상태로 저장됐어도)
                 // ComputeVisibleAppearance(Stage2)가 매번 desired만 보고 일관된 visible을 계산한다.
                 var visible = MutualExclusionResolver.ComputeVisibleAppearance(
                     _currentAppearance, data.Gender, _avatarPartKeyTable, _lastSelectedIndexByPartAndSubtype);
+
+
+                Debug.Log($"[CustomizerBase] visible 계산 완료: Head={visible.Head}, Torso={visible.Torso}, Hair={visible.Hair}");
+
 
                 // 기존 인스턴스 전부 해제
                 foreach (var key in new List<PartType>(_activePartInstances.Keys))
@@ -114,6 +126,7 @@ namespace MySecondWorld.Customization
                 ReapplyColors();
                 OnAppearanceChanged();
                 AppearanceApplied?.Invoke();
+                Debug.Log($"[CustomizerBase] ✅ ApplyAppearance 완료! 인스턴스화된 파츠 수={_activePartInstances.Count}");
             }
             finally
             {
@@ -287,19 +300,36 @@ namespace MySecondWorld.Customization
         private async UniTask InstantiatePart(PartType part, int index, Gender gender)
         {
             var candidates = _avatarPartKeyTable.GetCandidates(part, gender);
-            if (index < 0 || index >= candidates.Count) return; // "인덱스가 리스트 안에 있냐"만 봄. 리스트 안의 항목이 빈 항목인지는 구분 못함
-            if (!candidates[index].RuntimeKeyIsValid()) return; // "인덱스는 유효하지만 내용물이 빈 참조"인 경우를 걸러냄
+            if (index < 0 || index >= candidates.Count) // "인덱스가 리스트 안에 있냐"만 봄. 리스트 안의 항목이 빈 항목인지는 구분 못함
+            {
+                // -1(None)이 아닌데 인덱스 범위 초과면 경고
+                if (index != -1) Debug.LogWarning($"[CustomizerBase] {part} 인덱스 범위 벗어남 (index={index}, count={candidates.Count})");
+                return;
+            }
 
-            var instance = await Addressables.InstantiateAsync(candidates[index], _partRoot).ToUniTask();
-            _activePartInstances[part] = instance;
+            if (!candidates[index].RuntimeKeyIsValid()) // "인덱스는 유효하지만 내용물이 빈 참조"인 경우를 걸러냄
+            {
+                Debug.LogWarning($"[CustomizerBase] {part} candidates[{index}] RuntimeKey 유효하지 않음!");
+                return;
+            }
 
-            OnPartInstantiated(instance);
+            try
+            {
+                var instance = await Addressables.InstantiateAsync(candidates[index], _partRoot).ToUniTask();
+                _activePartInstances[part] = instance;
 
-            var smr = instance.GetComponent<SkinnedMeshRenderer>();
-            var partBoneNames = instance.GetComponent<PartBoneNames>();
+                OnPartInstantiated(instance);
 
-            if (smr != null && partBoneNames != null)
-                RemapBones(smr, partBoneNames);
+                var smr = instance.GetComponent<SkinnedMeshRenderer>();
+                var partBoneNames = instance.GetComponent<PartBoneNames>();
+
+                if (smr != null && partBoneNames != null)
+                    RemapBones(smr, partBoneNames);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[CustomizerBase] ❌ {part} InstantiateAsync 실패: {ex.Message}");
+            }
         }
 
         private void ReleasePartInstance(PartType part)
