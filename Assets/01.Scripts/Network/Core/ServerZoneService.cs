@@ -213,16 +213,23 @@ namespace MySecondWorld.Network
             // LeaveRoom에서 이전 씬이 필요하므로 MoveGameObjectToScene 전에 저장
             string prevScene = session.currentScene;
 
-            SceneManager.MoveGameObjectToScene(
-                conn.identity.gameObject,
-                SceneManager.GetSceneByPath(sceneName));
+            var targetScene = _manager.GetServerScene(sceneName);
+            if (targetScene.IsValid() && targetScene.isLoaded && conn.identity != null)
+            {
+                var playerGo = conn.identity.gameObject;
+                if (playerGo.transform.parent != null)
+                    playerGo.transform.SetParent(null);
+                SceneManager.MoveGameObjectToScene(playerGo, targetScene);
+            }
             session.currentScene = sceneName;
 
             // 플레이어 씬 이동 직후에 companion도 같은 씬으로 이동
-            if (session.companionIdentity != null)
+            if (session.companionIdentity != null && targetScene.IsValid() && targetScene.isLoaded)
             {
-                SceneManager.MoveGameObjectToScene(
-                    session.companionIdentity.gameObject, SceneManager.GetSceneByPath(sceneName));
+                var compGo = session.companionIdentity.gameObject;
+                if (compGo.transform.parent != null)
+                    compGo.transform.SetParent(null);
+                SceneManager.MoveGameObjectToScene(compGo, targetScene);
             }
 
             // 던전 씬 진입/퇴장 분기 (matchId 갱신)

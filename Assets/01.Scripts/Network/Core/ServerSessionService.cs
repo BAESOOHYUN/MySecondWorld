@@ -48,7 +48,7 @@ namespace MySecondWorld.Network
         {
             _manager = manager;
             _roomRegistry = roomRegistry;
-            _saveManager = saveManager;
+            _saveManager = saveManager ?? new SaveManager();
             _startingGoldItem = startingGoldItem;
             _startingGoldAmount = startingGoldAmount;
             _testSwordItem = testSwordItem;
@@ -105,17 +105,21 @@ namespace MySecondWorld.Network
                 return;
             }
 
-            var saveData = _saveManager.Load(session.playerId);
+            var saveData = (!string.IsNullOrEmpty(session.playerId) && _saveManager != null) 
+                ? _saveManager.Load(session.playerId) 
+                : null;
             var hasSpawnData = saveData.HasValue;
             session.isNewPlayer = !hasSpawnData;
 
-            string spawnScene = _manager.defaultSubScene;
+            string spawnScene = !string.IsNullOrEmpty(_manager.defaultSubScene) ? _manager.defaultSubScene : "Assets/00.Scenes/FieldScene.unity";
             Vector3 spawnPosition;
 
             if (!string.IsNullOrEmpty(session.playerId) && hasSpawnData)
             {
                 // 세이브 데이터가 있으면 → 저장된 씬 + 위치 사용
-                spawnScene = saveData.Value.lastSceneNames[0];
+                spawnScene = saveData.Value.lastSceneNames != null && saveData.Value.lastSceneNames.Length > 0 
+                    ? saveData.Value.lastSceneNames[0] 
+                    : spawnScene;
                 spawnPosition = saveData.Value.lastPosition;
                 session.recruitedCompanionIds = saveData.Value.recruitedCompanionIds ?? Array.Empty<string>();
                 session.companionAlive = saveData.Value.companionAlive;
@@ -124,11 +128,9 @@ namespace MySecondWorld.Network
             else
             {
                 // 시작 지점은 신규 플레이어만 소비한다.
-                // GetStartPosition()은 조회처럼 보이지만 RoundRobin 인덱스를 전진시키므로
-                // (NetworkManager.cs:1123), 값을 쓰지도 않을 경로에서 부르면 스폰 순번이 헛돈다.
                 var startPos = _manager.GetStartPosition();
                 if (startPos == null)
-                    Debug.LogError("[Session] NetworkStartPosition이 없다 — 원점에 스폰된다. 씬 배치 확인 필요.");
+                    Debug.LogWarning("[Session] NetworkStartPosition이 없다 — 원점에 스폰된다.");
                 spawnPosition = startPos != null ? startPos.position : Vector3.zero;
             }
 
@@ -136,7 +138,7 @@ namespace MySecondWorld.Network
             session.pendingSpawnScene = spawnScene;
 
             // spawnScene에 해당하는 번들 메시지도 전송
-            var zone = _manager.zones.FirstOrDefault(z => z.sceneName == spawnScene);
+            var zone = _manager.zones != null ? _manager.zones.FirstOrDefault(z => z.sceneName == spawnScene) : null;
             bool isLocalHost = NetworkServer.localConnection != null
                             && conn == NetworkServer.localConnection;
 
@@ -198,7 +200,14 @@ namespace MySecondWorld.Network
                 GrantStartingGold(conn);
 
             session.currentScene = session.pendingSpawnScene;
-            SceneManager.MoveGameObjectToScene(conn.identity.gameObject, _manager.GetServerScene(session.currentScene));
+            var targetScene = _manager.GetServerScene(session.currentScene);
+            if (targetScene.IsValid() && targetScene.isLoaded && conn.identity != null)
+            {
+                var playerGo = conn.identity.gameObject;
+                if (playerGo.transform.parent != null)
+                    playerGo.transform.SetParent(null);
+                SceneManager.MoveGameObjectToScene(playerGo, targetScene);
+            }
 
             // 스폰 직후 lastSafePosition 초기화:
             // zone bounds 체크 실패해도 즉시 텔레포트되지 않도록 안전 위치를 스폰 위치로 세팅
@@ -292,7 +301,16 @@ namespace MySecondWorld.Network
             if (companion == null) return;
 
             // 최초 스폰 시 씬 위치 동일하게 맞춤
-            SceneManager.MoveGameObjectToScene(companion, conn.identity.gameObject.scene);
+            if (conn.identity != null)
+            {
+                var targetScene = conn.identity.gameObject.scene;
+                if (targetScene.IsValid() && targetScene.isLoaded)
+                {
+                    if (companion.transform.parent != null)
+                        companion.transform.SetParent(null);
+                    SceneManager.MoveGameObjectToScene(companion, targetScene);
+                }
+            }
 
             session.companionIdentity = companion.GetComponent<NetworkIdentity>();
             if (companion.TryGetComponent(out NetworkMatch companionMatch))
