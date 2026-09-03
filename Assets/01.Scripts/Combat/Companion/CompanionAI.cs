@@ -39,7 +39,7 @@ namespace MySecondWorld.Combat.Companion
 
         #endregion
 
-        #region Fields
+        #region Fields & Properties
 
         [SerializeField] private CompanionStatsSO _stats;
         [SerializeField] private SphereCollider _detectionTrigger;
@@ -133,38 +133,10 @@ namespace MySecondWorld.Combat.Companion
                     break;
             }
         }
-        #endregion
-
-        #region 팩토리 초기화
-
-        // CompanionFactory가 서버에서만 호출한다.
-        // 프리팹은 CompanionAI가 기본 비활성 상태로 배치돼 있어야 하고(씬 배치 체크리스트 참고),
-        // Initialize가 owner를 채운 뒤 enabled = true로 켠다
-        // — 클라이언트 관전 사본은 이 메서드가 아예 호출되지 않아 비활성 상태 그대로 남는다
-        // (Player 트랙에서 확립된 "팩토리는 서버 인스턴스에만 작용" 패턴과 동일).
-        public void Initialize(Transform ownerTransform)
-        {
-            _owner = ownerTransform;
-            enabled = true;
-        }
-
-        // CompanionServerState.Revive()가 서버에서 호출 — NavMeshAgent 경유로 안전하게 위치 이동
-        public void Warp(Vector3 position)
-        {
-            if (!_agent.Warp(position))
-                Debug.LogWarning($"[CompanionAI] Warp 실패 — position이 NavMesh 밖에 있을 수 있음 on {gameObject.name}", this);
-        }
-
-        // CompanionServerState.Revive()가 부활 시 호출 — Dead에서 못 빠져나오는 상태머신을 통째로 재초기화
-        public void ResetForRevive()
-        {
-            InitStateMachine();
-            SetAgentStopped(_followPaused);
-        }
 
         #endregion
 
-        #region State Machine 동작
+        #region State Machine 설정 & 틱 루프
 
         private void InitStateMachine()
         {
@@ -193,7 +165,7 @@ namespace MySecondWorld.Combat.Companion
             _stateMachine.OnTransitioned(t => Debug.Log($"[CompanionAI] {t.Source} → {t.Destination} ({t.Trigger})"));
         }
 
-        //  owner가 일정 거리 이상 움직였을 때만 재계산하여 이동
+        // owner가 일정 거리 이상 움직였을 때만 재계산하여 이동
         private void UpdateFollow()
         {
             SetAgentStopped(_followPaused); // 매 프레임 강제 — 다른 경로에서 풀려도 다시 잡음
@@ -256,8 +228,64 @@ namespace MySecondWorld.Combat.Companion
 
         #endregion
 
-        #region 대화 중 이동 정지 (CompanionInteractable이 호출)
+        #region 외부 제어 API (초기화, 워프, 리셋, 이동 제어)
 
+        // CompanionFactory가 서버에서만 호출한다.
+        // 프리팹은 CompanionAI가 기본 비활성 상태로 배치돼 있어야 하고(씬 배치 체크리스트 참고),
+        // Initialize가 owner를 채운 뒤 enabled = true로 켠다
+        // — 클라이언트 관전 사본은 이 메서드가 아예 호출되지 않아 비활성 상태 그대로 남는다
+        // (Player 트랙에서 확립된 "팩토리는 서버 인스턴스에만 작용" 패턴과 동일).
+        public void Initialize(Transform ownerTransform)
+        {
+            _owner = ownerTransform;
+            enabled = true;
+        }
+
+        // CompanionServerState.Revive() 또는 포탈/낙하 시 서버에서 호출 — NavMeshAgent 경유로 안전하게 위치 이동
+        public void Warp(Vector3 position)
+        {
+            // 오너(_owner)를 전달하여 플레이어의 우측 후방 안전 지면을 확실하게 계산
+            Vector3 targetPos = GetSafeOffsetPosition(position, _owner);
+            transform.position = targetPos;
+            if (_agent.enabled)
+            {
+                if (!_agent.Warp(targetPos))
+                {
+                    _agent.enabled = false;
+                    transform.position = targetPos;
+                    _agent.enabled = true;
+                    _agent.Warp(targetPos);
+                }
+                _agent.isStopped = false;
+            }
+            _lastFollowTarget = Vector3.zero;
+            ResetToFollow();
+            Debug.Log($"[CompanionAI] Warp 완료: Pos={transform.position}");
+        }
+
+        // 이전 몬스터 타겟을 완전히 버리고 플레이어 따라오기(Follow)로 강제 복귀
+        public void ResetToFollow()
+        {
+            ClearTarget();          // 이전 씬 몬스터 타겟 완전 삭제
+            InitStateMachine();     // Follow 상태로 강제 리셋
+            SetAgentStopped(_followPaused);
+        }
+
+        // CompanionServerState.Revive()가 부활 시 호출 — Dead에서 못 빠져나오는 상태머신을 통째로 재초기화
+        public void ResetForRevive()
+        {
+            // 사망 시 껐던 피격 콜라이더와 NavMeshAgent 다시 활성화
+            if (TryGetComponent(out CapsuleCollider col))
+                col.enabled = true;
+
+            _agent.enabled = true;
+
+            // 상태머신 재초기화(Follow 상태로 복귀) 및 이동 상태 복구
+            InitStateMachine();
+            SetAgentStopped(_followPaused);
+        }
+
+        // 대화 중 이동 정지 (CompanionInteractable이 호출)
         public void PauseFollow()
         {
             _followPaused = true;
@@ -265,6 +293,7 @@ namespace MySecondWorld.Combat.Companion
                 SetAgentStopped(true);
         }
 
+        // 대화 종료 후 이동 재개 (CompanionInteractable이 호출)
         public void ResumeFollow()
         {
             _followPaused = false;
@@ -274,41 +303,7 @@ namespace MySecondWorld.Combat.Companion
 
         #endregion
 
-        #region 사망 처리
-
-        private void HandleDied() => SafeFire(CompanionTrigger.Died);
-
-        private void HandleEnterDead()
-        {
-            SetAgentStopped(true);
-            PlayDeathSequence().Forget();
-        }
-
-        private async UniTaskVoid PlayDeathSequence()
-        {
-            try
-            {
-                if (_networkAnimator != null)
-                    _networkAnimator.SetTrigger(DeathTrigger);
-                await UniTask.Delay(TimeSpan.FromSeconds(_stats.DeathDuration), cancellationToken: this.GetCancellationTokenOnDestroy());
-                GetComponent<CompanionServerState>()?.MarkDead(); // 죽음 애니메이션 '재생 완료 후' 비활성화되도록 호출. MarkDead() => _isAlive = false;
-            }
-            catch (OperationCanceledException)
-            {
-                // 대기 중 오브젝트가 파괴됨 — 정상 흐름
-            }
-        }
-
-        #endregion
-
-        #region 유틸리티
-
-        private bool SafeFire(CompanionTrigger trigger)
-        {
-            if (!_stateMachine.CanFire(trigger)) return false;
-            _stateMachine.Fire(trigger);
-            return true;
-        }
+        #region 타겟팅 및 몬스터 감지
 
         // 자식 오브젝트(몬스터 감지 전용 콜라이더, NPC 레이어와 분리)의 트리거 이벤트를 TriggerRelay가 대신 받아서 전달.
         // 코드 참조가 아니라 Companion_Ari.prefab의 TriggerRelay.OnTriggerEntered(UnityEvent) 슬롯에
@@ -376,6 +371,76 @@ namespace MySecondWorld.Combat.Companion
 
             _targetMHealth.OnDied += HandleTargetDied;
             SafeFire(CompanionTrigger.MonsterDetected);
+        }
+
+        #endregion
+
+        #region 사망 처리
+
+        private void HandleDied()
+        {
+            // 길찾기 정지 및 비활성화
+            _agent.ResetPath();
+            _agent.enabled = false;
+
+            // 핵심: 사망 시 피격 콜라이더를 꺼서 몬스터들의 물리 타겟 목록(어그로)에서 즉시 강제 퇴장시킴
+            if (TryGetComponent(out CapsuleCollider col))
+                col.enabled = false;
+
+            // 안전 트리거 실행 (예외 방지 가드)
+            SafeFire(CompanionTrigger.Died);
+        }
+
+        private void HandleEnterDead()
+        {
+            SetAgentStopped(true);
+            PlayDeathSequence().Forget();
+        }
+
+        private async UniTaskVoid PlayDeathSequence()
+        {
+            try
+            {
+                if (_networkAnimator != null)
+                    _networkAnimator.SetTrigger(DeathTrigger);
+                await UniTask.Delay(TimeSpan.FromSeconds(_stats.DeathDuration), cancellationToken: this.GetCancellationTokenOnDestroy());
+                GetComponent<CompanionServerState>()?.MarkDead(); // 죽음 애니메이션 '재생 완료 후' 비활성화되도록 호출. MarkDead() => _isAlive = false;
+            }
+            catch (OperationCanceledException)
+            {
+                // 대기 중 오브젝트가 파괴됨 — 정상 흐름
+            }
+        }
+
+        #endregion
+
+        #region 유틸리티 & 헬퍼
+
+        // [공통 헬퍼] 컴패니언 소환시 플레이어의 중심 위치에서 빗겨난 안전한 NavMesh 지면 좌표 계산
+        public static Vector3 GetSafeOffsetPosition(Vector3 center, Transform owner = null)
+        {
+            Vector3 candidatePos;
+            if (owner != null)
+            {
+                // 플레이어의 우측(1.2m) + 뒤쪽(0.8m) = 약 1.5m 대각선 뒤쪽 안전 위치 (물리 캡슐 절대 겹침 없음)
+                candidatePos = owner.position + (owner.right * 1.2f) - (owner.forward * 0.8f);
+            }
+            else
+            {
+                // 오너 참조가 없을 때의 폴백 (우측 1.5m)
+                candidatePos = center + (Vector3.right * 1.5f);
+            }
+            // 1.0m 반경 내 가장 가까운 유효 NavMesh 바닥 스냅
+            if (NavMesh.SamplePosition(candidatePos, out NavMeshHit hit, 1.0f, NavMesh.AllAreas))
+                return hit.position;
+            return candidatePos;
+        }
+
+        private bool SafeFire(CompanionTrigger trigger)
+        {
+            if (!_stateMachine.CanFire(trigger)) return false;
+            _stateMachine.Fire(trigger);
+            return true;
         }
 
         // NavMeshAgent가 지형에 파묻히는 등으로 NavMesh 밖에 있을 때 isStopped/SetDestination을 호출하면

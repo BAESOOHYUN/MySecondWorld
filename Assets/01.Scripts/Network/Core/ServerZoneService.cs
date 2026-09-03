@@ -378,6 +378,15 @@ namespace MySecondWorld.Network
             if (conn.identity.TryGetComponent(out MySecondWorld.Network.Player.NetworkPlayerController npc))
                 npc.ServerRescueTo(safePos);
 
+            // ★ 낙하 구조 시에도 컴패니언을 플레이어 옆으로 동반 텔레포트!
+            if (session.Value.companionIdentity != null && session.Value.companionPresent)
+            {
+                if (session.Value.companionIdentity.TryGetComponent(out ICompanionServerState compState))
+                {
+                    compState.Warp(safePos + (Vector3.right * 1.0f));
+                }
+            }
+
             session.Value.fallTimer = 0;
             session.Value.ungroundedTimer = 0;
         }
@@ -500,11 +509,21 @@ namespace MySecondWorld.Network
                     Debug.LogWarning($"[Portal] conn={conn.connectionId} — '{targetZone.sceneName}' 로드 ack 타임아웃 — 강제 진행");
                 PlayerChangedScene(conn, targetZone.sceneName); // 소속 전환(MoveGameObjectToScene)
 
+                // 1. 플레이어 재스냅
                 // ServerRescueTo는 이름은 "낙하 구조"지만 실제로는 NetworkTransform 보간 버퍼 리셋 +
                 // CharacterController 껐다 켜기라, 포탈 전환 직후 재스냅에도 그대로 재사용한다
                 if (conn.identity.TryGetComponent(out MySecondWorld.Network.Player.NetworkPlayerController playerController))
                     playerController.ServerRescueTo(rescuePos);
-
+                // 2. ★ 컴패니언도 플레이어 바로 옆으로 동반 텔레포트!
+                if (session.companionIdentity != null && session.companionPresent)
+                {
+                    if (session.companionIdentity.TryGetComponent(out ICompanionServerState compState))
+                    {
+                        compState.Warp(rescuePos);
+                        Debug.Log($"[Portal] 컴패니언 동반 텔레포트(Warp) 완료: {rescuePos}");
+                    }
+                }
+                // 3. 낙하 구조(RecoverFromFall) 시에도 동일하게 컴패니언 동반 텔레포트 추가
                 PlayerLeftZone(conn, sourceZone.sceneName); // 이전 씬 언로드
 
                 conn.Send(new ScreenFadeMessage { fadeOut = false, duration = _manager.portalFadeDuration });  // 씬 FadeIn > GameNetworkManager.OnStartClient

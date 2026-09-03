@@ -9,6 +9,7 @@ using Cleverous.VaultInventory;
 using MySecondWorld.Save;
 using MySecondWorld.Combat.Companion;
 using MySecondWorld.Customization;
+using MySecondWorld.Network.Companion;
 
 namespace MySecondWorld.Network
 {
@@ -300,8 +301,11 @@ namespace MySecondWorld.Network
 
         private void SpawnCompanionFor(PlayerSession session, NetworkConnectionToClient conn, GameObject prefab)
         {
-            var companion = MySecondWorld.Network.Companion.CompanionFactory.Create(
-                prefab, conn.identity.transform.position, Quaternion.identity, conn.identity.transform);
+            // 플레이어 발밑(0,0,0) 대신, 플레이어 우측 1.5m 옆 지점에 최초 생성! (들썩거림 원천 차단)
+            Vector3 playerPos = conn.identity.transform.position;
+            Vector3 spawnPos = playerPos + (Vector3.right * 1.5f);
+            var companion = CompanionFactory.Create(
+                prefab, spawnPos, Quaternion.identity, conn.identity.transform);
             if (companion == null) return;
 
             // 최초 스폰 시 씬 위치 동일하게 맞춤

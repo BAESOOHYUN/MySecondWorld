@@ -9,6 +9,7 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.ResourceProviders;
 using Mirror;
 using MySecondWorld.Bundle;
+using System;
 
 namespace MySecondWorld.Network
 {
@@ -27,6 +28,11 @@ namespace MySecondWorld.Network
             _manager = manager;
             _zoneLoader = zoneLoader;
         }
+
+        // 다른 어셈블리(Combat 등)가 구독할 수 있는 static 이벤트 선언
+        public static event Action<Scene> OnDestinationSceneActivated;
+
+
 
         public void SetPrimaryTargetScene(string sceneName)
         {
@@ -80,21 +86,22 @@ namespace MySecondWorld.Network
                 loadedScene = SceneManager.GetSceneByPath(sceneName);
             }
             // ─────────────────────────────────────────────────────────────
-            // 1. 최초 진입 시에는 '첫 번째로 로드된 씬'을 목적지로 확정 잠금!
-            // 2. 이후 주변에 프리로드되는 배경 씬들은 절대로 통과하지 못함!
+            // 1. 최초 진입 시에는 '첫 번째로 로드된 씬'을 공식 목적지로 확정 잠금
+            // 2. 이후 주변에 프리로드되는 배경 씬들은 절대로 통과하지 못함
             // ─────────────────────────────────────────────────────────────
             if (string.IsNullOrEmpty(_primaryTargetScene))
             {
-                _primaryTargetScene = sceneName; // 최초 씬(예: Entrance_Stairs 또는 FieldScene)으로 목적지 잠금!
+                _primaryTargetScene = sceneName; // 최초 씬(예: Entrance_Stairs 또는 FieldScene)으로 목적지 잠금
                 Debug.Log($"[Client] 최초 목적지 씬 잠금: {_primaryTargetScene}");
             }
-            // 씬 이름(파일명)이 현재 잠긴 목적지 씬과 정확히 일치할 때만 ActiveScene 지정!
+            // 씬 이름(파일명)이 현재 잠긴 목적지 씬과 정확히 일치할 때만 ActiveScene 지정
             string loadedSceneName = System.IO.Path.GetFileNameWithoutExtension(sceneName);
             string primaryName = System.IO.Path.GetFileNameWithoutExtension(_primaryTargetScene);
             if (loadedSceneName == primaryName && loadedScene.IsValid() && loadedScene.isLoaded)
             {
                 SceneManager.SetActiveScene(loadedScene);
                 Debug.Log($"[Client] 공식 목적지 씬 ActiveScene 지정: {loadedScene.name}");
+                // 1. 로컬 플레이어 씬 이동
                 if (NetworkClient.localPlayer != null && NetworkClient.localPlayer.gameObject != null)
                 {
                     var playerGo = NetworkClient.localPlayer.gameObject;
@@ -105,6 +112,9 @@ namespace MySecondWorld.Network
                         SceneManager.MoveGameObjectToScene(playerGo, loadedScene);
                     }
                 }
+
+                // 2. 컴패니언 등 외부 시스템에 "목적지 씬 전환 완료" 알림
+                OnDestinationSceneActivated?.Invoke(loadedScene);
             }
             else
             {
@@ -192,8 +202,8 @@ namespace MySecondWorld.Network
         {
             if (msg.fadeOut)
             {
-                // ★ 포탈 이동 시작: 이전 목적지 잠금을 풀어서, 
-                // 포탈 타고 도착할 새 씬(Entrance_Stairs 또는 FieldScene)이 새 목적지로 등록되게 함!
+                // 포탈 이동 시작: 이전 목적지 잠금을 풀어서,
+                // 포탈 타고 도착할 새 씬(Entrance_Stairs 또는 FieldScene)이 새 목적지로 등록되게 함
                 _primaryTargetScene = null;
             }
 

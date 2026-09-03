@@ -1,8 +1,10 @@
 using System;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Mirror;
 using MySecondWorld.Foundation;
+using MySecondWorld.Network;
 
 namespace MySecondWorld.Combat.Companion
 {
@@ -64,14 +66,32 @@ namespace MySecondWorld.Combat.Companion
                 _health.OnDamaged -= HandleDamaged;
         }
 
-        public override void OnStartClient() => WaitForLocalPlayerThenMark().Forget();
+        public override void OnStartClient()
+        {
+            // 목적지 씬 활성화 이벤트 구독
+            ClientSceneSyncService.OnDestinationSceneActivated += HandleDestinationSceneActivated;
+            WaitForLocalPlayerThenMark().Forget();
+        }
 
         public override void OnStopClient()
         {
+            // 구독 해제
+            ClientSceneSyncService.OnDestinationSceneActivated -= HandleDestinationSceneActivated;
             if (LocalCompanion != this) return;
-
             LocalCompanion = null;
             LocalCompanionLost?.Invoke();
+        }
+
+        // 목적지 씬이 활성화되면 컴패니언 스스로 새 씬으로 이사
+        private void HandleDestinationSceneActivated(Scene newScene)
+        {
+            if (LocalCompanion == this && gameObject.scene != newScene && newScene.IsValid() && newScene.isLoaded)
+            {
+                if (transform.parent != null)
+                    transform.SetParent(null);
+                SceneManager.MoveGameObjectToScene(gameObject, newScene);
+                Debug.Log($"[Companion] 로컬 컴패니언이 {newScene.name}으로 안전하게 이사 완료!");
+            }
         }
 
         #region ICompanionServerState — 서버 전용 조작
@@ -84,6 +104,10 @@ namespace MySecondWorld.Combat.Companion
 
             GetComponent<CompanionAI>().Initialize(ownerTransform);
         }
+
+        // 디버그 키 전용 즉사 — Health 데미지 → 사망 애니메이션까지 다 거치는 "진짜 죽음"
+        [Server]
+        public void DebugKill() => GetComponent<Health>().TakeDamage(99999f);
 
         // CompanionAI.PlayDeathSequence()가 사망 애니메이션 재생 완료 후 호출 — 실전투 사망.
         // 재접속 시 "죽은 채로 재소환"을 재현할 때도 재사용한다(애니메이션 없이 즉시).
@@ -103,6 +127,46 @@ namespace MySecondWorld.Combat.Companion
             _isPresent = true; // 소환해제된 채로 부활 요청이 와도 보이도록
         }
 
+        // 초상화 클릭 소환해제 — 생사와 무관하게 그냥 감춘다. 애니메이션도 HP 변화도 없다.
+        [Server]
+        public void Dismiss()
+        {
+            _isPresent = false;
+
+            // 서버에서도 즉시 타겟 불가 처리 및 AI 전투 강제 종료
+            if (_health == null) _health = GetComponent<Health>();
+            _health.SetTargetable(false);
+            if (TryGetComponent(out CompanionAI ai))
+                ai.ResetToFollow(); // 전투 상태 즉시 해제
+        }
+
+        // 초상화 클릭 재소환 — 감췄던 걸 내 위치로 다시 보여준다. 죽어있었다면 죽은 채로 나온다.
+        [Server]
+        public void Summon(Vector3 position)
+        {
+            // 1. Warp를 호출하면 내부의 CompanionAI가 플레이어 우측 후방 1.5m 안전 지면을 찾아 이동
+            Warp(position);
+
+            // 2. 화면 표시 및 타겟 가능 상태 복구
+            _isPresent = true;
+            if (_health == null) _health = GetComponent<Health>();
+            _health.SetTargetable(true);
+        }
+
+        // 포탈/낙하 구조 시 서버 AI 이동 + 네트워크 텔레포트 + 클라이언트 스냅 동기화
+        [Server]
+        public void Warp(Vector3 position)
+        {
+            // 1. 서버 AI 네비메시 워프 (CompanionAI.Warp 내부에서 GetSafeOffsetPosition 계산)
+            if (TryGetComponent(out CompanionAI ai))
+                ai.Warp(position);
+            // 2. Mirror NetworkTransform 텔레포트 (보간 버퍼 리셋)
+            if (TryGetComponent(out NetworkTransformBase netTransform))
+                netTransform.ServerTeleport(position, transform.rotation);
+            // 3. 클라이언트 위치 스냅 RPC
+            RpcWarp(position);
+        }
+
         [Server]
         public void ToggleFollowPaused()
         {
@@ -111,20 +175,11 @@ namespace MySecondWorld.Combat.Companion
             else ai.PauseFollow();
         }
 
-        // 디버그 키 전용 즉사 — Health 데미지 → 사망 애니메이션까지 다 거치는 "진짜 죽음"
-        [Server]
-        public void DebugKill() => GetComponent<Health>().TakeDamage(99999f);
-
-        // 초상화 클릭 소환해제 — 생사와 무관하게 그냥 감춘다. 애니메이션도 HP 변화도 없다.
-        [Server]
-        public void Dismiss() => _isPresent = false;
-
-        // 초상화 클릭 재소환 — 감췄던 걸 내 위치로 다시 보여준다. 죽어있었다면 죽은 채로 나온다.
-        [Server]
-        public void Summon(Vector3 position)
+        // 모든 관전 클라이언트에게 즉시 위치 강제 스냅
+        [ClientRpc]
+        private void RpcWarp(Vector3 position)
         {
-            GetComponent<CompanionAI>().Warp(position);
-            _isPresent = true;
+            transform.position = position;
         }
 
         [Server]
