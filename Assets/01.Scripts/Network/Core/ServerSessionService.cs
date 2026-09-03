@@ -420,10 +420,10 @@ namespace MySecondWorld.Network
             int grantedCount = 0;
             var addedItems = new HashSet<Cleverous.VaultInventory.RootItem>();
 
-            // 1~7번 인덱스의 파츠 요구 아이템만 선별 지급 (0번은 맨몸이라 제외)
+            // 1~n번 인덱스의 파츠 요구 아이템만 선별 지급 (0번은 맨몸이라 제외)
             foreach (PartType part in System.Enum.GetValues(typeof(PartType)))
             {
-                for (int i = 1; i <= 7; i++)
+                for (int i = 1; i <= 3; i++)
                 {
                     // 남성 파츠 요구 아이템
                     var maleItem = _avatarPartKeyTable.GetRequiredItem(part, Gender.Male, i);

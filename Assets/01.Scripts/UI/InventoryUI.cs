@@ -21,9 +21,7 @@ namespace MySecondWorld.UI
         [SerializeField] private Button _closeButton;
 
         private LocalPlayerInventoryProvider _inventoryProvider;
-        private CharacterSaveService _saveService;
-        private AvatarPartKeyTableSO _avatarPartKeyTable;
-        private IPublisher<CharacterAppearanceSyncRequestedEvent> _syncRequestPub;
+        private CharacterAppearanceService _appearanceService;
         private readonly List<InventorySlotButton> _spawnedSlots = new();
 
 
@@ -33,15 +31,11 @@ namespace MySecondWorld.UI
         [Inject]
         public void Construct(
             LocalPlayerInventoryProvider inventoryProvider,
-            CharacterSaveService saveService,
-            AvatarPartKeyTableSO avatarPartKeyTable,
-            IPublisher<CharacterAppearanceSyncRequestedEvent> syncRequestPub
+            CharacterAppearanceService appearanceService
             )
         {
             _inventoryProvider = inventoryProvider;
-            _saveService = saveService;
-            _avatarPartKeyTable = avatarPartKeyTable;
-            _syncRequestPub = syncRequestPub;
+            _appearanceService = appearanceService;
         }
 
         private void Start()
@@ -107,20 +101,10 @@ namespace MySecondWorld.UI
             }
         }
 
-        // 파츠 아이템 즉시 장착 — 저장된 외형에서 이 아이템에 해당하는 1개 필드만 바꿔서 재발행.
-        // 소유권 재검증은 서버 CmdSetAppearance가 그대로 하므로 여기선 안 함.
+        // 파츠 아이템 즉시 장착 : CharacterAppearanceService가 좌우 페어링, 세이브, 동기화까지 일괄 처리
         private void EquipPart(EquipmentItem item)
         {
-            var data = _saveService.Load();
-            if (!_avatarPartKeyTable.TryFindPartIndex(item, data.Gender, out var part, out var index))
-            {
-                Debug.LogWarning($"[InventoryUI] {item.name}에 대응하는 파츠 인덱스를 찾지 못했습니다.");
-                return;
-            }
-
-            data[part] = index;
-            _saveService.Save(data);
-            _syncRequestPub.Publish(new CharacterAppearanceSyncRequestedEvent(data));
+            _appearanceService.EquipWearableItem(item);
         }
 
         // 클릭한 아이템 종류에 따라 실제로 무슨 액션을 실행할지 결정.

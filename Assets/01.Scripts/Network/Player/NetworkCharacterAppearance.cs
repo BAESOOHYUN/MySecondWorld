@@ -70,8 +70,10 @@ namespace MySecondWorld.Network
             // 그걸 막기 위해 로컬 플레이어 본인 객체일 때만 호출한다.
             saveRequestSub.Subscribe(evt =>
             {
-                if (!isLocalPlayer) return; // "그거 내 캐릭터일 때만 반응해"
-                CmdSetAppearance(evt.Data);
+                if (!isLocalPlayer) return; // 내 캐릭터일 때만 반응
+                // [핵심] 인벤토리/커스터마이징에서 장착 시 내 필드 캐릭터 즉시 환복
+                _customizer.ApplyAppearance(evt.Data).Forget();
+                // 서버 및 다른 유저들에게 동기화 전송
             }).AddTo(destroyCancellationToken);
         }
 
@@ -143,7 +145,7 @@ namespace MySecondWorld.Network
                 {
                     Debug.LogWarning("[NetAppearance] [Server] _avatarPartKeyTable이 null이므로 파츠 유효성 검증을 건너뜁니다.");
                 }
-                // 🛡️ 2. 어떤 예외가 있더라도 서버의 SyncVar에 확실하게 대입!
+                // 2. 어떤 예외가 있더라도 서버의 SyncVar에 확실하게 대입!
                 _appearance = data;
                 Debug.Log($"[NetAppearance] [Server] _appearance 동기화 성공! Gender={data.Gender}, Head={data.Head}, Torso={data.Torso}");
             }

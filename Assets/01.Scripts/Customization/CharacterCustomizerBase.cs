@@ -328,7 +328,7 @@ namespace MySecondWorld.Customization
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[CustomizerBase] ❌ {part} InstantiateAsync 실패: {ex.Message}");
+                Debug.LogError($"[CustomizerBase] {part} InstantiateAsync 실패: {ex.Message}");
             }
         }
 

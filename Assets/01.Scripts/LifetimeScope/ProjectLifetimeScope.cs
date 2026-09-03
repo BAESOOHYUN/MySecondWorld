@@ -67,6 +67,7 @@ public class ProjectLifetimeScope : LifetimeScope
 
         builder.Register<SaveManager>(Lifetime.Singleton);
         builder.Register<CharacterSaveService>(Lifetime.Singleton);
+        builder.Register<CharacterAppearanceService>(Lifetime.Singleton);
         builder.Register<LocalPlayerInventoryProvider>(Lifetime.Singleton);
 
         builder.RegisterComponentInHierarchy<GameNetworkManager>();

@@ -1,8 +1,7 @@
 using UnityEngine;
 using VContainer;
-using MySecondWorld.Customization;
 
-namespace MySecondWorld.Save
+namespace MySecondWorld.Customization
 {
     public class CharacterSaveService
     {
