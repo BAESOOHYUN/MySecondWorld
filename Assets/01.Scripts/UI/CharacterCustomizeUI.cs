@@ -127,6 +127,15 @@ namespace MySecondWorld.UI
 #endif
         }
 
+        private void OnEnable()
+        {
+#if !UNITY_SERVER
+            EnsureInitialized();
+            // UI가 켜질 때마다(Open()이든 SetActive(true)든) 최신 세이브를 읽어서 프리뷰 캐릭터 즉시 동기화!
+            ReloadFromSave().Forget();
+#endif
+        }
+
         private void Start()
         {
 #if UNITY_SERVER
@@ -647,15 +656,16 @@ namespace MySecondWorld.UI
         {
             await EnsureAtlasLoadedAsync();
 
-            var saved = ValidateOwnership(_saveService.Load()); // fallback 없음(이미 저장된 값 자체가 오염된 경우) → 자기 자신 정화, 실패 시 맨몸(0)
+            var saved = _saveService.Load(); // 열릴 때는 현재 착용 중인 로컬 세이브 외형을 그대로 프리뷰에 로드
             _currentGender = saved.Gender;
-            InitIndices(saved); // 디폴트 SO 대신 저장된 외형으로 인덱스 캐시 채움
+            InitIndices(saved); // 저장된 외형으로 인덱스 캐시 채움
 
             UpdateFacialHairTabVisibility();
             ShowTopTab(0); // 파츠 탭(0) 먼저
 
             if (_previewCustomizer != null)
-                await _previewCustomizer.ApplyAppearance(saved); // 프리뷰 캐릭터에 저장된 외형 반영
+                await _previewCustomizer.ApplyAppearance(saved); // 프리뷰 캐릭터에 현재 옷 그대로 반영
+
             SyncIndicesFromCustomizer(); // 상호배제 캐스케이드 결과로 _currentIndices 재동기화
             UpdateThumbnailSelection();
             RefreshColorRows(); // 색상 스와치/피커도 저장된 색으로 갱신
