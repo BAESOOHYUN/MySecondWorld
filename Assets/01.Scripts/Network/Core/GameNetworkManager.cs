@@ -14,6 +14,8 @@ using Cleverous.VaultInventory;
 using MySecondWorld.Save;
 using MySecondWorld.Bundle;
 using MySecondWorld.Network.Companion;
+using MySecondWorld.Customization;
+
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -54,6 +56,7 @@ namespace MySecondWorld.Network
         [SerializeField] private RootItem _testNecklaceItem;
         [SerializeField] private RootItem _testAxeItem;
         [SerializeField] private RootItem _testPolearmItem;
+        [SerializeField] private AvatarPartKeyTableSO _avatarPartKeyTable;
 
         [Header("동행 NPC")]
         [SerializeField] private CompanionAdminService.CompanionEntry[] _companionRegistry;
@@ -81,6 +84,7 @@ namespace MySecondWorld.Network
 
         public CompanionAdminService CompanionService => _companionService;
         public ServerZoneService ZoneService => _zoneService;
+        public ServerSessionService SessionService => _sessionService;
 
         public event System.Action OnClientStopped;
 
@@ -98,6 +102,7 @@ namespace MySecondWorld.Network
             SaveManager saveManager,
             ISubscriber<AddressablesProgressEvent> progressSub,
             IPublisher<AddressablesProgressEvent> progressPub,
+            AvatarPartKeyTableSO avatarPartKeyTable = null,
             IUIManager uiManager = null
             )
         {
@@ -105,6 +110,8 @@ namespace MySecondWorld.Network
             _saveManager = saveManager;
             _progressSub = progressSub;
             _progressPub = progressPub;
+            if (avatarPartKeyTable != null) 
+                _avatarPartKeyTable = avatarPartKeyTable;
             _uiManager = uiManager;
         }
         #endregion
@@ -176,7 +183,8 @@ namespace MySecondWorld.Network
             _sessionService = new ServerSessionService(
                 this, _roomRegistry, _saveManager, _startingGoldItem, _startingGoldAmount,
                 _testSwordItem, _testRingItem, _testBowItem,
-                _testQuiverItem, _testBraceletItem, _testNecklaceItem, _testAxeItem, _testPolearmItem);
+                _testQuiverItem, _testBraceletItem, _testNecklaceItem, _testAxeItem, _testPolearmItem,
+                _avatarPartKeyTable);
             _companionService = new CompanionAdminService(_sessionService, _companionRegistry);
             _zoneService = new ServerZoneService(this, _sessionService, _roomRegistry);
 
@@ -357,20 +365,6 @@ namespace MySecondWorld.Network
             if (isOn) StartClient();
             else StopClient();
 #endif
-        }
-        #endregion
-
-        #region 디버그 / 테스트용
-        // 테스트용 — 기존 계정(isNewPlayer=false)에도 강제로 시작 골드를 지급한다.
-        // 누를 때마다 누적 지급되므로 디버그 전용.
-        public void DebugGrantStartingGold(NetworkConnectionToClient conn)
-        {
-            _sessionService.GrantStartingGold(conn);
-        }
-
-        public void DebugGrantWeaponTestKit(NetworkConnectionToClient conn)
-        {
-            _sessionService.GrantWeaponTestKit(conn);
         }
         #endregion
     }

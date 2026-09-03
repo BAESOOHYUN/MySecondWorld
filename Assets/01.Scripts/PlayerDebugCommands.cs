@@ -15,6 +15,7 @@ namespace MySecondWorld.Network.Player
         public void RequestStartingGold() { if (isOwned) CmdGrantStartingGold(); }
 
         public void RequestWeaponTestKit() { if (isOwned) CmdGrantWeaponTestKit(); }
+        public void RequestArmorTestKit() { if (isOwned) CmdGrantArmorTestKit(); }
 
         #endregion
 
@@ -27,21 +28,30 @@ namespace MySecondWorld.Network.Player
             if (keyboard == null) return;
 
             if (keyboard.f7Key.wasPressedThisFrame) RequestStartingGold();
+            if (keyboard.f11Key.wasPressedThisFrame) RequestArmorTestKit();
             if (keyboard.f12Key.wasPressedThisFrame) RequestWeaponTestKit();
         }
 
         #region Command (서버에서 실행)
 
+
         [Command]
         private void CmdGrantStartingGold()
         {
-            Manager.DebugGrantStartingGold(connectionToClient);
+            // 🛡️ Manager.SessionService로 직접 깔끔하게 호출!
+            Manager.SessionService.GrantStartingGold(connectionToClient);
         }
 
         [Command]
         private void CmdGrantWeaponTestKit()
         {
-            Manager.DebugGrantWeaponTestKit(connectionToClient);
+            Manager.SessionService.GrantWeaponTestKit(connectionToClient);
+        }
+
+        [Command]
+        private void CmdGrantArmorTestKit()
+        {
+            Manager.SessionService.GrantArmorTestKit(connectionToClient);
         }
         #endregion
     }

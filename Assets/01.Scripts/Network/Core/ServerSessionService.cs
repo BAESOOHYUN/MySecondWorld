@@ -8,6 +8,7 @@ using Mirror;
 using Cleverous.VaultInventory;
 using MySecondWorld.Save;
 using MySecondWorld.Combat.Companion;
+using MySecondWorld.Customization;
 
 namespace MySecondWorld.Network
 {
@@ -27,6 +28,7 @@ namespace MySecondWorld.Network
         private readonly RootItem _testNecklaceItem;
         private readonly RootItem _testAxeItem;
         private readonly RootItem _testPolearmItem;
+        private readonly AvatarPartKeyTableSO _avatarPartKeyTable;
 
         public Dictionary<int, PlayerSession> Sessions { get; } = new();
 
@@ -43,7 +45,8 @@ namespace MySecondWorld.Network
            RootItem testBraceletItem,
            RootItem testNecklaceItem,
            RootItem testAxeItem,
-           RootItem testPolearmItem
+           RootItem testPolearmItem,
+           AvatarPartKeyTableSO avatarPartKeyTable
            )
         {
             _manager = manager;
@@ -59,6 +62,7 @@ namespace MySecondWorld.Network
             _testNecklaceItem = testNecklaceItem;
             _testAxeItem = testAxeItem;
             _testPolearmItem = testPolearmItem;
+            _avatarPartKeyTable = avatarPartKeyTable;
         }
 
         // [S3] 세션 생성 + PrepareAndSpawn 시작
@@ -105,8 +109,8 @@ namespace MySecondWorld.Network
                 return;
             }
 
-            var saveData = (!string.IsNullOrEmpty(session.playerId) && _saveManager != null) 
-                ? _saveManager.Load(session.playerId) 
+            var saveData = (!string.IsNullOrEmpty(session.playerId) && _saveManager != null)
+                ? _saveManager.Load(session.playerId)
                 : null;
             var hasSpawnData = saveData.HasValue;
             session.isNewPlayer = !hasSpawnData;
@@ -117,8 +121,8 @@ namespace MySecondWorld.Network
             if (!string.IsNullOrEmpty(session.playerId) && hasSpawnData)
             {
                 // 세이브 데이터가 있으면 → 저장된 씬 + 위치 사용
-                spawnScene = saveData.Value.lastSceneNames != null && saveData.Value.lastSceneNames.Length > 0 
-                    ? saveData.Value.lastSceneNames[0] 
+                spawnScene = saveData.Value.lastSceneNames != null && saveData.Value.lastSceneNames.Length > 0
+                    ? saveData.Value.lastSceneNames[0]
                     : spawnScene;
                 spawnPosition = saveData.Value.lastPosition;
                 session.recruitedCompanionIds = saveData.Value.recruitedCompanionIds ?? Array.Empty<string>();
@@ -326,7 +330,7 @@ namespace MySecondWorld.Network
         {
             if (!Sessions.TryGetValue(conn.connectionId, out var session)) return;
             if (session.companionIdentity != null) return; // MVP: 이미 있으면 무시
-            
+
             SpawnCompanionFor(session, conn, speciesPrefab);
             session.companionAlive = true;
             session.companionPresent = true;
@@ -348,6 +352,10 @@ namespace MySecondWorld.Network
                 session.recruitedCompanionIds = newIds;
             }
         }
+
+        #endregion
+
+        #region 테스트/디버그 
 
         // 시작 골드 지급. 스폰 경로와 디버그 버튼이 같은 코드를 쓰도록 분리.
         // "신규 플레이어인가" 판단은 호출부 책임 — 디버그 경로는 그 조건을 일부러 건너뛴다.
@@ -393,6 +401,48 @@ namespace MySecondWorld.Network
             Debug.Log($"[Session] conn={conn.connectionId}에게 무기 테스트 킷 지급");
         }
 
+        // 테스트용 옷/방어구(EquipmentItem) 일괄 인벤토리 지급
+        public void GrantArmorTestKit(NetworkConnectionToClient conn)
+        {
+            if (conn.identity == null) return;
+            var inventory = conn.identity.GetComponent<Cleverous.VaultInventory.Inventory>();
+            if (inventory == null)
+            {
+                Debug.LogWarning($"[Session] conn={conn.connectionId} 플레이어에 Inventory가 없음");
+                return;
+            }
+            if (_avatarPartKeyTable == null)
+            {
+                Debug.LogWarning("[Session] AvatarPartKeyTableSO가 연결되지 않아 방어구 지급 불가");
+                return;
+            }
+
+            int grantedCount = 0;
+            var addedItems = new HashSet<Cleverous.VaultInventory.RootItem>();
+
+            // 1~7번 인덱스의 파츠 요구 아이템만 선별 지급 (0번은 맨몸이라 제외)
+            foreach (PartType part in System.Enum.GetValues(typeof(PartType)))
+            {
+                for (int i = 1; i <= 7; i++)
+                {
+                    // 남성 파츠 요구 아이템
+                    var maleItem = _avatarPartKeyTable.GetRequiredItem(part, Gender.Male, i);
+                    if (maleItem != null && addedItems.Add(maleItem) && !inventory.Contains(maleItem, 1))
+                    {
+                        inventory.DoAdd(new Cleverous.VaultInventory.RootItemStack(maleItem, 1));
+                        grantedCount++;
+                    }
+                    // 여성 파츠 요구 아이템
+                    var femaleItem = _avatarPartKeyTable.GetRequiredItem(part, Gender.Female, i);
+                    if (femaleItem != null && femaleItem != maleItem && addedItems.Add(femaleItem) && !inventory.Contains(femaleItem, 1))
+                    {
+                        inventory.DoAdd(new Cleverous.VaultInventory.RootItemStack(femaleItem, 1));
+                        grantedCount++;
+                    }
+                }
+            }
+            Debug.Log($"[Session] conn={conn.connectionId}에게 1~7번 방어구/의상 아이템 {grantedCount}개 서버 지급 완료!");
         #endregion
+        }
     }
 }

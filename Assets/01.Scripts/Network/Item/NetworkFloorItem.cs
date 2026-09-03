@@ -1,4 +1,5 @@
 using UnityEngine;
+using Cysharp.Threading.Tasks;
 using Mirror;
 using Cleverous.VaultInventory;
 
@@ -15,6 +16,7 @@ namespace MySecondWorld.Network
         [SerializeField] private RootItem _item;
         [SerializeField] private int _stackSize = 1;
         [SerializeField] private float _pickupDelay = 1f; // 스폰 직후 이 시간(초) 동안은 못 주움 — 버리자마자 다시 줍히는 것 방지
+        [SerializeField] private float _autoDestroyLifetime = 10f;
 
         // "이 바닥 아이템이 이미 누군가에게 지급됐는가"를 기억하는 스위치
         // _isPickedUp 플래그는 서버가 NetworkServer.Destroy 처리 전 네트워크 왕복 시간 동안
@@ -25,6 +27,12 @@ namespace MySecondWorld.Network
         {
             base.OnStartServer();
             _spawnServerTime = NetworkTime.time; // 서버 기준 스폰 시각 기록(씬 배치든 런타임 Instantiate든 공통)
+
+            // n초 후 자동 소멸 타이머 가동 (서버 권위)
+            if (_autoDestroyLifetime > 0f)
+            {
+                DestroyAfterLifetimeAsync(_autoDestroyLifetime, destroyCancellationToken).Forget();
+            }
         }
 
         private void OnTriggerEnter(Collider other)
@@ -62,6 +70,17 @@ namespace MySecondWorld.Network
             // 모두 들어갔으면 지급 완료 → 필드 아이템 제거
             _isPickedUp = true;
             NetworkServer.Destroy(gameObject);
+        }
+
+        // n초 대기 후 아직 안 주워갔으면 서버에서 안전하게 파괴
+        private async UniTaskVoid DestroyAfterLifetimeAsync(float lifetime, System.Threading.CancellationToken ct)
+        {
+            await UniTask.Delay(System.TimeSpan.FromSeconds(lifetime), cancellationToken: ct);
+            // 아직 아무도 안 주워갔고 오브젝트가 살아있으면 서버에서 파괴
+            if (!_isPickedUp && gameObject != null)
+            {
+                NetworkServer.Destroy(gameObject);
+            }
         }
     }
 }
