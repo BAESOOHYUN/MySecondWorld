@@ -94,6 +94,8 @@ namespace MySecondWorld.Network.Player
             if (customizer != null)
             {
                 await customizer.ApplyAppearance(data);
+                // [핵심 추가] 내 캐릭터 외형 조립 완료 → HUD 얼굴 썸네일 캡처 트리거
+                NetworkCharacterAppearance.TriggerLocalAppearanceReady();
             }
             // 4. 다른 플레이어들에게 보여주기 위해 서버로 외형 동기화 전송
             if (_networkAppearance != null)

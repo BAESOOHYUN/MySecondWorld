@@ -38,7 +38,6 @@ namespace MySecondWorld.Network
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics() => LocalAppearanceReady = null; // Domain Reload OFF 대응
-
         private IPublisher<RequestOpenCustomizeUIEvent> _openUIPublisher;
 
         [Inject]
@@ -71,8 +70,9 @@ namespace MySecondWorld.Network
             saveRequestSub.Subscribe(evt =>
             {
                 if (!isLocalPlayer) return; // 내 캐릭터일 때만 반응
-                // [핵심] 인벤토리/커스터마이징에서 장착 시 내 필드 캐릭터 즉시 환복
-                _customizer.ApplyAppearance(evt.Data).Forget();
+                // 외형 조립 후 HUD 얼굴 캡처 신호 발송
+                ApplyAndNotify(evt.Data).Forget(); 
+                CmdSetAppearance(evt.Data);
                 // 서버 및 다른 유저들에게 동기화 전송
             }).AddTo(destroyCancellationToken);
         }
@@ -165,12 +165,18 @@ namespace MySecondWorld.Network
 #endif 
         }
 
-
         private async Cysharp.Threading.Tasks.UniTaskVoid ApplyAndNotify(CharacterAppearanceData next)
         {
-            await _customizer.ApplyAppearance(next); // 파츠 로딩 다 끝날 때까지 여기서 기다림
-            if (isLocalPlayer) LocalAppearanceReady?.Invoke();
+            await _customizer.ApplyAppearance(next); // 1.머리, 눈, 투구 등 모든 파츠가 다 로딩 될 때까지 기다림
+            if (isLocalPlayer) LocalAppearanceReady?.Invoke(); // 2. 완벽하게 다 입혀진 순간 사진(썸네일) 촬영
         }
+
+        // 외부에서 얼굴 캡처 신호를 안전하게 쏠 수 있는 정적 함수
+        public static void TriggerLocalAppearanceReady()
+        {
+            LocalAppearanceReady?.Invoke();
+        }
+
 
         private static int Clamp(int value, int count)
         {

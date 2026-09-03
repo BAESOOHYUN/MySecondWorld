@@ -86,6 +86,14 @@ namespace MySecondWorld.Network
         public void EquipMainHand(int weaponDbKey)
         {
             Debug.Log($"[Equip] EquipMainHand(client) 호출 dbKey={weaponDbKey}");
+
+            // [핵심] 서버 응답 기다리지 않고 내 손에 0.01초 즉시 무기 부착
+            if (isLocalPlayer)
+            {
+                _equipToken++;
+                ApplyMainHandVisual(weaponDbKey, _equipToken).Forget();
+            }
+
             CmdEquipMainHand(weaponDbKey);
         }
 
