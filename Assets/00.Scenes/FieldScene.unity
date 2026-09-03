@@ -20,11 +20,11 @@ RenderSettings:
   m_FogDensity: 0.01
   m_LinearFogStart: 0
   m_LinearFogEnd: 300
-  m_AmbientSkyColor: {r: 1, g: 1, b: 1, a: 1}
-  m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
-  m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
+  m_AmbientSkyColor: {r: 0.8156863, g: 0.9098039, b: 1, a: 1}
+  m_AmbientEquatorColor: {r: 0.5019608, g: 0.5019608, b: 0.5019608, a: 1}
+  m_AmbientGroundColor: {r: 0.1882353, g: 0.1882353, b: 0.1882353, a: 1}
   m_AmbientIntensity: 1
-  m_AmbientMode: 3
+  m_AmbientMode: 1
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
   m_SkyboxMaterial: {fileID: 10304, guid: 0000000000000000f000000000000000, type: 0}
   m_HaloStrength: 0.5
@@ -341,6 +341,37 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 131926678}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &147082597
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 147082598}
+  m_Layer: 0
+  m_Name: SpawnPoint_02
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &147082598
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 147082597}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
+  m_LocalPosition: {x: -12.700001, y: 24.53, z: 39.2}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 453876622}
+  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!1001 &184389398
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1114,6 +1145,62 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 451627568}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &453876620
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 453876622}
+  - component: {fileID: 453876621}
+  m_Layer: 0
+  m_Name: MonsterWaveSpawner_01
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &453876621
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 453876620}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd1510ffaddd1b542ad8c9eb8003c6d8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MySecondWorld.Combat.Monster.MonsterWaveSpawner
+  _spawnMode: 1
+  _waveDefinition: {fileID: 11400000, guid: 3300b81502908c94ab4312fd6b56f607, type: 2}
+  _spawnPoints:
+  - {fileID: 1461570879}
+  - {fileID: 147082598}
+  _spawnRadius: 5
+  _autoStartOnServer: 1
+  _individualRespawnDelay: 5
+  _loopDungeonWaves: 1
+  _waveDelay: 3
+--- !u!4 &453876622
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 453876620}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1461570879}
+  - {fileID: 147082598}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &463445429
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3578,6 +3665,37 @@ Transform:
   - {fileID: 1213966583}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1461570878
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1461570879}
+  m_Layer: 0
+  m_Name: SpawnPoint_01
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1461570879
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1461570878}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
+  m_LocalPosition: {x: 2.5, y: 24.53, z: 41.6}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 453876622}
+  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!1001 &1467762334
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4775,11 +4893,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cd1510ffaddd1b542ad8c9eb8003c6d8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MySecondWorld.Combat.Monster.MonsterWaveSpawner
+  _spawnMode: 0
   _waveDefinition: {fileID: 11400000, guid: 3300b81502908c94ab4312fd6b56f607, type: 2}
   _spawnPoints:
   - {fileID: 683837941}
   - {fileID: 2006034582}
-  _autoStartForTesting: 1
+  _spawnRadius: 5
+  _autoStartOnServer: 1
+  _individualRespawnDelay: 5
+  _loopDungeonWaves: 0
+  _waveDelay: 3
 --- !u!4 &1921059537
 Transform:
   m_ObjectHideFlags: 0
@@ -5572,4 +5695,5 @@ SceneRoots:
   - {fileID: 1001816890409495545}
   - {fileID: 1821594886}
   - {fileID: 1921059537}
+  - {fileID: 453876622}
   - {fileID: 1335720705}

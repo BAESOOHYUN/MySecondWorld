@@ -120,6 +120,8 @@ namespace MySecondWorld.Network
         // 클라이언트만 도는 케이스에서도 ExitingPlayMode 정리가 보장되도록 Awake에서 등록.
         public override void Awake()
         {
+            // Mirror가 연결 끊김 시 MoveGameObjectToScene을 시도하지 않도록 방지
+            offlineScene = "";
             base.Awake();
 #if UNITY_EDITOR
             EditorApplication.playModeStateChanged += OnEditorPlayModeStateChanged;

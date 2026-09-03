@@ -114,11 +114,25 @@ namespace MySecondWorld.Network.Player
                 const float timeout = 10f;
                 float elapsed = 0f;
                 string targetScene = ResolveSpawnScene();
-
+                // 타겟 씬(FieldScene 등)이 메모리에 로드될 때까지 대기
                 while (!SceneManager.GetSceneByPath(targetScene).isLoaded && elapsed < timeout)
                 {
                     await UniTask.Delay(100, cancellationToken: ct);
                     elapsed += 0.1f;
+                }
+
+                // [안전 보정] 클라이언트 환경에서 혹시라도 MainScene에 머물러 있는 경우,
+                // 플레이어를 타겟 서브씬으로 확실하게 이동
+                if (!NetworkServer.active)
+                {
+                    var subScene = SceneManager.GetSceneByPath(targetScene);
+                    if (subScene.IsValid() && subScene.isLoaded && gameObject.scene != subScene)
+                    {
+                        if (transform.parent != null)
+                            transform.SetParent(null);
+                        SceneManager.MoveGameObjectToScene(gameObject, subScene);
+                        Debug.Log($"[NetPlayerController] 클라이언트 플레이어 GameObject를 {subScene.name}으로 이동 완료");
+                    }
                 }
             }
             catch (OperationCanceledException)
