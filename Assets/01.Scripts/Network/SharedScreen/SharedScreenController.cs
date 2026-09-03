@@ -52,6 +52,9 @@ namespace MySecondWorld.Network
         private int _cachedTotalPageCount;  // 서버용 (Cmd에서 범위 체크, 캐시 전송, TargetRpc로 전달할 때 필요)
         private bool _isCacheReady; // 캐시 완성 여부(전송 중에 진입한 사람에게 미완성 데이터 안 보내려고)
 
+        // 서버에서 발표자를 추적하고, 발표자가 로그아웃/접속 종료 시
+        // _presenterId를 0으로 리셋하고 SendClearToObservers()를 호출하여 화면을 끔
+        private NetworkConnectionToClient _presenterConn;
         // 관찰자 목록 : 이 SharedScreen 오브젝트만의 로컬 상태
         private HashSet<NetworkConnectionToClient> _outerObservers = new HashSet<NetworkConnectionToClient>();
 
@@ -102,6 +105,18 @@ namespace MySecondWorld.Network
 
         public void OnObserverDisconnected(NetworkConnectionToClient conn)
         {
+            if (conn != null && (_presenterConn == conn || (conn.identity != null && _presenterId == conn.identity.netId)))
+            {
+                _presenterId = 0;
+                _presenterConn = null;
+                _currentPage = 0;
+                _zoomLevel = 1f;
+                _viewportRect = new Vector4(0, 0, 1, 1);
+                SendClearToObservers();
+                _isCacheReady = false;
+                _cachedFileBuffer = null;
+            }
+
             _outerObservers.Remove(conn);
         }
 
@@ -135,15 +150,17 @@ namespace MySecondWorld.Network
         {
             if (sender?.identity == null) return;
             _presenterId = sender.identity.netId;
+            _presenterConn = sender;
         }
 
         [Command(requiresAuthority = false)]
         public void CmdReleasePresenter(NetworkConnectionToClient sender = null)
         {
             if (sender?.identity == null) return;
-            if (_presenterId == sender.identity.netId)
+            if (_presenterId == sender.identity.netId || _presenterConn == sender)
             {
                 _presenterId = 0;    // 서버에서 SyncVar 세팅
+                _presenterConn = null;
                 _currentPage = 0;    // 늦게 온 사람도 "발표자 없음, 0페이지" 상태를 자동으로 받아야 함
                 _zoomLevel = 1f;
                 _viewportRect = new Vector4(0, 0, 1, 1);
@@ -155,7 +172,6 @@ namespace MySecondWorld.Network
         }
 
         // 서버에 파일 다운로드 요청
-
         [Command(requiresAuthority = false)]
         public void CmdSendFileStart(string fileName, FileType fileType, int totalSize, int totalChunkCount, bool allowDownload, NetworkConnectionToClient sender = null)
         {
@@ -164,9 +180,13 @@ namespace MySecondWorld.Network
             // 발표자가 이미 있고, 내가 아니면 거부
             if (_presenterId != 0 && sender?.identity?.netId != _presenterId)
                 return;
-            // 파일 여는 사람이 자동으로 발표자
+
+            // 내부 발표자 등록 : 파일 여는 사람이 자동으로 발표자
             if (sender?.identity != null)
+            {
                 _presenterId = sender.identity.netId;
+                _presenterConn = sender; // 추가
+            }
 
             _allowDownload = allowDownload;
             _fileName = fileName;        // 서버에서 SyncVar 세팅
