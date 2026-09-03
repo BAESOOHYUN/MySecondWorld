@@ -153,50 +153,85 @@ namespace MySecondWorld.Network
         {
             bool inAnyZone = false;
             string currentWorld = WorldOf(session.Value.currentScene) ?? WorldOf(_manager.defaultSubScene);
-
-            var currentZone = _manager.zones.FirstOrDefault(z => z.sceneName == session.Value.currentScene);
-            if (currentZone != null && currentZone.bounds.Contains(playerPos))
+            ZoneDefinitionSO detectedZone = null;
+            // ─────────────────────────────────────────────────────────────
+            // [1단계: 최우선] 실제로 발을 딛고 서 있는 바닥 콜라이더의 씬 확인!
+            // ─────────────────────────────────────────────────────────────
+            var controller = conn.identity.GetComponent<CharacterController>();
+            Vector3 origin = conn.identity.transform.position + (controller != null ? controller.center : Vector3.up);
+            float radius = controller != null ? Mathf.Max(0.2f, controller.radius - controller.skinWidth) : 0.3f;
+            float distance = (controller != null ? (controller.height / 2f) : 1f) + 2.5f; // 계단 경사로 감안 넉넉한 거리
+                                                                                          // 트리거를 제외한 바닥 물리 콜라이더를 SphereCast로 확실하게 검출
+            if (Physics.SphereCast(origin, radius, Vector3.down, out RaycastHit hit, distance, ~0, QueryTriggerInteraction.Ignore))
             {
-                inAnyZone = true;
-            }
-            else
-            {
-                ZoneDefinitionSO bestZone = null;
-                float bestVolume = float.MaxValue;
-
-                foreach (var zone in _manager.zones)
+                Scene hitScene = hit.collider.gameObject.scene;
+                if (hitScene.IsValid() && !string.IsNullOrEmpty(hitScene.name))
                 {
-                    // 다른 월드의 존은 후보로 삼지 않는다 — 월드 간 이동은 포탈로만 일어난다.
-                    if (zone.WorldId != currentWorld) continue;
-                    if (!zone.bounds.Contains(playerPos)) continue;
-
-                    float volume = zone.bounds.size.x * zone.bounds.size.y * zone.bounds.size.z;
-                    if (volume < bestVolume)
+                    // ★ 핵심: Addressables 씬은 scene.path가 비어있으므로 scene.name으로 비교!
+                    detectedZone = _manager.zones.FirstOrDefault(z =>
+                        z.sceneName == hitScene.path ||
+                        System.IO.Path.GetFileNameWithoutExtension(z.sceneName) == hitScene.name ||
+                        z.sceneName.EndsWith("/" + hitScene.name + ".unity"));
+                    if (detectedZone != null)
                     {
-                        bestVolume = volume;
-                        bestZone = zone;
+                        Debug.Log($"[Zone] 바닥 감지 성공: 밟은 오브젝트='{hit.collider.name}', 씬='{hitScene.name}' ➔ Zone='{detectedZone.name}'");
                     }
                 }
-                if (bestZone != null)
-                {
-                    inAnyZone = true;
-                    PlayerChangedScene(conn, bestZone.sceneName);
-                }
             }
 
-            if (inAnyZone)
+            // ─────────────────────────────────────────────────────────────
+            // [2단계: 폴백] 점프 중이거나 허공일 때는 기존 Bounds 판정 수행
+            // ─────────────────────────────────────────────────────────────
+            if (detectedZone == null)
             {
-                session.Value.fallTimer = 0;
-                // 안전 위치는 "존 안"이 아니라 "발밑에 지형이 있을 때"만 기록한다.
-                if (grounded)
+                // 2-A. 현재 머물고 있는 씬의 Bounds 안에 여전히 있다면 현재 씬 유지 (히스테리시스)
+                var currentZone = _manager.zones.FirstOrDefault(z => z.sceneName == session.Value.currentScene);
+                if (currentZone != null && currentZone.bounds.Contains(playerPos))
                 {
-                    session.Value.lastSafePosition = playerPos;
-                    session.Value.lastSafeScene = session.Value.currentScene;
+                    detectedZone = currentZone; // 현재 머물고 있는 씬 유지
+                }
+                else
+                {
+                    // 2-B. 완전히 다른 영역으로 벗어났을 때만 가장 작은 부피의 겹친 Zone 탐색
+                    ZoneDefinitionSO bestZone = null;
+                    float bestVolume = float.MaxValue;
+                    foreach (var zone in _manager.zones)
+                    {
+                        if (zone.WorldId != currentWorld) continue;
+                        if (!zone.bounds.Contains(playerPos)) continue;
+                        float volume = zone.bounds.size.x * zone.bounds.size.y * zone.bounds.size.z;
+                        if (volume < bestVolume)
+                        {
+                            bestVolume = volume;
+                            bestZone = zone;
+                        }
+                    }
+                    detectedZone = bestZone;
                 }
             }
-            else
+            // ─────────────────────────────────────────────────────────────
+            // [3단계: 씬 소속 갱신]
+            // ─────────────────────────────────────────────────────────────
+            if (detectedZone != null)
             {
+                inAnyZone = true;
+                // 판정된 씬이 현재 세션 씬과 다르면 즉시 소속 씬 전환 (MoveGameObjectToScene)
+                if (session.Value.currentScene != detectedZone.sceneName)
+                {
+                    Debug.Log($"[Zone] 씬 전환 감지: {session.Value.currentScene} ➔ {detectedZone.sceneName} (밟고 있는 바닥 기준)");
+                    PlayerChangedScene(conn, detectedZone.sceneName);
+                }
+            }
+            // 존 이탈 타이머 갱신
+            if (inAnyZone)
+                session.Value.fallTimer = 0;
+            else
                 session.Value.fallTimer += _manager.zoneCheckInterval;
+            // 안전 위치 기록
+            if (grounded && inAnyZone)
+            {
+                session.Value.lastSafePosition = playerPos;
+                session.Value.lastSafeScene = session.Value.currentScene;
             }
         }
 
