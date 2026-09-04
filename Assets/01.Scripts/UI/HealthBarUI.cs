@@ -23,9 +23,9 @@ namespace MySecondWorld.UI
         private TextMeshProUGUI _hpText;
 
         // [SerializeField] private Image _fillImage;   // ↓ 셰이더 방식으로 되돌릴 때 함께 부활
-
         private ScreenFollowUI _follow;   // 화면 고정 바(플레이어 HUD)에는 없다
         private IHealthView _view;
+
 
         private void Awake()
         {
@@ -46,10 +46,17 @@ namespace MySecondWorld.UI
             _slider.interactable = false;
         }
 
+
+        // IHealthView 구현체는 전부 NetworkBehaviour(UnityEngine.Object)다.
+        // 인터페이스 타입으로 들고 있으면 `== null`이 Unity의 "파괴됨" 판정을 못 타므로,
+        // UnityEngine.Object로 한 번 캐스팅해서 확인해야 한다.
+        private static bool IsAlive(IHealthView view) => view != null && (view as UnityEngine.Object) != null;
+
+
         public void Bind(IHealthView view)
         {
             Unbind();
-            if (view == null) return;
+            if (!IsAlive(view)) return;
 
             _view = view;
             _follow?.SetTarget(view.Anchor);
@@ -60,18 +67,17 @@ namespace MySecondWorld.UI
 
         public void Unbind()
         {
-            if (_view != null)
-            {
+            if (IsAlive(_view))
                 _view.HPChanged -= Refresh;
-                _view = null;
-            }
+
+            _view = null;
             _follow?.SetTarget(null);
         }
 
         // 현재/최대를 한 번에 다시 읽는다 — 짝이 어긋난 값이 화면에 뜨지 않게.
         private void Refresh()
         {
-            if (_view == null) return;
+            if (!IsAlive(_view)) return;
 
             float max = _view.MaxHP;
             float cur = _view.CurrentHP;
