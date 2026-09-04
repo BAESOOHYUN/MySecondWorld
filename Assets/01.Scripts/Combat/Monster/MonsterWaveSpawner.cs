@@ -53,7 +53,6 @@ namespace MySecondWorld.Combat.Monster
         {
             // Additive 씬은 모든 클라에도 로드됨 — 가드 없으면 클라마다 독립적으로 중복 스폰함
             if (!NetworkServer.active) return;
-            StartWaves(gameObject.scene.path);
 
             if (_autoStartOnServer)
                 StartWaves(gameObject.scene.path);

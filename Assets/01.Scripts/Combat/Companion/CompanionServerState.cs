@@ -70,6 +70,7 @@ namespace MySecondWorld.Combat.Companion
         {
             // 목적지 씬 활성화 이벤트 구독
             ClientSceneSyncService.OnDestinationSceneActivated += HandleDestinationSceneActivated;
+            ClientSceneSyncService.OnAdditiveSceneUnloading += HandleAdditiveSceneUnloading;
             WaitForLocalPlayerThenMark().Forget();
         }
 
@@ -77,6 +78,7 @@ namespace MySecondWorld.Combat.Companion
         {
             // 구독 해제
             ClientSceneSyncService.OnDestinationSceneActivated -= HandleDestinationSceneActivated;
+            ClientSceneSyncService.OnAdditiveSceneUnloading -= HandleAdditiveSceneUnloading;
             if (LocalCompanion != this) return;
             LocalCompanion = null;
             LocalCompanionLost?.Invoke();
@@ -94,6 +96,27 @@ namespace MySecondWorld.Combat.Companion
                 SceneManager.MoveGameObjectToScene(gameObject, newScene);
                 Debug.Log($"[Companion] 로컬 컴패니언이 {newScene.name}으로 안전하게 이사 완료");
             }
+        }
+
+        // 언로드 직전 긴급 대피 — HandleDestinationSceneActivated로 새 씬 이동이 안 끝난 채
+        // 이전 씬이 언로드되면 컴패니언 GameObject가 통째로 파괴되는 것을 막는 마지막 방어선
+        private void HandleAdditiveSceneUnloading(Scene unloadingScene)
+        {
+            if (this == null) return;
+            if (LocalCompanion != this) return;
+            if (gameObject.scene != unloadingScene) return;
+
+            var permanentScene = SceneManager.GetSceneAt(0);
+            if (!permanentScene.IsValid() || !permanentScene.isLoaded || permanentScene == unloadingScene)
+            {
+                Debug.LogError($"[Companion] '{unloadingScene.name}' 언로드 직전 대피 실패 — 안전한 영구 씬을 찾지 못함(permanentScene={(permanentScene.IsValid() ? permanentScene.name : "invalid")})");
+                return;
+            }
+
+            if (transform.parent != null)
+                    transform.SetParent(null);
+            SceneManager.MoveGameObjectToScene(gameObject, permanentScene);
+            Debug.LogWarning($"[Companion] '{unloadingScene.name}' 언로드 직전 로컬 컴패니언을 MainScene으로 긴급 대피 — 정상 경로였다면 이미 새 씬으로 옮겨져 있어야 함");
         }
 
         #region ICompanionServerState — 서버 전용 조작

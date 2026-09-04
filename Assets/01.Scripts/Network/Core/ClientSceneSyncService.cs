@@ -31,6 +31,7 @@ namespace MySecondWorld.Network
 
         // 다른 어셈블리(Combat 등)가 구독할 수 있는 static 이벤트 선언
         public static event Action<Scene> OnDestinationSceneActivated;
+        public static event Action<Scene> OnAdditiveSceneUnloading; // 언로드 직전 대피 신호
 
         // Domain Reload OFF — static 이벤트는 Play 세션을 넘어 구독자가 그대로 남는다.
         // 이전 세션에서 파괴된 인스턴스가 계속 구독돼 있으면, 다음 씬 로드 시점에
@@ -39,6 +40,7 @@ namespace MySecondWorld.Network
         private static void ResetStatics()
         {
             OnDestinationSceneActivated = null;
+            OnAdditiveSceneUnloading = null;
         }
 
         public void SetPrimaryTargetScene(string sceneName)
@@ -141,36 +143,80 @@ namespace MySecondWorld.Network
             // Host 모드: 같은 프로세스라 언로드하면 서버 씬까지 날아가므로 스킵
             if (NetworkServer.active)
                 return;
-
+            
             // [안전장치] 만약 언로드하려는 씬이 현재 ActiveScene이라면,
             // 남아있는 다른 서브씬이나 MainScene으로 ActiveScene 복구
             Scene activeScene = SceneManager.GetActiveScene();
+            var mainScene = SceneManager.GetSceneAt(0);
+
             if (activeScene.IsValid() &&
                 (activeScene.path == sceneName ||
                  activeScene.name == System.IO.Path.GetFileNameWithoutExtension(sceneName)))
             {
                 var otherHandle = _sceneHandles.FirstOrDefault(kvp => kvp.Key != sceneName &&
                                                                     kvp.Value.IsValid() &&
+                                                                    kvp.Value.IsDone &&
                                                                     kvp.Value.Result.Scene.isLoaded);
                 if (otherHandle.Value.IsValid())
-                {
                     SceneManager.SetActiveScene(otherHandle.Value.Result.Scene);
-                }
-                else
-                {
-                    var mainScene = SceneManager.GetSceneAt(0);
-                    if (mainScene.IsValid() && mainScene.isLoaded)
+                else if (mainScene.IsValid() && mainScene.isLoaded)
                         SceneManager.SetActiveScene(mainScene);
-                }
             }
 
             // 씬 언로드 + 핸들 제거 먼저
             if (_sceneHandles.TryGetValue(sceneName, out var handle))
             {
-                await Addressables.UnloadSceneAsync(handle).ToUniTask();
-                _sceneHandles.Remove(sceneName);  // ← 여기서 제거해야 anyRemaining 체크에서 빠짐
+                // [대피 가드] [안전 대피 1] 플레이어가 언로드 대상 씬에 남아있으면 MainScene으로 피신
+                try
+                {
+                    // [안전 대피 1] 플레이어가 언로드 대상 씬에 남아있으면 MainScene으로 피신
+                    // Addressables 씬은 .path가 비어있을 수 있으므로 Scene 구조체 직접 비교
+                    Scene unloadingScene = handle.Result.Scene;
+                    if (unloadingScene.IsValid() && unloadingScene.isLoaded)
+                    {
+                        bool canEvacuate = mainScene.IsValid() && mainScene.isLoaded && mainScene != unloadingScene;
+                        bool playerInScene = NetworkClient.localPlayer != null && NetworkClient.localPlayer.gameObject != null
+                                                && NetworkClient.localPlayer.gameObject.scene == unloadingScene;
+                        {
+                            if (playerInScene && canEvacuate)
+                            {
+                                var playerGo = NetworkClient.localPlayer.gameObject;
+                                if (playerGo.transform.parent != null)
+                                    playerGo.transform.SetParent(null);
+                                SceneManager.MoveGameObjectToScene(playerGo, mainScene);
+                                Debug.LogWarning($"[Client] '{sceneName}' 언로드 직전 로컬 플레이어를 MainScene으로 긴급 대피 — 정상 경로였다면 이미 새 씬으로 옮겨져 있어야 함");
+                            }
+                            else if (playerInScene)
+                            {
+                                Debug.LogError($"[Client] '{sceneName}' 언로드 직전 대피 실패 — 안전한 영구 씬을 찾지 못함");
+                            }
+                            // [안전 대피 2] 컴패니언에게 씬 언로드 전 대피 알림 발행
+                            OnAdditiveSceneUnloading?.Invoke(unloadingScene);
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"[Client] '{sceneName}' 대피 가드 처리 중 예외 — 언로드는 계속 진행: {e}");
+                }
+
+                // 실제 언로드는 대피 가드와 완전히 별개의 try/catch/finally.
+                // 대피 가드가 어떻게 실패하든 이 블록은 반드시 실행되고, 장부 정리도 반드시 보장된다.
+                try
+                {
+                    await Addressables.UnloadSceneAsync(handle).ToUniTask();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"[Client] '{sceneName}' Addressables 언로드 실패: {e}");
+                }
+                finally
+                {
+                    _sceneHandles.Remove(sceneName); // 성공/실패 무관 무조건 정리 — 핸들 누수 방지
+                }
             }
 
+            //  라벨 해제
             // 1. 언로드된 씬의 에셋번들(ZoneAssetLabel) 찾기
             var label = _manager.zones.FirstOrDefault(z => z.sceneName == sceneName)?.ZoneAssetLabel?.labelString;
             // 2. 같은 label의 씬이 _sceneHandles에 아직 있는지 확인

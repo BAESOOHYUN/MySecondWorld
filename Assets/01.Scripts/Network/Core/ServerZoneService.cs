@@ -178,14 +178,23 @@ namespace MySecondWorld.Network
                 Scene hitScene = hit.collider.gameObject.scene;
                 if (hitScene.IsValid() && !string.IsNullOrEmpty(hitScene.name))
                 {
-                    // 핵심: Addressables 씬은 scene.path가 비어있으므로 scene.name으로 비교
-                    detectedZone = _manager.zones.FirstOrDefault(z =>
+                    // 1단계: 밟은 콜라이더의 씬과 일치하는 ZoneDefinitionSO 탐색
+                    //  핵심: Addressables 씬은 scene.path가 비어있으므로 scene.name으로 비교
+                    var candidateZone = _manager.zones.FirstOrDefault(z =>
                         z.sceneName == hitScene.path ||
                         System.IO.Path.GetFileNameWithoutExtension(z.sceneName) == hitScene.name ||
                         z.sceneName.EndsWith("/" + hitScene.name + ".unity"));
-                    if (detectedZone != null)
+                    // 2단계: 현재 세션의 월드(currentWorld)와 일치하는 바닥만 인정
+                    // 던전에 있을 때 겹쳐 있는 FieldScene 콜라이더를 밟아 필드로 강제 추방되는 것 차단
+                    if (candidateZone != null && candidateZone.WorldId == currentWorld)
                     {
-                        Debug.Log($"[Zone] 바닥 감지 성공: 밟은 오브젝트='{hit.collider.name}', 씬='{hitScene.name}' ➔ Zone='{detectedZone.name}'");
+                        detectedZone = candidateZone;
+                        Debug.Log($"[Zone] 바닥 감지 성공: 밟은 오브젝트='{hit.collider.name}', 씬='{hitScene.name}' ➔ Zone='{detectedZone.name}' (World: {currentWorld})");
+                    }
+                    else if (candidateZone != null)
+                    {
+                        // 다른 월드의 겹친 콜라이더(예: 던전 입구에서 FieldScene 지형)를 밟았을 때 가드가 정상 작동했음을 확인
+                        Debug.Log($"[Zone] 바닥 감지됐으나 월드 불일치로 무시: 밟은 씬='{hitScene.name}'(WorldId={candidateZone.WorldId}) ≠ currentWorld='{currentWorld}'");
                     }
                 }
             }

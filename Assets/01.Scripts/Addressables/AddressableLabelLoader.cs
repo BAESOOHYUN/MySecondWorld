@@ -69,12 +69,24 @@ namespace MySecondWorld.Bundle
 
         public void ReleaseLabel(string label)
         {
-            _refCounts[label]--;
+            if (string.IsNullOrEmpty(label))
+                return;
+
+            if (!_refCounts.TryGetValue(label, out int currentCount))
+            {
+                Debug.LogWarning($"[Bundle] '{label}' ReleaseLabel 호출되었으나 참조 카운트가 없음  (중복 해제 의심, 무시)");
+                return;
+            }
+
+            currentCount--;
+            _refCounts[label] = currentCount;
             Debug.Log($"[Bundle] '{label}' refCount={_refCounts[label]}");
 
-            if (_refCounts[label] <= 0)
+            if (currentCount <= 0)
             {
-                Addressables.Release(_handles[label]);
+                if (_handles.TryGetValue(label, out var handle))
+                    Addressables.Release(_handles[label]);
+                // Dictionary.Remove(key)는 그 키가 없어도 예외 없이 그냥 false를 반환하는 안전한 연산
                 _handles.Remove(label);
                 _refCounts.Remove(label);
                 Debug.Log($"[Bundle] '{label}' 언로드 완료");

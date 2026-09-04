@@ -366,6 +366,8 @@ namespace MySecondWorld.Combat.Companion
 
             foreach (var hit in hits)
             {
+                if (hit.transform.gameObject.scene != gameObject.scene) continue; // 포탈 건너편 등 다른 씬의 몬스터는 후보에서 제외
+
                 var health = hit.GetComponentInParent<Health>();
                 if (health == null || health.IsDead) continue; // 죽음 애니메이션 재생 중인 시체는 후보에서 제외
 
