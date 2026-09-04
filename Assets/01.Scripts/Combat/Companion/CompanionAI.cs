@@ -188,6 +188,15 @@ namespace MySecondWorld.Combat.Companion
                 return;
             }
 
+            // owner에게서 너무 멀어지면 호위 우선 — 추격 포기
+            if ((_targetM.position - _owner.position).sqrMagnitude >
+                _stats.MaxChaseDistanceFromOwner * _stats.MaxChaseDistanceFromOwner)
+            {
+                ClearTarget();
+                SafeFire(CompanionTrigger.MonsterLost);
+                return;
+            }
+
             SetAgentDestination(_targetM.position);
             float distance = Vector3.Distance(transform.position, _targetM.position);
             if (distance <= _stats.AttackRange)
@@ -199,6 +208,14 @@ namespace MySecondWorld.Combat.Companion
             if (_targetM == null)
             {
                 SafeFire(CompanionTrigger.TargetOutOfRange);
+                return;
+            }
+
+            if ((_targetM.position - _owner.position).sqrMagnitude >
+                _stats.MaxChaseDistanceFromOwner * _stats.MaxChaseDistanceFromOwner)
+            {
+                ClearTarget();
+                SafeFire(CompanionTrigger.MonsterLost);
                 return;
             }
 

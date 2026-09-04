@@ -33,7 +33,7 @@ namespace MySecondWorld.Combat
                 // SingleTargetSelector가 [0]을 "가장 가까운 대상"으로 쓰므로 정렬만 바꾸면 끝난다.
                 .OrderBy(c => preferred != null && (c.transform == preferred || c.transform.IsChildOf(preferred)) ? 0 : 1)
                 .Select(c => c.GetComponentInParent<IDamageable>()) // 콜라이더 → 자신+조상 중 IDamageable 붙은 가장 가까운 오브젝트로 변환
-                .Where(d => d != null && !d.IsDead)                 // IDamageable이 없는 대상(오탐) 제거, 죽은 대상은 후보에서 제외 — 공격이 시체에 낭비되지 않게
+                .Where(d => d != null && !d.IsDead && d.IsTargetable)// 죽었거나, 소환 해제(IsTargetable == false)된 대상은 공격 타겟 목록에서 원천 배제
                 .Where(d => !IsCasterSelf(d))                       // 자기 자신 안때림
                 .Where(d => !IsAlly(d))                             // 같은 편 안때림
                 .Distinct()                                         // 여러 콜라이더가 같은 IDamageable로 겹칠 때 중복 제거

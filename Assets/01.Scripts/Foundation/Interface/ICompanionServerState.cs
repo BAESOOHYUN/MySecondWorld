@@ -9,6 +9,7 @@ namespace MySecondWorld.Combat.Companion
         event System.Action<bool> AliveChanged;
 
         void Initialize(Transform ownerTransform);
+        void ResetCombatState(); // 씬 전환처럼 기존 타겟 참조가 무의미해진 시점에 전투 상태(타겟/상태머신) 초기화
         void DebugKill();
         void MarkDead();
         void Revive(Vector3 position);

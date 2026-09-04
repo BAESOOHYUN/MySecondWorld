@@ -52,12 +52,17 @@ namespace MySecondWorld.Combat
 
         public void TakeDamage(float damage)
         {
-            if (IsDead || damage <= 0f) return;
+            // 죽었거나, 소환 해제(IsTargetable == false) 상태면 데미지 완벽 무시
+            if (IsDead || !_isTargetable || damage <= 0f) return;
             CurrentHP = Mathf.Max(0f, CurrentHP - damage);
             OnDamaged?.Invoke(CurrentHP);
-
             if (CurrentHP <= 0)
                 OnDied?.Invoke();
+        }
+
+        public void ReviveFull()
+        {
+            CurrentHP = _maxHP;
         }
     }
 }

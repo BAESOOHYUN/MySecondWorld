@@ -56,6 +56,7 @@ namespace MySecondWorld.Combat.Monster
         private readonly AIContext _aiContext = new AIContext();
         private Transform _target;
         private bool _actionLocked;
+        private Vector3 _spawnPosition;
 
         // 진입한 유효 대상의 루트 Transform → 콜라이더 개수 참조카운트.
         // 콜라이더가 여러 개인 대상이 하나씩 나가도 완전히 나가기 전엔 후보에서 지워지지 않게 한다.
@@ -71,6 +72,7 @@ namespace MySecondWorld.Combat.Monster
         // 실제로 풀에 반납된 시점(=죽는 애니메이션까지 완전히 끝난 시점) 통지
         // — MonsterWaveSpawner가 웨이브 전환 타이밍으로 구독
         public event Action OnReturnedToPool;
+
         #endregion
 
         #region Unity 생명주기
@@ -147,8 +149,10 @@ namespace MySecondWorld.Combat.Monster
             var damageable = other.GetComponentInParent<IDamageable>();
             if (damageable == null || damageable.Faction != CombatFaction.Player) return;
 
-            bool wasEmpty = _targetRefCounts.Count == 0;
             var root = other.transform.root;
+            // 죽었거나 소환 해제된 컴패니언은 애초에 어그로 목록에 진입조차 못하게 차단
+            if (!IsValidTarget(root)) return;
+            bool wasEmpty = _targetRefCounts.Count == 0;
 
             // Key: 대상의 루트 Transform(즉, 플레이어/컴패니언 전체 오브젝트)
             // Value: 그 루트에 속한 콜라이더가 현재 Trigger 안에 몇 개 들어와 있는지 카운트
@@ -226,8 +230,19 @@ namespace MySecondWorld.Combat.Monster
         {
             Transform nearest = null;
             float nearestSqrDist = float.MaxValue;
+            List<Transform> invalids = null; // 순회 끝난 뒤 한꺼번에 제거하기 위한 임시 버퍼
+
             foreach (var candidate in _targetRefCounts.Keys)
             {
+                // 단일 통로: 죽어있는 대상은 후보에서 즉시 영구 퇴장
+                if (!IsValidTarget(candidate))
+                {
+                    // 무효 타겟이 하나도 없는 게 보통이라, 진짜 발견됐을 때만 리스트를 만들도록
+                    // 지연 생성(lazy initialization)함 (불필요한 GC 할당 방지)
+                    (invalids ??= new List<Transform>()).Add(candidate);
+                    continue;
+                }
+
                 float sqrDist = (candidate.position - transform.position).sqrMagnitude;
                 if (sqrDist < nearestSqrDist)
                 {
@@ -235,13 +250,19 @@ namespace MySecondWorld.Combat.Monster
                     nearest = candidate;
                 }
             }
+
+            if (invalids != null)
+                foreach (var invalid in invalids)
+                    HandleTargetDied(invalid); // foreach가 완전히 끝난 뒤에만 딕셔너리를 건드림
+
             return nearest;
         }
-
 
         // 표적이 물리적으로 트리거를 나가지 않아도(죽은 채로 그 자리에 있어도) 후보에서 완전히 제거한다
         private void HandleTargetDied(Transform root)
         {
+            if (root == null) return; // _target이 이미 null인 채로 호출되는 경로 방어
+
             _targetRefCounts.Remove(root);
             UnsubscribeDeath(root);
 
@@ -316,6 +337,7 @@ namespace MySecondWorld.Combat.Monster
             if (!_agent.Warp(position))
                 Debug.LogWarning($"[MonsterAI] Warp 실패 — spawnPoint가 NavMesh 밖에 있을 수 있음 on {gameObject.name}", this);
             this.transform.rotation = rotation;
+            _spawnPosition = position;
             _target = null;
             foreach (var unsubscribe in _targetDeathUnsubscribers.Values)
                 unsubscribe?.Invoke();
@@ -360,6 +382,7 @@ namespace MySecondWorld.Combat.Monster
             _stateMachine.Configure(MonsterState.Attack)
                 .OnEntry(() => _agent.isStopped = true)
                 .Permit(MonsterTrigger.TargetOutOfRange, MonsterState.Chase)
+                .Permit(MonsterTrigger.PlayerLost, MonsterState.Idle)   // 공격 중 타겟 소실 시 Idle 복귀
                 .Permit(MonsterTrigger.Died, MonsterState.Dead);
 
             _stateMachine.Configure(MonsterState.Dead)
@@ -370,7 +393,19 @@ namespace MySecondWorld.Combat.Monster
 
         private void UpdateChase()
         {
-            if (_target == null) return;
+            // 추적 중에도 대상이 죽었으면 즉시 추적 중단
+            if (!IsValidTarget(_target))
+            {
+                HandleTargetDied(_target);
+                return;
+            }
+
+            // 스폰 지점에서 리쉬 범위 밖으로 나가면 포기하고 원위치 복귀
+            if ((_target.position - _spawnPosition).sqrMagnitude > _stats.LeashRange * _stats.LeashRange)
+            {
+                GiveUpChase();
+                return;
+            }
 
             _agent.SetDestination(_target.position);
             float distance = Vector3.Distance(transform.position, _target.position);
@@ -380,7 +415,19 @@ namespace MySecondWorld.Combat.Monster
 
         private void UpdateAttack()
         {
-            if (_target == null) return;
+            // 공격 중에도 대상이 죽었으면 즉시 공격 중단 및 타겟 해제
+            if (!IsValidTarget(_target))
+            {
+                HandleTargetDied(_target);
+                return;
+            }
+
+            // 공격 중이어도 타겟이 리쉬 밖이면(추격 도중 밀려났다면) 포기
+            if ((_target.position - _spawnPosition).sqrMagnitude > _stats.LeashRange * _stats.LeashRange)
+            {
+                GiveUpChase();
+                return;
+            }
 
             float distance = Vector3.Distance(transform.position, _target.position);
             // AttackRange보다 확실히 더 멀어져야 Chase로 돌아가게 함 (유격 20%) — 경계에서 떨리는 것 방지
@@ -393,6 +440,19 @@ namespace MySecondWorld.Combat.Monster
 
             _aiContext.DistanceToTarget = distance;
             PlayAttackSkill(_skillSelector.SelectSkill(_aiContext));
+        }
+
+        // 어그로 전부 버리고 스폰 지점으로 귀환
+        private void GiveUpChase()
+        {
+            foreach (var unsubscribe in _targetDeathUnsubscribers.Values)
+                unsubscribe?.Invoke();
+            _targetDeathUnsubscribers.Clear();
+            _targetRefCounts.Clear();
+            _target = null;
+            SafeFire(MonsterTrigger.PlayerLost);   // Idle 진입 → OnEntry가 isStopped = true로 세팅
+            _agent.isStopped = false;              // 스폰 지점까지는 걸어가야 하므로 즉시 다시 풀어줌
+            _agent.SetDestination(_spawnPosition);
         }
 
         // 스킬 ID -> 실제 모션/이동 처리. 보스는 override해서 자기 트리거로 교체.
@@ -473,6 +533,25 @@ namespace MySecondWorld.Combat.Monster
             }
         }
 
+
+        // MonsterAI.cs 내부 단일 생사 검증 통로
+        private bool IsValidTarget(Transform target)
+        {
+            if (target == null) return false;
+            // 1. Health 기본 생사 및 타겟 가능 여부 검증
+            var health = target.GetComponentInParent<Health>();
+            if (health == null || health.IsDead || !health.IsTargetable)
+                return false;
+            // 2. 컴패니언인 경우: 죽었거나(IsAlive == false) 소환 해제(IsPresent == false)면 즉시 공격 불가
+            if (target.TryGetComponent(out MySecondWorld.Combat.Companion.ICompanionServerState compState))
+            {
+                if (!compState.IsAlive || !compState.IsPresent)
+                    return false;
+            }
+            return true;
+
+
+        }
         #endregion
 
         #region 유틸리티

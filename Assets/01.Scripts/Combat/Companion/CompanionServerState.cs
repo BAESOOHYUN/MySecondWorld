@@ -85,12 +85,14 @@ namespace MySecondWorld.Combat.Companion
         // 목적지 씬이 활성화되면 컴패니언 스스로 새 씬으로 이사
         private void HandleDestinationSceneActivated(Scene newScene)
         {
+            if (this == null) return;
+
             if (LocalCompanion == this && gameObject.scene != newScene && newScene.IsValid() && newScene.isLoaded)
             {
                 if (transform.parent != null)
                     transform.SetParent(null);
                 SceneManager.MoveGameObjectToScene(gameObject, newScene);
-                Debug.Log($"[Companion] 로컬 컴패니언이 {newScene.name}으로 안전하게 이사 완료!");
+                Debug.Log($"[Companion] 로컬 컴패니언이 {newScene.name}으로 안전하게 이사 완료");
             }
         }
 
@@ -103,6 +105,13 @@ namespace MySecondWorld.Combat.Companion
                 _ownerNetId = owner.netId;
 
             GetComponent<CompanionAI>().Initialize(ownerTransform);
+        }
+
+        [Server]
+        public void ResetCombatState()
+        {
+            if (TryGetComponent(out CompanionAI ai))
+                ai.ResetToFollow();
         }
 
         // 디버그 키 전용 즉사 — Health 데미지 → 사망 애니메이션까지 다 거치는 "진짜 죽음"
@@ -122,7 +131,9 @@ namespace MySecondWorld.Combat.Companion
             var ai = GetComponent<CompanionAI>();
             ai.Warp(position);
             ai.ResetForRevive();
-            _currentHP = _health.MaxHP;
+
+            _health.ReviveFull();          // 실제 Health 내부 HP도 복구
+            _currentHP = _health.CurrentHP; // SyncVar는 그 결과를 그대로 반영
             _isAlive = true;
             _isPresent = true; // 소환해제된 채로 부활 요청이 와도 보이도록
         }

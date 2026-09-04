@@ -167,7 +167,7 @@ namespace MySecondWorld.Combat
             }
 
             var target = hit.collider.GetComponentInParent<IDamageable>();
-            if (target == null || target.IsDead)
+            if (target == null || target.IsDead || !target.IsTargetable)
                 return false; // IDamageable이 없거나 이미 죽은 대상 — 명중으로 치지 않고 계속 비행
 
             SnapTipTo(hit.point);

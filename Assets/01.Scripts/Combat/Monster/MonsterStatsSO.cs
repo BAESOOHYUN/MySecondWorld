@@ -15,12 +15,16 @@ namespace MySecondWorld.Combat.Monster
         [SerializeField] private float _bodyColliderRadius = 0.2f;
         [SerializeField] private float _bodyColliderHeight = 1.9f;
 
+        [Header("추격 리쉬")]
+        [SerializeField] private float _leashRange = 15f; // 스폰 지점 기준 이 거리 이상 벌어지면 추격 포기하고 귀환
+
         #region Property
-       
+
         public string AttackPointSocketName => _attackPointSocketName;
         public Vector3 BodyColliderCenter => _bodyColliderCenter;
         public float BodyColliderRadius => _bodyColliderRadius;
         public float BodyColliderHeight => _bodyColliderHeight;
+        public float LeashRange => _leashRange;
 
         #endregion
     }

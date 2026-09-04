@@ -5,6 +5,7 @@ namespace MySecondWorld.Combat
     {
         void TakeDamage(float amount);
         bool IsDead { get; }
+        bool IsTargetable { get; } // 소환 해제 및 무적 상태 판별
         CombatFaction Faction { get; }
     }
 }
