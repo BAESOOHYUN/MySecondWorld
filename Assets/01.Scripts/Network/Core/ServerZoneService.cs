@@ -98,7 +98,18 @@ namespace MySecondWorld.Network
                             // Active를 읽을 때는 이미 최신 상태가 보장
                             foreach (var trigger in ZonePortalTrigger.Active)
                             {
-                                if (trigger.Bounds.Contains(playerPos))
+                                bool inside = trigger.Bounds.Contains(playerPos);
+
+                                if (trigger.Portal == session.Value.lastUsedPortal)
+                                {
+                                    // 방금 이 포탈을 타고 온 경우 — 범위를 벗어난 적이 있어야만 재탑승 허용
+                                    if (!inside)
+                                        session.Value.hasLeftLastPortalBounds = true; // 도착 지점을 실제로 벗어남
+                                    if (inside && !session.Value.hasLeftLastPortalBounds)
+                                        continue;  // 방금 탄 그 포탈 범위 안에 계속 있음 — 재진입 무시
+                                }
+
+                                if (inside)
                                     OnPortalTriggerEntered(conn, trigger.Portal, trigger.SourceZone);
                             }
                         }
@@ -155,7 +166,7 @@ namespace MySecondWorld.Network
             string currentWorld = WorldOf(session.Value.currentScene) ?? WorldOf(_manager.defaultSubScene);
             ZoneDefinitionSO detectedZone = null;
             // ─────────────────────────────────────────────────────────────
-            // [1단계: 최우선] 실제로 발을 딛고 서 있는 바닥 콜라이더의 씬 확인!
+            // [1단계: 최우선] 실제로 발을 딛고 서 있는 바닥 콜라이더의 씬 확인
             // ─────────────────────────────────────────────────────────────
             var controller = conn.identity.GetComponent<CharacterController>();
             Vector3 origin = conn.identity.transform.position + (controller != null ? controller.center : Vector3.up);
@@ -167,7 +178,7 @@ namespace MySecondWorld.Network
                 Scene hitScene = hit.collider.gameObject.scene;
                 if (hitScene.IsValid() && !string.IsNullOrEmpty(hitScene.name))
                 {
-                    // ★ 핵심: Addressables 씬은 scene.path가 비어있으므로 scene.name으로 비교!
+                    // 핵심: Addressables 씬은 scene.path가 비어있으므로 scene.name으로 비교
                     detectedZone = _manager.zones.FirstOrDefault(z =>
                         z.sceneName == hitScene.path ||
                         System.IO.Path.GetFileNameWithoutExtension(z.sceneName) == hitScene.name ||
@@ -265,6 +276,11 @@ namespace MySecondWorld.Network
                 if (compGo.transform.parent != null)
                     compGo.transform.SetParent(null);
                 SceneManager.MoveGameObjectToScene(compGo, targetScene);
+
+                // 이전 씬에 남겨진 몬스터(_targetM)를 계속 쫓아가려는 상태를 초기화
+                // — 안 하면 이제 존재하지 않는 씬의 좌표를 향해 영원히 길찾기를 시도한다
+                if (compGo.TryGetComponent(out ICompanionServerState companionState))
+                    companionState.ResetCombatState();
             }
 
             // 던전 씬 진입/퇴장 분기 (matchId 갱신)
@@ -378,7 +394,7 @@ namespace MySecondWorld.Network
             if (conn.identity.TryGetComponent(out MySecondWorld.Network.Player.NetworkPlayerController npc))
                 npc.ServerRescueTo(safePos);
 
-            // ★ 낙하 구조 시에도 컴패니언을 플레이어 옆으로 동반 텔레포트!
+            // 낙하 구조 시에도 컴패니언을 플레이어 옆으로 동반 텔레포트
             if (session.Value.companionIdentity != null && session.Value.companionPresent)
             {
                 if (session.Value.companionIdentity.TryGetComponent(out ICompanionServerState compState))
@@ -481,6 +497,11 @@ namespace MySecondWorld.Network
             if (currentWorld != sourceZone.WorldId) return; // 이미 전환됨 — 반대쪽 트리거가 먼저 처리함
 
             var targetZone = portal.zoneA == sourceZone ? portal.zoneB : portal.zoneA;
+
+            // 이 포탈을 지금 탄다 — 재진입 판정용 상태 기록
+            session.lastUsedPortal = portal;
+            session.hasLeftLastPortalBounds = false;
+
             BeginPortalTransitionAsync(conn, session, sourceZone, targetZone).Forget();
         }
 
@@ -514,7 +535,7 @@ namespace MySecondWorld.Network
                 // CharacterController 껐다 켜기라, 포탈 전환 직후 재스냅에도 그대로 재사용한다
                 if (conn.identity.TryGetComponent(out MySecondWorld.Network.Player.NetworkPlayerController playerController))
                     playerController.ServerRescueTo(rescuePos);
-                // 2. ★ 컴패니언도 플레이어 바로 옆으로 동반 텔레포트!
+                // 2. 컴패니언도 플레이어 바로 옆으로 동반 텔레포트
                 if (session.companionIdentity != null && session.companionPresent)
                 {
                     if (session.companionIdentity.TryGetComponent(out ICompanionServerState compState))

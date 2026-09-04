@@ -32,7 +32,14 @@ namespace MySecondWorld.Network
         // 다른 어셈블리(Combat 등)가 구독할 수 있는 static 이벤트 선언
         public static event Action<Scene> OnDestinationSceneActivated;
 
-
+        // Domain Reload OFF — static 이벤트는 Play 세션을 넘어 구독자가 그대로 남는다.
+        // 이전 세션에서 파괴된 인스턴스가 계속 구독돼 있으면, 다음 씬 로드 시점에
+        // 죽은 인스턴스를 호출하다 예외가 터져서 그 아래 ACK 전송 코드까지 통째로 스킵된다.
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics()
+        {
+            OnDestinationSceneActivated = null;
+        }
 
         public void SetPrimaryTargetScene(string sceneName)
         {
