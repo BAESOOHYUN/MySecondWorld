@@ -90,9 +90,10 @@ namespace MySecondWorld.AI
             _llmService = llmService;
             _interactable = interactable;
 
-            string myKey = UniqueId;
+            // 라우팅 키는 SessionKey(인스턴스 단위) — UniqueId(캐릭터 정체성)를 그대로 쓰면
+            // 같은 NpcGuid를 공유하는 다른 인스턴스(예: 컴패니언)와 채널이 겹친다.
+            string myKey = _interactable != null ? _interactable.SessionKey : UniqueId;
             Debug.Log($"[NPCBrain] '{name}' 대화 등록 완료! 구독 키: '{myKey}', LLM: {llmService?.GetType().Name ?? "null"}");
-            // 오직 자신의 고유 키(UniqueId)로만 1:1 수신
             messageSub
                .Subscribe(myKey, evt =>
                {
@@ -110,7 +111,7 @@ namespace MySecondWorld.AI
             try
             {
                 _thinkingPub.Publish(new NPCThinkingStartedEvent(key));
-                var response = await GenerateResponseAsync(evt.Text, evt.CT);
+                var response = await GenerateResponseAsync(evt.Text, key, evt.CT);
                 Debug.Log($"[NPCBrain] '{name}' LLM 응답 완료: {response}");
                 _responsePub.Publish(new NPCResponseReceivedEvent(
                         key,
@@ -200,8 +201,9 @@ namespace MySecondWorld.AI
         }
 
         // 응답 생성 — 팩트 추출 없이 응답만 반환해 대기 시간 최소화
+        // sessionKey: TTS 이벤트 라우팅용(SessionKey). 영구 저장은 이 메서드 내에서도 항상 UniqueId를 쓴다.
         private async UniTask<string> GenerateResponseAsync(
-            string userInput, CancellationToken ct = default)
+            string userInput, string sessionKey, CancellationToken ct = default)
         {
             if (_llmService == null || !_llmService.IsReady)
             {
@@ -223,7 +225,7 @@ namespace MySecondWorld.AI
                     if (sentence.Any(char.IsLetterOrDigit))
                     {
                         // token[lastSentEnd..] : C# 범위 연산자, lastSentEnd부터 끝까지(새로 추가된 부분만) 슬라이스
-                        _ttsPub.Publish(new NPCTTSSentenceEvent(UniqueId, token[lastSentEnd..]));
+                        _ttsPub.Publish(new NPCTTSSentenceEvent(sessionKey, token[lastSentEnd..]));
                         lastSentEnd = token.Length;
                     }
                 }
@@ -252,7 +254,7 @@ namespace MySecondWorld.AI
                 string sentence = lastToken[lastSentEnd..];
                 if (sentence.Any(char.IsLetterOrDigit))
                 {
-                    _ttsPub.Publish(new NPCTTSSentenceEvent(UniqueId, lastToken[lastSentEnd..]));
+                    _ttsPub.Publish(new NPCTTSSentenceEvent(sessionKey, lastToken[lastSentEnd..]));
                 }
             }
 

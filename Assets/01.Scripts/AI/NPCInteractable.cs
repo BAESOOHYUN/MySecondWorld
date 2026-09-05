@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
@@ -115,10 +116,15 @@ namespace MySecondWorld.AI
             }
         }
 
-        // NPCBrain이 메시지 수신 시 "지금 나랑 대화 중인가"를 확인하는 용도
-        // (같은 NpcGuid를 공유하는 다른 NPC/컴패니언이 엿듣지 않도록 필터링)
+        // NPCBrain이 메시지 수신 시 "지금 나랑 대화 중인가"를 확인하는 용도 (안전망으로 유지)
         public bool IsConversationActive =>
             _stateMachine.State == NpcState.Talking || _stateMachine.State == NpcState.Generating;
+
+        // 대화 세션 라우팅 전용 키. NpcGuid(캐릭터 정체성)는 NPC_Ari/Companion_Ari처럼
+        // 여러 인스턴스가 의도적으로 공유할 수 있어서, 이벤트 라우팅에 그대로 쓰면 크로스토크가 난다.
+        // GetInstanceID()를 섞어 인스턴스 단위로 항상 고유하게 만든다.
+        // 주의: 영구 저장(_memory.Load/Save)에는 이 값을 쓰지 않는다 — 세션 종료 시 새 값이 되므로 저장 키로는 부적합.
+        public string SessionKey => $"{NpcGuid}_{GetInstanceID()}";
         #endregion
 
         #region 초기화
@@ -141,7 +147,7 @@ namespace MySecondWorld.AI
             responseSub
                 .Subscribe(evt =>
                 {
-                    if (evt.NpcGuid != NpcGuid)
+                    if (evt.NpcGuid != SessionKey)
                         return;
                     // 내부 로직이므로 Fire() (SafeFire가 아님)
                     if (_stateMachine.CanFire(NpcTrigger.ResponseReceived))
@@ -332,7 +338,7 @@ namespace MySecondWorld.AI
                 _cts?.Dispose();
                 _cts = new CancellationTokenSource();
 
-                _dialogueUI.Open(NpcGuid);
+                _dialogueUI.Open(SessionKey);
 
                 // R3 구독 — _cts 해제 시 자동으로 함께 해제된다
                 _dialogueUI.OnSubmit
@@ -369,12 +375,12 @@ namespace MySecondWorld.AI
                 _dialogueUI.SetInputEnabled(false);
                 _dialogueUI.ShowThinking();
 
-                string guid = NpcGuid;
+                string sessionKey = SessionKey;
                 string localPlayer = MySecondWorld.Network.PlayerSession.LocalPlayerName;
                 bool isCtsCanceled = _cts != null && _cts.Token.IsCancellationRequested;
-                Debug.Log($"[NPCInteractable] {name}: OnEnterGenerating 발행 시도 -> NpcGuid='{guid}', Text='{_pendingInput}', Player='{localPlayer}', CtsCanceled={isCtsCanceled}");
+                Debug.Log($"[NPCInteractable] {name}: OnEnterGenerating 발행 시도 -> SessionKey='{sessionKey}', Text='{_pendingInput}', Player='{localPlayer}', CtsCanceled={isCtsCanceled}");
 
-                _messagePub.Publish(guid, new PlayerMessageSentEvent(_pendingInput, localPlayer, _cts.Token));
+                _messagePub.Publish(sessionKey, new PlayerMessageSentEvent(_pendingInput, localPlayer, _cts.Token));
                 _pendingInput = null;
             }
             catch (Exception ex)

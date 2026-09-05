@@ -12,7 +12,7 @@ namespace MySecondWorld.AI.Voice
     {
         [SerializeField] private AudioSource[] _sources = new AudioSource[2];
         public AudioSource[] Sources => _sources;
-        private NPCSystemPromptSO _promptSO;
+        private NPCInteractable _interactable;
         private readonly Queue<(string text, UniTask<AudioClip> fetch)> _fetchQueue = new(); //문장 도착 즉시 fetch 시작
         private CancellationTokenSource _playCts; // stopSub가 재생 루프 자체를 취소할 수 있게
         private bool _isPlaying = false;
@@ -26,9 +26,9 @@ namespace MySecondWorld.AI.Voice
        [Inject]
         // NPCScope VContainer가 ITTSService 타입 보고 → .As<ITTSService>()로 등록된 EdgeTTSService 인스턴스를 넣어줌
         private void Construct(
-            NPCSystemPromptSO promptSO,
-            ITTSService tts, 
-            ISubscriber<NPCTTSSentenceEvent> ttsSub, 
+            NPCInteractable interactable,
+            ITTSService tts,
+            ISubscriber<NPCTTSSentenceEvent> ttsSub,
             ISubscriber<NPCStopTTSEvent> stopSub,
             IPublisher<NPCSpeakFinishedEvent> speakFinishedPub,
             IPublisher<NPCSentenceStartedEvent> sentenceStartedPub
@@ -36,15 +36,17 @@ namespace MySecondWorld.AI.Voice
         {
 
 #if !UNITY_SERVER
-            _promptSO = promptSO;
+            _interactable = interactable;
             _tts = tts;
             _speakFinishedPub = speakFinishedPub;
             _sentenceStartedPub = sentenceStartedPub;
 
             // 이벤트 올 때마다 큐에 Enqueue한 뒤 재생 중이 아니면 큐를 드레인하는 방식
+            // SessionKey(인스턴스 단위)로 필터링 — NpcGuid(캐릭터 정체성) 기준이면 같은 캐릭터를
+            // 공유하는 다른 인스턴스(컴패니언 등)의 TTS까지 같이 재생돼버린다.
             ttsSub.Subscribe(evt =>
             {
-                if (evt.NpcGuid != _promptSO.NpcGuid) return;
+                if (_interactable == null || evt.NpcGuid != _interactable.SessionKey) return;
                 _fetchQueue.Enqueue((evt.Text, _tts.FetchAsync(evt.Text, destroyCancellationToken)));
                 Debug.Log($"[VoicePlayer] Enqueue. isPlaying={_isPlaying}");
                 if (!_isPlaying)
@@ -58,7 +60,7 @@ namespace MySecondWorld.AI.Voice
 
             stopSub.Subscribe(evt =>
             {
-                if (evt.NpcGuid != _promptSO.NpcGuid) return;
+                if (_interactable == null || evt.NpcGuid != _interactable.SessionKey) return;
                 _fetchQueue.Clear(); //Stop 시 쌓인 문장도 비움
                 _sources[0].Stop();
                 _sources[1].Stop();
@@ -97,7 +99,7 @@ namespace MySecondWorld.AI.Voice
                     if (clip == null)
                     {
                         // TTS 서버 꺼진 경우 — 버블은 즉시 표시
-                        _sentenceStartedPub.Publish(new NPCSentenceStartedEvent(_promptSO.NpcGuid, text));
+                        _sentenceStartedPub.Publish(new NPCSentenceStartedEvent(_interactable?.SessionKey, text));
                         continue;
                     }
 
@@ -126,7 +128,7 @@ namespace MySecondWorld.AI.Voice
                     Debug.Log($"[VoicePlayer] PlayScheduled source={i % 2}, startTime={startTime}");
                     
                     // 재생 예약 직후 버블 표시 (실제 재생과 ~100ms 차이, 체감 불가)
-                    _sentenceStartedPub.Publish(new NPCSentenceStartedEvent(_promptSO.NpcGuid, text));
+                    _sentenceStartedPub.Publish(new NPCSentenceStartedEvent(_interactable?.SessionKey, text));
 
                     if (i == 0) 
                         OnSpeakStarted?.Invoke(); // 첫 문장 예약 시 발행
@@ -156,7 +158,7 @@ namespace MySecondWorld.AI.Voice
                 else
                 { 
                     OnSpeakFinished?.Invoke();
-                    _speakFinishedPub.Publish(new NPCSpeakFinishedEvent(_promptSO.NpcGuid));
+                    _speakFinishedPub.Publish(new NPCSpeakFinishedEvent(_interactable?.SessionKey));
                 }
             }
         }
