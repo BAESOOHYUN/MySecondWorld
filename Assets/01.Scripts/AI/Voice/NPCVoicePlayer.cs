@@ -14,6 +14,7 @@ namespace MySecondWorld.AI.Voice
         public AudioSource[] Sources => _sources;
         private NPCSystemPromptSO _promptSO;
         private readonly Queue<(string text, UniTask<AudioClip> fetch)> _fetchQueue = new(); //문장 도착 즉시 fetch 시작
+        private CancellationTokenSource _playCts; // stopSub가 재생 루프 자체를 취소할 수 있게
         private bool _isPlaying = false;
         public bool IsPlaying => _isPlaying;
         public event Action OnSpeakStarted;
@@ -47,7 +48,12 @@ namespace MySecondWorld.AI.Voice
                 _fetchQueue.Enqueue((evt.Text, _tts.FetchAsync(evt.Text, destroyCancellationToken)));
                 Debug.Log($"[VoicePlayer] Enqueue. isPlaying={_isPlaying}");
                 if (!_isPlaying)
-                   PlayQueue(destroyCancellationToken).Forget();
+                {
+                    _playCts?.Cancel();
+                    _playCts?.Dispose();
+                    _playCts = CancellationTokenSource.CreateLinkedTokenSource(destroyCancellationToken);
+                    PlayQueue(_playCts.Token).Forget();
+                }
             }).AddTo(destroyCancellationToken);
 
             stopSub.Subscribe(evt =>
@@ -56,6 +62,9 @@ namespace MySecondWorld.AI.Voice
                 _fetchQueue.Clear(); //Stop 시 쌓인 문장도 비움
                 _sources[0].Stop();
                 _sources[1].Stop();
+                _playCts?.Cancel(); // 재생 루프 자체를 즉시 취소 — await 중이던 항목도 여기서 끊김
+                _playCts?.Dispose();
+                _playCts = null;
             }).AddTo(destroyCancellationToken);
 #endif
         }
@@ -133,6 +142,10 @@ namespace MySecondWorld.AI.Voice
                 double remaining = nextStartTime - AudioSettings.dspTime;
                 if (remaining > 0)
                     await UniTask.Delay(TimeSpan.FromSeconds(remaining), cancellationToken: ct);
+            }
+            catch (OperationCanceledException)
+            {
+                //  stopSub에 의한 정상 취소. 조용히 종료하도록 catch 추가
             }
             finally
             {

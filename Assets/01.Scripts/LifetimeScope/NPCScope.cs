@@ -70,17 +70,6 @@ namespace MySecondWorld.AI
 
             // TTS는 Azure 한국어 감정 미지원으로 Edge 고정
             builder.RegisterInstance(gameObject.AddComponent<EdgeTTSServiceNativeWebSocket>()).As<ITTSService>();
-
-            // ★★★ 핵심: 스코프 빌드 즉시 모든 컴포넌트의 [Inject] Construct 강제 실행! ★★★
-            builder.RegisterBuildCallback(container =>
-            {
-                if (brain != null) container.Inject(brain);
-                if (interactable != null) container.Inject(interactable);
-                if (voicePlayer != null) container.Inject(voicePlayer);
-                if (lipSync != null) container.Inject(lipSync);
-                if (customizer != null) container.Inject(customizer);
-                Debug.Log($"[NPCScope] {name}: 모든 컴포넌트 [Inject] 주입 완료!");
-            });
         }
     }
 }
