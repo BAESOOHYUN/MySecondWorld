@@ -15,7 +15,7 @@ namespace MySecondWorld.AI.Voice
     public class GroqWhisperSTTService : MonoBehaviour, ISTTService
     {
         private const string API_KEY = "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";
-        private const string MODEL = "whisper-large-v3";
+        private const string MODEL = "whisper-large-v3-turbo";
         [SerializeField] private int _sampleRate = 16000;
         [SerializeField] private int _maxDurationSec = 30;
         private bool _isListening;

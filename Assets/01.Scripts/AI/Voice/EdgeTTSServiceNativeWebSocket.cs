@@ -182,7 +182,15 @@ namespace MySecondWorld.AI.Voice
                 _ = ws.Close();         // 열려있는 WebSocket 연결 닫음. _는 반환값(Task)을 무시하겠다는 표현 fire-and-forget
             });
 
+            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            timeoutCts.CancelAfter(TimeSpan.FromSeconds(4)); // 4초 내 음성 안 오면 강제 취소
+            timeoutCts.Token.Register(() =>
+            {
+                tcs.TrySetCanceled();
+                _ = ws.Close();
+            });
             byte[] mp3Bytes;
+
             try
             {
                 // 3. 연결 시작 + 오디오 수신 대기
@@ -190,7 +198,15 @@ namespace MySecondWorld.AI.Voice
                 //  mp3Bytes == audioBytes.ToArray() 모든 청크가 합쳐진 MP3 바이트 배열
                 mp3Bytes = await tcs.Task; // ← 여기서 tcs.TrySetResult()가 호출될 때까지 실제로 기다림
             }
-            catch (OperationCanceledException) { throw; }
+            catch (OperationCanceledException) 
+            {
+                // 플레이어가 대화창을 닫아서 발생한 진짜 취소는 throw
+                if (ct.IsCancellationRequested)
+                    throw;
+                // 4초 타임아웃인 경우는 조용히 null 반환 -> 텍스트 즉시 출력
+                Debug.LogWarning("[EdgeTTS] 4초 타임아웃 -> 음성 생략하고 텍스트만 표시");
+                return null;
+            }
             catch (Exception e)
             {
                 Debug.LogWarning($"[EdgeTTS] 연결 실패: {e.Message}");

@@ -16,25 +16,46 @@ namespace MySecondWorld.AI
     /// </summary>
     public class NPCBrain : MonoBehaviour
     {
+        #region 인스펙터 필드
         [Header("References")]
         [SerializeField] private NPCSystemPromptSO _systemPrompt;
         [SerializeField] private NPCMemorySO _memory;
         [SerializeField] private MonoBehaviour _serverStateRaw; // 선택적, 없으면 null 허용
         private INPCServerState _serverState => _serverStateRaw as INPCServerState;
+        #endregion
 
-        [ContextMenu("메모리 초기화")]
-        private void DebugClearMemory() => ResetMemory();
+        #region 식별자 및 프로퍼티
 
-        private string NpcNameKey =>
-            (_systemPrompt != null && !string.IsNullOrEmpty(_systemPrompt.NpcGuid))
-                ? _systemPrompt.NpcGuid : name;
+        // 클론/동적 스폰에서도 겹치지 않는 고유 식별자
+        private string _cachedUniqueId;
+        public string UniqueId
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(_cachedUniqueId))
+                {
+                    if (_systemPrompt != null && !string.IsNullOrEmpty(_systemPrompt.NpcGuid))
+                        _cachedUniqueId = _systemPrompt.NpcGuid;
+                    else
+                        _cachedUniqueId = $"{name}_{GetInstanceID()}";
+                }
+                return _cachedUniqueId;
+            }
+        }
 
         // 대화 세션 버퍼 — 창 닫힐 때 한 번에 팩트 추출
         private readonly List<(string user, string npc)> _sessionBuffer = new();
 
         // 외부 읽기 전용 접근 (NPCInteractable에서 npcName 접근용)
         public NPCSystemPromptSO SystemPrompt => _systemPrompt;
+        #endregion
 
+        #region 에디터 디버그 툴
+        [ContextMenu("메모리 초기화")]
+        private void DebugClearMemory() => ResetMemory();
+        #endregion
+
+        #region DI
         // _responsePub와 _thinkingPub는 람다 안에서 쓰인다.
         // 람다는 Construct()가 끝난 훨씬 나중에 , 플레이어가 메시지를 보낼 때마다 실행된다.
         // 그 시점에도 살아있어야 하므로 필드에 저장
@@ -66,31 +87,46 @@ namespace MySecondWorld.AI
             _ttsPub = ttsPub;
             _llmService = llmService;
 
-            // NpcNameKey(GUID)를 키로 구독 — 이 NPC에게 온 메시지만 수신된다
+            string myKey = UniqueId;
+            Debug.Log($"[NPCBrain] '{name}' 대화 등록 완료! 구독 키: '{myKey}', LLM: {llmService?.GetType().Name ?? "null"}");
+            // 오직 자신의 고유 키(UniqueId)로만 1:1 수신
             messageSub
-                .Subscribe(NpcNameKey, async evt =>
-                {
-                    try
-                    {
-                        _thinkingPub.Publish(new NPCThinkingStartedEvent(NpcNameKey));
-                        var response = await GenerateResponseAsync(evt.Text, evt.CT);
-                        _responsePub.Publish(new NPCResponseReceivedEvent(
-                                NpcNameKey,
-                                _systemPrompt?.NpcName ?? name,
-                                response));
-                        _dialoguePub.Publish(new NPCDialogueEvent { NpcName = NpcNameKey, Message = response });
-
-                        _sessionBuffer.Add((evt.Text, response));
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        // 취소는 정상 흐름 — 무시
-                    }
-                })
-                .AddTo(destroyCancellationToken);
+               .Subscribe(myKey, evt =>
+               {
+                   Debug.Log($"[NPCBrain] '{name}' 메시지 수신 성공! 텍스트: '{evt.Text}'");
+                   ProcessMessageAsync(evt, myKey).Forget();
+               })
+               .AddTo(destroyCancellationToken);
 #endif
         }
 
+        private async UniTaskVoid ProcessMessageAsync(PlayerMessageSentEvent evt, string key)
+        {
+            try
+            {
+                _thinkingPub.Publish(new NPCThinkingStartedEvent(key));
+                var response = await GenerateResponseAsync(evt.Text, evt.CT);
+                Debug.Log($"[NPCBrain] '{name}' LLM 응답 완료: {response}");
+                _responsePub.Publish(new NPCResponseReceivedEvent(
+                        key,
+                        _systemPrompt?.NpcName ?? name,
+                        response));
+                _dialoguePub.Publish(new NPCDialogueEvent { NpcName = key, Message = response });
+                _sessionBuffer.Add((evt.Text, response));
+            }
+            catch (OperationCanceledException)
+            {
+                Debug.LogWarning($"[NPCBrain] '{name}' 대화 생성이 취소되었습니다.");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[NPCBrain] '{name}' 대화 생성 중 예외 발생: {ex}");
+            }
+        }
+        #endregion
+
+
+        #region 유니티 생명주기
         private void Awake()
         {
 #if UNITY_SERVER
@@ -100,7 +136,7 @@ namespace MySecondWorld.AI
 
         private void Start()
         {
-            _memory?.Load(NpcNameKey);
+            _memory?.Load(UniqueId);
 
             // 서버 상태 => 로컬 메모리 동기화
             if (_serverState != null && _memory != null)
@@ -118,8 +154,12 @@ namespace MySecondWorld.AI
 
         private void OnDestroy()
         {
-            _memory?.Save(NpcNameKey);
+            _memory?.Save(UniqueId);
         }
+
+        #endregion
+
+        #region 프롬프트 빌드 & LLM 응답 생성
 
         // 시스템 프롬프트 빌드
         private string BuildSystemPromptWithFacts()
@@ -152,7 +192,7 @@ namespace MySecondWorld.AI
         private async UniTask<string> GenerateResponseAsync(
             string userInput, CancellationToken ct = default)
         {
-            if (!_llmService.IsReady)
+            if (_llmService == null || !_llmService.IsReady)
             {
                 Debug.LogWarning("[NPCBrain] LLM 서비스가 아직 준비되지 않았습니다.");
                 return string.Empty;
@@ -172,7 +212,7 @@ namespace MySecondWorld.AI
                     if (sentence.Any(char.IsLetterOrDigit))
                     {
                         // token[lastSentEnd..] : C# 범위 연산자, lastSentEnd부터 끝까지(새로 추가된 부분만) 슬라이스
-                        _ttsPub.Publish(new NPCTTSSentenceEvent(NpcNameKey, token[lastSentEnd..]));
+                        _ttsPub.Publish(new NPCTTSSentenceEvent(UniqueId, token[lastSentEnd..]));
                         lastSentEnd = token.Length;
                     }
                 }
@@ -180,13 +220,13 @@ namespace MySecondWorld.AI
             // 콜백 1회차: "안녕하세요." → 문장 끝 감지
             //     token[0..] = "안녕하세요."  → TTS 발행
             //     lastSentEnd = 7
-               
+
             // 콜백 2회차: "안녕하세요. 저는 의사입니다." → 문장 끝 감지
             //     token[7..] = " 저는 의사입니다."  → TTS 발행(앞 7글자는 이미 발행했으니 스킵)
             //     lastSentEnd = 20
-               
+
             // 콜백 3회차: "안녕하세요. 저는 의사입니다. 무엇을" → 문장 끝 아님 → 발행 안 함
-               
+
             // 콜백 4회차: "안녕하세요. 저는 의사입니다. 무엇을 도와드릴까요?" → 문장 끝 감지
             //     token[20..] = " 무엇을 도와드릴까요?"  → TTS 발행
             //     lastSentEnd = 34
@@ -201,7 +241,7 @@ namespace MySecondWorld.AI
                 string sentence = lastToken[lastSentEnd..];
                 if (sentence.Any(char.IsLetterOrDigit))
                 {
-                    _ttsPub.Publish(new NPCTTSSentenceEvent(NpcNameKey, lastToken[lastSentEnd..]));
+                    _ttsPub.Publish(new NPCTTSSentenceEvent(UniqueId, lastToken[lastSentEnd..]));
                 }
             }
 
@@ -211,10 +251,13 @@ namespace MySecondWorld.AI
                 return string.Empty;
 
             _memory?.IncrementConversationCount();
-            _memory?.Save(NpcNameKey);
+            _memory?.Save(UniqueId);
 
             return response;
         }
+        #endregion
+
+        #region 팩트 추출 및 메모리 관리
 
         // NPCInteractable.OnEnterIdle()에서 호출 — 대화창 닫힐 때 세션 전체 팩트 추출
         public void OnConversationEnded()
@@ -230,7 +273,7 @@ namespace MySecondWorld.AI
         private async UniTaskVoid ExtractAndSaveFactAsync(
             List<(string user, string npc)> transcript, CancellationToken ct)
         {
-            if (!_llmService.IsReady || _memory == null) return;
+            if(_llmService == null || !_llmService.IsReady || _memory == null) return;
 
             string playerName = string.IsNullOrWhiteSpace(MySecondWorld.Network.PlayerSession.LocalPlayerName)
                 ? "플레이어"
@@ -280,7 +323,7 @@ namespace MySecondWorld.AI
                 {
                     Debug.Log($"[NPCBrain] 새 팩트: {trimmed}");
                     _memory.AddKnowFact(trimmed);
-                    _memory.Save(NpcNameKey);
+                    _memory.Save(UniqueId);
                 }
             }
             catch (OperationCanceledException) { }
@@ -288,8 +331,9 @@ namespace MySecondWorld.AI
 
         private void ResetMemory()
         {
-            _memory?.Clear(NpcNameKey);
+            _memory?.Clear(UniqueId);
             _llmService?.ClearHistory(); // 대화 히스토리도 같이 초기화
         }
+        #endregion
     }
 }

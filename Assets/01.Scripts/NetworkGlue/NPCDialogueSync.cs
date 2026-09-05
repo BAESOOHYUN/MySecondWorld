@@ -24,8 +24,19 @@ namespace MySecondWorld.Network
         private IDisposable _subscription; //구독 영수증. 구독을 끊는 것도 리소스 정리의 일종이라 Dispose()로 통일. 
 
         private void Awake()
-        {
-            LifetimeScope.Find<NPCScope>().Container.Inject(this);
+        { 
+            // Awake에서 LifetimeScope.Find<NPCScope>()를 직접 호출하면 타이밍 이슈로 에러 발생 가능
+            // 만약 컴포넌트 주입이 필요하다면 NPCScope.Configure에 등록하는 것이 안전합니다.
+            try
+            {
+                var scope = GetComponent<NPCScope>() ?? LifetimeScope.Find<NPCScope>();
+                if (scope != null && scope.Container != null)
+                    scope.Container.Inject(this);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[NPCDialogueSync] Inject 지연/스킵: {ex.Message}");
+            }
         }
 
         private void OnEnable()

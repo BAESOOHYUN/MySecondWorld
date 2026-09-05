@@ -18,6 +18,7 @@ namespace MySecondWorld.UI
     /// </summary>
     public class NPCDialogueUI : MonoBehaviour, INPCDialogueUI
     {
+        #region 인스펙터
         [Header("UI References")]
         [SerializeField] private GameObject _canvas;
         [SerializeField] private TextMeshProUGUI _npcNameText;
@@ -35,15 +36,20 @@ namespace MySecondWorld.UI
         [Header("Future: Voice")]
         [SerializeField] private Button _sttButton;
         [SerializeField] private Button _ttsButton;
+        #endregion
 
-        private IPublisher<NPCStopTTSEvent> _stopTTSPub;
-        private ISTTService _stt;
-        private CancellationTokenSource _sttCts;
-
+        #region 필드 — 내부 상태
+        private string _lastNpcGuid;
+        private string _currentNpcGuid;
         private ChatBubble _thinkingBubble;
         private CancellationTokenSource _thinkingAnimCts;
-        private string _currentNpcGuid;
-        private string _lastNpcGuid;
+        private CancellationTokenSource _sttCts;
+        private bool _hasReceivedSentence = false;
+        #endregion
+
+        #region DI
+        private IPublisher<NPCStopTTSEvent> _stopTTSPub;
+        private ISTTService _stt;
 
         // R3 구독
         public Observable<string> OnSubmit => _submitButton.OnClickAsObservable()
@@ -54,7 +60,7 @@ namespace MySecondWorld.UI
         [Inject]
         private void Construct(
             ISubscriber<NPCResponseReceivedEvent> responseSub,
-            ISubscriber<NPCThinkingStartedEvent> thinkingSub, 
+            ISubscriber<NPCThinkingStartedEvent> thinkingSub,
             ISubscriber<NPCSpeakFinishedEvent> speakFinishedSub,
             ISubscriber<NPCSentenceStartedEvent> sentenceStartedSub,
             IPublisher<NPCStopTTSEvent> stopTTSPub,
@@ -67,7 +73,8 @@ namespace MySecondWorld.UI
                 {
                     if (evt.NpcGuid != _currentNpcGuid)
                         return;
-                    AppendSentence(evt.Text);
+                    _hasReceivedSentence = true; // 문장 수신 확인!
+                    AppendSentence(evt.Text);    // 음성 타이밍에 맞춰 문장 추가
                 })
                 .AddTo(destroyCancellationToken);
 
@@ -83,6 +90,7 @@ namespace MySecondWorld.UI
                 .AddTo(destroyCancellationToken);
 
             // TTS 서버 꺼진 경우 안전망: 5초 후 강제 활성화
+            // responseSub: LLM 응답 도착 시 즉시 화면에 대화 표시
             responseSub
                 .Subscribe(evt =>
                 {
@@ -90,7 +98,19 @@ namespace MySecondWorld.UI
                         return;
                     if (_npcNameText != null)
                         _npcNameText.text = evt.NpcName;
-                    FallbackEnableInputAsync(destroyCancellationToken).Forget();
+
+                    if (string.IsNullOrWhiteSpace(evt.Text))
+                    {
+                        // 실패/빈 응답 시
+                        AppendSentence("죄송합니다, 잘 듣지 못했어요. 다시 말씀해 주시겠어요?");
+                        SetInputEnabled(true);
+                    }
+                    else
+                    {
+
+                        // TTS 음성이 안 와서 문장이 한 번도 안 떴을 경우를 대비한 안전망 (2초 대기)
+                        FallbackEnsureDialogueAsync(evt.Text, destroyCancellationToken).Forget();
+                    }
                 })
                 .AddTo(destroyCancellationToken);
 
@@ -128,8 +148,10 @@ namespace MySecondWorld.UI
                 trigger.triggers.Add(up);
             }
         }
+        #endregion
 
         #region 필수 참조 검증
+
         private void Awake()
         {
             bool valid = true;
@@ -217,6 +239,7 @@ namespace MySecondWorld.UI
 
         public void ShowThinking()
         {
+            _hasReceivedSentence = false; // 플래그 초기화
             if (_thinkingBubblePrefab == null || _chatContent == null) return;
 
             // 이전 생각중 버블 정리 (방어코드)
@@ -280,6 +303,20 @@ namespace MySecondWorld.UI
             if (_scrollRect != null)
                 _scrollRect.verticalNormalizedPosition = 0f;
         }
+
+        // 안전망: TTS가 정상 작동하면 _hasReceivedSentence가 true가 되어 아무것도 안 하고,
+        // TTS가 죽어서 문장이 안 오면 2초 뒤 전체 답변을 띄워줌!
+        private async UniTaskVoid FallbackEnsureDialogueAsync(string fullText, CancellationToken ct)
+        {
+            await UniTask.Delay(2000, cancellationToken: ct);
+            // 2초 동안 TTS 음성 문장이 단 한 번도 도착하지 않은 경우 (TTS 장애/무음)
+            if (!_hasReceivedSentence)
+            {
+                AppendSentence(fullText); // 전체 텍스트 즉시 출력 & '...' 버블 닫기
+                SetInputEnabled(true);
+            }
+        }
+
         #endregion
 
         #region STT 헬퍼 메서드
@@ -307,17 +344,5 @@ namespace MySecondWorld.UI
             _sttCts = null;
         }
         #endregion
-
-        private async UniTaskVoid FallbackEnableInputAsync(CancellationToken ct)
-        {
-            // ResponseSub가 5초 fallback이 된 이유:
-            // TTS 서버가 꺼져 있으면 speakFinishedSub가 영원히 안 와서 입력창이 영원히 잠겨버린다.
-            // LLM 응답 완료 → responseSub → 5초 대기 → SetInputEnabled(true)  ← 서버 꺼진 경우 구제
-            //                                ↑
-            //         정상 상황에선 speakFinishedSub가 먼저 활성화시키고,
-            //         5초 후에 한 번 더 호출돼도 이미 활성화된 상태라 무해함
-            await UniTask.Delay(5000, cancellationToken: ct);
-            SetInputEnabled(true);
-        }
     }
 }

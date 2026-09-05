@@ -13,23 +13,54 @@ namespace MySecondWorld.AI
     {
         [SerializeField] private CharacterAppearanceSO _appearanceSO; // NPC별로 다른 SO를 인스펙터에서 지정
 
-        protected override LifetimeScope FindParent() => Find<NPCLifetimeScope>();
+        protected override LifetimeScope FindParent()
+        {
+            var parent = Find<NPCLifetimeScope>();
+            Debug.Log($"[NPCScope] {name}: FindParent -> {(parent != null ? parent.name : "NULL")}");
+            return parent;
+        }
+
         protected override void Configure(IContainerBuilder builder)
         {
-            builder.RegisterComponent(GetComponent<NPCBrain>());
-            builder.RegisterComponent(GetComponent<NPCInteractable>());
-            builder.RegisterComponent(GetComponent<NPCVoicePlayer>());
-            builder.RegisterComponent(GetComponent<NPCLipSyncController>());
-            // NPCSystemPromptSO를 컨테이너에 별도 타입으로 추가 등록 → NPCVoicePlayer [Inject]에 자동 주입
-            builder.RegisterInstance(GetComponent<NPCBrain>().SystemPrompt);
-            // 외형 커스터마이저 + NPC별 SO
-            builder.RegisterComponent(GetComponent<NPCCharacterCustomizer>());
-            builder.RegisterInstance(_appearanceSO);
+            Debug.Log($"[NPCScope] {name}: Configure 시작");
+            var brain = GetComponent<NPCBrain>();
+            var interactable = GetComponent<NPCInteractable>();
+            var voicePlayer = GetComponent<NPCVoicePlayer>();
+            var lipSync = GetComponent<NPCLipSyncController>();
+            var customizer = GetComponent<NPCCharacterCustomizer>();
+            builder.RegisterComponent(brain);
+            builder.RegisterComponent(interactable);
+            builder.RegisterComponent(voicePlayer);
+            builder.RegisterComponent(lipSync);
+            builder.RegisterComponent(customizer);
 
-            var deviceCapability = Parent.Container.Resolve<IDeviceCapability>();
-            //                     ↑ 부모 컨테이너에서  ↑ IDeviceCapability 인스턴스 꺼내줘
-            //                  ProjectLifetimeScope
-            if (deviceCapability.UseServerMode)
+            // NPCSystemPromptSO를 컨테이너에 별도 타입으로 추가 등록 → NPCVoicePlayer [Inject]에 자동 주입
+            if (brain != null && brain.SystemPrompt != null)
+                builder.RegisterInstance(brain.SystemPrompt);
+            else
+                Debug.LogWarning($"[NPCScope] {name}: NPCBrain 또는 SystemPrompt가 null입니다.");
+
+            // 외형 커스터마이저 + NPC별 SO
+            if (_appearanceSO != null)
+                builder.RegisterInstance(_appearanceSO);
+
+            // ServerMode 판별 및 LLM 등록
+            IDeviceCapability deviceCapability = null;
+            if (Parent != null && Parent.Container != null)
+            {
+                try
+                {
+                    deviceCapability = Parent.Container.Resolve<IDeviceCapability>();
+                }
+                catch (System.Exception ex)
+                {
+                    Debug.LogWarning($"[NPCScope] {name}: IDeviceCapability Resolve 예외 (기본 ServerMode 적용): {ex.Message}");
+                }
+            }
+
+            bool useServerMode = deviceCapability?.UseServerMode ?? true;
+            Debug.Log($"[NPCScope] {name}: LLM 등록 -> UseServerMode={useServerMode}");
+            if (useServerMode)
                 builder.Register<GroqLLMService>(Lifetime.Scoped).As<ILLMService>();
             else
             {
@@ -38,7 +69,18 @@ namespace MySecondWorld.AI
             }
 
             // TTS는 Azure 한국어 감정 미지원으로 Edge 고정
-            builder.RegisterInstance(gameObject.AddComponent<EdgeTTSServiceNativeWebSocket>()).As<ITTSService>(); // 씬에서 EdgeTTSService 찾아서 등록, .As 뜻 'ITTSService로 달라
+            builder.RegisterInstance(gameObject.AddComponent<EdgeTTSServiceNativeWebSocket>()).As<ITTSService>();
+
+            // ★★★ 핵심: 스코프 빌드 즉시 모든 컴포넌트의 [Inject] Construct 강제 실행! ★★★
+            builder.RegisterBuildCallback(container =>
+            {
+                if (brain != null) container.Inject(brain);
+                if (interactable != null) container.Inject(interactable);
+                if (voicePlayer != null) container.Inject(voicePlayer);
+                if (lipSync != null) container.Inject(lipSync);
+                if (customizer != null) container.Inject(customizer);
+                Debug.Log($"[NPCScope] {name}: 모든 컴포넌트 [Inject] 주입 완료!");
+            });
         }
     }
 }
