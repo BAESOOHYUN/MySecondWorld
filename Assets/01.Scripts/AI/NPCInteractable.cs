@@ -351,15 +351,32 @@ namespace MySecondWorld.AI
         // 나가는 경로는 세 개다. 그러나 특별한 정리작업이 없으므로 OnExit은 따로 작성하지 않는다.
         private void OnEnterGenerating()
         {
-            // _pendingInput Submit 시 저장해둔 값을 사용한다. (캐싱)
-            if (_pendingInput == null)
-                return;
+            Debug.Log($"[NPCInteractable] {name}: OnEnterGenerating 진입! _pendingInput='{_pendingInput}', _messagePub={(_messagePub == null ? "NULL" : "OK")}, _dialogueUI={(_dialogueUI == null ? "NULL" : "OK")}, _cts={(_cts == null ? "NULL" : "OK")}");
+            try
+            {
+                // _pendingInput Submit 시 저장해둔 값을 사용한다. (캐싱)
+                if (_pendingInput == null)
+                {
+                    Debug.LogWarning($"[NPCInteractable] {name}: _pendingInput이 null이어서 OnEnterGenerating 중단");
+                    return;
+                }
 
-            _dialogueUI.SetInputEnabled(false);
-            _dialogueUI.ShowThinking();
+                _dialogueUI.SetInputEnabled(false);
+                _dialogueUI.ShowThinking();
 
-            _messagePub.Publish(NpcGuid, new PlayerMessageSentEvent(_pendingInput, MySecondWorld.Network.PlayerSession.LocalPlayerName, _cts.Token));
-            _pendingInput = null;
+                string guid = NpcGuid;
+                string localPlayer = MySecondWorld.Network.PlayerSession.LocalPlayerName;
+                bool isCtsCanceled = _cts != null && _cts.Token.IsCancellationRequested;
+                Debug.Log($"[NPCInteractable] {name}: OnEnterGenerating 발행 시도 -> NpcGuid='{guid}', Text='{_pendingInput}', Player='{localPlayer}', CtsCanceled={isCtsCanceled}");
+
+                _messagePub.Publish(guid, new PlayerMessageSentEvent(_pendingInput, localPlayer, _cts.Token));
+                _pendingInput = null;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[NPCInteractable] {name}: OnEnterGenerating 예외! {ex}");
+                throw;
+            }
         }
 
         // Shopping은 진입 경로가 SelectShop 하나뿐이라 항상 cts를 새로 만든다.

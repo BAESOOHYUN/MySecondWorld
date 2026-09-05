@@ -130,7 +130,10 @@ namespace MySecondWorld.AI
         private void Awake()
         {
 #if UNITY_SERVER
-    enabled = false;
+            Debug.LogWarning($"[NPCBrain] {name}: ⚠️ UNITY_SERVER 정의됨 → enabled=false 처리됨!");
+            enabled = false;
+#else
+            Debug.Log($"[NPCBrain] {name}: UNITY_SERVER 없음 — 정상 활성화 상태");
 #endif
         }
 
