@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System.IO;
 using UnityEditor;
+using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
@@ -33,6 +34,12 @@ namespace MySecondWorld.Editor
         public static void BuildLinuxServer()
         {
             Debug.Log("[Build] Linux Dedicated Server 빌드 시작...");
+            // 이미 BuildAddressablesRemote()로 번들을 만들어놨는데, BuildPipeline.BuildPlayer()가
+            // Addressables "Build on Player Build" 설정 때문에 또 한 번 자동으로 빌드를 시도한다.
+            // 이 자동 빌드가 Server subtarget을 못 다뤄서 실패하므로 여기서는 끈다.
+            var addressableSettings = AddressableAssetSettingsDefaultObject.Settings;
+            if (addressableSettings != null)
+                addressableSettings.BuildAddressablesWithPlayerBuild = AddressableAssetSettings.PlayerBuildOption.DoNotBuildWithPlayer;
 
             // 빌드 디렉토리 확인 및 생성
             string outputDir = Path.GetDirectoryName(ServerBuildPath);
