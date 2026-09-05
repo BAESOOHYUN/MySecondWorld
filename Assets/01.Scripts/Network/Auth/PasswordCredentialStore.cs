@@ -63,7 +63,8 @@ namespace MySecondWorld.Network
                 // File.Move(a, b, overwrite:true)는 .NET Standard 2.1엔 없어서 직접 지우고 교체
                 if (File.Exists(_filePath))
                     File.Delete(_filePath);
-                File.Delete(tempPath);
+
+                File.Move(tempPath, _filePath);
             }
             catch (Exception ex)
             {
