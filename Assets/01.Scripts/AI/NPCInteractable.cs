@@ -114,6 +114,11 @@ namespace MySecondWorld.AI
                 return _brain.SystemPrompt?.NpcGuid ?? _brain.name;
             }
         }
+
+        // NPCBrain이 메시지 수신 시 "지금 나랑 대화 중인가"를 확인하는 용도
+        // (같은 NpcGuid를 공유하는 다른 NPC/컴패니언이 엿듣지 않도록 필터링)
+        public bool IsConversationActive =>
+            _stateMachine.State == NpcState.Talking || _stateMachine.State == NpcState.Generating;
         #endregion
 
         #region 초기화

@@ -64,6 +64,7 @@ namespace MySecondWorld.AI
         private IPublisher<NPCDialogueEvent> _dialoguePub;
         private IPublisher<NPCTTSSentenceEvent> _ttsPub;
         private ILLMService _llmService;
+        private NPCInteractable _interactable;
 
         // [Inject]가 붙은 메서드를 VContainer(NPCLifetimeScope)가 찾아서
         // 파라미터 타입에 맞는 인스턴스를 컨테이너에서 꺼내 자동으로 호출한다.
@@ -77,7 +78,8 @@ namespace MySecondWorld.AI
             IPublisher<NPCThinkingStartedEvent> thinkingPub,
             IPublisher<NPCDialogueEvent> dialoguePub,
             IPublisher<NPCTTSSentenceEvent> ttsPub,
-            ILLMService llmService
+            ILLMService llmService,
+            NPCInteractable interactable
             )
         {
 #if !UNITY_SERVER
@@ -86,6 +88,7 @@ namespace MySecondWorld.AI
             _dialoguePub = dialoguePub;
             _ttsPub = ttsPub;
             _llmService = llmService;
+            _interactable = interactable;
 
             string myKey = UniqueId;
             Debug.Log($"[NPCBrain] '{name}' 대화 등록 완료! 구독 키: '{myKey}', LLM: {llmService?.GetType().Name ?? "null"}");
@@ -93,6 +96,8 @@ namespace MySecondWorld.AI
             messageSub
                .Subscribe(myKey, evt =>
                {
+                   if (_interactable != null && !_interactable.IsConversationActive)
+                       return; // 나랑 대화 중인 게 아니면 무시 (컴패니언이 몰래 엿듣지 않게)
                    Debug.Log($"[NPCBrain] '{name}' 메시지 수신 성공! 텍스트: '{evt.Text}'");
                    ProcessMessageAsync(evt, myKey).Forget();
                })
