@@ -30,23 +30,11 @@ namespace MySecondWorld.Network
 {
     public class PlayerAuthenticator : NetworkAuthenticator
     {
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStaticState()
-        {
-            playerNames.Clear();
-        }
-
-        [Inject] private IPublisher<AuthStateChangedEvent> _authPublisher;
-
-        // 이름 중복 검사에 사용할 컬렉션
-        public static readonly HashSet<string> playerNames = new HashSet<string>();
-        // 이름이 중복되어 요청이 거절된 사람 명단
-        private readonly HashSet<NetworkConnectionToClient> connectionsPendingDisconnect = new HashSet<NetworkConnectionToClient>();
-
         // Client → Server : 이름 보냄
-        public struct AuthRequestMessage : NetworkMessage 
-        { 
+        public struct AuthRequestMessage : NetworkMessage
+        {
             public string authUsername;
+            public string authPassword;
         }
 
         // Server → Client : 성공/실패 응답
@@ -54,8 +42,23 @@ namespace MySecondWorld.Network
         {
             public const byte Success = 100;
             public const byte Failure = 200;
+            public const byte WrongPassword = 201;
             public byte code;
         }
+        private const int MinPasswordLength = 4;
+
+        // 이름 중복 검사에 사용할 컬렉션
+        public static readonly HashSet<string> playerNames = new HashSet<string>();
+        // 이름이 중복되어 요청이 거절된 사람 명단
+        private readonly HashSet<NetworkConnectionToClient> connectionsPendingDisconnect = new HashSet<NetworkConnectionToClient>();
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStaticState()
+        {
+            playerNames.Clear();
+        }
+        [Inject] private IPublisher<AuthStateChangedEvent> _authPublisher;
+        [Inject] private PasswordCredentialStore _credentialStore;
 
         #region 서버
         public override void OnStartServer() //클라이언트가 보낼 AuthRequestMessage 핸들러 등록
@@ -86,25 +89,48 @@ namespace MySecondWorld.Network
             if (connectionsPendingDisconnect.Contains(conn))
                 return;
 
+            // 조작된 패킷으로 빈 값이 오는 경우 서버에서도 차단 (클라 가드는 우회 가능)
+            if (string.IsNullOrWhiteSpace(msg.authUsername) || string.IsNullOrWhiteSpace(msg.authPassword))
+            {
+                RejectAuth(conn, AuthResponseMessage.Failure);
+                return;
+            }
+
+            bool isExistingAccount = _credentialStore.TryGetCredential(msg.authUsername, out _);
+
+            // 신규 계정 등록 시에만 최소 길이 강제 (기존 계정 검증엔 적용 안 함)
+            if (!isExistingAccount && msg.authPassword.Length < MinPasswordLength)
+            {
+                RejectAuth(conn, AuthResponseMessage.Failure);
+                return;
+            }
+
+            if (isExistingAccount)
+            {
+                // 비밀번호 검증 — 기존 계정이면 대조, 신규 계정이면 최초 접속을 회원가입으로 처리
+                if (!_credentialStore.Verify(msg.authUsername, msg.authPassword))
+                {
+                    RejectAuth(conn, AuthResponseMessage.WrongPassword);
+                    return;
+                }
+            }
+            else
+            {
+                _credentialStore.Register(msg.authUsername, msg.authPassword);
+            }
+
             // 인증요청을 보낸 사람의 이름이 playerNames에 포함되지 않았다면 추가.
             if (!playerNames.Contains(msg.authUsername))
             {
                 playerNames.Add(msg.authUsername);
-
 
                 // authenticationData는 object type.
                 // 지금은 이름만 필요하니까 string 하나지만,
                 // 실제 게임이라면 username, userId, sessionToken, permissionLevel 등이 담길수 있다.
                 conn.authenticationData = msg.authUsername;
 
-                // 성공 응답 생성
-                AuthResponseMessage authResponseMessage = new AuthResponseMessage
-                {
-                    code = AuthResponseMessage.Success
-                };
-
                 //클라이언트에게 성공 응답 보내기
-                conn.Send(authResponseMessage);
+                conn.Send(new AuthResponseMessage {code = AuthResponseMessage.Success });
 
                 // 서버가 "이 클라이언트 인증 통과"라고 Mirror에 알림
                 // NetworkAuthenticator 상속 클래스
@@ -112,27 +138,31 @@ namespace MySecondWorld.Network
             }
             else //이름이 이미 사용중인 경우 
             {
-                // Add하여 (이 클라이언트의 연결동안) '이 conn은 거절 처리 중'임을 알림
-                connectionsPendingDisconnect.Add(conn);
-
-                // 실패 응답 생성
-                AuthResponseMessage authResponseMessage = new AuthResponseMessage
-                {
-                    code = AuthResponseMessage.Failure
-                };
-
-                // 클라이언트에게 실패 응답 보내기
-                conn.Send(authResponseMessage);
-
-                // Mirror는 인증 성공 시 conn.isAuthenticated = true로 자동 설정한다.
-                // else (거부)쪽에서 명시적으로 false로 되돌려
-                // ServerReject 전에 확실하게 "이 연결은 인증 안 됨" 상태로 표시해두는 안전장치
-                conn.isAuthenticated = false;
-
-                // 클라이언트에게 연결 종료(거부) 이유 알려주기 위해 1초 딜레이
-                DelayedDisconnect(conn, 1f).Forget();
+                RejectAuth(conn, AuthResponseMessage.Failure);
             }
         }
+        
+        private void RejectAuth(NetworkConnectionToClient conn, byte code)
+        {
+            // Add하여 (이 클라이언트의 연결동안) '이 conn은 거절 처리 중'임을 알림
+            connectionsPendingDisconnect.Add(conn);
+
+            // 클라이언트에게 실패 응답 보내기
+            conn.Send(new AuthResponseMessage { code = AuthResponseMessage.WrongPassword });
+
+            // Mirror는 인증 성공 시 conn.isAuthenticated = true로 자동 설정한다.
+            // else (거부)쪽에서 명시적으로 false로 되돌려
+            // ServerReject 전에 확실하게 "이 연결은 인증 안 됨" 상태로 표시해두는 안전장치
+            conn.isAuthenticated = false;
+
+            // 클라이언트에게 연결 종료(거부) 이유 알려주기 위해 1초 딜레이
+            DelayedDisconnect(conn, 1f).Forget();
+            return;
+        }
+                
+         
+
+            
 
         // UniTaskVoid — 호출하고 잊어버릴 때 (fire-and-forget). 호출쪽에서 결과를 await해서 받지 않음.
         // DelayedDisconnect(conn).Forget();
@@ -180,7 +210,17 @@ namespace MySecondWorld.Network
                 return;
             }
 
-            NetworkClient.Send(new AuthRequestMessage { authUsername = PlayerSession.LocalPlayerName });
+            if (string.IsNullOrWhiteSpace(PlayerSession.LocalPlayerPassword))
+            {
+                Debug.LogWarning("[Auth] localPlayerPassword 비어있음 → 인증 메시지 미전송");
+                return;
+            }
+
+            NetworkClient.Send(new AuthRequestMessage
+            {
+                authUsername = PlayerSession.LocalPlayerName,
+                authPassword = PlayerSession.LocalPlayerPassword
+            });
         }
 
         public void OnAuthResponseMessage(AuthResponseMessage msg)

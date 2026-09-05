@@ -1,11 +1,11 @@
 using UnityEngine;
 using VContainer;
+using MySecondWorld.Network;
 
 namespace MySecondWorld.Customization
 {
     public class CharacterSaveService
     {
-        private const string Key = "CharacterAppearance";
         // 생성자 인젝션에서는 필드를 readonly로 선언할 수 있다.
         private readonly CharacterAppearanceSO _defaultSO;
 
@@ -16,6 +16,9 @@ namespace MySecondWorld.Customization
         {  
             _defaultSO = defaultSO; 
         }
+
+        // 계정(이름)마다 별도 키 — 같은 기기에서 여러 계정을 테스트해도 안 섞이게
+        private static string Key => $"CharacterAppearance_{PlayerSession.LocalPlayerName ?? "default"}";
 
         public void Save(CharacterAppearanceData data)
         {

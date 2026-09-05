@@ -12,6 +12,7 @@ namespace MySecondWorld.Network
 
         [Header("입력 및 버튼")]
         [SerializeField] private TMP_InputField _localPlayerNameInput;
+        [SerializeField] private TMP_InputField _localPlayerPasswordInput;
         [SerializeField] private Toggle _hostToggle;         // Host (에디터 전용)
         [SerializeField] private Toggle _cloudClientToggle;  // AWS 클라우드 접속
         [SerializeField] private Toggle _localClientToggle;  // 내 PC 로컬 접속
@@ -40,16 +41,25 @@ namespace MySecondWorld.Network
 
             // [플랫폼별 버튼 노출 제어]
 #if UNITY_EDITOR
-            _localPlayerNameInput.text = "payu 1";
+            _localPlayerNameInput.text = "payu1";
             if (_hostToggle != null) _hostToggle.gameObject.SetActive(true);               // 에디터: Host 노출
             if (_cloudClientToggle != null) _cloudClientToggle.gameObject.SetActive(true); // 에디터: AWS 노출
             if (_localClientToggle != null) _localClientToggle.gameObject.SetActive(false); // 에디터: 로컬접속 불필요
 #elif UNITY_ANDROID || UNITY_IOS
-            _localPlayerNameInput.text = "payu 2";
+            //_localPlayerNameInput.text = "payu2";
             if (_hostToggle != null) _hostToggle.gameObject.SetActive(false);              // 모바일: Host 숨김
             if (_cloudClientToggle != null) _cloudClientToggle.gameObject.SetActive(true); // 모바일: AWS 노출
             if (_localClientToggle != null) _localClientToggle.gameObject.SetActive(true); // 모바일: 내 PC 노출
 #endif
+            // 저장된 이름/비밀번호가 있으면 자동 입력 (위 테스트용 하드코딩 값보다 우선)
+            string savedName = PlayerPrefs.GetString("playerName", "");
+            if (!string.IsNullOrEmpty(savedName))
+                _localPlayerNameInput.text = savedName;
+
+            string savedPassword = PlayerPrefs.GetString("playerPassword", "");
+            if (!string.IsNullOrEmpty(savedPassword))
+                _localPlayerPasswordInput.text = savedPassword;
+
             OnNameChanged(_localPlayerNameInput.text);
         }
 
@@ -84,7 +94,10 @@ namespace MySecondWorld.Network
         private void OnToggleHost(bool isOn)
         {
             if (isOn)
+            {
                 SetPlayerName(_localPlayerNameInput.text);
+                SetPlayerPassword(_localPlayerPasswordInput.text);
+            }
 
             _networkManager.ToggleHost(isOn);
             if (_cloudClientToggle != null) _cloudClientToggle.interactable = !isOn;
@@ -96,6 +109,7 @@ namespace MySecondWorld.Network
             if (isOn)
             {
                 SetPlayerName(_localPlayerNameInput.text);
+                SetPlayerPassword(_localPlayerPasswordInput.text);
                 _networkManager.SetServerAddress(targetIp);
                 Debug.Log($"[Login] Connecting to '{targetIp}'...");
             }
@@ -113,6 +127,13 @@ namespace MySecondWorld.Network
             PlayerSession.LocalPlayerName = username;
             _localPlayerNameInput.interactable = false;
             Debug.Log($"[Login] SetPlayerName: '{PlayerSession.LocalPlayerName}'");
+        }
+
+        public void SetPlayerPassword(string password)
+        {
+            PlayerPrefs.SetString("playerPassword", password);
+            PlayerSession.LocalPlayerPassword = password;
+            _localPlayerPasswordInput.interactable = false;
         }
 
         public void PlayerPrefsDeleteAll()

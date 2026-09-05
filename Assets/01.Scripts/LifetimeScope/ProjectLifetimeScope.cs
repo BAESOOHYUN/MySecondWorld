@@ -66,6 +66,7 @@ public class ProjectLifetimeScope : LifetimeScope
         builder.RegisterMessageBroker<RequestOpenCustomizeUIEvent>(options);
 
         builder.Register<SaveManager>(Lifetime.Singleton);
+        builder.Register<PasswordCredentialStore>(Lifetime.Singleton);
         builder.Register<CharacterSaveService>(Lifetime.Singleton);
         builder.Register<CharacterAppearanceService>(Lifetime.Singleton);
         builder.Register<LocalPlayerInventoryProvider>(Lifetime.Singleton);

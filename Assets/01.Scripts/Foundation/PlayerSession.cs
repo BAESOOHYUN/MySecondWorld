@@ -10,13 +10,17 @@ namespace MySecondWorld.Network
     /// </summary>
     public class PlayerSession
     {
+        public static string LocalPlayerName { get; set; }
+        public static string LocalPlayerPassword { get; set; }
+
+        // Domain Reload OFF 환경에서도 매번 초기화
         #region 로컬 플레이어 이름 (정적, 세션과 무관 — 클라 로컬 표시용)
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void ResetLocalPlayerName()
         {
-            LocalPlayerName = null; // Domain Reload OFF 환경에서도 매번 초기화
+            LocalPlayerName = null;
+            LocalPlayerPassword = null; 
         }
-        public static string LocalPlayerName { get; set; }
         #endregion
 
         #region 번들/씬 로드 상태

@@ -11,7 +11,8 @@
         "MySecondWorld.Inventory.Items",
         "Cleverous.VaultInventory",
         "Mirror",
-        "Cleverous.VaultSystem"
+        "Cleverous.VaultSystem",
+        "MySecondWorld.Foundation"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
