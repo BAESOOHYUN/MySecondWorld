@@ -58,6 +58,9 @@ public class ProjectLifetimeScope : LifetimeScope
         //                "IDeviceCapability 요청이 오면 NetworkDeviceCapability 인스턴스 줘" -> NPCLifetimeScope
         else
             builder.Register<IDeviceCapability, LocalDeviceCapability>(Lifetime.Singleton);
+#else
+        // 헤드리스 서버: IUIManager를 아무도 등록 안 해서 GameNetworkManager 주입이 통째로 실패하던 문제 — 더미로 해결
+        builder.Register<IUIManager, NullUIManager>(Lifetime.Singleton);
 #endif
 
         builder.RegisterMessageBroker<AuthStateChangedEvent>(options);
