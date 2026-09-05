@@ -9,7 +9,6 @@ using Random = UnityEngine.Random;
 using VContainer;
 using MessagePipe;
 using MySecondWorld.Customization;
-using MySecondWorld.Save;
 
 namespace MySecondWorld.UI
 {
@@ -176,6 +175,11 @@ namespace MySecondWorld.UI
             if (_isInitialized) return;
             _isInitialized = true;
 
+            // 세이브 로드(InitIndices)가 끝나기 전에 Toggle 콜백이 먼저 SwitchTab을 부를 수 있어서
+            // _currentIndices[part] 직접 인덱서 접근이 KeyNotFoundException을 던지지 않도록 기본값(0)으로 선채움
+            foreach (PartType part in System.Enum.GetValues(typeof(PartType)))
+                _currentIndices[part] = 0;
+
             _lastPartsTab = _partsTabEntries.Length > 0 ? _partsTabEntries[0].Part : default;
             _lastAccessoryTab = _accessoryTabEntries.Length > 0 ? _accessoryTabEntries[0].Part : default;
             RegisterButtons();
@@ -290,14 +294,20 @@ namespace MySecondWorld.UI
                 _colorPicker.gameObject.SetActive(false);  // 색상 탭 벗어나면 피커 닫기
         }
 
-        // 하위 탭
+        // 하위 탭 (헤어, 헤드.... / 머리장식, 등부착물)
         private void SwitchTab(PartType part)
         {
             if (_isSwitchingTab) return;
             _isSwitchingTab = true;
-            _currentTab = part;
-            PopulateThumbnails(part);
-            _isSwitchingTab = false;
+            try
+            {
+                _currentTab = part;
+                PopulateThumbnails(part);
+            }
+            finally
+            {
+                _isSwitchingTab = false;
+            }
         }
 
         // Female 시 FacialHair 탭 버튼 숨김 처리

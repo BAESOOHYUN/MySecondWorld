@@ -1,0 +1,179 @@
+<linker>
+  <assembly fullname="Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <type fullname="InfinityPBR.BlendShapesManager" preserve="all" />
+    <type fullname="InfinityPBR.BlendShapesPresetManager" preserve="all" />
+    <type fullname="MySecondWorld.Network.NPCDialogueSync" preserve="all" />
+    <type fullname="MySecondWorld.Network.SharedScreenInteraction" preserve="all" />
+    <type fullname="InfinityPBR.BlendShapeGameObject" preserve="nothing" serialized="true" />
+    <type fullname="InfinityPBR.BlendShapePreset" preserve="nothing" serialized="true" />
+    <type fullname="InfinityPBR.BlendShapePresetValue" preserve="nothing" serialized="true" />
+    <type fullname="InfinityPBR.BlendShapeValue" preserve="nothing" serialized="true" />
+    <type fullname="InfinityPBR.Shape" preserve="nothing" serialized="true" />
+  </assembly>
+  <assembly fullname="Cleverous.VaultInventory, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <type fullname="Cleverous.VaultInventory.SlotRestriction" preserve="all" />
+  </assembly>
+  <assembly fullname="Mirror, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <type fullname="Mirror.NetworkIdentity" preserve="all" />
+  </assembly>
+  <assembly fullname="Mirror.Components, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <type fullname="Mirror.NetworkAnimator" preserve="all" />
+    <type fullname="Mirror.NetworkMatch" preserve="all" />
+    <type fullname="Mirror.NetworkTransformReliable" preserve="all" />
+  </assembly>
+  <assembly fullname="MySecondWorld.AI, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <type fullname="MySecondWorld.AI.NPCBrain" preserve="all" />
+    <type fullname="MySecondWorld.AI.NPCInteractable" preserve="all" />
+    <type fullname="MySecondWorld.AI.ServerAwareLLMAgent" preserve="all" />
+    <type fullname="MySecondWorld.AI.Voice.NPCLipSyncController" preserve="all" />
+    <type fullname="MySecondWorld.AI.Voice.NPCVoicePlayer" preserve="all" />
+  </assembly>
+  <assembly fullname="MySecondWorld.Combat, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <type fullname="MySecondWorld.Combat.AnimationEventReceiver" preserve="all" />
+    <type fullname="MySecondWorld.Combat.CircleAoESelectorSO" preserve="all" />
+    <type fullname="MySecondWorld.Combat.DamageEffectSO" preserve="all" />
+    <type fullname="MySecondWorld.Combat.InstantCastSO" preserve="all" />
+    <type fullname="MySecondWorld.Combat.Monster.BossStatsSO" preserve="all" />
+    <type fullname="MySecondWorld.Combat.Monster.MonsterRendererVisibilityFix" preserve="all" />
+    <type fullname="MySecondWorld.Combat.Monster.MonsterServerState" preserve="all" />
+    <type fullname="MySecondWorld.Combat.Monster.MonsterStatsSO" preserve="all" />
+    <type fullname="MySecondWorld.Combat.Monster.MonsterTapTarget" preserve="all" />
+    <type fullname="MySecondWorld.Combat.Monster.MonsterWaveDefinitionSO" preserve="all" />
+    <type fullname="MySecondWorld.Combat.Monster.MonsterWaveSpawner" preserve="all" />
+    <type fullname="MySecondWorld.Combat.Monster.RangedMonsterStatsSO" preserve="all" />
+    <type fullname="MySecondWorld.Combat.NetworkProjectileRelay" preserve="all" />
+    <type fullname="MySecondWorld.Combat.Projectile" preserve="all" />
+    <type fullname="MySecondWorld.Combat.ProjectileCastSO" preserve="all" />
+    <type fullname="MySecondWorld.Combat.SingleTargetSelectorSO" preserve="all" />
+    <type fullname="MySecondWorld.Combat.SkillDefinition" preserve="all" />
+    <type fullname="MySecondWorld.Combat.SplashDamageEffectSO" preserve="all" />
+    <type fullname="MySecondWorld.Combat.Monster.MonsterWaveDefinitionSO/MonsterEntry" preserve="nothing" serialized="true" />
+    <type fullname="MySecondWorld.Combat.Monster.MonsterWaveDefinitionSO/Wave" preserve="nothing" serialized="true" />
+  </assembly>
+  <assembly fullname="MySecondWorld.Customization, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <type fullname="MySecondWorld.AI.NPCCharacterCustomizer" preserve="all" />
+    <type fullname="MySecondWorld.Customization.CharacterAppearanceSO" preserve="all" />
+    <type fullname="MySecondWorld.Customization.PartBoneNames" preserve="all" />
+    <type fullname="MySecondWorld.Customization.CharacterAppearanceData" preserve="nothing" serialized="true" />
+  </assembly>
+  <assembly fullname="MySecondWorld.Inventory.Items, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <type fullname="MySecondWorld.Inventory.Items.EquipmentItem" preserve="all" />
+  </assembly>
+  <assembly fullname="MySecondWorld.LifetimeScope, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <type fullname="MySecondWorld.AI.NPCScope" preserve="all" />
+  </assembly>
+  <assembly fullname="MySecondWorld.Network, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <type fullname="MySecondWorld.Network.NPCServerState" preserve="all" />
+    <type fullname="MySecondWorld.Network.SharedScreenController" preserve="all" />
+    <type fullname="MySecondWorld.Network.SharedScreenOuterZone" preserve="all" />
+    <type fullname="MySecondWorld.Network.ZonePortalTrigger" preserve="all" />
+  </assembly>
+  <assembly fullname="MySecondWorld.Pool, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <type fullname="MySecondWorld.Pool.PooledObject" preserve="all" />
+  </assembly>
+  <assembly fullname="MySecondWorld.ScriptableObject, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <type fullname="MySecondWorld.AI.NPCMemorySO" preserve="all" />
+    <type fullname="MySecondWorld.AI.NPCSystemPromptSO" preserve="all" />
+    <type fullname="MySecondWorld.Network.ZoneDefinitionSO" preserve="all" />
+    <type fullname="MySecondWorld.Network.ZonePortalSO" preserve="all" />
+  </assembly>
+  <assembly fullname="MySecondWorld.Utils, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <type fullname="MySecondWorld.Utils.TriggerRelay" preserve="all" />
+  </assembly>
+  <assembly fullname="Unity.Addressables, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null" preserve="all">
+    <type fullname="UnityEngine.AddressableAssets.Addressables" preserve="all" />
+    <type fullname="UnityEngine.AddressableAssets.AssetLabelReference" preserve="nothing" serialized="true" />
+    <type fullname="UnityEngine.AddressableAssets.AssetReferenceGameObject" preserve="nothing" serialized="true" />
+  </assembly>
+  <assembly fullname="Unity.AI.Navigation, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <type fullname="Unity.AI.Navigation.NavMeshLink" preserve="all" />
+    <type fullname="Unity.AI.Navigation.NavMeshSurface" preserve="all" />
+  </assembly>
+  <assembly fullname="Unity.RenderPipelines.Universal.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <type fullname="UnityEngine.Rendering.Universal.UniversalAdditionalLightData" preserve="all" />
+  </assembly>
+  <assembly fullname="Unity.ResourceManager, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null" preserve="all">
+    <type fullname="UnityEngine.ResourceManagement.ResourceProviders.AssetBundleProvider" preserve="all" />
+    <type fullname="UnityEngine.ResourceManagement.ResourceProviders.AtlasSpriteProvider" preserve="all" />
+    <type fullname="UnityEngine.ResourceManagement.ResourceProviders.BundledAssetProvider" preserve="all" />
+    <type fullname="UnityEngine.ResourceManagement.ResourceProviders.InstanceProvider" preserve="all" />
+    <type fullname="UnityEngine.ResourceManagement.ResourceProviders.SceneProvider" preserve="all" />
+  </assembly>
+  <assembly fullname="Unity.TextMeshPro, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <type fullname="TMPro.TextMeshPro" preserve="all" />
+    <type fullname="TMPro.TMP_FontAsset" preserve="all" />
+    <type fullname="TMPro.FaceInfo_Legacy" preserve="nothing" serialized="true" />
+    <type fullname="TMPro.FontAssetCreationSettings" preserve="nothing" serialized="true" />
+    <type fullname="TMPro.KerningTable" preserve="nothing" serialized="true" />
+    <type fullname="TMPro.TMP_Character" preserve="nothing" serialized="true" />
+    <type fullname="TMPro.TMP_FontFeatureTable" preserve="nothing" serialized="true" />
+    <type fullname="TMPro.TMP_FontWeightPair" preserve="nothing" serialized="true" />
+    <type fullname="TMPro.VertexGradient" preserve="nothing" serialized="true" />
+  </assembly>
+  <assembly fullname="UnityEngine.AIModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <type fullname="UnityEngine.AI.NavMeshData" preserve="all" />
+  </assembly>
+  <assembly fullname="UnityEngine.AnimationModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <type fullname="UnityEngine.Animation" preserve="all" />
+    <type fullname="UnityEngine.AnimationClip" preserve="all" />
+    <type fullname="UnityEngine.Animator" preserve="all" />
+    <type fullname="UnityEngine.Avatar" preserve="all" />
+    <type fullname="UnityEngine.RuntimeAnimatorController" preserve="all" />
+  </assembly>
+  <assembly fullname="UnityEngine.AudioModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <type fullname="UnityEngine.AudioSource" preserve="all" />
+  </assembly>
+  <assembly fullname="UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <type fullname="UnityEngine.Cubemap" preserve="all" />
+    <type fullname="UnityEngine.GameObject" preserve="all" />
+    <type fullname="UnityEngine.Light" preserve="all" />
+    <type fullname="UnityEngine.LightmapSettings" preserve="all" />
+    <type fullname="UnityEngine.LightProbes" preserve="all" />
+    <type fullname="UnityEngine.Material" preserve="all" />
+    <type fullname="UnityEngine.Mesh" preserve="all" />
+    <type fullname="UnityEngine.MeshFilter" preserve="all" />
+    <type fullname="UnityEngine.MeshRenderer" preserve="all" />
+    <type fullname="UnityEngine.Object" preserve="all" />
+    <type fullname="UnityEngine.RectTransform" preserve="all" />
+    <type fullname="UnityEngine.RenderSettings" preserve="all" />
+    <type fullname="UnityEngine.Shader" preserve="all" />
+    <type fullname="UnityEngine.SkinnedMeshRenderer" preserve="all" />
+    <type fullname="UnityEngine.Sprite" preserve="all" />
+    <type fullname="UnityEngine.Texture2D" preserve="all" />
+    <type fullname="UnityEngine.Transform" preserve="all" />
+    <type fullname="UnityEngine.U2D.SpriteAtlas" preserve="all" />
+    <type fullname="UnityEngine.RenderingLayerMask" preserve="nothing" serialized="true" />
+    <type fullname="UnityEngine.Events.ArgumentCache" preserve="nothing" serialized="true" />
+    <type fullname="UnityEngine.Events.PersistentCallGroup" preserve="nothing" serialized="true" />
+    <type fullname="UnityEngine.Events.PersistentListenerMode" preserve="nothing" serialized="true" />
+    <type fullname="UnityEngine.Events.UnityEvent`1" preserve="nothing" serialized="true" />
+  </assembly>
+  <assembly fullname="UnityEngine.ParticleSystemModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <type fullname="UnityEngine.ParticleSystem" preserve="all" />
+    <type fullname="UnityEngine.ParticleSystemRenderer" preserve="all" />
+  </assembly>
+  <assembly fullname="UnityEngine.PhysicsModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <type fullname="UnityEngine.BoxCollider" preserve="all" />
+    <type fullname="UnityEngine.CapsuleCollider" preserve="all" />
+    <type fullname="UnityEngine.MeshCollider" preserve="all" />
+    <type fullname="UnityEngine.SphereCollider" preserve="all" />
+  </assembly>
+  <assembly fullname="UnityEngine.TextRenderingModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <type fullname="UnityEngine.Font" preserve="all" />
+  </assembly>
+  <assembly fullname="MySecondWorld.Inventory">
+    <type fullname="MySecondWorld.Inventory.StatModifier" preserve="nothing" serialized="true" />
+  </assembly>
+  <assembly fullname="UnityEngine.TextCoreFontEngineModule">
+    <type fullname="UnityEngine.TextCore.FaceInfo" preserve="nothing" serialized="true" />
+    <type fullname="UnityEngine.TextCore.Glyph" preserve="nothing" serialized="true" />
+    <type fullname="UnityEngine.TextCore.GlyphMetrics" preserve="nothing" serialized="true" />
+    <type fullname="UnityEngine.TextCore.GlyphRect" preserve="nothing" serialized="true" />
+  </assembly>
+  <assembly fullname="UnityEngine.UI">
+    <type fullname="UnityEngine.UI.MaskableGraphic/CullStateChangedEvent" preserve="nothing" serialized="true" />
+  </assembly>
+  <assembly fullname="VContainer">
+    <type fullname="VContainer.Unity.ParentReference" preserve="nothing" serialized="true" />
+  </assembly>
+</linker>
