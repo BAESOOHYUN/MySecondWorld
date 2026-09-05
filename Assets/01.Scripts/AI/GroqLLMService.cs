@@ -17,8 +17,15 @@ namespace MySecondWorld.AI
         // private const string MODEL = "llama-3.3-70b-versatile";
 
         private string _systemPrompt = "";
+        private int _maxTokens = 40;
         public bool IsReady => true;
-        public void SetSystemPrompt(string prompt) => _systemPrompt = prompt;
+
+        public void SetSystemPrompt(string prompt, int maxTokens)
+        {
+            _systemPrompt = prompt;
+            _maxTokens = maxTokens > 0 ? maxTokens : 40;
+        }
+
         public void ClearHistory() { } // Groq는 매 요청이 독립적 — 히스토리 없음
 
         public async UniTask<string> ChatAsync(string userInput, Action<string> onToken, CancellationToken ct)
@@ -136,7 +143,14 @@ namespace MySecondWorld.AI
         {
             string sys = EscapeJson(_systemPrompt);
             string usr = EscapeJson(userInput);
-            return $"{{\"model\":\"{MODEL}\",\"stream\":false,\"messages\":[{{\"role\":\"system\",\"content\":\"{sys}\"}},{{\"role\":\"user\",\"content\":\"{usr}\"}}]}}";
+            return "{" +
+                $"\"model\":\"{MODEL}\"," +
+                "\"stream\":false," +
+                $"\"max_tokens\":{_maxTokens}," +
+                "\"messages\":[" +
+                    $"{{\"role\":\"system\",\"content\":\"{sys}\"}}," +
+                    $"{{\"role\":\"user\",\"content\":\"{usr}\"}}" +
+                "]}";
         }
 
         // {"choices":[{"message":{"content":"..."}}]} 에서 content 추출

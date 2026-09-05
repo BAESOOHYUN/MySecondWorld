@@ -36,6 +36,7 @@ namespace MySecondWorld.AI
         public string NpcName => npcName;
         public string NpcGuid => npcGuid;
         public string NpcLocation => npcLocation;
+        public int MaxResponseTokens => maxResponseTokens;
 
         /// <summary>
         /// Gemma에 넘길 시스템 프롬프트 문자열 조합

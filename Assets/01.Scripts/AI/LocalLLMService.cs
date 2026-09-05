@@ -68,10 +68,16 @@ namespace MySecondWorld.AI
             _llmAgent?.CancelRequests(); // 게임 중 NPC Destroy(예: 씬 전환) → _isExitingPlayMode = false → CancelRequests() 정상 실행
         }
 
-        public void SetSystemPrompt(string prompt)
+        public void SetSystemPrompt(string prompt, int maxTokens)
         {
             if (_llmAgent != null)
+            {
                 _llmAgent.systemPrompt = prompt;
+                _llmAgent.numPredict = maxTokens;
+            }
+            // numPredict: 모델이 EOS 토큰(LLM이 학습할 때 문장/응답이 끝나는 자리마다 심어두는 특수 토큰) 없이도 이 개수에서 강제로 생성을 멈추게 하는 상한.
+            // Groq의 max_tokens와 같은 개념 — 저사양 기기에서 답변이 쓸데없이 길어져 느려지는 걸 막는다.
+            // NPCSystemPromptSO.maxResponseTokens 하나로 Groq/로컬 두 백엔드의 응답 길이를 동일 기준으로 통제.
         }
 
         public void ClearHistory() => _llmAgent?.ClearHistory();

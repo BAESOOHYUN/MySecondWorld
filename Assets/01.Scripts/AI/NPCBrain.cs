@@ -152,7 +152,7 @@ namespace MySecondWorld.AI
                 _memory.SetFirstMet(System.DateTime.Now.ToString("yyyy-MM-dd"), location);
             }
 
-            _llmService.SetSystemPrompt(BuildSystemPromptWithFacts());
+            _llmService.SetSystemPrompt(BuildSystemPromptWithFacts(), _systemPrompt?.MaxResponseTokens ?? 40);
         }
 
         private void OnDestroy()
