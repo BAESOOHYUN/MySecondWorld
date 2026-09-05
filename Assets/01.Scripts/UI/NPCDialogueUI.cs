@@ -35,7 +35,7 @@ namespace MySecondWorld.UI
 
         [Header("Future: Voice")]
         [SerializeField] private Button _sttButton;
-        [SerializeField] private Button _ttsButton;
+        [SerializeField] private Button _ttsStopButton;
         #endregion
 
         #region 필드 — 내부 상태
@@ -131,8 +131,8 @@ namespace MySecondWorld.UI
                 .AddTo(destroyCancellationToken);
 
             _stopTTSPub = stopTTSPub;
-            if (_ttsButton != null)
-                _ttsButton.OnClickAsObservable()
+            if (_ttsStopButton != null)
+                _ttsStopButton.OnClickAsObservable()
                         .Subscribe(_ => _stopTTSPub.Publish(new NPCStopTTSEvent(_currentNpcGuid))) // NPCVoicePlayer가 구독
                         .AddTo(destroyCancellationToken);
 
