@@ -53,6 +53,7 @@ namespace MySecondWorld.Combat.Companion
         private NavMeshAgent _agent;
         private Health _health;
         private NetworkAnimator _networkAnimator;
+        private UniTaskCompletionSource _deathAnimationTcs;
         private Transform _owner;   // 따라다녀야 할 플레이어 
         private Transform _targetM;  // 감지된 몬스터
         private Health _targetMHealth; // 현재 감지된 몬스터의 Health — 사망을 직접 감지하기 위함
@@ -396,6 +397,9 @@ namespace MySecondWorld.Combat.Companion
 
         #region 사망 처리
 
+        // Death 클립 마지막 프레임 근처에 Animation Event로 연결
+        public void OnDeathAnimationEnd() => _deathAnimationTcs?.TrySetResult();
+
         private void HandleDied()
         {
             // 길찾기 정지 및 비활성화
@@ -420,10 +424,18 @@ namespace MySecondWorld.Combat.Companion
         {
             try
             {
+                _deathAnimationTcs = new UniTaskCompletionSource();
+
                 if (_networkAnimator != null)
                     _networkAnimator.SetTrigger(DeathTrigger);
-                await UniTask.Delay(TimeSpan.FromSeconds(_stats.DeathDuration), cancellationToken: this.GetCancellationTokenOnDestroy());
-                GetComponent<CompanionServerState>()?.MarkDead(); // 죽음 애니메이션 '재생 완료 후' 비활성화되도록 호출. MarkDead() => _isAlive = false;
+
+                await UniTask.WhenAny(
+                   _deathAnimationTcs.Task,
+                   UniTask.Delay(TimeSpan.FromSeconds(_stats.DeathDuration), 
+                   cancellationToken: this.GetCancellationTokenOnDestroy()));
+
+                // 죽음 애니메이션 '재생 완료 후' 비활성화되도록 호출. MarkDead() => _isAlive = false;
+                GetComponent<CompanionServerState>()?.MarkDead();
             }
             catch (OperationCanceledException)
             {

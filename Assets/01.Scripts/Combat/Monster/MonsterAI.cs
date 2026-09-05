@@ -51,6 +51,7 @@ namespace MySecondWorld.Combat.Monster
         protected NavMeshAgent _agent;
         protected Health _health;
         protected NetworkAnimator _networkAnimator;   // Trigger 타입 파라미터는 이걸 거쳐야 다른 클라에 동기화됨
+        private UniTaskCompletionSource _deathAnimationTcs;
         private StateMachine<MonsterState, MonsterTrigger> _stateMachine;
         protected ISkillSelector _skillSelector;
         private readonly AIContext _aiContext = new AIContext();
@@ -502,6 +503,8 @@ namespace MySecondWorld.Combat.Monster
 
         #region 사망 처리
 
+        // Death 클립 마지막 프레임 근처에 Animation Event로 연결
+        public void OnDeathAnimationEnd() => _deathAnimationTcs?.TrySetResult();
         private void HandleDied() => SafeFire(MonsterTrigger.Died);
 
         private void HandleEnterDead()
@@ -517,7 +520,11 @@ namespace MySecondWorld.Combat.Monster
             {
                 if (_networkAnimator != null)
                     _networkAnimator.SetTrigger(GetDeathTriggerHash());
-                await UniTask.Delay(TimeSpan.FromSeconds(_stats.DeathDuration));
+
+                // Animation Event가 정상 호출되면 즉시, 배선이 빠졌으면 DeathDuration 후 타임아웃으로 진행
+                await UniTask.WhenAny(
+                    _deathAnimationTcs.Task,
+                    UniTask.Delay(TimeSpan.FromSeconds(_stats.DeathDuration), cancellationToken: ct));
 
                 // 클라이언트 사본을 먼저 정리 — SetActive(false)보다 먼저 호출해야 함
                 if (NetworkServer.active)
