@@ -27,6 +27,7 @@ namespace MySecondWorld.UI
 
         // Open() 시점에 구독한 인스턴스를 기억 — Close() 때 다른 인스턴스로 바뀌어도 정확히 해당 구독만 해제
         private Cleverous.VaultInventory.Inventory _subscribedInventory;
+        private IWeaponEquipActionsProvider _subscribedWeaponActions;
 
         [Inject]
         public void Construct(
@@ -48,15 +49,23 @@ namespace MySecondWorld.UI
         {
             if (_subscribedInventory != null)
                 _subscribedInventory.OnChanged -= OnInventoryChanged;
+
+            if (_subscribedWeaponActions != null)
+                _subscribedWeaponActions.OnMainHandStateChanged -= OnWeaponStateChanged;
         }
 
         public void Open()
         {
             gameObject.SetActive(true);
+
             _subscribedInventory = _inventoryProvider.Inventory;
             if (_subscribedInventory != null)
                 _subscribedInventory.OnChanged += OnInventoryChanged; // 열려있는 동안만 구독 — 상점/바닥획득 등 다른 화면에서 바뀐 것도 즉시 반영
 
+            _subscribedWeaponActions = _inventoryProvider.WeaponActions;
+            if (_subscribedWeaponActions != null)
+                _subscribedWeaponActions.OnMainHandStateChanged += OnWeaponStateChanged;
+         
             Refresh();
         }
 
@@ -65,10 +74,16 @@ namespace MySecondWorld.UI
             if (_subscribedInventory != null)
                 _subscribedInventory.OnChanged -= OnInventoryChanged;
             _subscribedInventory = null;
+
+            if (_subscribedWeaponActions != null)
+                _subscribedWeaponActions.OnMainHandStateChanged -= OnWeaponStateChanged;
+            _subscribedWeaponActions = null;
+
             gameObject.SetActive(false);
         }
 
         private void OnInventoryChanged(int index) => Refresh();
+        private void OnWeaponStateChanged() => Refresh();
 
         private void Refresh()
         {
@@ -89,11 +104,17 @@ namespace MySecondWorld.UI
                 bool isEquippable = stack.Source is EquipmentItem eq
                                     && eq.Category != WeaponCategory.Quiver
                                     && (eq.Category != WeaponCategory.None || eq.Restriction != null);
+                bool isEquippedWeapon = stack.Source is EquipmentItem weaponCheck
+                                    && weaponCheck.Category != WeaponCategory.None
+                                    && weaponCheck.Category != WeaponCategory.Quiver
+                                    && _inventoryProvider.WeaponActions?.CurrentMainHandDbKey == weaponCheck.GetDbKey();
+
                 slot.Setup(
                    stack.Source.UiIcon,
                    stack.StackSize,
                    isEquippable,
                    isConsumable,
+                   isEquippedWeapon,
                    onDiscard: () => _inventoryProvider.Actions?.DiscardItem(capturedIndex), // UI에서 "버리기" 버튼 클릭 시 그 슬롯의 아이템을 '전량 제거'.
                    onAction: ResolveEquipAction(stack.Source, capturedIndex));
 
@@ -118,10 +139,13 @@ namespace MySecondWorld.UI
                 )
                 return () =>
                 {
-                    Debug.Log($"[Equip] 무기 장착 클릭: " +
-                        $"{weaponItem.Title} dbKey={weaponItem.GetDbKey()} Category={weaponItem.Category} " +
-                        $"/ WeaponActions={(_inventoryProvider.WeaponActions != null ? "OK" : "NULL!!")}");
-                    _inventoryProvider.WeaponActions?.EquipMainHand(weaponItem.GetDbKey());
+                    int dbKey = weaponItem.GetDbKey();
+                    bool alreadyEquipped = _inventoryProvider.WeaponActions?.CurrentMainHandDbKey == dbKey;
+                    Debug.Log($"[Equip] 무기 {(alreadyEquipped ? "해제" : "장착")} 클릭: {weaponItem.Title} dbKey={dbKey}");
+                    if (alreadyEquipped)
+                        _inventoryProvider.WeaponActions?.UnequipMainHand();
+                    else
+                        _inventoryProvider.WeaponActions?.EquipMainHand(dbKey);
                 };
 
             // 커스터마이징 파츠면 파츠 장착

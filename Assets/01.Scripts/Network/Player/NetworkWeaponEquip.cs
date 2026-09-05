@@ -38,29 +38,30 @@ namespace MySecondWorld.Network
         [Header("궁수 전용")]
         [SerializeField] private GameObject _quiverPrefab; // 화살통 — 특정 소유 아이템과 무관한 고정 시각 프롭(화살과 동일 패턴)
 
-
         [Header("애니메이션")]
         [SerializeField] private Animator _animator;
         [SerializeField] private WeaponAnimationMapSO _animationMap;
 
-
         [SyncVar(hook = nameof(OnMainHandChanged))]
         private int _mainHandDbKey = Unequipped;
+
+        private int _predictedMainHandDbKey = Unequipped; // 로컬 예측값 — SyncVar 왕복 안 기다리고 UI가 즉시 정답을 보게
         private bool _currentVisualIsAddressable;
         private GameObject _currentVisual;
         private GameObject _currentQuiverVisual;
-
         private Cleverous.VaultInventory.Inventory _inventory;
         private int _equipToken; // 빠른 연속 교체 시, 먼저 시작된 느린 로드가 나중에 끝나 최신 장착을 덮어쓰는 걸 막기 위한 토큰
         private RuntimeAnimatorController _defaultController;
         private LocalPlayerInventoryProvider _localInventoryProvider;
+
+        public int CurrentMainHandDbKey => _predictedMainHandDbKey;
 
         // 메인핸드 시각 오브젝트가 적용된 뒤 발행. 인자는 방금 장착된 카테고리(해제 시 None).
         // Combat 어셈블리의 타입을 쓰지 않는 게 중요하다 — 여기서 ArrowNockPoint를 직접 참조하면
         // Network → Combat 참조가 생겨 기존 Combat → Network 참조와 순환이 된다.
         // 이벤트로 뒤집으면 Combat 쪽이 일방적으로 구독하므로 방향이 하나로 유지된다.
         public event System.Action<WeaponCategory> OnMainHandVisualApplied;
-
+        public event System.Action OnMainHandStateChanged;
 
         [Inject]
         public void Construct(LocalPlayerInventoryProvider localInventoryProvider)
@@ -95,6 +96,16 @@ namespace MySecondWorld.Network
             }
 
             CmdEquipMainHand(weaponDbKey);
+        }
+
+        public void UnequipMainHand() => EquipMainHand(Unequipped);
+
+        // 서버 전용 — 다른 컴포넌트(인벤토리 버리기/거래 등)가 이 무기의 장착 상태를 강제로 해제할 때 호출.
+        // 넘긴 dbKey가 현재 장착 중인 것과 다르면 무시한다(엉뚱한 무기가 실수로 풀리는 것 방지).
+        public void ServerUnequipIfMatches(int dbKey)
+        {
+            if (_mainHandDbKey == dbKey)
+                CmdEquipMainHand(Unequipped);
         }
 
         [Command]
@@ -156,6 +167,7 @@ namespace MySecondWorld.Network
         }
 
         #region 무기 시각 적용 (private)
+
         private void OnMainHandChanged(int oldKey, int newKey)
         {
             Debug.Log($"[Equip] OnMainHandChanged(SyncVar hook) {oldKey} → {newKey}");
@@ -167,8 +179,9 @@ namespace MySecondWorld.Network
 
         private async UniTask ApplyMainHandVisual(int dbKey, int generation)
         {
+            _predictedMainHandDbKey = dbKey; // 로컬 예측 반영 — SyncVar 왕복 기다리지 않고 UI가 즉시 정답을 보게
             ReleaseCurrentVisual();
-            
+
             if (dbKey == Unequipped)
             {
                 Debug.Log("[Equip] ApplyMainHandVisual — 해제 처리");
@@ -176,9 +189,10 @@ namespace MySecondWorld.Network
                     _animator.runtimeAnimatorController = _defaultController;
                 // 해제 경로
                 OnMainHandVisualApplied?.Invoke(WeaponCategory.None);
+                OnMainHandStateChanged?.Invoke();
                 return;
             }
-            // 1. Vault에서 아이템 조회 
+            // 1. Vault에서 아이템 조회
             if (Vault.Get(dbKey) is not EquipmentItem item)
             {
                 Debug.LogWarning($"[Equip] ApplyMainHandVisual — dbKey={dbKey} EquipmentItem 아님, 중단");
@@ -240,6 +254,7 @@ namespace MySecondWorld.Network
             }
             // 장착 성공 경로
             OnMainHandVisualApplied?.Invoke(item.Category);
+            OnMainHandStateChanged?.Invoke();
         }
 
         private Transform GetSocket(WeaponCategory category)

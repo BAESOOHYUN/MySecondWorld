@@ -13,7 +13,9 @@ namespace MySecondWorld.UI
         [SerializeField] private Button _actionButton; // 파츠면 "장착", 소모품이면 "사용"
         [SerializeField] private TMP_Text _actionButtonText;
 
-        public void Setup(Sprite icon, int stackSize, bool isPart, bool isConsumable, Action onDiscard, Action onAction)
+        public void Setup(Sprite icon, int stackSize,
+                        bool isPart, bool isConsumable, bool isEquipped, 
+                        Action onDiscard, Action onAction)
         {
             _icon.sprite = icon;
             _icon.enabled = icon != null;
@@ -24,7 +26,7 @@ namespace MySecondWorld.UI
             if (isPart)
             {
                 _actionButton.gameObject.SetActive(true);
-                _actionButtonText.text = "장착";
+                _actionButtonText.text = isEquipped ? "해제" : "장착";
                 _actionButton.onClick.AddListener(() => onAction?.Invoke());
             }
             else if (isConsumable)

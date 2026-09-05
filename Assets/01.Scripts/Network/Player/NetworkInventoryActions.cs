@@ -71,6 +71,9 @@ namespace MySecondWorld.Network
 
             // 전량 버리기(간단 구현 — 부분 버리기는 범위 밖)
             _inventory.DoTake(slotIndex, stack.StackSize);
+            // 버린 아이템이 지금 장착 중인 무기면 손에서도 내린다 — 안 그러면 인벤토리엔 없는데 계속 들고 있게 됨
+            if (TryGetComponent(out NetworkWeaponEquip weaponEquip))
+                weaponEquip.ServerUnequipIfMatches(item.GetDbKey());
 
             // 런타임 스폰 오브젝트는 GameNetworkManager의 자동 matchId 세팅을 안 거치므로 직접 복사
             if (TryGetComponent(out NetworkMatch myMatch) && floorItem.TryGetComponent(out NetworkMatch floorMatch))

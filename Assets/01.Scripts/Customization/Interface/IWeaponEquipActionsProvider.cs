@@ -6,5 +6,8 @@ namespace MySecondWorld.Customization
     public interface IWeaponEquipActionsProvider
     {
         void EquipMainHand(int weaponDbKey);
+        void UnequipMainHand();
+        int CurrentMainHandDbKey { get; }
+        event System.Action OnMainHandStateChanged; // 장착/해제 시 발행 — InventoryUI가 버튼 라벨 갱신용으로 구독
     }
 }
