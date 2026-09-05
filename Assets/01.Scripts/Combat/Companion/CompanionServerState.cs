@@ -38,6 +38,8 @@ namespace MySecondWorld.Combat.Companion
 
         public event Action HPChanged;
         public event Action<bool> AliveChanged;
+        public event Action<bool> OnPresenceChanged; // 소환/소환해제 상태가 바뀔 때마다 알림 (AI 쪽 NPCBrain 등이 구독)
+        public event Action<bool> OnPresenceChanged; // 소환/소환해제 상태가 바뀔 때마다 알림 (AI 쪽 NPCBrain 등이 구독)
 
         public static CompanionServerState LocalCompanion { get; private set; }
         public static event Action<CompanionServerState> LocalCompanionReady;
@@ -259,6 +261,8 @@ namespace MySecondWorld.Combat.Companion
             bool activeState = newValue && _isAlive;
             if (ai != null) ai.enabled = activeState;
             if (hitbox != null) hitbox.enabled = activeState;
+
+            OnPresenceChanged?.Invoke(activeState);
         }
 
         private void OnOwnerChanged(uint oldValue, uint newValue) => TryMarkLocal();

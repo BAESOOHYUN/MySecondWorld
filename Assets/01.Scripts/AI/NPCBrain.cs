@@ -134,11 +134,14 @@ namespace MySecondWorld.AI
         #region 유니티 생명주기
         private void Awake()
         {
+
 #if UNITY_SERVER
             Debug.LogWarning($"[NPCBrain] {name}: ⚠️ UNITY_SERVER 정의됨 → enabled=false 처리됨!");
             enabled = false;
 #else
             Debug.Log($"[NPCBrain] {name}: UNITY_SERVER 없음 — 정상 활성화 상태");
+            if (TryGetComponent(out MySecondWorld.Combat.Companion.CompanionServerState companionState))
+                companionState.OnPresenceChanged += active => enabled = active;
 #endif
         }
 
