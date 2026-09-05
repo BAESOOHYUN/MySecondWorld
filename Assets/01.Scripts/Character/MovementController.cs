@@ -40,6 +40,7 @@ namespace MySecondWorld.Move
         // 공격 회차 중 회전 잠금. Combat 쪽에서 켜고 끈다.
         // Character는 Combat을 참조하지 않으므로(순환 방지) 플래그를 밖에서 밀어넣는 구조다.
         public bool RotationLocked { get; set; }
+        public bool MovementLocked { get; set; }
 
         // Private State
         private Vector3 _inputDirection;
@@ -93,6 +94,7 @@ namespace MySecondWorld.Move
 
         private void Update()
         {
+            if (MovementLocked) return;
             //지면 상태(IsGrounded)를 먼저 확정한 뒤
             //이동 속도(_moveSpeed vs _moveSpeed * _airControlMultiplier)를 결정
             Jumping();

@@ -118,7 +118,7 @@ namespace MySecondWorld.Network
                             Debug.LogError($"[S-Loop-Portal] conn={session.Key} 처리 중 예외 — 이 세션만 스킵: {e}");
                         }
                     }
-                    
+
                     //"0.1초마다 내가 직접 '지금 이 플레이어 위치가 트리거 안에 있나?' 하고 계속 물어봄" — 능동적으로 확인
                     await UniTask.Delay(TimeSpan.FromSeconds(_manager.portalCheckInterval), cancellationToken: ct);
                 }
@@ -336,7 +336,7 @@ namespace MySecondWorld.Network
 
             // companion matchId를 플레이어와 동일하게 맞춤
             // DungeonRoomRegistry는 안 거침(정원 계산에서 제외, "방 인원 수(4)"에는 안 잡힘)
-            if (session.companionIdentity != null 
+            if (session.companionIdentity != null
                 && session.companionIdentity.TryGetComponent(out NetworkMatch companionMatch))
                 companionMatch.matchId = networkMatch.matchId;
         }
@@ -351,66 +351,7 @@ namespace MySecondWorld.Network
             if (session.Value.fallTimer < 3f && session.Value.ungroundedTimer < 3f && !belowRescueLine)
                 return;
 
-            // 안전 위치 결정
-            Vector3 safePos;
-            string safeScene;
-
-            if (session.Value.lastSafePosition != Vector3.zero
-                && !string.IsNullOrEmpty(session.Value.lastSafeScene))
-            {
-                // 위치와 씬은 항상 같이 기록되므로 같이 꺼내 쓴다.
-                // currentScene은 낙하 중에 바뀌어 있을 수 있으므로 lastSafeScene를 사용.
-                safePos = session.Value.lastSafePosition;
-                safeScene = session.Value.lastSafeScene;
-            }
-            else // 한 번도 지면에 서 본 적이 없음 → 스폰 지점으로
-            {
-                safeScene = _manager.defaultSubScene;
-
-                // GetStartPosition()은 조회처럼 보이지만 RoundRobin 인덱스를 전진시킨다(NetworkManager.cs:1123).
-                // 구조는 스폰이 아니므로 신규 플레이어의 스폰 순번을 건드리면 안 된다 → 리스트를 직접 읽는다.
-                // (파괴된 Transform이 남아 있을 수 있어 null이 아닌 것 중 첫 번째를 고른다)
-                var startPos = NetworkManager.startPositions.FirstOrDefault(t => t != null);
-
-                if (startPos != null)
-                {
-                    safePos = startPos.position;
-                }
-                else // 살아있는 NetworkStartPosition이 하나도 없는 비정상 상황
-                {
-                    // 여기서 원점(Vector3.zero)으로 보내면 필드 지면(Y≈15)보다 아래라
-                    // 구조가 곧바로 재낙하가 된다 — 고치려던 버그를 구조 로직이 다시 만드는 셈.
-                    // 필드 존 bounds의 중심은 정의상 필드 콘텐츠 안이므로 훨씬 안전한 최후 수단.
-                    var fieldZone = _manager.zones.FirstOrDefault(z => z.sceneName == safeScene);
-                    safePos = fieldZone != null ? fieldZone.bounds.center : Vector3.zero;
-                    Debug.LogError(
-                        $"[S-Loop] NetworkStartPosition이 하나도 없다 — 필드 bounds 중심({safePos})으로 대체 구조. 씬 배치 확인 필요.");
-                }
-            }
-
-            // 씬 이동을 먼저 — 목적지 씬으로 옮긴 뒤에 위치를 확정해야 가시성 판정이 어긋나지 않는다
-            if (session.Value.currentScene != safeScene)
-            {
-                // PlayerChangedScene 재사용
-                // 직접 MoveGameObjectToScene만 하면 UpdateDungeonMatch(matchId 갱신)가 안 불려서
-                // 포탈 ack 타임아웃 강제진행 이후 재낙하 시 matchId가 안 풀리는 문제가 있었음
-                PlayerChangedScene(conn, safeScene);
-
-            }
-
-            // transform.position 직접 대입은 다음 클라 스냅샷에 덮어써진다 (권한이 클라에 있음).
-            // 반드시 소유 클라까지 내려가는 경로로 보낼 것.
-            if (conn.identity.TryGetComponent(out MySecondWorld.Network.Player.NetworkPlayerController npc))
-                npc.ServerRescueTo(safePos);
-
-            // 낙하 구조 시에도 컴패니언을 플레이어 옆으로 동반 텔레포트
-            if (session.Value.companionIdentity != null && session.Value.companionPresent)
-            {
-                if (session.Value.companionIdentity.TryGetComponent(out ICompanionServerState compState))
-                {
-                    compState.Warp(safePos + (Vector3.right * 1.0f));
-                }
-            }
+            TeleportToSafePosition(session, conn);
 
             session.Value.fallTimer = 0;
             session.Value.ungroundedTimer = 0;
@@ -487,7 +428,7 @@ namespace MySecondWorld.Network
         public void PlayerLeftZone(NetworkConnectionToClient conn, string sceneName)
         {
             if (!_sessionService.Sessions.TryGetValue(conn.connectionId, out var session)) return;
-            if (!session.loadedScenes.Contains(sceneName)) 
+            if (!session.loadedScenes.Contains(sceneName))
                 return;
             conn.Send(new AdditiveSceneMessage { sceneName = sceneName, load = false }); // > GameNetworkManager.OnStartClient
             session.loadedScenes.Remove(sceneName);
@@ -578,6 +519,82 @@ namespace MySecondWorld.Network
         {
             if (!_sessionService.Sessions.TryGetValue(conn.connectionId, out var session)) return;
             session.confirmedPortalScene = msg.sceneName;
+        }
+
+        // 사망 리스폰 등, 낙하 타이머 게이트 없이 즉시 안전 위치로 보내야 할 때 사용
+        public void RespawnPlayer(NetworkConnectionToClient conn)
+        {
+            if (!_sessionService.Sessions.TryGetValue(conn.connectionId, out var playerSession))
+            {
+                Debug.LogWarning($"[ServerZoneService] RespawnPlayer — conn={conn.connectionId} 세션을 찾을 수 없음");
+                return;
+            }
+            TeleportToSafePosition(new KeyValuePair<int, PlayerSession>(conn.connectionId, playerSession), conn);
+        }
+
+        // 안전 위치 결정 + 씬 이동 + 텔레포트 + 컴패니언 동반. RecoverFromFall/RespawnPlayer 공용.
+        private void TeleportToSafePosition(KeyValuePair<int, PlayerSession> session, NetworkConnectionToClient conn)
+        {
+            // 안전 위치 결정
+            Vector3 safePos;
+            string safeScene;
+
+            if (session.Value.lastSafePosition != Vector3.zero
+                && !string.IsNullOrEmpty(session.Value.lastSafeScene))
+            {
+                // 위치와 씬은 항상 같이 기록되므로 같이 꺼내 쓴다.
+                // currentScene은 낙하 중에 바뀌어 있을 수 있으므로 lastSafeScene를 사용.
+                safePos = session.Value.lastSafePosition;
+                safeScene = session.Value.lastSafeScene;
+            }
+            else // 한 번도 지면에 서 본 적이 없음 → 스폰 지점으로
+            {
+                safeScene = _manager.defaultSubScene;
+
+                // GetStartPosition()은 조회처럼 보이지만 RoundRobin 인덱스를 전진시킨다(NetworkManager.cs:1123).
+                // 구조는 스폰이 아니므로 신규 플레이어의 스폰 순번을 건드리면 안 된다 → 리스트를 직접 읽는다.
+                // (파괴된 Transform이 남아 있을 수 있어 null이 아닌 것 중 첫 번째를 고른다)
+                var startPos = NetworkManager.startPositions.FirstOrDefault(t => t != null);
+
+                if (startPos != null)
+                {
+                    safePos = startPos.position;
+                }
+                else // 살아있는 NetworkStartPosition이 하나도 없는 비정상 상황
+                {
+                    // 여기서 원점(Vector3.zero)으로 보내면 필드 지면(Y≈15)보다 아래라
+                    // 구조가 곧바로 재낙하가 된다 — 고치려던 버그를 구조 로직이 다시 만드는 셈.
+                    // 필드 존 bounds의 중심은 정의상 필드 콘텐츠 안이므로 훨씬 안전한 최후 수단.
+                    var fieldZone = _manager.zones.FirstOrDefault(z => z.sceneName == safeScene);
+                    safePos = fieldZone != null ? fieldZone.bounds.center : Vector3.zero;
+                    Debug.LogError(
+                        $"[S-Loop] NetworkStartPosition이 하나도 없다 — 필드 bounds 중심({safePos})으로 대체 구조. 씬 배치 확인 필요.");
+                }
+            }
+
+            // 씬 이동을 먼저 — 목적지 씬으로 옮긴 뒤에 위치를 확정해야 가시성 판정이 어긋나지 않는다
+            if (session.Value.currentScene != safeScene)
+            {
+                // PlayerChangedScene 재사용
+                // 직접 MoveGameObjectToScene만 하면 UpdateDungeonMatch(matchId 갱신)가 안 불려서
+                // 포탈 ack 타임아웃 강제진행 이후 재낙하 시 matchId가 안 풀리는 문제가 있었음
+                PlayerChangedScene(conn, safeScene);
+
+            }
+
+            // transform.position 직접 대입은 다음 클라 스냅샷에 덮어써진다 (권한이 클라에 있음).
+            // 반드시 소유 클라까지 내려가는 경로로 보낼 것.
+            if (conn.identity.TryGetComponent(out MySecondWorld.Network.Player.NetworkPlayerController npc))
+                npc.ServerRescueTo(safePos);
+
+            // 낙하 구조 시에도 컴패니언을 플레이어 옆으로 동반 텔레포트
+            if (session.Value.companionIdentity != null && session.Value.companionPresent)
+            {
+                if (session.Value.companionIdentity.TryGetComponent(out ICompanionServerState compState))
+                {
+                    compState.Warp(safePos + (Vector3.right * 1.0f));
+                }
+            }
         }
     }
 }
