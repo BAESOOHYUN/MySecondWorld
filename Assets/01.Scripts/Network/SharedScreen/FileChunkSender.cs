@@ -1,6 +1,7 @@
 using System;
 using System.IO;
-using System.Collections;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -38,35 +39,46 @@ namespace MySecondWorld.Network
             controller.CmdSendFileEnd(totalSize);
         }
 
-        public static IEnumerator SendFileFromUrl(SharedScreenController controller, string url, FileType fileType, bool allowDownload = false)
+        public static async UniTask SendFileFromUrlAsync(SharedScreenController controller, string url, FileType fileType, bool allowDownload = false, CancellationToken ct = default)
         {
-            using (UnityWebRequest request = UnityWebRequest.Get(url))
+            try
             {
-                yield return request.SendWebRequest();
-
-                if (request.result != UnityWebRequest.Result.Success)
+                using (UnityWebRequest request = UnityWebRequest.Get(url))
                 {
-                    Debug.LogError($"[FileChunkSender] URL 다운로드 실패: {request.error}");
-                    yield break;
-                }
+                    await request.SendWebRequest().WithCancellation(ct);
 
-                string fileName = Path.GetFileName(url);
-                byte[] fileByte = request.downloadHandler.data;
-                int chunkSize = SharedScreenConstants.ChunkSize;
-                int totalSize = fileByte.Length;
-                int totalChunkCount = Mathf.CeilToInt((float)totalSize / chunkSize);
-                controller.CmdSendFileStart(fileName, fileType, totalSize, totalChunkCount, allowDownload);
+                    if (request.result != UnityWebRequest.Result.Success)
+                    {
+                        Debug.LogError($"[FileChunkSender] URL 다운로드 실패: {request.error}");
+                        return;
+                    }
 
-                for (int i = 0; i < totalChunkCount; i++)
-                {
-                    var offset = i * chunkSize;
-                    int remaining = totalSize - offset;
-                    int currChunkSize = Mathf.Min(remaining, chunkSize);
-                    byte[] currChunk = new byte[currChunkSize];
-                    Buffer.BlockCopy(fileByte, offset, currChunk, 0, currChunkSize);
-                    controller.CmdSendFileChunk(i, currChunk);
+                    string fileName = Path.GetFileName(url);
+                    byte[] fileByte = request.downloadHandler.data;
+                    int chunkSize = SharedScreenConstants.ChunkSize;
+                    int totalSize = fileByte.Length;
+                    int totalChunkCount = Mathf.CeilToInt((float)totalSize / chunkSize);
+                    controller.CmdSendFileStart(fileName, fileType, totalSize, totalChunkCount, allowDownload);
+
+                    for (int i = 0; i < totalChunkCount; i++)
+                    {
+                        var offset = i * chunkSize;
+                        int remaining = totalSize - offset;
+                        int currChunkSize = Mathf.Min(remaining, chunkSize);
+                        byte[] currChunk = new byte[currChunkSize];
+                        Buffer.BlockCopy(fileByte, offset, currChunk, 0, currChunkSize);
+                        controller.CmdSendFileChunk(i, currChunk);
+                    }
+                    controller.CmdSendFileEnd(totalSize);
                 }
-                controller.CmdSendFileEnd(totalSize);
+            }
+            catch (OperationCanceledException)
+            {
+                // UI 닫힘 또는 취소 시 정상 종료
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[FileChunkSender] 파일 전송 중 예외 발생: {ex.Message}");
             }
         }
     }

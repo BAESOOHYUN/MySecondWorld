@@ -346,7 +346,7 @@ namespace MySecondWorld.Network
                     Debug.LogWarning("지원하지 않는 파일 형식입니다.");
                     return;
                 }
-                StartCoroutine(FileChunkSender.SendFileFromUrl(_controller, url, type, allowDownload));
+                FileChunkSender.SendFileFromUrlAsync(_controller, url, type, allowDownload, destroyCancellationToken).Forget();
             }
         }
 
