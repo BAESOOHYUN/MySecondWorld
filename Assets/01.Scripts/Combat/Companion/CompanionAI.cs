@@ -4,7 +4,9 @@ using UnityEngine;
 using UnityEngine.AI;
 using Stateless;
 using Mirror;
+using MySecondWorld.Combat;
 using MySecondWorld.Combat.Player;
+using MySecondWorld.Foundation;
 
 namespace MySecondWorld.Combat.Companion
 {
@@ -16,7 +18,7 @@ namespace MySecondWorld.Combat.Companion
     [RequireComponent(typeof(SphereCollider))]
     [RequireComponent(typeof(Health))]
     [RequireComponent(typeof(Rigidbody))]   // 몬스터 감지 트리거가 (MonsterAI와) 같은 이유로 부실할 수 있어 선제 조치
-    public class CompanionAI : MonoBehaviour, IStunnable
+    public class CompanionAI : MonoBehaviour, IStunnable, IMovementLockable, ICombatant
     {
         #region State Machine 정의
 
@@ -64,6 +66,7 @@ namespace MySecondWorld.Combat.Companion
         private Vector3 _lastFollowTarget;
         private float _lastHitTime = -999f;
         private bool _isHitStunned;
+        private bool _movementLocked;
         private const float HitCooldown = 1.5f;
 
         private const float FollowRecalcThreshold = 0.5f; // 이 거리 이상 움직였을 때만 재계산
@@ -71,10 +74,30 @@ namespace MySecondWorld.Combat.Companion
         public bool IsInCombat =>
             _stateMachine != null &&
             (_stateMachine.State == CompanionState.Chase || _stateMachine.State == CompanionState.Attack);
+        public bool IsAttacking => _stateMachine != null && _stateMachine.State == CompanionState.Attack;
+        public CombatFaction Faction => CombatFaction.Player;
         public bool IsOwnerInCombat =>
             _owner != null && _owner.TryGetComponent(out PlayerAttackController attackController) && attackController.IsInCombat;
         public bool IsFollowPaused => _followPaused;
         public bool IsStunned => _isHitStunned;
+
+        public bool MovementLocked
+        {
+            get => _movementLocked || _isHitStunned;
+            set
+            {
+                _movementLocked = value;
+                if (value)
+                {
+                    SetAgentStopped(true);
+                    if (_animator != null) _animator.SetFloat(Speed, 0f);
+                }
+                else if (!_isHitStunned && !_followPaused && _stateMachine != null && _stateMachine.State != CompanionState.Attack && !_health.IsDead)
+                {
+                    SetAgentStopped(false);
+                }
+            }
+        }
 
         #endregion
 
@@ -128,9 +151,9 @@ namespace MySecondWorld.Combat.Companion
         {
             if (_owner == null) return;
 
-            if (_isHitStunned)
+            if (MovementLocked)
             {
-                _agent.isStopped = true;
+                SetAgentStopped(true);
                 _animator.SetFloat(Speed, 0f);
                 return;
             }
@@ -440,8 +463,7 @@ namespace MySecondWorld.Combat.Companion
         private async UniTaskVoid ApplyHitStun(float duration = 0.5f)
         {
             _isHitStunned = true;
-            if (_agent != null && _agent.enabled)
-                _agent.isStopped = true;
+            SetAgentStopped(true);
             try
             {
                 await UniTask.Delay(TimeSpan.FromSeconds(duration), cancellationToken: this.GetCancellationTokenOnDestroy());
@@ -450,10 +472,10 @@ namespace MySecondWorld.Combat.Companion
             finally
             {
                 _isHitStunned = false;
-                // 전투나 추격 상태였으면 이동 다시 재개
-                if (_agent != null && _agent.enabled && !_health.IsDead && !_followPaused && _stateMachine.State != CompanionState.Attack)
+                // 전투나 추격 상태였고 이동 잠금 중이 아니면 이동 다시 재개
+                if (_agent != null && _agent.enabled && !_health.IsDead && !_followPaused && !_movementLocked && _stateMachine.State != CompanionState.Attack)
                 {
-                    _agent.isStopped = false;
+                    SetAgentStopped(false);
                 }
             }
 

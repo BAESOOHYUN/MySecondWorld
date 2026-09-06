@@ -7,10 +7,12 @@ using MySecondWorld.Move;
 using MySecondWorld.Inventory;
 using MySecondWorld.Combat.Monster;
 
+using MySecondWorld.Combat;
+
 namespace MySecondWorld.Combat.Player
 {
     // 입력 발생 → 쿨다운 체크 → 애니메이션 트리거 → (애니메이션의 타격/발사 프레임에서) 판정
-    public class PlayerAttackController : MonoBehaviour
+    public class PlayerAttackController : MonoBehaviour, ICombatant
     {
         #region 인스펙터
         [Header("참조")]
@@ -60,6 +62,8 @@ namespace MySecondWorld.Combat.Player
         public bool IsLocalPlayer => _weaponEquip.isLocalPlayer;
 
         public bool IsInCombat => Time.time - _lastAttackTime < _stats.CombatStateDuration;
+        public bool IsAttacking => IsAttackRoundOpen;
+        public CombatFaction Faction => CombatFaction.Player;
 
         // 공격이 진행 중인가 = 몸 회전을 잠글 것인가.
         // 발사(타격) 전까지만 true. 타임아웃도 함께 보므로 이벤트가 씹혀도 잠금이 영구히 남지 않는다.

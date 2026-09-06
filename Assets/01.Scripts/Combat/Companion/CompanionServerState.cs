@@ -231,6 +231,7 @@ namespace MySecondWorld.Combat.Companion
             if (TryGetComponent(out Animator anim))
             {
                 // 컴패니언도 공격 중 슈퍼아머
+                if (TryGetComponent(out ICombatant combatant) && combatant.IsAttacking) return;
                 if (anim.GetCurrentAnimatorStateInfo(0).IsTag("Attack")) return;
                 anim.SetTrigger(Animator.StringToHash("HitTrigger"));
             }

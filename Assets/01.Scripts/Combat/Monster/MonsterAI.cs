@@ -6,6 +6,8 @@ using UnityEngine.AI;
 using Stateless;
 using Mirror;
 using MySecondWorld.Pool;
+using MySecondWorld.Combat;
+using MySecondWorld.Foundation;
 
 namespace MySecondWorld.Combat.Monster
 {
@@ -17,7 +19,7 @@ namespace MySecondWorld.Combat.Monster
     [RequireComponent(typeof(PooledObject))]
     [RequireComponent(typeof(Rigidbody))] // Rigidbody 없이는 CharacterController가 꺼진 원격 플레이어와
                                           // OnTriggerEnter 자체가 발생하지 않는다 (Unity 물리 규칙)
-    public class MonsterAI : MonoBehaviour, IStunnable
+    public class MonsterAI : MonoBehaviour, IStunnable, IMovementLockable, ICombatant
     {
         #region State Machine 정의
 
@@ -71,6 +73,7 @@ namespace MySecondWorld.Combat.Monster
         private readonly AIContext _aiContext = new AIContext();
         private Transform _target;
         private bool _actionLocked;
+        private bool _movementLocked;
         private Vector3 _spawnPosition;
         private float _lastHitAnimationTime = -999f;
 
@@ -94,6 +97,32 @@ namespace MySecondWorld.Combat.Monster
         public event Action OnReturnedToPool;
 
         public bool IsStunned => _actionLocked;
+
+        public bool IsInCombat =>
+            _stateMachine != null &&
+            (_stateMachine.State == MonsterState.Chase || _stateMachine.State == MonsterState.Attack);
+        public bool IsAttacking => _stateMachine != null && _stateMachine.State == MonsterState.Attack;
+        public CombatFaction Faction => CombatFaction.Monster;
+
+        public bool MovementLocked
+        {
+            get => _movementLocked || _actionLocked;
+            set
+            {
+                _movementLocked = value;
+                if (value)
+                {
+                    if (_agent != null && _agent.isOnNavMesh && _agent.enabled)
+                        _agent.isStopped = true;
+                    SetMovingAnimation(false);
+                }
+                else if (!_actionLocked && _stateMachine != null && _stateMachine.State == MonsterState.Chase && !_health.IsDead)
+                {
+                    if (_agent != null && _agent.isOnNavMesh && _agent.enabled)
+                        _agent.isStopped = false;
+                }
+            }
+        }
 
         #endregion
 
@@ -599,7 +628,7 @@ namespace MySecondWorld.Combat.Monster
         private async UniTaskVoid ApplyHitStun(float duration = 0.5f)
         {
             _actionLocked = true;
-            if (_agent != null && _agent.enabled)
+            if (_agent != null && _agent.isOnNavMesh && _agent.enabled)
                 _agent.isStopped = true;
             SetMovingAnimation(false); // 걷기 모션 끄기 (발미끄러짐 방지)
             try
@@ -610,8 +639,8 @@ namespace MySecondWorld.Combat.Monster
             finally
             {
                 _actionLocked = false;
-                // 살아서 추격 중(Chase)이었다면 네비메시 이동 재개
-                if (_agent != null && _agent.enabled && !_health.IsDead && _stateMachine.State == MonsterState.Chase)
+                // 살아서 추격 중(Chase)이었고 이동 잠금 중이 아니면 네비메시 이동 재개
+                if (_agent != null && _agent.isOnNavMesh && _agent.enabled && !_health.IsDead && !_movementLocked && _stateMachine.State == MonsterState.Chase)
                 {
                     _agent.isStopped = false;
                 }
@@ -758,7 +787,7 @@ namespace MySecondWorld.Combat.Monster
 
         protected virtual int GetDeathTriggerHash() => DeathTrigger;
         protected virtual void OnTick() { }
-        protected virtual bool IsUpdatePaused => _actionLocked;
+        protected virtual bool IsUpdatePaused => _actionLocked || _movementLocked;
         protected virtual void OnIdleUpdate() { }
         protected virtual void OnEnterIdle() { }
         protected virtual void OnPlayerFirstDetected() { }

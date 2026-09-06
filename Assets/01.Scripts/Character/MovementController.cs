@@ -6,13 +6,14 @@ using MessagePipe;
 using VContainer;
 using MySecondWorld.Utils;
 using MySecondWorld.Network.Player;
+using MySecondWorld.Foundation;
 
 namespace MySecondWorld.Move
 {
     // TODO: OnLand_Cancel — 착지 취소(공중 재점프) 시나리오 구현 시 IPublisher<PlayerLandCancelledEvent> 추가
     
     [RequireComponent(typeof(CharacterController))]
-    public class MovementController : MonoBehaviour, IInputAxisOwner
+    public class MovementController : MonoBehaviour, IInputAxisOwner, IMovementLockable
     {
         // Inspector
         [SerializeField] private CharacterController _controller;

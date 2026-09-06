@@ -148,7 +148,9 @@ namespace MySecondWorld.Combat.Player
         [TargetRpc]
         private void TargetPlayHitAnimation(NetworkConnection target)
         {
-            // [슈퍼아머] 공격 태그("Attack") 상태일 때는 피격 모션으로 캔슬되지 않음
+            // [슈퍼아머] 공격 중이거나 공격 태그("Attack") 상태일 때는 피격 모션으로 캔슬되지 않음
+            if (TryGetComponent(out ICombatant combatant) && combatant.IsAttacking)
+                return;
             if (_animator != null && _animator.GetCurrentAnimatorStateInfo(0).IsTag("Attack"))
                 return;
 
