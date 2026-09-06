@@ -16,34 +16,13 @@ namespace MySecondWorld.Combat.Player
     [DisallowMultipleComponent]
     public class PlayerHealthState : NetworkBehaviour, IHealthView
     {
-        [Header("사망 처리")]
-        [SerializeField] private MovementController _movement;
-        [SerializeField] private NetworkAnimator _networkAnimator;
-        [SerializeField] private Animator _animator;
-        [SerializeField] private Collider _playerCollider;
+        #region Constants & Statics
+
+        private const float DeathAnimationTimeoutSeconds = 3f; // Animation Event 배선 누락 시 안전장치
+        private const float HitCooldown = 1.2f;
 
         private static readonly int DeathTrigger = Animator.StringToHash(nameof(DeathTrigger));
-        private const float DeathAnimationTimeoutSeconds = 3f; // Animation Event 배선 누락 시 안전장치
-
-        // 비율이 아니라 절대값 두 개를 나른다 — "78/100" 숫자 표시가 필요해서다.
-        [SyncVar(hook = nameof(OnHPValueChanged))]
-        private float _currentHP;
-
-        [SyncVar(hook = nameof(OnHPValueChanged))]
-        private float _maxHP = 1f;   // 0이면 UI의 나눗셈이 터진다
-
-        private Health _health;
-        private ServerZoneService _zoneService;
-        private UniTaskCompletionSource _deathAnimationTcs;
-
-        public Transform Anchor => transform;      // 화면 고정 바에서는 안 쓰이지만 계약이라 채운다
-        public float CurrentHP => _currentHP;
-        public float MaxHP => _maxHP;
-        public event Action HPChanged;
-        public event Action OnLocalDied;
-        public event Action OnLocalRespawned;
-
-        // 화면 HUD는 플레이어보다 먼저 살아 있으므로, UI가 "내 플레이어 나왔니"를 알 수단이 필요하다.
+        private static readonly int HitTrigger = Animator.StringToHash(nameof(HitTrigger));
         public static PlayerHealthState Local { get; private set; }
         public static event Action<PlayerHealthState> LocalReady;
 
@@ -54,6 +33,51 @@ namespace MySecondWorld.Combat.Player
             Local = null;
             LocalReady = null;
         }
+
+        #endregion
+
+        #region Inspector Fields
+
+        [Header("사망 처리")]
+        [SerializeField] private MovementController _movement;
+        [SerializeField] private NetworkAnimator _networkAnimator;
+        [SerializeField] private Animator _animator;
+        [SerializeField] private Collider _playerCollider;
+
+        #endregion
+
+        #region SyncVars
+
+        // 비율이 아니라 절대값 두 개를 나른다 — "78/100" 숫자 표시가 필요해서다.
+        [SyncVar(hook = nameof(OnHPValueChanged))]
+        private float _currentHP;
+
+        [SyncVar(hook = nameof(OnHPValueChanged))]
+        private float _maxHP = 1f;   // 0이면 UI의 나눗셈이 터진다
+
+        #endregion
+
+        #region Private Fields
+
+        private Health _health;
+        private ServerZoneService _zoneService;
+        private UniTaskCompletionSource _deathAnimationTcs;
+        private float _lastHitTime = -999f;
+
+        #endregion
+
+        #region Properties & Events
+
+        public Transform Anchor => transform;      // 화면 고정 바에서는 안 쓰이지만 계약이라 채운다
+        public float CurrentHP => _currentHP;
+        public float MaxHP => _maxHP;
+        public event Action HPChanged;
+        public event Action OnLocalDied;
+        public event Action OnLocalRespawned;
+
+        #endregion
+
+        #region Unity Lifecycle & Network Callbacks
 
         private void Awake()
         {
@@ -99,12 +123,64 @@ namespace MySecondWorld.Combat.Player
             if (Local == this) Local = null;
         }
 
-        [Server]
-        private void HandleDamaged(float newCurrentHP) => _currentHP = newCurrentHP;
+        #endregion
+
+        #region 피격 및 데미지 처리
 
         private void OnHPValueChanged(float oldValue, float newValue) => HPChanged?.Invoke();
+        
+        [Server]
+        private void HandleDamaged(float newCurrentHP)
+        {
+            _currentHP = newCurrentHP;
+            if (_health.IsDead) return;
+            
+            // [쿨다운] 플레이어도 잡몹 여러 마리한테 맞을 때 무한 윽윽 방지
+            if (Time.time - _lastHitTime < HitCooldown) return;
+            _lastHitTime = Time.time;
+            
+            // 오너 클라이언트에게 피격 모션 트리거 지시
+            TargetPlayHitAnimation(connectionToClient);
+        }
+
+        [TargetRpc]
+        private void TargetPlayHitAnimation(NetworkConnection target)
+        {
+            // [슈퍼아머] 공격 태그("Attack") 상태일 때는 피격 모션으로 캔슬되지 않음
+            if (_animator != null && _animator.GetCurrentAnimatorStateInfo(0).IsTag("Attack"))
+                return;
+
+            if (_networkAnimator != null)
+                _networkAnimator.SetTrigger(HitTrigger);
+            else if (_animator != null)
+                _animator.SetTrigger(HitTrigger);
+
+            // [피격 경직] 0.5초 동안 플레이어 조작/이동 잠금!
+            ApplyHitStun().Forget();
+        }
+
+        private async UniTaskVoid ApplyHitStun(float duration = 0.5f)
+        {
+            if (_movement == null) return;
+            _movement.MovementLocked = true;
+            try
+            {
+                await UniTask.Delay(TimeSpan.FromSeconds(duration), cancellationToken: this.GetCancellationTokenOnDestroy());
+            }
+            catch (OperationCanceledException) { }
+            finally
+            {
+                // 사망 상태가 아닐 때만 이동 락 해제
+                if (_movement != null && !_health.IsDead)
+                    _movement.MovementLocked = false;
+            }
+        }
+        #endregion
 
         #region 사망 시퀀스
+
+        // Death 클립 마지막 프레임 근처에 Animation Event로 연결
+        public void OnDeathAnimationEnd() => _deathAnimationTcs?.TrySetResult();
 
         [Server]
         private void HandleDied()
@@ -113,9 +189,6 @@ namespace MySecondWorld.Combat.Player
             if (_playerCollider != null) _playerCollider.enabled = false;
             PlayDeathSequence().Forget();
         }
-
-        // Death 클립 마지막 프레임 근처에 Animation Event로 연결
-        public void OnDeathAnimationEnd() => _deathAnimationTcs?.TrySetResult();
 
         private async UniTaskVoid PlayDeathSequence()
         {

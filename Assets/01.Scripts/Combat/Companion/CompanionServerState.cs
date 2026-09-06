@@ -218,8 +218,23 @@ namespace MySecondWorld.Combat.Companion
         }
 
         [Server]
-        private void HandleDamaged(float newCurrentHP) => _currentHP = newCurrentHP;
+        private void HandleDamaged(float newCurrentHP)
+        {
+            _currentHP = newCurrentHP;
+            if (_health.IsDead) return;
+            RpcPlayHitAnimation();
+        }
 
+        [ClientRpc]
+        private void RpcPlayHitAnimation()
+        {
+            if (TryGetComponent(out Animator anim))
+            {
+                // 컴패니언도 공격 중 슈퍼아머
+                if (anim.GetCurrentAnimatorStateInfo(0).IsTag("Attack")) return;
+                anim.SetTrigger(Animator.StringToHash("HitTrigger"));
+            }
+        }
         #endregion
 
         #region SyncVar 훅

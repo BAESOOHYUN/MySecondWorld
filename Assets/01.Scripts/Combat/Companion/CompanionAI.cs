@@ -48,6 +48,7 @@ namespace MySecondWorld.Combat.Companion
         private static readonly int AttackTrigger = Animator.StringToHash(nameof(AttackTrigger));
         private static readonly int DeathTrigger = Animator.StringToHash(nameof(DeathTrigger));
         private static readonly int Speed = Animator.StringToHash(nameof(Speed));
+        private static readonly int HitTrigger = Animator.StringToHash(nameof(HitTrigger));
         private int _monsterLayer;
 
         private NavMeshAgent _agent;
@@ -61,6 +62,10 @@ namespace MySecondWorld.Combat.Companion
         private float _lastAttackTime;
         private bool _followPaused;
         private Vector3 _lastFollowTarget;
+        private float _lastHitTime = -999f;
+        private bool _isHitStunned;
+        private const float HitCooldown = 1.5f;
+
         private const float FollowRecalcThreshold = 0.5f; // 이 거리 이상 움직였을 때만 재계산
 
         public bool IsInCombat =>
@@ -108,17 +113,27 @@ namespace MySecondWorld.Combat.Companion
         private void OnEnable()
         {
             _health.OnDied += HandleDied;
+            _health.OnDamaged += HandleDamaged;
         }
 
         private void OnDisable()
         {
             _health.OnDied -= HandleDied;
+            _health.OnDamaged -= HandleDamaged;
             ClearTarget(); // 추적 중이던 타겟의 OnDied 구독 해제
         }
 
         private void Update()
         {
             if (_owner == null) return;
+
+            if (_isHitStunned)
+            {
+                _agent.isStopped = true;
+                _animator.SetFloat(Speed, 0f);
+                return;
+            }
+
             _animator.SetFloat(Speed, _agent.velocity.magnitude);
 
             switch (_stateMachine.State)
@@ -393,6 +408,50 @@ namespace MySecondWorld.Combat.Companion
             SafeFire(CompanionTrigger.MonsterDetected);
         }
 
+        #endregion
+
+        #region 피격 처리
+        private void HandleDamaged(float currentHp)
+        {
+            if (_health.IsDead || _stateMachine.State == CompanionState.Dead)
+                return;
+            // [슈퍼아머] 컴패니언이 공격 중일 때는 피격 모션 무시!
+            if (_stateMachine.State == CompanionState.Attack)
+                return;
+            // [쿨다운] 1.5초 쿨다운
+            if (Time.time - _lastHitTime < HitCooldown)
+                return;
+            _lastHitTime = Time.time;
+            if (_networkAnimator != null)
+                _networkAnimator.SetTrigger(HitTrigger);
+            else if (_animator != null)
+                _animator.SetTrigger(HitTrigger);
+
+            //  [피격 경직] 0.5초간 이동 정지
+            ApplyHitStun().Forget();
+        }
+
+        private async UniTaskVoid ApplyHitStun(float duration = 0.5f)
+        {
+            _isHitStunned = true;
+            if (_agent != null && _agent.enabled)
+                _agent.isStopped = true;
+            try
+            {
+                await UniTask.Delay(TimeSpan.FromSeconds(duration), cancellationToken: this.GetCancellationTokenOnDestroy());
+            }
+            catch (OperationCanceledException) { }
+            finally
+            {
+                _isHitStunned = false;
+                // 전투나 추격 상태였으면 이동 다시 재개
+                if (_agent != null && _agent.enabled && !_health.IsDead && !_followPaused && _stateMachine.State != CompanionState.Attack)
+                {
+                    _agent.isStopped = false;
+                }
+            }
+
+        }
         #endregion
 
         #region 사망 처리

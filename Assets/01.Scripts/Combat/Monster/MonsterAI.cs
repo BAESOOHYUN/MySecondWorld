@@ -39,11 +39,9 @@ namespace MySecondWorld.Combat.Monster
 
         #endregion
 
-        #region Fields
+        #region Constants & Statics
 
-        [SerializeField] protected MonsterStatsSO _stats;
-        [SerializeField] private SphereCollider _detectionTrigger;
-        [SerializeField] protected Animator _animator;
+        private const float HitAnimationCooldown = 1.5f; // 최소 1.5초 간격
 
         private static readonly int AttackTrigger = Animator.StringToHash(nameof(AttackTrigger));
         private static readonly int DeathTrigger = Animator.StringToHash(nameof(DeathTrigger));
@@ -51,16 +49,30 @@ namespace MySecondWorld.Combat.Monster
         private static readonly int IsMoving = Animator.StringToHash(nameof(IsMoving));
         // (만약 나중에 float Speed를 사용한다면: private static readonly int Speed = Animator.StringToHash("Speed");)
 
+        #endregion
+
+        #region Inspector Fields
+
+        [SerializeField] protected MonsterStatsSO _stats;
+        [SerializeField] private SphereCollider _detectionTrigger;
+        [SerializeField] protected Animator _animator;
+
+        #endregion
+
+        #region Internal References & Runtime States
+
         protected NavMeshAgent _agent;
         protected Health _health;
         protected NetworkAnimator _networkAnimator;   // Trigger 타입 파라미터는 이걸 거쳐야 다른 클라에 동기화됨
-        private UniTaskCompletionSource _deathAnimationTcs;
-        private StateMachine<MonsterState, MonsterTrigger> _stateMachine;
         protected ISkillSelector _skillSelector;
+
+        private StateMachine<MonsterState, MonsterTrigger> _stateMachine;
+        private UniTaskCompletionSource _deathAnimationTcs;
         private readonly AIContext _aiContext = new AIContext();
         private Transform _target;
         private bool _actionLocked;
         private Vector3 _spawnPosition;
+        private float _lastHitAnimationTime = -999f;
 
         // 진입한 유효 대상의 루트 Transform → 콜라이더 개수 참조카운트.
         // 콜라이더가 여러 개인 대상이 하나씩 나가도 완전히 나가기 전엔 후보에서 지워지지 않게 한다.
@@ -69,6 +81,10 @@ namespace MySecondWorld.Combat.Monster
         // root별 사망 구독 해제용 델리게이트. Action으로 감싸는 이유는 람다가 캡처한
         // Health 인스턴스와 핸들러를 -=로 정확히 짝지어 해제해야 이벤트 누수가 안 나기 때문.
         private readonly Dictionary<Transform, Action> _targetDeathUnsubscribers = new Dictionary<Transform, Action>();
+
+        #endregion
+
+        #region Properties & Events
 
         // RangedMonsterHitbox가 조준점으로 읽어감. 타겟이 없으면 null.
         public Vector3? CurrentTargetPosition => _target != null ? (Vector3?)_target.position : null;
@@ -350,6 +366,10 @@ namespace MySecondWorld.Combat.Monster
             _stateMachine.OnTransitioned(t => Debug.Log($"[MonsterAI] {t.Source} → {t.Destination} ({t.Trigger})"));
         }
 
+        #endregion
+
+        #region 이동 및 애니메이션 제어
+
         private void SetMovingAnimation(bool isMoving)
         {
             if (_animator != null)
@@ -363,6 +383,10 @@ namespace MySecondWorld.Combat.Monster
             bool isActuallyMoving = !_agent.isStopped && _agent.velocity.sqrMagnitude > 0.05f;
             _animator.SetBool(IsMoving, isActuallyMoving);
         }
+
+        #endregion
+
+        #region State Machine 업데이트
 
         private void UpdateChase()
         {
@@ -545,14 +569,46 @@ namespace MySecondWorld.Combat.Monster
             // 1. 이미 죽었거나 사망 상태에 진입 중이면 피격 모션을 띄우지 않음 (사망 모션 우선)
             if (_health.IsDead || _stateMachine.State == MonsterState.Dead)
                 return;
+
             // 2. 공격 중 피격 모션으로 캔슬시킬지 여부:
-            //    만약 공격 모션 도중엔 피격 리액션을 무시하고 싶다면:
-            //    if (_actionLocked) return;
+            // [슈퍼아머] 공격 중이거나 액션 락이 걸려있으면 피격 모션 스킵!
+            if (_actionLocked || _stateMachine.State == MonsterState.Attack)
+                return;
+            // [쿨다운] 1.5초가 안 지났으면 피격 모션 스킵!
+            if (Time.time - _lastHitAnimationTime < HitAnimationCooldown)
+                return;
+            _lastHitAnimationTime = Time.time;
+
             // 3. Mirror NetworkAnimator가 있으면 클라이언트에 동기화, 없으면 로컬 재생
             if (_networkAnimator != null)
                 _networkAnimator.SetTrigger(HitTrigger);
             else if (_animator != null)
                 _animator.SetTrigger(HitTrigger);
+
+            // [피격 경직] 0.5초간 몬스터 이동 및 행동 일시 정지
+            ApplyHitStun().Forget();
+        }
+
+        private async UniTaskVoid ApplyHitStun(float duration = 0.5f)
+        {
+            _actionLocked = true;
+            if (_agent != null && _agent.enabled)
+                _agent.isStopped = true;
+            SetMovingAnimation(false); // 걷기 모션 끄기 (발미끄러짐 방지)
+            try
+            {
+                await UniTask.Delay(TimeSpan.FromSeconds(duration), cancellationToken: this.GetCancellationTokenOnDestroy());
+            }
+            catch (OperationCanceledException) { }
+            finally
+            {
+                _actionLocked = false;
+                // 살아서 추격 중(Chase)이었다면 네비메시 이동 재개
+                if (_agent != null && _agent.enabled && !_health.IsDead && _stateMachine.State == MonsterState.Chase)
+                {
+                    _agent.isStopped = false;
+                }
+            }
         }
 
         #endregion
@@ -634,6 +690,11 @@ namespace MySecondWorld.Combat.Monster
 
             try
             {
+                // [안전장치] 최대 2.5초 지나면 강제 탈출하여 AI가 굳는 버그 방지
+                using var timeoutCts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(2.5f));
+                using var linkedCts = System.Threading.CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutCts.Token);
+                var token = linkedCts.Token;
+
                 int baselineHash = _animator.GetCurrentAnimatorStateInfo(0).shortNameHash;
 
                 // 1) 트리거로 인한 전이가 실제로 일어나 상태가 기준선에서 벗어날 때까지 대기
@@ -648,8 +709,9 @@ namespace MySecondWorld.Combat.Monster
                 }
 
                 // 2) 그 상태가 끝나거나(정상 종료) 다른 상태로 또 바뀔 때까지(인터럽트) 대기
-                while (!ct.IsCancellationRequested)
+                while (!ct.IsCancellationRequested) // ct 대신 token 사용
                 {
+                    // 애니메이터의 0번 레이어(Base Layer)에서 지금 실시간으로 재생 중인 애니메이션의 상태 정보
                     var stateInfo = _animator.GetCurrentAnimatorStateInfo(0);
                     // shortNameHash != enteredStateHash: 우리가 기다리던 상태가 아니라 다른 상태로 바뀜 
                     bool interrupted = stateInfo.shortNameHash != enteredStateHash;

@@ -10,20 +10,32 @@ namespace MySecondWorld.Combat
     /// </summary>
     public class AnimationEventReceiver : MonoBehaviour
     {
+        #region Events
+
         public event Action OnAttackHitEvent;
         public event Action OnAttackNockEvent;
         public event Action OnAttackReleaseEvent;
         public event Action OnAttackShootEvent; // 기타 클립용 예비 훅
         public event Action OnSlamImpactEvent;
 
+        #endregion
+
+        #region Animation Event Handlers
+
         // 근접 몬스터 이벤트 (MonsterHitbox 대응)
         public void OnAttackHit() { }
+
         // 원거리 몬스터 이벤트 (RangedMonsterHitbox 대응)
         public void OnAttackNock() { }
         public void OnAttackRelease() { }
         public void OnAttackShoot() { }
+
         // 보스 광역 이벤트 (BossAoEHitbox 대응)
         public void OnSlamImpact() { }
+
+        // 사망 몬스터 이벤트 (클라이언트에서 has no receiver 방지용)
         public void OnDeathAnimationEnd() { }
+
+        #endregion
     }
 }
