@@ -6,6 +6,7 @@ using MySecondWorld.Network;
 using MySecondWorld.Move;
 using MySecondWorld.Inventory;
 using MySecondWorld.Combat.Monster;
+using MySecondWorld.Combat.Vfx;
 
 using MySecondWorld.Combat;
 
@@ -22,6 +23,9 @@ namespace MySecondWorld.Combat.Player
         [SerializeField] private InputActionReference _attackAction;
         [SerializeField] private PlayerCombatStatsSO _stats;
         [SerializeField] private MovementController _movement;
+
+        [Header("VFX")]
+        [SerializeField] private WeaponAttackVfxMapSO _vfxMap;
 
         [Header("근접 판정")]
         [SerializeField] private Transform _attackPoint;
@@ -53,10 +57,12 @@ namespace MySecondWorld.Combat.Player
         // 시간을 재서 관리한다 — 여기 값들은 로컬 UI/미리보기 예측치일 뿐이다.
         private bool _isCharging;
         private Transform _pendingHomingTarget;   // 홀드 시작 시점에 고정한 유도 대상
+        private Transform _meleeTarget;           // 근접 공격 시 회전 추적 대상
         private float _pendingHomingTurnRate;      // 릴리즈 순간 굳힌 값(로컬 표현 화살용)
 
         // HUD가 구독하는 게이지 값(0~1). 활이 아니거나 충전 중이 아니면 0.
         public float AimGauge01 { get; private set; }
+        public bool IsCharging => _isCharging;
 
         public bool IsBowEquipped => _weaponEquip.GetMainHandCategory() == WeaponCategory.Bow;
         public bool IsLocalPlayer => _weaponEquip.isLocalPlayer;
@@ -85,6 +91,17 @@ namespace MySecondWorld.Combat.Player
         // 탭으로 고른 대상. PlayerTapAttack이 설정한다.
         // 비어 있으면 기존 자동 최근접 그대로 동작한다(회귀 안전장치).
         public Transform SelectedTarget { get; set; }
+
+        // 현재 조준/공격 중인 대상 (실시간 추적). 타겟 UI 인디케이터가 구독한다.
+        public Transform CurrentTarget { get; private set; }
+        public event Action<Transform> OnCurrentTargetChanged;
+
+        private void SetCurrentTarget(Transform target)
+        {
+            if (CurrentTarget == target) return;
+            CurrentTarget = target;
+            OnCurrentTargetChanged?.Invoke(CurrentTarget);
+        }
 
         // 화면 HUD는 로컬 플레이어보다 먼저 살아 있을 수 있다 — PlayerHealthState.Local과 같은 패턴.
         public static PlayerAttackController Local { get; private set; }
@@ -139,7 +156,14 @@ namespace MySecondWorld.Combat.Player
                 _movement.RotationLocked = IsAttackRoundOpen || _isCharging;
 
             if (_isCharging)
+            {
                 TickAimGauge();
+                UpdateAimFacing();
+            }
+            else if (!IsBowEquipped && _meleeTarget != null)
+            {
+                UpdateMeleeFacing();
+            }
         }
 
         private void OnDisable()
@@ -151,6 +175,8 @@ namespace MySecondWorld.Combat.Player
             }
             _weaponEquip.OnMainHandVisualApplied -= HandleMainHandChanged;
             CancelAimCharge();
+            _meleeTarget = null;
+            SetCurrentTarget(null);
 
             if (Local == this) Local = null;
         }
@@ -164,6 +190,7 @@ namespace MySecondWorld.Combat.Player
         private void OnAttackHoldStarted(InputAction.CallbackContext ctx)
         {
             if (!_weaponEquip.isLocalPlayer) return;
+            if (TryGetComponent(out PlayerHealthState health) && (health.IsDead || health.IsStunned)) return;
 
             if (!IsBowEquipped)
             {
@@ -179,6 +206,11 @@ namespace MySecondWorld.Combat.Player
         private void OnAttackHoldReleased(InputAction.CallbackContext ctx)
         {
             if (!_weaponEquip.isLocalPlayer) return;
+            if (TryGetComponent(out PlayerHealthState health) && (health.IsDead || health.IsStunned))
+            {
+                CancelAimCharge();
+                return;
+            }
             if (!_isCharging) return;
 
             EndAimChargeAndShoot();
@@ -190,6 +222,7 @@ namespace MySecondWorld.Combat.Player
         public void TryAttack()
         {
             if (!_weaponEquip.isLocalPlayer) return; // 원격 플레이어 — 내 입력에 반응하면 안 됨
+            if (TryGetComponent(out PlayerHealthState health) && (health.IsDead || health.IsStunned)) return;
             if (!IsReadyToAttack()) return;
 
             ConfirmAttack(IsBowEquipped);
@@ -200,17 +233,20 @@ namespace MySecondWorld.Combat.Player
         // (근접/즉시발사는 기존 Action, 홀드 발사는 Release) — 여기 섞으면 두 흐름이 뒤엉킨다.
         private void ConfirmAttack(bool isBow)
         {
-            // 회전을 먼저 — 몸이 향한 뒤에 조준을 계산해야 둘이 같은 곳을 본다.
-            // (대상이 없어 정면으로 쏘는 경우, 회전 없이 계산하면 엉뚱한 방향이 잡힌다)
-            FaceAttackTarget(isBow ? _stats.ShootRange : _stats.MeleeFacingRange);
-
             if (isBow)
             {
-                // 조준은 '입력 시점'에 확정한다. 발사 프레임까지 0.3~0.6초 여유가 생겨
-                // 원격 피어가 자기 발사 프레임에 이 값을 읽어 쓸 수 있다.
-                // 발사 프레임에 보내면 왕복 지연만큼 늦게 도착해 남의 화면에서 화살이 늦게 떠난다.
+                // 회전을 먼저 — 몸이 향한 뒤에 조준을 계산해야 둘이 같은 곳을 본다.
+                FaceAttackTarget(_stats.ShootRange);
                 _pendingAimDirection = ComputeAimDirection();
                 _attackAuthority.CmdSetAimDirection(_pendingAimDirection);
+            }
+            else
+            {
+                // 근접 공격: 사거리 내 몬스터를 즉시 바라보고, 타격 프레임까지 회전 추적 대상으로 설정
+                _meleeTarget = FindAttackTarget(_stats.MeleeFacingRange);
+                SetCurrentTarget(_meleeTarget);
+                if (_meleeTarget != null)
+                    FaceTarget(_meleeTarget);
             }
 
             _attackToken++;
@@ -238,6 +274,9 @@ namespace MySecondWorld.Combat.Player
             _isCharging = true;
             AimGauge01 = 0f;
             _pendingHomingTarget = target;
+            SetCurrentTarget(target);
+
+            FaceTarget(target); // 조준 시작 즉시 타겟을 바라보도록 회전
 
             uint targetNetId = target.TryGetComponent(out NetworkIdentity identity) ? identity.netId : 0;
             _attackAuthority.CmdBeginAim(targetNetId);
@@ -269,14 +308,16 @@ namespace MySecondWorld.Combat.Player
             _animationController.HandleAimRelease();
         }
 
-        // 무기 교체·컴포넌트 비활성화 등으로 홀드를 강제로 접을 때. 발사로 이어지지 않는다.
-        private void CancelAimCharge()
+        // 무기 교체·컴포넌트 비활성화·사망 등으로 홀드를 강제로 접을 때. 발사로 이어지지 않는다.
+        public void CancelAimCharge()
         {
             if (!_isCharging) return;
 
             _isCharging = false;
             AimGauge01 = 0f;
             _pendingHomingTarget = null;
+            SetCurrentTarget(null);
+            _animationController?.HandleAimCancel();
             _attackAuthority?.CmdCancelAim();
         }
 
@@ -318,7 +359,13 @@ namespace MySecondWorld.Combat.Player
         // 애니메이션을 멈추지 않고, 손 화살도 회수하지 않는다 —
         // 모션이 끝까지 가서 발사 이벤트가 와도 CloseRound()가 "이미 닫힌 회차"로 걸러낸다.
         // 여러 번 불러도 안전하다(피격/사망/무기교체가 서로 순서를 신경 쓸 필요 없음).
-        public void AbortAttack() => _releasedToken = _attackToken;
+        public void AbortAttack()
+        {
+            _releasedToken = _attackToken;
+            _meleeTarget = null;
+            if (!_isCharging)
+                SetCurrentTarget(null);
+        }
 
         private void HandleMainHandChanged(WeaponCategory _)
         {
@@ -342,7 +389,16 @@ namespace MySecondWorld.Combat.Player
         // 근접 타격 프레임. 기존 클립에 이미 박혀 있는 이벤트 이름이라 그대로 둔다.
         public void OnAttackHit()
         {
+            _meleeTarget = null;
+            SetCurrentTarget(null);
             if (!CloseRound()) return;
+
+            // NetworkAnimator가 애니메이터 상태를 동기화해 이 메서드는 모든 피어에서 각자 호출된다
+            // (isLocalPlayer 가드 이전 지점) — 그래서 별도 RPC 없이 전원 화면에 스윙 VFX가 뜬다.
+            var vfxPrefab = _vfxMap != null ? _vfxMap.GetVfxPrefab(_weaponEquip.GetMainHandCategory()) : null;
+            if (vfxPrefab != null)
+                CombatVfxSpawner.Spawn(vfxPrefab, _attackPoint.position, _attackPoint.rotation);
+
             if (!_weaponEquip.isLocalPlayer) return;
 
             // "누굴 노렸는지"만 알려준다. 실제로 때릴 수 있는지는 서버의 구체 판정이 정한다.
@@ -360,7 +416,14 @@ namespace MySecondWorld.Combat.Player
             if (!CloseRound()) return;
             if (_weaponEquip.GetMainHandCategory() != WeaponCategory.Bow) return;
 
+            // OnAttackHit()과 동일한 이유로 RPC 없이 여기서 바로 재생 — 모든 피어에서 각자 호출된다.
+            var vfxPrefab = _vfxMap != null ? _vfxMap.GetVfxPrefab(WeaponCategory.Bow) : null;
+            if (vfxPrefab != null)
+                CombatVfxSpawner.Spawn(vfxPrefab, AimOrigin, transform.rotation);
+
             ReleaseArrow();
+            _pendingHomingTarget = null;
+            SetCurrentTarget(null);
         }
 
         #endregion
@@ -427,14 +490,18 @@ namespace MySecondWorld.Combat.Player
         // 발사 자체를 취소하면 입력이 씹힌 것처럼 느껴진다.
         private Vector3 FindAimPoint()
         {
-            var target = FindAttackTarget(_stats.ShootRange);
+            var target = _pendingHomingTarget != null && _pendingHomingTarget.gameObject.activeInHierarchy
+                ? _pendingHomingTarget
+                : FindAttackTarget(_stats.ShootRange);
+
             if (target == null)
                 return AimOrigin + transform.forward * _stats.ShootRange; // 대상 없음 — 정면으로
 
-            if (target.TryGetComponent(out MonsterServerState state))
+            var state = target.GetComponentInParent<MonsterServerState>();
+            if (state != null)
                 return state.BodyCenterWorld;
 
-            return target.position + Vector3.up * _stats.AimHeightOffset;   // 몬스터가 아니면 폴백
+            return target.position + Vector3.up * _stats.AimHeightOffset;   // 몬스터가 아니면 폴백 (몸통 높이)
         }
 
         private Vector3 ComputeAimDirection() => (FindAimPoint() - AimOrigin).normalized;
@@ -448,7 +515,16 @@ namespace MySecondWorld.Combat.Player
         // 억지로 정면을 향해 돌리면 허공을 쏠 때 캐릭터가 홱 도는 게 더 이상하다.
         private void FaceAttackTarget(float searchRange)
         {
-            var target = FindAttackTarget(searchRange);   // ← 탭으로 고른 놈을 향해 돌게 하는 지점
+            var target = _pendingHomingTarget != null && _pendingHomingTarget.gameObject.activeInHierarchy
+                ? _pendingHomingTarget
+                : FindAttackTarget(searchRange);
+
+            if (target != null)
+                FaceTarget(target);
+        }
+
+        private void FaceTarget(Transform target)
+        {
             if (target == null) return;
 
             Vector3 lookDirection = target.position - transform.position;
@@ -456,6 +532,76 @@ namespace MySecondWorld.Combat.Player
 
             if (lookDirection.sqrMagnitude > 0.001f)
                 transform.rotation = Quaternion.LookRotation(lookDirection);
+        }
+
+        // 활 조준(홀드) 중 이동하거나 몬스터가 움직일 때 실시간으로 대상 방향을 바라보도록 회전
+        private void UpdateAimFacing()
+        {
+            if (_pendingHomingTarget == null || !_pendingHomingTarget.gameObject.activeInHierarchy)
+            {
+                _pendingHomingTarget = FindAttackTarget(_stats.ShootRange);
+            }
+            else
+            {
+                var monster = _pendingHomingTarget.GetComponentInParent<MonsterServerState>();
+                if (monster != null && !monster.IsAlive)
+                {
+                    _pendingHomingTarget = FindAttackTarget(_stats.ShootRange);
+                }
+            }
+
+            SetCurrentTarget(_pendingHomingTarget);
+
+            if (_pendingHomingTarget == null) return;
+
+            Vector3 lookDirection = _pendingHomingTarget.position - transform.position;
+            lookDirection.y = 0f;
+
+            if (lookDirection.sqrMagnitude > 0.001f)
+            {
+                Quaternion targetRotation = Quaternion.LookRotation(lookDirection);
+                // 조준 중 이동하거나 몬스터가 움직일 때 부드럽고 신속하게 타겟을 향해 회전 (720도/초)
+                transform.rotation = Quaternion.RotateTowards(
+                    transform.rotation,
+                    targetRotation,
+                    720f * Time.deltaTime
+                );
+            }
+        }
+
+        // 근접 공격 모션 중(타격 전) 몬스터가 움직이거나 플레이어가 접근할 때 대상 방향으로 회전
+        private void UpdateMeleeFacing()
+        {
+            if (_meleeTarget == null || !_meleeTarget.gameObject.activeInHierarchy)
+            {
+                _meleeTarget = FindAttackTarget(_stats.MeleeFacingRange);
+            }
+            else
+            {
+                var monster = _meleeTarget.GetComponentInParent<MonsterServerState>();
+                if (monster != null && !monster.IsAlive)
+                {
+                    _meleeTarget = FindAttackTarget(_stats.MeleeFacingRange);
+                }
+            }
+
+            SetCurrentTarget(_meleeTarget);
+
+            if (_meleeTarget == null) return;
+
+            Vector3 lookDirection = _meleeTarget.position - transform.position;
+            lookDirection.y = 0f;
+
+            if (lookDirection.sqrMagnitude > 0.001f)
+            {
+                Quaternion targetRotation = Quaternion.LookRotation(lookDirection);
+                // 타격 직전까지 몬스터를 향해 신속하게 회전 (720도/초)
+                transform.rotation = Quaternion.RotateTowards(
+                    transform.rotation,
+                    targetRotation,
+                    720f * Time.deltaTime
+                );
+            }
         }
 
         // 선택 대상이 사거리 안이면 그놈, 밖이면 관측 목록에서 가장 가까운 살아있는 몬스터.
@@ -476,9 +622,15 @@ namespace MySecondWorld.Combat.Player
         //   플레이어 이동은 CharacterController 직접 제어라 NavMeshAgent가 없다 — 경로 탐색 수단부터 결정 필요.
         private Transform FindAttackTarget(float range)
         {
-            if (IsSelectionUsable() &&
-                (SelectedTarget.position - AimOrigin).sqrMagnitude <= range * range)
-                return SelectedTarget;
+            Vector3 playerPos = transform.position;
+
+            if (IsSelectionUsable())
+            {
+                Vector3 toSelected = SelectedTarget.position - playerPos;
+                toSelected.y = 0f;
+                if (toSelected.sqrMagnitude <= range * range)
+                    return SelectedTarget;
+            }
 
             Transform nearest = null;
             float bestSqr = range * range;
@@ -487,7 +639,9 @@ namespace MySecondWorld.Combat.Player
             {
                 if (monster == null || !monster.IsAlive) continue;
 
-                float sqr = (monster.Anchor.position - AimOrigin).sqrMagnitude;
+                Vector3 toMonster = monster.Anchor.position - playerPos;
+                toMonster.y = 0f;
+                float sqr = toMonster.sqrMagnitude;
                 if (sqr >= bestSqr) continue;
 
                 bestSqr = sqr;

@@ -20,7 +20,7 @@ namespace MySecondWorld.Combat.Player
 
         [Tooltip("근접 공격 시 이 반경 안의 가장 가까운 대상 쪽으로 몸을 돌린다.\n" +
           "공격 반경(AttackRadius)보다 조금 넉넉해야 '살짝 빗나간 위치의 적'에게도 돌아선다.")]
-        [SerializeField] private float _meleeFacingRange = 3f; // 회전 반경은 공격 반경보다 넉넉하게
+        [SerializeField] private float _meleeFacingRange = 5f; // 회전 반경은 공격 반경보다 넉넉하게
         [SerializeField] private float _unarmedAttack = 10f; // 무기 미장착(맨주먹) 시 기본 공격력
         [SerializeField] private float _attackCooldown = 0.8f;
 

@@ -71,7 +71,14 @@ namespace MySecondWorld.Combat
             // 원격 피어가 보는 '남의 화살'만 / 직선으로 날다가 RpcConfirmHit로 명중 지점에 스냅되는 기존 오차 허용 방식을 그대로 쓴다.
             if (_homingTarget != null && _homingTurnRateDegPerSec > 0f)
             {
-                Vector3 toTarget = (_homingTarget.position - transform.position).normalized;
+                Vector3 targetPos;
+                var monsterState = _homingTarget.GetComponentInParent<Monster.MonsterServerState>();
+                if (monsterState != null)
+                    targetPos = monsterState.BodyCenterWorld;
+                else
+                    targetPos = _homingTarget.position + Vector3.up * 1.0f; // 발밑(0) 대신 몸통(1.0m) 조준
+
+                Vector3 toTarget = (targetPos - transform.position).normalized;
                 _direction = Vector3.RotateTowards(
                     _direction, toTarget, _homingTurnRateDegPerSec * Mathf.Deg2Rad * Time.deltaTime, 0f).normalized;
             }
