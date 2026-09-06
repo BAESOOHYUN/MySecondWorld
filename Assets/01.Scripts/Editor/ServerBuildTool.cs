@@ -2,11 +2,13 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 using Debug = UnityEngine.Debug;
 
 namespace MySecondWorld.Editor
@@ -41,23 +43,41 @@ namespace MySecondWorld.Editor
                 return;
             }
 
-            string fullKeyPath = Path.GetFullPath(KeyPath).Replace("\\", "/");
-            string fullServerData = Path.GetFullPath("ServerData/StandaloneLinux64").Replace("\\", "/");
-            string fullServerBuild = Path.GetFullPath("Builds/Server").Replace("\\", "/") + "/*";
-
             Debug.Log("[Deploy] 🚀 [2/3] EC2 기존 서버 안전 중지 및 파일 업로드 중 (잠시 대기)...");
             // 실행 중인 바이너리 덮어쓰기 에러 방지를 위해 서비스 먼저 중지
-            RunPowerShell($"ssh -i \"{fullKeyPath}\" {EC2User}@{EC2Host} \"sudo systemctl stop mysecondworld\"");
+            // + scp -r는 목적지에 같은 이름의 디렉터리가 이미 있으면 그 "안으로" 복사한다
+            //   (ServerData/StandaloneLinux64/StandaloneLinux64/ 처럼 중첩되고, 클라/서버는 계속 옛 번들을 받는다)
+            //   → 업로드 전에 원격 디렉터리를 지워서 항상 새 번들이 올라가게 만든다.
+            // df까지 같이 찍는다 — 디스크가 꽉 차면 scp가 "write remote ...: Failure"로 죽는데
+            // 에러 메시지만 봐서는 용량 문제인 줄 모른다.
+            if (!RunSsh($"sudo systemctl stop mysecondworld; rm -rf {EC2RemoteDir}/ServerData/StandaloneLinux64; mkdir -p {EC2RemoteDir}/ServerData; df -h /"))
+            {
+                Debug.LogError("[Deploy] ❌ 서버 중지/정리 실패 — 배포 중단.");
+                return;
+            }
 
             // A: 리눅스 에셋번들 업로드
-            RunPowerShell($"scp -i \"{fullKeyPath}\" -r \"{fullServerData}\" {EC2User}@{EC2Host}:{EC2RemoteDir}/ServerData/");
-            // B: 리눅스 서버 바이너리 업로드
-            RunPowerShell($"scp -i \"{fullKeyPath}\" -r \"{fullServerBuild}\" {EC2User}@{EC2Host}:{EC2RemoteDir}/");
+            if (!RunScp(new[] { "ServerData/StandaloneLinux64" }, $"{EC2RemoteDir}/ServerData/"))
+            {
+                Debug.LogError("[Deploy] ❌ 에셋번들 업로드 실패 — 배포 중단.");
+                return;
+            }
+            // B: 리눅스 서버 바이너리 업로드 (Builds/Server 하위 항목을 직접 펼쳐서 넘긴다)
+            string serverBuildDir = Path.GetDirectoryName(ServerBuildPath);
+            string[] serverBuildEntries = Directory.GetFileSystemEntries(serverBuildDir);
+            if (!RunScp(serverBuildEntries, $"{EC2RemoteDir}/"))
+            {
+                Debug.LogError("[Deploy] ❌ 서버 바이너리 업로드 실패 — 배포 중단.");
+                return;
+            }
 
             Debug.Log("[Deploy] 🚀 [3/3] 실행 권한 부여 및 systemd 서비스 재시작...");
-            RunPowerShell($"ssh -i \"{fullKeyPath}\" {EC2User}@{EC2Host} \"chmod +x {EC2RemoteDir}/MySecondWorld.x86_64; sudo systemctl restart mysecondworld\"");
+            RunSsh($"chmod +x {EC2RemoteDir}/MySecondWorld.x86_64; sudo systemctl restart mysecondworld");
 
-            Debug.Log("🎉 [Deploy] Linux 전용 서버가 EC2에 완벽하게 배포 및 재시작되었습니다! 이제 접속 테스트를 진행하세요.");
+            // 업로드 결과 확인 — aa/ 카탈로그와 번들이 실제로 올라갔는지 눈으로 확인할 수 있게 찍는다
+            RunSsh($"ls {EC2RemoteDir}/MySecondWorld_Data/StreamingAssets/aa; ls {EC2RemoteDir}/ServerData/StandaloneLinux64; df -h /");
+
+            Debug.Log("🎉 [Deploy] Linux 전용 서버가 EC2에 배포 및 재시작되었습니다! 위 ls 출력에 aa/ 와 catalog_*.json 이 보이는지 확인하세요.");
             Debug.Log("[Deploy] ========================================================");
         }
 
@@ -68,23 +88,49 @@ namespace MySecondWorld.Editor
         public static void BuildAndDeployAndroidBundles()
         {
             Debug.Log("[Deploy-Android] ========================================================");
-            Debug.Log("[Deploy-Android] 📱 Android 타겟으로 전환 중...");
-            var androidProfile = AssetDatabase.LoadAssetAtPath<UnityEditor.Build.Profile.BuildProfile>("Assets/Settings/Build Profiles/Android™.asset");
-            if (androidProfile != null)
-                UnityEditor.Build.Profile.BuildProfile.SetActiveBuildProfile(androidProfile);
-            EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Android, BuildTarget.Android);
+
+            // 타겟 전환 직후 BuildPlayerContent()를 부르면 이전 타겟의 콘텐츠가 만들어진다.
+            // 전환만 하고 중단 → 재임포트가 끝난 뒤 사용자가 한 번 더 실행하는 방식으로 나눈다.
+            if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.Android)
+            {
+                Debug.LogWarning("[Deploy-Android] 📱 Android 타겟으로 전환을 시작한다.");
+                var androidProfile = AssetDatabase.LoadAssetAtPath<UnityEditor.Build.Profile.BuildProfile>("Assets/Settings/Build Profiles/Android™.asset");
+                if (androidProfile != null)
+                    UnityEditor.Build.Profile.BuildProfile.SetActiveBuildProfile(androidProfile);
+                EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Android, BuildTarget.Android);
+
+                Debug.LogError("[Deploy-Android] ⛔ 전환/재임포트가 끝난 뒤 메뉴를 '한 번 더' 실행하라. 지금은 여기서 중단한다.");
+                return;
+            }
 
             Debug.Log("[Deploy-Android] 📱 Android용 Addressables 번들 빌드 시작...");
-            AddressableAssetSettings.BuildPlayerContent();
-            Debug.Log("[Deploy-Android] 📱 Android 번들 빌드 완료! (ServerData/Android/)");
+            AddressableAssetSettings.BuildPlayerContent(out var buildResult);
+            if (!string.IsNullOrEmpty(buildResult.Error))
+            {
+                Debug.LogError($"[Deploy-Android] ❌ Addressables 빌드 실패: {buildResult.Error}");
+                return;
+            }
 
-            string fullKeyPath = Path.GetFullPath(KeyPath).Replace("\\", "/");
-            string fullAndroidData = Path.GetFullPath("ServerData/Android").Replace("\\", "/");
+            string androidDataDir = Path.GetFullPath("ServerData/Android");
+
+            // 빈 폴더를 올려서 "업로드 성공"으로 착각하는 걸 막는다
+            if (!Directory.Exists(androidDataDir) || Directory.GetFiles(androidDataDir, "catalog_*.json").Length == 0)
+            {
+                Debug.LogError($"[Deploy-Android] ❌ {androidDataDir} 에 카탈로그가 없다 — 업로드 중단. Addressables 프로파일의 Remote 경로를 확인하라.");
+                return;
+            }
+
+            PruneStaleBundles(androidDataDir, Directory.GetFiles(androidDataDir, "catalog_*.json").OrderByDescending(File.GetLastWriteTime).First());
 
             Debug.Log("[Deploy-Android] 🚀 EC2 웹서버로 Android 번들 업로드 중...");
-            RunPowerShell($"scp -i \"{fullKeyPath}\" -r \"{fullAndroidData}\" {EC2User}@{EC2Host}:{EC2RemoteDir}/ServerData/");
+            // scp -r 중첩 방지 — 원격 디렉터리를 먼저 지운다 (Linux 배포와 동일한 이유)
+            if (!RunSsh($"rm -rf {EC2RemoteDir}/ServerData/Android; mkdir -p {EC2RemoteDir}/ServerData; df -h /"))
+                return;
+            if (!RunScp(new[] { "ServerData/Android" }, $"{EC2RemoteDir}/ServerData/"))
+                return;
 
-            Debug.Log("🎉 [Deploy-Android] Android 에셋번들이 EC2에 업로드되었습니다! 안드로이드 기기에서 접속 테스트가 가능합니다.");
+            Debug.Log("🎉 [Deploy-Android] Android 에셋번들이 EC2에 업로드되었습니다!");
+            Debug.LogWarning("[Deploy-Android] ⚠️ 지금 에디터 빌드 타겟은 Android다. 서버를 다시 구우려면 Linux Server 프로파일로 되돌려라.");
             Debug.Log("[Deploy-Android] ========================================================");
         }
 
@@ -124,24 +170,93 @@ namespace MySecondWorld.Editor
         [MenuItem("Tools/Build/🔄 [EC2] 서버 재시작만 실행 (Quick Restart)", priority = 10)]
         public static void RestartEC2ServerOnly()
         {
-            string fullKeyPath = Path.GetFullPath(KeyPath).Replace("\\", "/");
             Debug.Log("[Deploy] 🔄 EC2 서버 서비스 재시작 중...");
-            RunPowerShell($"ssh -i \"{fullKeyPath}\" {EC2User}@{EC2Host} \"sudo systemctl restart mysecondworld\"");
+            RunSsh("sudo systemctl restart mysecondworld");
             Debug.Log("🎉 [Deploy] EC2 서버 서비스 재시작 완료!");
         }
 
         [MenuItem("Tools/Build/1. Linux 전용 Addressables 번들 빌드 (Remote)", priority = 20)]
-        public static void BuildAddressablesRemote()
-        {
-            Debug.Log("[Build] StandaloneLinux64 타겟으로 전환 중...");
-            var linuxProfile = AssetDatabase.LoadAssetAtPath<UnityEditor.Build.Profile.BuildProfile>("Assets/Settings/Build Profiles/Linux Server.asset");
-            if (linuxProfile != null)
-                UnityEditor.Build.Profile.BuildProfile.SetActiveBuildProfile(linuxProfile);
-            EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Standalone, BuildTarget.StandaloneLinux64);
+        public static void BuildAddressablesRemoteMenu() => BuildAddressablesRemote();
 
+        // 타겟 전환은 스크립트 재컴파일을 유발해 이 메서드 뒤쪽이 실행되지 않을 수 있다.
+        // 그래서 "전환만 하고 중단 → 사용자가 다시 실행"으로 나눈다.
+        // 전환 직후 BuildPlayerContent()를 부르면 이전 타겟(Android 등)의 콘텐츠가 만들어져
+        // aa/Linux 가 비는 채로 서버가 배포된다 — 오늘 사고의 원인.
+        public static bool BuildAddressablesRemote()
+        {
+            if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.StandaloneLinux64)
+            {
+                Debug.LogWarning("[Build] 현재 빌드 타겟이 StandaloneLinux64가 아니다 — 전환을 시작한다.");
+                var linuxProfile = AssetDatabase.LoadAssetAtPath<UnityEditor.Build.Profile.BuildProfile>("Assets/Settings/Build Profiles/Linux Server.asset");
+                if (linuxProfile != null)
+                    UnityEditor.Build.Profile.BuildProfile.SetActiveBuildProfile(linuxProfile);
+                EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Standalone, BuildTarget.StandaloneLinux64);
+
+                Debug.LogError("[Build] ⛔ 타겟 전환/재임포트가 끝난 뒤 메뉴를 '한 번 더' 실행하라. 지금은 여기서 중단한다.");
+                return false;
+            }
+
+            EditorUserBuildSettings.standaloneBuildSubtarget = StandaloneBuildSubtarget.Server;
+
+            DateTime buildStartedAt = DateTime.Now;
             Debug.Log("[Build] Linux용 Addressables 번들 빌드 시작...");
-            AddressableAssetSettings.BuildPlayerContent();
-            Debug.Log("[Build] Linux용 Addressables 번들 빌드 완료! (ServerData/StandaloneLinux64/ 생성됨)");
+            AddressableAssetSettings.BuildPlayerContent(out var buildResult);
+
+            if (!string.IsNullOrEmpty(buildResult.Error))
+            {
+                Debug.LogError($"[Build] ❌ Addressables 빌드 실패: {buildResult.Error}");
+                return false;
+            }
+
+            // 검증 1: StreamingAssets로 복사될 로컬 카탈로그(aa/Linux)가 실제로 생겼는가
+            // (이게 없으면 서버가 Addressables.InitializeAsync()에서 죽어 ServerReady가 영원히 false다)
+            string localCatalogDir = Addressables.BuildPath;
+            if (!Directory.Exists(localCatalogDir) || Directory.GetFiles(localCatalogDir, "settings.json", SearchOption.AllDirectories).Length == 0)
+            {
+                Debug.LogError($"[Build] ❌ 로컬 카탈로그가 없다: {localCatalogDir}\n" +
+                               "Addressables Groups 창에서 Build > New Build > Default Build Script를 직접 한 번 돌려라.");
+                return false;
+            }
+
+            // 검증 2: 원격 번들(ServerData/StandaloneLinux64)이 이번 실행에서 갱신됐는가
+            string remoteDir = Path.GetFullPath("ServerData/StandaloneLinux64");
+            var catalogs = Directory.Exists(remoteDir) ? Directory.GetFiles(remoteDir, "catalog_*.json") : Array.Empty<string>();
+            if (catalogs.Length == 0 || !catalogs.Any(c => File.GetLastWriteTime(c) >= buildStartedAt))
+            {
+                Debug.LogError($"[Build] ❌ 원격 카탈로그가 갱신되지 않았다: {remoteDir}\n" +
+                               "Addressables 프로파일이 Remote(ServerData/[BuildTarget])를 가리키는지 확인하라.");
+                return false;
+            }
+
+            PruneStaleBundles(remoteDir, catalogs.OrderByDescending(File.GetLastWriteTime).First());
+
+            Debug.Log($"[Build] ✅ Linux Addressables 빌드 완료 — 로컬: {localCatalogDir} / 원격: {remoteDir}");
+            return true;
+        }
+
+        // Addressables는 재빌드해도 구버전 .bundle을 지우지 않고 계속 쌓는다.
+        // 그대로 두면 업로드 용량이 눈덩이처럼 불어나 EC2 디스크가 100%가 되고,
+        // scp가 "write remote ...: Failure"로 죽는다(오늘 겪은 그 에러).
+        // 현재 카탈로그가 참조하지 않는 번들은 죽은 파일이므로 지운다.
+        private static void PruneStaleBundles(string remoteDir, string catalogPath)
+        {
+            if (!Directory.Exists(remoteDir)) return;
+
+            string catalogText = File.ReadAllText(catalogPath);
+            long freed = 0;
+            int count = 0;
+
+            foreach (string bundlePath in Directory.GetFiles(remoteDir, "*.bundle"))
+            {
+                if (catalogText.Contains(Path.GetFileName(bundlePath))) continue;
+
+                freed += new FileInfo(bundlePath).Length;
+                File.Delete(bundlePath);
+                count++;
+            }
+
+            if (count > 0)
+                Debug.Log($"[Build] 🧹 카탈로그 미참조 구버전 번들 {count}개 삭제 ({freed / (1024 * 1024)} MB 확보)");
         }
 
         [MenuItem("Tools/Build/2. Linux Dedicated Server 빌드 (Headless)", priority = 21)]
@@ -171,16 +286,26 @@ namespace MySecondWorld.Editor
             BuildReport report = BuildPipeline.BuildPlayer(buildPlayerOptions);
             BuildSummary summary = report.summary;
 
-            if (summary.result == BuildResult.Succeeded)
-            {
-                Debug.Log($"[Build] 🎉 서버 빌드 대성공! (크기: {summary.totalSize / (1024 * 1024):F1} MB, 위치: {ServerBuildPath})");
-                return true;
-            }
-            else
+            if (summary.result != BuildResult.Succeeded)
             {
                 Debug.LogError($"[Build] ❌ 서버 빌드 실패! 에러 수: {summary.totalErrors}");
                 return false;
             }
+
+            // Addressables를 DoNotBuildWithPlayer로 꺼놨기 때문에, 플레이어 빌드는
+            // Library/com.unity.addressables/aa/<플랫폼> 을 StreamingAssets로 "복사만" 한다.
+            // 그게 비어 있으면 빌드는 성공으로 끝나지만 서버는 Addressables.InitializeAsync()에서 죽고
+            // GameNetworkManager.ServerReady가 영원히 false → 클라는 로그인만 되고 씬/스폰이 멈춘다.
+            string catalogDir = Path.Combine(Path.GetDirectoryName(ServerBuildPath), "MySecondWorld_Data/StreamingAssets/aa");
+            if (!Directory.Exists(catalogDir))
+            {
+                Debug.LogError($"[Build] ❌ StreamingAssets/aa 가 없다 ({catalogDir}) — Linux용 Addressables 로컬 콘텐츠 미빌드.\n" +
+                               "메뉴 '1. Linux 전용 Addressables 번들 빌드'를 먼저 성공시켜라. 이 상태로 배포하면 접속만 되고 씬이 안 열린다.");
+                return false;
+            }
+
+            Debug.Log($"[Build] 🎉 서버 빌드 대성공! (크기: {summary.totalSize / (1024 * 1024):F1} MB, 위치: {ServerBuildPath})");
+            return true;
         }
 
         [MenuItem("Tools/Build/3. [ALL-IN-ONE] Linux 번들 + Linux 서버 일괄 빌드", priority = 22)]
@@ -188,16 +313,36 @@ namespace MySecondWorld.Editor
 
         private static bool BuildAllInternal()
         {
-            BuildAddressablesRemote();
+            // 번들 빌드가 실패했는데 서버만 굽는 걸 막는다 — 그게 오늘 사고의 형태였다.
+            if (!BuildAddressablesRemote()) return false;
             return BuildLinuxServer();
         }
 
-        private static bool RunPowerShell(string command)
+        private static string KeyArg => $"-i \"{Path.GetFullPath(KeyPath)}\" -o StrictHostKeyChecking=no -o BatchMode=yes";
+
+        // 원격에서 셸 명령 실행.
+        // powershell.exe를 거치지 않는다 — -Command "ssh ... \"a; b; c\"" 형태로 넘기면
+        // PowerShell이 중첩 따옴표를 벗겨내면서 ';' 뒤 명령들을 '로컬' 문장으로 쪼개 실행해버린다
+        // (원격을 지우려던 rm -rf가 로컬에서 돌 뻔한, 조용하고 위험한 버그).
+        // ssh.exe를 직접 띄우면 따옴표가 그대로 보존된다.
+        private static bool RunSsh(string remoteCommand)
+            => RunProcess("ssh", $"{KeyArg} {EC2User}@{EC2Host} \"{remoteCommand}\"");
+
+        // localPaths를 원격 remoteDir로 업로드. 와일드카드(*)는 쓰지 않는다 —
+        // CreateProcess는 글롭을 확장해주지 않아서 '*'가 파일명 그대로 전달된다.
+        // 대신 C#에서 미리 펼쳐 여러 소스 인자로 넘긴다(scp가 지원하는 형식).
+        private static bool RunScp(string[] localPaths, string remoteDir)
+        {
+            string sources = string.Join(" ", localPaths.Select(p => $"\"{Path.GetFullPath(p)}\""));
+            return RunProcess("scp", $"{KeyArg} -r {sources} {EC2User}@{EC2Host}:{remoteDir}");
+        }
+
+        private static bool RunProcess(string fileName, string arguments)
         {
             var psi = new ProcessStartInfo
             {
-                FileName = "powershell.exe",
-                Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{command}\"",
+                FileName = fileName,
+                Arguments = arguments,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
@@ -206,21 +351,25 @@ namespace MySecondWorld.Editor
             try
             {
                 using var p = Process.Start(psi);
-                string stdout = p.StandardOutput.ReadToEnd();
-                string stderr = p.StandardError.ReadToEnd();
+                // ReadToEnd를 순차로 부르면 한쪽 파이프가 가득 찰 때 교착된다 → 비동기로 받는다
+                var stdoutTask = p.StandardOutput.ReadToEndAsync();
+                var stderrTask = p.StandardError.ReadToEndAsync();
                 p.WaitForExit();
+                string stdout = stdoutTask.Result;
+                string stderr = stderrTask.Result;
 
-                if (!string.IsNullOrEmpty(stdout)) Debug.Log($"[Deploy] {stdout.Trim()}");
+                if (!string.IsNullOrWhiteSpace(stdout)) Debug.Log($"[Deploy] {stdout.Trim()}");
                 if (p.ExitCode != 0)
                 {
-                    Debug.LogError($"[Deploy 실패 - Code {p.ExitCode}] {command}\n{stderr}");
+                    Debug.LogError($"[Deploy 실패 - Code {p.ExitCode}] {fileName} {arguments}\n{stderr}");
                     return false;
                 }
+                if (!string.IsNullOrWhiteSpace(stderr)) Debug.LogWarning($"[Deploy] {stderr.Trim()}");
                 return true;
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[Deploy 예외] {ex.Message}");
+                Debug.LogError($"[Deploy 예외] {fileName}: {ex.Message}");
                 return false;
             }
         }
