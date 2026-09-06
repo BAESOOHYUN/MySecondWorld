@@ -6,6 +6,7 @@ using MySecondWorld.Move;
 using MySecondWorld.CameraSystem;
 using MySecondWorld.Customization;
 using MySecondWorld.Network;
+using MySecondWorld.Combat.Player;
 
 /// <summary>
 /// Mirror-spawned 플레이어 프리팹 전용 LifetimeScope.
@@ -31,5 +32,6 @@ public class PlayerScope : LifetimeScope
         builder.RegisterComponent(GetComponent<NetworkPlayerController>());
         builder.RegisterComponent(GetComponent<NetworkInventoryActions>());
         builder.RegisterComponent(GetComponent<NetworkWeaponEquip>());
+        builder.RegisterComponent(GetComponent<PlayerHealthState>());
     }
 }

@@ -17,7 +17,8 @@
         "MySecondWorld.Bundle",
         "MySecondWorld.Save",
         "MySecondWorld.ScriptableObject",
-        "MySecondWorld.Interaction"
+        "MySecondWorld.Interaction",
+        "MySecondWorld.Combat"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
