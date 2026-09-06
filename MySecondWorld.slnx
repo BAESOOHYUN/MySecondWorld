@@ -129,6 +129,7 @@
   <Project Path="Unity.RenderPipeline.Universal.ShaderLibrary.csproj" />
   <Project Path="FlexibleColorPicker.csproj" />
   <Project Path="MySecondWorld.Bundle.csproj" />
+  <Project Path="MySecondWorld.Utils.csproj" />
   <Project Path="Cloud.Unum.USearch.csproj" />
   <Project Path="UniTask.Editor.csproj" />
   <Project Path="UnityCliConnector.TestRunner.csproj" />
@@ -143,7 +144,6 @@
   <Project Path="NetworkImposter.csproj" />
   <Project Path="Unity.2D.Sprite.AIIntegration.Editor.csproj" />
   <Project Path="Unity.RenderPipelines.Core.Editor.Shared.csproj" />
-  <Project Path="MySecondWorld.Utils.csproj" />
   <Project Path="ToonyColorsPro.Demo.Editor.csproj" />
   <Project Path="MySecondWorld.Character.csproj" />
   <Project Path="MySecondWorld.Camera.csproj" />
