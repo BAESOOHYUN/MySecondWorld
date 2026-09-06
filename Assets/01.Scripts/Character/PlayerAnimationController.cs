@@ -18,8 +18,12 @@ namespace MySecondWorld.Move
 
         // 공격 스테이트 재생 중인가.
         // Override Controller가 클립만 바꾸고 스테이트/태그는 베이스 것을 쓰므로 무기 5종에 모두 통한다.
+        // 상체 전용 레이어(Layer 1, UpperBody)가 활성화되어 있는 경우 해당 레이어의 태그도 함께 검사한다.
         public bool IsAttacking =>
-            _animator != null && _animator.GetCurrentAnimatorStateInfo(0).IsTag(AttackTag);
+            _animator != null && (
+                _animator.GetCurrentAnimatorStateInfo(0).IsTag(AttackTag) ||
+                (_animator.layerCount > 1 && _animator.GetCurrentAnimatorStateInfo(1).IsTag(AttackTag))
+            );
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void InitStatics()
@@ -193,6 +197,31 @@ namespace MySecondWorld.Move
                 _networkAnimator.SetTrigger(AimReleaseTrigger);
             else
                 _animator.SetTrigger(AimReleaseTrigger);
+        }
+
+        // 조준 취소 (사망, 무기 교체, 캔슬 등) — 남아있는 조준 및 공격 트리거를 깨끗이 청소한다.
+        public void HandleAimCancel()
+        {
+            if (_animator == null) return;
+
+            if (_networkAnimator != null)
+            {
+                _networkAnimator.ResetTrigger(AimLoadTrigger);
+                _networkAnimator.ResetTrigger(AimReleaseTrigger);
+                _networkAnimator.ResetTrigger(AttackTrigger);
+            }
+            else
+            {
+                _animator.ResetTrigger(AimLoadTrigger);
+                _animator.ResetTrigger(AimReleaseTrigger);
+                _animator.ResetTrigger(AttackTrigger);
+            }
+
+            // 상체 레이어(Layer 1, UpperBody)가 활성화되어 있다면 즉시 Empty(기본) 상태로 복귀하여 굳음 방지
+            if (_animator.layerCount > 1)
+            {
+                _animator.CrossFadeInFixedTime("Empty", 0.1f, 1);
+            }
         }
     }
 }
