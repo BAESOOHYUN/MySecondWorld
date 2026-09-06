@@ -7,12 +7,16 @@ namespace MySecondWorld.UI
     public class PlayerDeathUI : MonoBehaviour
     {
         [SerializeField] private GameObject _panel;
-        [SerializeField] private Button _respawnButton;
+        [SerializeField] private Button _respawnButton;     // 제자리 부활
+        [SerializeField] private Button _townRespawnButton; // 마을 부활
 
         private void Start()
         {
             _panel.SetActive(false);
-            _respawnButton.onClick.AddListener(OnRespawnClicked);
+            if (_respawnButton != null)
+                _respawnButton.onClick.AddListener(OnImmediateRespawnClicked);
+            if (_townRespawnButton != null)
+                _townRespawnButton.onClick.AddListener(OnTownRespawnClicked);
 
             if (PlayerHealthState.Local != null)
                 Subscribe(PlayerHealthState.Local);
@@ -24,7 +28,10 @@ namespace MySecondWorld.UI
             PlayerHealthState.LocalReady -= Subscribe;
             if (PlayerHealthState.Local != null)
                 Unsubscribe(PlayerHealthState.Local);
-            _respawnButton.onClick.RemoveListener(OnRespawnClicked);
+            if (_respawnButton != null)
+                _respawnButton.onClick.RemoveListener(OnImmediateRespawnClicked);
+            if (_townRespawnButton != null)
+                _townRespawnButton.onClick.RemoveListener(OnTownRespawnClicked);
         }
 
         private void Subscribe(PlayerHealthState state)
@@ -44,13 +51,25 @@ namespace MySecondWorld.UI
         private void HidePanel()
         {
             _panel.SetActive(false);
-            _respawnButton.interactable = true;
+            SetButtonsInteractable(true);
         }
 
-        private void OnRespawnClicked()
+        private void OnImmediateRespawnClicked()
         {
-            _respawnButton.interactable = false; // 중복클릭 방지
-            PlayerHealthState.Local?.CmdRequestRespawn();
+            SetButtonsInteractable(false);
+            PlayerHealthState.Local?.CmdRequestRespawn(toTown: false); // 제자리 부활
+        }
+
+        private void OnTownRespawnClicked()
+        {
+            SetButtonsInteractable(false);
+            PlayerHealthState.Local?.CmdRequestRespawn(toTown: true);  // 마을 부활
+        }
+
+        private void SetButtonsInteractable(bool interactable)
+        {
+            if (_respawnButton != null) _respawnButton.interactable = interactable;
+            if (_townRespawnButton != null) _townRespawnButton.interactable = interactable;
         }
     }
 }

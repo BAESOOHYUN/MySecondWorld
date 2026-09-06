@@ -20,6 +20,8 @@ namespace MySecondWorld.Combat.Player
         [Header("사망 처리")]
         [SerializeField] private MovementController _movement;
         [SerializeField] private NetworkAnimator _networkAnimator;
+        [SerializeField] private Animator _animator;
+        [SerializeField] private Collider _playerCollider;
 
         private static readonly int DeathTrigger = Animator.StringToHash(nameof(DeathTrigger));
         private const float DeathAnimationTimeoutSeconds = 3f; // Animation Event 배선 누락 시 안전장치
@@ -60,6 +62,13 @@ namespace MySecondWorld.Combat.Player
             _zoneService = zoneService;
         }
 
+        private void Awake()
+        {
+            if (_animator == null) _animator = GetComponentInChildren<Animator>();
+            if (_playerCollider == null) _playerCollider = GetComponent<Collider>();
+            if (_movement == null) _movement = GetComponent<MovementController>();
+        }
+
         public override void OnStartServer()
         {
             _health = GetComponent<Health>();
@@ -95,10 +104,13 @@ namespace MySecondWorld.Combat.Player
 
         private void OnHPValueChanged(float oldValue, float newValue) => HPChanged?.Invoke();
 
+        #region 사망 시퀀스
+
         [Server]
         private void HandleDied()
         {
             if (_movement != null) _movement.MovementLocked = true;
+            if (_playerCollider != null) _playerCollider.enabled = false;
             PlayDeathSequence().Forget();
         }
 
@@ -112,13 +124,13 @@ namespace MySecondWorld.Combat.Player
             {
                 _deathAnimationTcs = new UniTaskCompletionSource();
 
-                if (_networkAnimator != null)
-                    _networkAnimator.SetTrigger(DeathTrigger);
-
+                // 1. 오너 클라이언트에게 사망 애니메이션 트리거 위임
+                TargetPlayDeathAnimation(connectionToClient);
+                // 2. 애니메이션 종료 또는 3초 타임아웃 대기
                 await UniTask.WhenAny(
                     _deathAnimationTcs.Task,
                     UniTask.Delay(TimeSpan.FromSeconds(DeathAnimationTimeoutSeconds), cancellationToken: ct));
-
+                // 3. 사망 화면 UI 팝업 요청
                 TargetShowDeathScreen();
             }
             catch (OperationCanceledException)
@@ -127,24 +139,55 @@ namespace MySecondWorld.Combat.Player
             }
         }
 
+        // 오너 클라이언트가 NetworkAnimator를 구동하여 Mirror가 전체에 릴레이하도록 함
+        [TargetRpc]
+        private void TargetPlayDeathAnimation(NetworkConnection target)
+        {
+            if (_movement != null) _movement.MovementLocked = true; //죽었을 때 내 이동 조작 락
+            if (_networkAnimator != null)
+                _networkAnimator.SetTrigger(DeathTrigger);
+        }
+
         [TargetRpc]
         private void TargetShowDeathScreen() => OnLocalDied?.Invoke();
 
+        #endregion
+
+        #region 부활 시퀀스 (Respawn Sequence)
+
         [Command]
-        public void CmdRequestRespawn()
+        public void CmdRequestRespawn(bool toTown)
         {
             if (!_health.IsDead) return; // 살아있는데 리스폰 요청은 무시(조작 방지)
 
             _health.ReviveFull();
             _currentHP = _health.CurrentHP;
-
-            _zoneService?.RespawnPlayer(connectionToClient);
-
+            // 1. 스폰 구역으로 텔레포트 (마을 부활 여부 전달)
+            _zoneService?.RespawnPlayer(connectionToClient, toTown);
+            // 2. 물리 엔진에 텔레포트 위치 즉시 반영 (1프레임 간극 방지)
+            Physics.SyncTransforms();
+            // 3. 콜라이더 및 이동 락 해제
+            if (_playerCollider != null) _playerCollider.enabled = true;
             if (_movement != null) _movement.MovementLocked = false;
             TargetHideDeathScreen();
+            RpcOnRespawn(); // (전체 클라이언트에 부활 애니메이션 브로드캐스트)
+        }
+
+        // 부활 시 눕는 모션에서 탈출하여 기본 이동 블렌드트리로 강제 복귀
+        [ClientRpc]
+        private void RpcOnRespawn()
+        {
+            if (_movement != null) _movement.MovementLocked = false; // 부활 시 이동 조작 락 해제
+            if (_animator != null)
+            {
+                _animator.ResetTrigger(DeathTrigger);
+                _animator.Play("MoveBlendTree", 0, 0f);
+            }
         }
 
         [TargetRpc]
         private void TargetHideDeathScreen() => OnLocalRespawned?.Invoke();
+
+        #endregion
     }
 }

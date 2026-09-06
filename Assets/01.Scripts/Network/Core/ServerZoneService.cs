@@ -522,35 +522,36 @@ namespace MySecondWorld.Network
         }
 
         // 사망 리스폰 등, 낙하 타이머 게이트 없이 즉시 안전 위치로 보내야 할 때 사용
-        public void RespawnPlayer(NetworkConnectionToClient conn)
+        // toTown이 true면 마을 스폰 지점으로
+        public void RespawnPlayer(NetworkConnectionToClient conn, bool toTown = false)
         {
             if (!_sessionService.Sessions.TryGetValue(conn.connectionId, out var playerSession))
             {
                 Debug.LogWarning($"[ServerZoneService] RespawnPlayer — conn={conn.connectionId} 세션을 찾을 수 없음");
                 return;
             }
-            TeleportToSafePosition(new KeyValuePair<int, PlayerSession>(conn.connectionId, playerSession), conn);
+            TeleportToSafePosition(new KeyValuePair<int, PlayerSession>(conn.connectionId, playerSession), conn, toTown);
         }
 
         // 안전 위치 결정 + 씬 이동 + 텔레포트 + 컴패니언 동반. RecoverFromFall/RespawnPlayer 공용.
-        private void TeleportToSafePosition(KeyValuePair<int, PlayerSession> session, NetworkConnectionToClient conn)
+        private void TeleportToSafePosition(KeyValuePair<int, PlayerSession> session, NetworkConnectionToClient conn, bool toTown = false)
         {
             // 안전 위치 결정
             Vector3 safePos;
             string safeScene;
 
-            if (session.Value.lastSafePosition != Vector3.zero
+            // toTown이 false이고 마지막 안전 위치가 있으면 제자리 부활
+            if (!toTown && session.Value.lastSafePosition != Vector3.zero
                 && !string.IsNullOrEmpty(session.Value.lastSafeScene))
             {
-                // 위치와 씬은 항상 같이 기록되므로 같이 꺼내 쓴다.
-                // currentScene은 낙하 중에 바뀌어 있을 수 있으므로 lastSafeScene를 사용.
                 safePos = session.Value.lastSafePosition;
                 safeScene = session.Value.lastSafeScene;
             }
-            else // 한 번도 지면에 서 본 적이 없음 → 스폰 지점으로
+            else // 마을 부활(toTown=true)이거나 지면에 서 본 적이 없을 때 -> MainScene의 NetworkStartPosition 사용
             {
                 safeScene = _manager.defaultSubScene;
 
+                // MainScene에 배치된 NetworkStartPosition을 그대로 가져옴
                 // GetStartPosition()은 조회처럼 보이지만 RoundRobin 인덱스를 전진시킨다(NetworkManager.cs:1123).
                 // 구조는 스폰이 아니므로 신규 플레이어의 스폰 순번을 건드리면 안 된다 → 리스트를 직접 읽는다.
                 // (파괴된 Transform이 남아 있을 수 있어 null이 아닌 것 중 첫 번째를 고른다)
@@ -560,7 +561,7 @@ namespace MySecondWorld.Network
                 {
                     safePos = startPos.position;
                 }
-                else // 살아있는 NetworkStartPosition이 하나도 없는 비정상 상황
+                else // 씬에 NetworkStartPosition이 하나도 없을 때의 비상용 대체
                 {
                     // 여기서 원점(Vector3.zero)으로 보내면 필드 지면(Y≈15)보다 아래라
                     // 구조가 곧바로 재낙하가 된다 — 고치려던 버그를 구조 로직이 다시 만드는 셈.
@@ -568,7 +569,7 @@ namespace MySecondWorld.Network
                     var fieldZone = _manager.zones.FirstOrDefault(z => z.sceneName == safeScene);
                     safePos = fieldZone != null ? fieldZone.bounds.center : Vector3.zero;
                     Debug.LogError(
-                        $"[S-Loop] NetworkStartPosition이 하나도 없다 — 필드 bounds 중심({safePos})으로 대체 구조. 씬 배치 확인 필요.");
+                        $"[ServerZoneService] NetworkStartPosition이 없습니다 — 필드 bounds 중심({safePos})으로 대체");
                 }
             }
 
