@@ -191,6 +191,7 @@ namespace MySecondWorld.Network.Player
             bool wasEnabled = _characterController.enabled;
             _characterController.enabled = false;
             transform.position = position;
+            Physics.SyncTransforms(); // PhysX 좌표 즉시 갱신
             _characterController.enabled = wasEnabled;
         }
     }

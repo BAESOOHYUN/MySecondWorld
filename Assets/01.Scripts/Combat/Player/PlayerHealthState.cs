@@ -5,7 +5,6 @@ using MySecondWorld.Foundation;
 using MySecondWorld.Move;
 using MySecondWorld.Network;
 using Cysharp.Threading.Tasks;
-using VContainer;
 
 namespace MySecondWorld.Combat.Player
 {
@@ -56,12 +55,6 @@ namespace MySecondWorld.Combat.Player
             LocalReady = null;
         }
 
-        [Inject]
-        public void Construct(ServerZoneService zoneService)
-        {
-            _zoneService = zoneService;
-        }
-
         private void Awake()
         {
             if (_animator == null) _animator = GetComponentInChildren<Animator>();
@@ -74,6 +67,13 @@ namespace MySecondWorld.Combat.Player
             _health = GetComponent<Health>();
             _maxHP = _health.MaxHP;
             _currentHP = _health.CurrentHP;
+
+            // [Inject] 대신 여기서 꺼내는 이유 —
+            // ServerZoneService는 서버에만 있는데(GameNetworkManager.OnStartServer에서 new),
+            // PlayerScope는 서버·클라이언트 양쪽에서 만들어진다.
+            // 클라에서 없는 걸 요구하면 스코프가 통째로 깨진다.
+            // OnStartServer는 서버 전용 훅이라 이 줄에선 반드시 존재한다.
+            _zoneService = (NetworkManager.singleton as GameNetworkManager)?.ZoneService;
 
             _health.OnDamaged += HandleDamaged;
             _health.OnDied += HandleDied;
@@ -163,6 +163,8 @@ namespace MySecondWorld.Combat.Player
             _health.ReviveFull();
             _currentHP = _health.CurrentHP;
             // 1. 스폰 구역으로 텔레포트 (마을 부활 여부 전달)
+            if (_zoneService == null)
+                _zoneService = (NetworkManager.singleton as GameNetworkManager)?.ZoneService;
             _zoneService?.RespawnPlayer(connectionToClient, toTown);
             // 2. 물리 엔진에 텔레포트 위치 즉시 반영 (1프레임 간극 방지)
             Physics.SyncTransforms();
