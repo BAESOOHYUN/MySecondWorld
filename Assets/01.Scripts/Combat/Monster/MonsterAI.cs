@@ -168,17 +168,19 @@ namespace MySecondWorld.Combat.Monster
         private void OnEnable()
         {
             _health.OnDied += HandleDied;
-            _health.OnDamaged += HandleDamaged;
+            _health.OnDamagedWithAttacker += HandleDamagedWithAttacker;
         }
 
         private void OnDisable()
         {
             _health.OnDied -= HandleDied;
-            _health.OnDamaged -= HandleDamaged;
+            _health.OnDamagedWithAttacker -= HandleDamagedWithAttacker;
         }
 
         private void Update()
         {
+            if (_health != null && _health.IsDead) return;
+
             OnTick();
             UpdateMoveAnimation();
 
@@ -187,6 +189,7 @@ namespace MySecondWorld.Combat.Monster
             switch (_stateMachine.State)
             {
                 case MonsterState.Idle:
+                    UpdateIdle();
                     OnIdleUpdate();
                     break;
                 case MonsterState.Chase:
@@ -346,6 +349,12 @@ namespace MySecondWorld.Combat.Monster
                 _animator.Update(0);
                 _animator.SetBool(IsMoving, false); // IsMoving 초기화
                 _animator.ResetTrigger(HitTrigger);  // 혹시 남아있을 수 있는 피격 트리거 리셋
+                _animator.ResetTrigger(GetDeathTriggerHash());
+            }
+            if (_networkAnimator != null)
+            {
+                _networkAnimator.ResetTrigger(HitTrigger);
+                _networkAnimator.ResetTrigger(GetDeathTriggerHash());
             }
 
             // 클라이언트는 이 재사용된 GameObject를 모름
@@ -419,6 +428,43 @@ namespace MySecondWorld.Combat.Monster
 
         #region State Machine 업데이트
 
+        private void UpdateIdle()
+        {
+            // 귀환 중 스폰 지점에 도착하면 정지
+            if (_agent != null && _agent.isOnNavMesh && !_agent.isStopped)
+            {
+                if (Vector3.Distance(transform.position, _spawnPosition) <= 0.5f)
+                {
+                    _agent.isStopped = true;
+                    SetMovingAnimation(false);
+                }
+            }
+
+            // 만약 Idle 상태인데 트리거 안에 플레이어/컴패니언이 이미 머물러 있다면 (OnTriggerEnter를 놓친 경우) 재탐지
+            if (_targetRefCounts.Count == 0 && _detectionTrigger != null)
+            {
+                ReacquireTargetsInTrigger();
+            }
+        }
+
+        private void ReacquireTargetsInTrigger()
+        {
+            var hits = Physics.OverlapSphere(transform.position, _detectionTrigger.radius);
+            foreach (var hit in hits)
+            {
+                var damageable = hit.GetComponentInParent<IDamageable>();
+                if (damageable != null && damageable.Faction == CombatFaction.Player)
+                {
+                    var root = hit.transform.root;
+                    if (IsValidTarget(root) && IsWithinLeash(root))
+                    {
+                        OnTriggerEnter(hit);
+                        break;
+                    }
+                }
+            }
+        }
+
         private void UpdateChase()
         {
             // 추적 중에도 대상이 죽었으면 즉시 추적 중단
@@ -428,11 +474,19 @@ namespace MySecondWorld.Combat.Monster
                 return;
             }
 
-            // 스폰 지점에서 리쉬 범위 밖으로 나가면 포기하고 원위치 복귀
-            if ((_target.position - _spawnPosition).sqrMagnitude > _stats.LeashRange * _stats.LeashRange)
+            // 스폰 지점에서 리쉬 범위 밖으로 나가면 해당 타겟 포기하고 다른 후보로 전환
+            if (!IsWithinLeash(_target))
             {
-                GiveUpChase();
+                HandleTargetLostLeash(_target);
                 return;
+            }
+
+            // 후보가 여럿일 때 더 가까운 대상(예: 플레이어 쫓던 중 다가온 컴패니언)이 있으면 자연스럽게 타겟 전환
+            if (_targetRefCounts.Count > 1)
+            {
+                var nearest = ChooseNearestTarget();
+                if (nearest != null)
+                    _target = nearest;
             }
 
             _agent.SetDestination(_target.position);
@@ -450,11 +504,19 @@ namespace MySecondWorld.Combat.Monster
                 return;
             }
 
-            // 공격 중이어도 타겟이 리쉬 밖이면(추격 도중 밀려났다면) 포기
-            if ((_target.position - _spawnPosition).sqrMagnitude > _stats.LeashRange * _stats.LeashRange)
+            // 공격 중이어도 타겟이 리쉬 밖이면(추격 도중 밀려났다면) 포기하고 다른 후보로 전환
+            if (!IsWithinLeash(_target))
             {
-                GiveUpChase();
+                HandleTargetLostLeash(_target);
                 return;
+            }
+
+            // 공격 범위 내에서도 후보가 여럿일 때 더 가까운 대상(예: 플레이어 치던 중 다가온 컴패니언 등)이 있으면 타겟 전환
+            if (_targetRefCounts.Count > 1)
+            {
+                var nearest = ChooseNearestTarget();
+                if (nearest != null && nearest != _target)
+                    _target = nearest;
             }
 
             float distance = Vector3.Distance(transform.position, _target.position);
@@ -521,6 +583,7 @@ namespace MySecondWorld.Combat.Monster
         }
         private void RotateTowardsTarget()
         {
+            if (_target == null) return;
             Vector3 lookDirection = _target.position - transform.position;
             lookDirection.y = 0f; // 위아래로 기울지 않게 수평 방향만
             if (lookDirection.sqrMagnitude > 0.001f)
@@ -532,6 +595,12 @@ namespace MySecondWorld.Combat.Monster
 
         #region 표적추적
 
+        private bool IsWithinLeash(Transform target)
+        {
+            if (target == null) return false;
+            return (target.position - _spawnPosition).sqrMagnitude <= _stats.LeashRange * _stats.LeashRange;
+        }
+
         private Transform ChooseNearestTarget()
         {
             Transform nearest = null;
@@ -540,8 +609,8 @@ namespace MySecondWorld.Combat.Monster
 
             foreach (var candidate in _targetRefCounts.Keys)
             {
-                // 단일 통로: 죽어있는 대상은 후보에서 즉시 영구 퇴장
-                if (!IsValidTarget(candidate))
+                // 단일 통로: 죽어있거나 리쉬를 벗어난 대상은 후보에서 즉시 영구 퇴장
+                if (!IsValidTarget(candidate) || !IsWithinLeash(candidate))
                 {
                     // 무효 타겟이 하나도 없는 게 보통이라, 진짜 발견됐을 때만 리스트를 만들도록
                     // 지연 생성(lazy initialization)함 (불필요한 GC 할당 방지)
@@ -562,6 +631,27 @@ namespace MySecondWorld.Combat.Monster
                     HandleTargetDied(invalid); // foreach가 완전히 끝난 뒤에만 딕셔너리를 건드림
 
             return nearest;
+        }
+
+        // 대상이 리쉬 범위를 벗어났을 때: 해당 대상만 어그로에서 제외하고 다른 남은 후보(컴패니언 등)로 전환
+        private void HandleTargetLostLeash(Transform root)
+        {
+            if (root == null) return;
+
+            _targetRefCounts.Remove(root);
+            UnsubscribeDeath(root);
+
+            if (_target == root)
+                _target = ChooseNearestTarget();
+
+            if (_target == null || _targetRefCounts.Count == 0)
+            {
+                GiveUpChase();
+            }
+            else
+            {
+                _agent.SetDestination(_target.position);
+            }
         }
 
         // 표적이 물리적으로 트리거를 나가지 않아도(죽은 채로 그 자리에 있어도) 후보에서 완전히 제거한다
@@ -595,6 +685,50 @@ namespace MySecondWorld.Combat.Monster
 
         #region 피격
 
+        private void HandleDamagedWithAttacker(float currentHp, GameObject attacker)
+        {
+            HandleDamaged(currentHp);
+
+            if (_health.IsDead || _stateMachine.State == MonsterState.Dead)
+                return;
+
+            if (attacker == null) return;
+
+            var root = attacker.transform.root;
+            if (!IsValidTarget(root) || !IsWithinLeash(root)) return;
+
+            bool wasEmpty = _targetRefCounts.Count == 0;
+            if (!_targetRefCounts.ContainsKey(root))
+            {
+                _targetRefCounts[root] = 1;
+                var targetHealth = root.GetComponentInChildren<Health>();
+                if (targetHealth != null)
+                {
+                    void OnTargetRemoved() => HandleTargetDied(root);
+                    targetHealth.OnDied += OnTargetRemoved;
+                    targetHealth.OnBecameUntargetable += OnTargetRemoved;
+                    _targetDeathUnsubscribers[root] = () =>
+                    {
+                        targetHealth.OnDied -= OnTargetRemoved;
+                        targetHealth.OnBecameUntargetable -= OnTargetRemoved;
+                    };
+                }
+            }
+
+            if (_target == null)
+                _target = root;
+
+            // 만약 대기(Idle) 중이었거나 기존 타겟이 없었다면 즉시 공격자를 바라보고 추격(Chase) 개시
+            if (wasEmpty || _stateMachine.State == MonsterState.Idle)
+            {
+                _target = root;
+                FaceTarget();
+                SafeFire(MonsterTrigger.PlayerDetected);
+                if (wasEmpty)
+                    OnPlayerFirstDetected();
+            }
+        }
+
         private void HandleDamaged(float currentHp)
         {
             // 1. 이미 죽었거나 사망 상태에 진입 중이면 피격 모션을 띄우지 않음 (사망 모션 우선)
@@ -616,28 +750,31 @@ namespace MySecondWorld.Combat.Monster
             else if (_animator != null)
                 _animator.SetTrigger(HitTrigger);
 
-            // [피격 경직] 0.5초간 몬스터 이동 및 행동 일시 정지
+            // [피격 경직] 0.75초간 몬스터 이동 및 행동 일시 정지
             ApplyHitStun().Forget();
         }
 
         /// <summary>
         /// IStunnable 구현 — 외부 CC기 및 피격 경직 공통 진입점
         /// </summary>
-        public void ApplyStun(float duration) => ApplyHitStun(duration).Forget();
+        public void ApplyStun(float duration = 0.35f) => ApplyHitStun(duration).Forget();
 
-        private async UniTaskVoid ApplyHitStun(float duration = 0.5f)
+        private System.Threading.CancellationTokenSource _hitStunCts;
+
+        private async UniTaskVoid ApplyHitStun(float duration = 0.35f)
         {
+            _hitStunCts?.Cancel();
+            _hitStunCts?.Dispose();
+            _hitStunCts = System.Threading.CancellationTokenSource.CreateLinkedTokenSource(this.GetCancellationTokenOnDestroy());
+            var ct = _hitStunCts.Token;
+
             _actionLocked = true;
             if (_agent != null && _agent.isOnNavMesh && _agent.enabled)
                 _agent.isStopped = true;
             SetMovingAnimation(false); // 걷기 모션 끄기 (발미끄러짐 방지)
             try
             {
-                await UniTask.Delay(TimeSpan.FromSeconds(duration), cancellationToken: this.GetCancellationTokenOnDestroy());
-            }
-            catch (OperationCanceledException) { }
-            finally
-            {
+                await UniTask.Delay(TimeSpan.FromSeconds(duration), cancellationToken: ct);
                 _actionLocked = false;
                 // 살아서 추격 중(Chase)이었고 이동 잠금 중이 아니면 네비메시 이동 재개
                 if (_agent != null && _agent.isOnNavMesh && _agent.enabled && !_health.IsDead && !_movementLocked && _stateMachine.State == MonsterState.Chase)
@@ -645,6 +782,7 @@ namespace MySecondWorld.Combat.Monster
                     _agent.isStopped = false;
                 }
             }
+            catch (OperationCanceledException) { }
         }
 
         #endregion
@@ -653,22 +791,41 @@ namespace MySecondWorld.Combat.Monster
 
         // Death 클립 마지막 프레임 근처에 Animation Event로 연결
         public void OnDeathAnimationEnd() => _deathAnimationTcs?.TrySetResult();
-        private void HandleDied() => SafeFire(MonsterTrigger.Died);
+        
+        private void HandleDied()
+        {
+            if (_stateMachine.State == MonsterState.Dead) return;
+
+            if (_stateMachine.CanFire(MonsterTrigger.Died))
+            {
+                _stateMachine.Fire(MonsterTrigger.Died);
+            }
+            else
+            {
+                Debug.LogWarning($"[MonsterAI] {_stateMachine.State} 상태에서 Died 전이 불가 — 강제 사망 처리", this);
+                HandleEnterDead();
+            }
+        }
 
         private void HandleEnterDead()
         {
-            _agent.isStopped = true;
+            if (_agent != null && _agent.isOnNavMesh && _agent.enabled)
+                _agent.isStopped = true;
             PlayDeathSequence().Forget();
         }
 
         private async UniTaskVoid PlayDeathSequence()
         {
+            _hitStunCts?.Cancel();
+            _actionLocked = true;
             _deathAnimationTcs = new UniTaskCompletionSource();
             var ct = this.GetCancellationTokenOnDestroy();
             try
             {
                 if (_networkAnimator != null)
                     _networkAnimator.SetTrigger(GetDeathTriggerHash());
+                else if (_animator != null)
+                    _animator.SetTrigger(GetDeathTriggerHash());
 
                 // Animation Event가 정상 호출되면 즉시, 배선이 빠졌으면 DeathDuration 후 타임아웃으로 진행
                 await UniTask.WhenAny(
@@ -680,12 +837,22 @@ namespace MySecondWorld.Combat.Monster
                     NetworkServer.UnSpawn(gameObject);
 
                 // 풀 반납 — 내부적으로 SetActive(false)까지 처리됨
-                GetComponent<PooledObject>().ReturnToPool();
+                if (TryGetComponent(out PooledObject pooled))
+                    pooled.ReturnToPool();
+                else
+                    gameObject.SetActive(false);
+
                 OnReturnedToPool?.Invoke();
             }
             catch (OperationCanceledException)
             {
                 // 대기 중 오브젝트가 파괴됨 — 정상 흐름, 별도 처리 불필요
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[MonsterAI] PlayDeathSequence 오류: {ex}", this);
+                if (NetworkServer.active) NetworkServer.UnSpawn(gameObject);
+                gameObject.SetActive(false);
             }
         }
 
@@ -735,9 +902,9 @@ namespace MySecondWorld.Combat.Monster
 
                 // 1) 트리거로 인한 전이가 실제로 일어나 상태가 기준선에서 벗어날 때까지 대기
                 int enteredStateHash = baselineHash;
-                while (!ct.IsCancellationRequested)
+                while (!token.IsCancellationRequested)
                 {
-                    await UniTask.Yield(ct);
+                    await UniTask.Yield(token);
                     // Base Layer(레이어 인덱스 0)에서 실제로 재생 중인 상태를 읽어서 그 이름의 해시값을 저장
                     enteredStateHash = _animator.GetCurrentAnimatorStateInfo(0).shortNameHash;
                     if (enteredStateHash != baselineHash)
@@ -745,7 +912,7 @@ namespace MySecondWorld.Combat.Monster
                 }
 
                 // 2) 그 상태가 끝나거나(정상 종료) 다른 상태로 또 바뀔 때까지(인터럽트) 대기
-                while (!ct.IsCancellationRequested) // ct 대신 token 사용
+                while (!token.IsCancellationRequested)
                 {
                     // 애니메이터의 0번 레이어(Base Layer)에서 지금 실시간으로 재생 중인 애니메이션의 상태 정보
                     var stateInfo = _animator.GetCurrentAnimatorStateInfo(0);
@@ -759,7 +926,7 @@ namespace MySecondWorld.Combat.Monster
                     if (interrupted || finished)
                         break;
 
-                    await UniTask.Yield(ct);
+                    await UniTask.Yield(token);
                 }
             }
             catch (OperationCanceledException)

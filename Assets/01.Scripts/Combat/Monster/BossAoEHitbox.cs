@@ -1,4 +1,5 @@
 using UnityEngine;
+using MySecondWorld.Combat.Vfx;
 
 namespace MySecondWorld.Combat.Monster
 {
@@ -41,8 +42,16 @@ namespace MySecondWorld.Combat.Monster
         {
             if (_stats == null || _stats.AoESkill == null) return;
 
+            // 보스 전방 지면 충격 지점(전방 1.5m)을 중심으로 광역 판정 실행
+            Vector3 center = transform.position + transform.forward * 1.5f + Vector3.up * 0.5f;
+
+            // 슬램 애니메이션 자체가 NetworkAnimator로 전원 동기화되므로 이 Animation Event는
+            // 모든 피어에서 각자 로컬로 호출된다 — 별도 RPC 없이 Instantiate해도 전원에게 보인다.
+            if (_stats.AoeSlamVfxPrefab != null)
+                CombatVfxSpawner.Spawn(_stats.AoeSlamVfxPrefab, center, Quaternion.identity);
+
             SphereAttackResolver.ResolveAndExecute(
-                this.gameObject, _attackPoint.position, _stats.AoERadius, _targetLayerMask,
+                this.gameObject, center, _stats.AoERadius, _targetLayerMask,
                 _stats.Attack, _stats.AoESkill);
         }
     }

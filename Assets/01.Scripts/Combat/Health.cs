@@ -14,6 +14,7 @@ namespace MySecondWorld.Combat
         public CombatFaction Faction => _faction;
         public event Action OnDied;
         public event Action<float> OnDamaged; // 데미지로 CurrentHP가 바뀔 때마다 새 CurrentHP 값을 실어 발행
+        public event Action<float, GameObject> OnDamagedWithAttacker; // 공격자 정보가 포함된 피격 이벤트
 
         // 죽지 않았어도 "지금은 공격 대상이 될 수 없음" 상태(소환해제 등)를 알리는 이벤트.
         // MonsterAI가 OnDied와 동일하게 처리해 표적에서 즉시 뺀다.
@@ -50,12 +51,15 @@ namespace MySecondWorld.Combat
                 OnBecameUntargetable?.Invoke();
         }
 
-        public void TakeDamage(float damage)
+        public void TakeDamage(float damage) => TakeDamage(damage, null);
+
+        public void TakeDamage(float damage, GameObject attacker)
         {
             // 죽었거나, 소환 해제(IsTargetable == false) 상태면 데미지 완벽 무시
             if (IsDead || !_isTargetable || damage <= 0f) return;
             CurrentHP = Mathf.Max(0f, CurrentHP - damage);
             OnDamaged?.Invoke(CurrentHP);
+            OnDamagedWithAttacker?.Invoke(CurrentHP, attacker);
             if (CurrentHP <= 0)
                 OnDied?.Invoke();
         }

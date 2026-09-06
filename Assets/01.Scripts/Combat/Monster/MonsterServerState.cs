@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Mirror;
 using UnityEngine;
 using MySecondWorld.Foundation;
+using MySecondWorld.Combat.Vfx;
 
 namespace MySecondWorld.Combat.Monster
 {
@@ -14,6 +15,9 @@ namespace MySecondWorld.Combat.Monster
     [DisallowMultipleComponent]
     public class MonsterServerState : NetworkBehaviour, IHealthView
     {
+        [Header("VFX")]
+        [SerializeField] private CombatVfxDefaultsSO _vfxDefaults;
+
         // 비율이 아니라 절대값 두 개를 나른다 — "78/100" 같은 숫자 표시가 필요해서다.
         // MaxHP는 MonsterStatsSO(서버 전용)에서 오므로 클라가 알 방법이 이것뿐이다.
         [SyncVar(hook = nameof(OnHPValueChanged))]
@@ -39,7 +43,10 @@ namespace MySecondWorld.Combat.Monster
 
         // 몸통 중심의 월드 좌표. 원거리 조준점으로 쓴다 — 피벗(발밑)에 고정 오프셋을 더하면
         // 몬스터 종류마다 어긋난다(슬라임은 머리 위로, 드래곤은 발목으로).
-        public Vector3 BodyCenterWorld => transform.TransformPoint(_bodyCenter);
+        public Vector3 BodyCenterWorld =>
+            _bodyCenter.sqrMagnitude > 0.001f
+                ? transform.TransformPoint(_bodyCenter)
+                : transform.position + Vector3.up * 1.0f;
 
         public float CurrentHP => _currentHP;
         public float MaxHP => _maxHP;
@@ -119,6 +126,14 @@ namespace MySecondWorld.Combat.Monster
                 _tapTarget.SetTappable(_isAlive);
             }
 
+            // 풀 재사용 시 직전 생애에서 맞았던 Hit/Death 트리거 잔여물로 인해 스폰 즉시 피격 모션이 도는 현상 방지
+            var anim = GetComponent<Animator>() ?? GetComponentInChildren<Animator>();
+            if (anim != null)
+            {
+                anim.Rebind();
+                anim.Update(0f);
+            }
+
             // 풀 재사용 시 같은 인스턴스가 다시 스폰되므로 중복 등록을 막는다.
             if (!_activeOnClient.Contains(this))
             {
@@ -134,10 +149,37 @@ namespace MySecondWorld.Combat.Monster
         }
 
         [Server]
-        private void HandleDamaged(float newCurrentHP) => _currentHP = newCurrentHP;
+        private void HandleDamaged(float newCurrentHP)
+        {
+            _currentHP = newCurrentHP;
+            RpcPlayHitVfx(BodyCenterWorld);
+        }
 
         [Server]
-        private void HandleDied() => _isAlive = false;
+        private void HandleDied()
+        {
+            _isAlive = false;
+            // 만약 서버 전용(단독 서버) 모드인 경우 SyncVar 훅이 호출되지 않으므로 보장
+            if (!isClient)
+            {
+                Died?.Invoke();
+            }
+            RpcPlayDeathVfx(BodyCenterWorld);
+        }
+
+        [ClientRpc]
+        private void RpcPlayHitVfx(Vector3 position)
+        {
+            if (_vfxDefaults == null || _vfxDefaults.HitVfxPrefab == null) return;
+            CombatVfxSpawner.Spawn(_vfxDefaults.HitVfxPrefab, position, Quaternion.identity);
+        }
+
+        [ClientRpc]
+        private void RpcPlayDeathVfx(Vector3 position)
+        {
+            if (_vfxDefaults == null || _vfxDefaults.DeathVfxPrefab == null) return;
+            CombatVfxSpawner.Spawn(_vfxDefaults.DeathVfxPrefab, position, Quaternion.identity);
+        }
 
         private void OnHPValueChanged(float oldValue, float newValue) => HPChanged?.Invoke();
 

@@ -16,7 +16,7 @@ namespace MySecondWorld.Combat
             // Epicenter가 없으면 그냥 고정 데미지
             if (ctx.Epicenter == null)
             {
-                target.TakeDamage(ctx.Power);
+                target.TakeDamage(ctx.Power, ctx.Caster);
                 return;
             }
 
@@ -24,7 +24,7 @@ namespace MySecondWorld.Combat
             var targetTransform = (target as MonoBehaviour)?.transform;
             if (targetTransform == null)
             {
-                target.TakeDamage(ctx.Power);
+                target.TakeDamage(ctx.Power, ctx.Caster);
                 return;
             }
 
@@ -32,7 +32,7 @@ namespace MySecondWorld.Combat
             float radius = ctx.SplashRadius;
             if (radius <= 0f)
             {
-                target.TakeDamage(ctx.Power);
+                target.TakeDamage(ctx.Power, ctx.Caster);
                 return;
             }
             // Epicenter와 대상 사이 거리 계산
@@ -42,7 +42,7 @@ namespace MySecondWorld.Combat
             // 데미지 = Power * (1 - t)
             // 중심에서 100% → 반경 끝에서 0%
             float damage = ctx.Power * (1f - t);
-            target.TakeDamage(damage);
+            target.TakeDamage(damage, ctx.Caster);
         }
     }
 }

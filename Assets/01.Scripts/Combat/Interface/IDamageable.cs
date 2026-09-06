@@ -4,6 +4,7 @@ namespace MySecondWorld.Combat
     public interface IDamageable
     {
         void TakeDamage(float amount);
+        void TakeDamage(float amount, UnityEngine.GameObject attacker);
         bool IsDead { get; }
         bool IsTargetable { get; } // 소환 해제 및 무적 상태 판별
         CombatFaction Faction { get; }

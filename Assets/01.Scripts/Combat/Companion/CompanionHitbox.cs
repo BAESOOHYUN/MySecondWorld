@@ -15,8 +15,12 @@ namespace MySecondWorld.Combat.Companion
         [SerializeField] private CompanionStatsSO _stats;
 
 
+        private CompanionServerState _serverState;
+
         private void Awake()
         {
+            _serverState = GetComponent<CompanionServerState>();
+
             if (_attackPoint == null || _stats == null)
             {
                 Debug.LogError($"CompanionHitbox 참조 누락(_attackPoint 또는 _stats) {gameObject.name}", this);
@@ -38,6 +42,8 @@ namespace MySecondWorld.Combat.Companion
         public void OnAttackHit()
         {
             if (!isServer) return; // NetworkAnimator 복제 재생으로 클라에서도 호출됨 — 서버 인스턴스만 판정
+            if (!enabled) return;
+            if (_serverState != null && (!_serverState.IsPresent || !_serverState.IsAlive)) return;
             if (_stats == null || _stats.AttackSkill == null) return;
 
             SphereAttackResolver.ResolveAndExecute(

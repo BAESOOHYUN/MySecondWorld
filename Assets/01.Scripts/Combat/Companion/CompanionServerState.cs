@@ -5,6 +5,7 @@ using UnityEngine.SceneManagement;
 using Mirror;
 using MySecondWorld.Foundation;
 using MySecondWorld.Network;
+using MySecondWorld.Combat.Vfx;
 
 namespace MySecondWorld.Combat.Companion
 {
@@ -12,6 +13,9 @@ namespace MySecondWorld.Combat.Companion
     [RequireComponent(typeof(NetworkMatch))]
     public class CompanionServerState : NetworkBehaviour, ICompanionServerState, IHealthView
     {
+        [Header("VFX")]
+        [SerializeField] private CombatVfxDefaultsSO _vfxDefaults;
+
         [SyncVar(hook = nameof(OnHPChanged))]
         private float _currentHP;
 
@@ -168,24 +172,47 @@ namespace MySecondWorld.Combat.Companion
         {
             _isPresent = false;
 
-            // 서버에서도 즉시 타겟 불가 처리 및 AI 전투 강제 종료
+            // 서버에서도 즉시 타겟 불가 처리 및 AI/히트박스/이동 완전 중단
             if (_health == null) _health = GetComponent<Health>();
             _health.SetTargetable(false);
             if (TryGetComponent(out CompanionAI ai))
+            {
                 ai.ResetToFollow(); // 전투 상태 즉시 해제
+                ai.enabled = false;
+            }
+            if (TryGetComponent(out CompanionHitbox hitbox))
+            {
+                hitbox.enabled = false;
+            }
+            if (TryGetComponent(out UnityEngine.AI.NavMeshAgent agent))
+            {
+                if (agent.isOnNavMesh) agent.isStopped = true;
+            }
+
+            OnPresenceChanged?.Invoke(false);
         }
 
         // 초상화 클릭 재소환 — 감췄던 걸 내 위치로 다시 보여준다. 죽어있었다면 죽은 채로 나온다.
         [Server]
         public void Summon(Vector3 position)
         {
-            // 1. Warp를 호출하면 내부의 CompanionAI가 플레이어 우측 후방 1.5m 안전 지면을 찾아 이동
-            Warp(position);
-
-            // 2. 화면 표시 및 타겟 가능 상태 복구
             _isPresent = true;
             if (_health == null) _health = GetComponent<Health>();
             _health.SetTargetable(true);
+
+            if (TryGetComponent(out CompanionAI ai))
+            {
+                ai.enabled = _isAlive;
+            }
+            if (TryGetComponent(out CompanionHitbox hitbox))
+            {
+                hitbox.enabled = _isAlive;
+            }
+
+            // 1. Warp를 호출하면 내부의 CompanionAI가 플레이어 우측 후방 1.5m 안전 지면을 찾아 이동
+            Warp(position);
+
+            OnPresenceChanged?.Invoke(_isAlive);
         }
 
         // 포탈/낙하 구조 시 서버 AI 이동 + 네트워크 텔레포트 + 클라이언트 스냅 동기화
@@ -228,6 +255,9 @@ namespace MySecondWorld.Combat.Companion
         [ClientRpc]
         private void RpcPlayHitAnimation()
         {
+            if (_vfxDefaults != null && _vfxDefaults.HitVfxPrefab != null)
+                CombatVfxSpawner.Spawn(_vfxDefaults.HitVfxPrefab, transform.position, Quaternion.identity);
+
             if (TryGetComponent(out Animator anim))
             {
                 // 컴패니언도 공격 중 슈퍼아머
@@ -235,6 +265,19 @@ namespace MySecondWorld.Combat.Companion
                 if (anim.GetCurrentAnimatorStateInfo(0).IsTag("Attack")) return;
                 anim.SetTrigger(Animator.StringToHash("HitTrigger"));
             }
+        }
+
+        // CompanionAI(NetworkBehaviour 아님)가 PlayDeathSequence()에서 대신 호출하는 진입점.
+        // MarkDead()와 절대 합치지 말 것 — MarkDead()는 재접속 시 "죽은 채 무음 재소환" 경로에서도
+        // 재사용되므로, 거기에 VFX를 넣으면 재접속마다 사망 이펙트가 오발동한다.
+        [Server]
+        public void PlayDeathVfx(Vector3 position) => RpcPlayDeathVfx(position);
+
+        [ClientRpc]
+        private void RpcPlayDeathVfx(Vector3 position)
+        {
+            if (_vfxDefaults == null || _vfxDefaults.DeathVfxPrefab == null) return;
+            CombatVfxSpawner.Spawn(_vfxDefaults.DeathVfxPrefab, position, Quaternion.identity);
         }
         #endregion
 

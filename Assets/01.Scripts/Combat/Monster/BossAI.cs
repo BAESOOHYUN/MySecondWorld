@@ -69,6 +69,10 @@ namespace MySecondWorld.Combat.Monster
         {
             base.PrepareForSpawn(position, rotation);
 
+            _phaseTransitionCts?.Cancel();
+            _phaseTransitionCts?.Dispose();
+            _phaseTransitionCts = null;
+
             _currentPhaseIndex = 0;
             _inPhaseTransition = false;
             _idleBreakTimer = 0f;
@@ -110,10 +114,14 @@ namespace MySecondWorld.Combat.Monster
 
         #region 페이즈 전환
 
+        private System.Threading.CancellationTokenSource _phaseTransitionCts;
+
         protected override bool IsUpdatePaused => base.IsUpdatePaused || _inPhaseTransition;
 
         protected override void OnTick()
         {
+            if (_health != null && _health.IsDead) return;
+
             UpdateLocomotionAnimation();
             if (!_inPhaseTransition)
                 CheckPhaseTransition();
@@ -121,6 +129,8 @@ namespace MySecondWorld.Combat.Monster
 
         private void CheckPhaseTransition()
         {
+            if (_health == null || _health.IsDead || _health.CurrentHP <= 0f) return;
+
             int newPhaseIndex = CalculatePhaseIndex(_health.CurrentHP / _health.MaxHP);
             if (newPhaseIndex == _currentPhaseIndex) return;
 
@@ -170,23 +180,32 @@ namespace MySecondWorld.Combat.Monster
         // 상태머신을 안 거치고 MonsterAI.IsUpdatePaused로만 얼려놨다가 풀기 때문에 트리거/퍼밋 추가가 필요 없음.
         private async UniTaskVoid PlayPhaseTransitionSequence()
         {
-            var ct = this.GetCancellationTokenOnDestroy();
+            _phaseTransitionCts?.Cancel();
+            _phaseTransitionCts?.Dispose();
+            _phaseTransitionCts = System.Threading.CancellationTokenSource.CreateLinkedTokenSource(this.GetCancellationTokenOnDestroy());
+            var ct = _phaseTransitionCts.Token;
+
             try
             {
                 if (_networkAnimator != null)
-                _networkAnimator.SetTrigger(_collapseHash);
-                await UniTask.Delay(TimeSpan.FromSeconds(_bossStats.CollapseDuration));
+                    _networkAnimator.SetTrigger(_collapseHash);
+                await UniTask.Delay(TimeSpan.FromSeconds(_bossStats.CollapseDuration), cancellationToken: ct);
+
+                if (_health != null && _health.IsDead)
+                {
+                    _inPhaseTransition = false;
+                    return;
+                }
 
                 if (_networkAnimator != null)
                     _networkAnimator.SetTrigger(_reassembleHash);
-                await UniTask.Delay(TimeSpan.FromSeconds(_bossStats.ReassembleDuration));
+                await UniTask.Delay(TimeSpan.FromSeconds(_bossStats.ReassembleDuration), cancellationToken: ct);
 
-                //SafeFire(MonsterTrigger.TransitionComplete);
                 _inPhaseTransition = false;
             }
             catch (OperationCanceledException)
             {
-                // 대기 중 오브젝트가 파괴됨 — 정상 흐름, 별도 처리 불필요
+                _inPhaseTransition = false;
             }
         }
 

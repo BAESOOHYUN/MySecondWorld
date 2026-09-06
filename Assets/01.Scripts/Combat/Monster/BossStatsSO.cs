@@ -12,6 +12,7 @@ namespace MySecondWorld.Combat.Monster
         [SerializeField] private float _aoeRadius = 3f;
         [SerializeField] private float _aoeCooldown = 4f;
         [SerializeField] private SkillDefinition _aoeSkill;
+        [SerializeField] private GameObject _aoeSlamVfxPrefab;
 
         [Header("페이즈 전환 연출 (Collapse -> Reassemble)")]
         [SerializeField] private float _collapseDuration = 1.5f;
@@ -45,6 +46,7 @@ namespace MySecondWorld.Combat.Monster
         public float AoERadius => _aoeRadius;
         public float AoECooldown => _aoeCooldown;
         public SkillDefinition AoESkill => _aoeSkill;
+        public GameObject AoeSlamVfxPrefab => _aoeSlamVfxPrefab;
         public float CollapseDuration => _collapseDuration;
         public float ReassembleDuration => _reassembleDuration;
         public float IdleBreakIntervalMin => _idleBreakIntervalMin;

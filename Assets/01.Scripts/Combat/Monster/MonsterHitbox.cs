@@ -34,6 +34,11 @@ namespace MySecondWorld.Combat.Monster
             _attackPoint = attackPoint;
             _stats = stats;
             _targetLayerMask = LayerMask.GetMask("Player", "NPC");   // 컴패니언이 NPC 레이어라 같이 훑는다
+            if (_stats != null)
+            {
+                // 공격 사거리 내에서 공격할 때 헛스윙이 나지 않도록 최소 AttackRange 이상 반경 보정
+                _attackRadius = Mathf.Max(_attackRadius, _stats.AttackRange + 0.3f);
+            }
         }
 
         // Attack 애니메이션 클립의 타격 프레임에 Animation Event로 연결
@@ -43,8 +48,12 @@ namespace MySecondWorld.Combat.Monster
             // — Awake에서 참조 누락으로 꺼진 경우 방어
             if (_stats == null || _stats.AttackSkill == null) return;
 
+            // 몬스터 전방 궤적 중심점과 반경을 넉넉하게 계산해 헛스윙 원천 차단 (딱 붙지 않아도 사거리 내 확실 타격)
+            Vector3 center = transform.position + transform.forward * (_stats.AttackRange * 0.5f) + Vector3.up * 1.0f;
+            float radius = Mathf.Max(_attackRadius, _stats.AttackRange + 0.8f);
+
             SphereAttackResolver.ResolveAndExecute(
-                this.gameObject, _attackPoint.position, _attackRadius, _targetLayerMask,
+                this.gameObject, center, radius, _targetLayerMask,
                 _stats.Attack, _stats.AttackSkill);
         }
     }

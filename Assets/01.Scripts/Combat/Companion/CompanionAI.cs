@@ -451,7 +451,7 @@ namespace MySecondWorld.Combat.Companion
             else if (_animator != null)
                 _animator.SetTrigger(HitTrigger);
 
-            //  [피격 경직] 0.5초간 이동 정지
+            //  [피격 경직] 0.75초간 이동 정지
             ApplyHitStun().Forget();
         }
 
@@ -460,17 +460,20 @@ namespace MySecondWorld.Combat.Companion
         /// </summary>
         public void ApplyStun(float duration) => ApplyHitStun(duration).Forget();
 
-        private async UniTaskVoid ApplyHitStun(float duration = 0.5f)
+        private System.Threading.CancellationTokenSource _hitStunCts;
+
+        private async UniTaskVoid ApplyHitStun(float duration = 0.75f)
         {
+            _hitStunCts?.Cancel();
+            _hitStunCts?.Dispose();
+            _hitStunCts = System.Threading.CancellationTokenSource.CreateLinkedTokenSource(this.GetCancellationTokenOnDestroy());
+            var ct = _hitStunCts.Token;
+
             _isHitStunned = true;
             SetAgentStopped(true);
             try
             {
-                await UniTask.Delay(TimeSpan.FromSeconds(duration), cancellationToken: this.GetCancellationTokenOnDestroy());
-            }
-            catch (OperationCanceledException) { }
-            finally
-            {
+                await UniTask.Delay(TimeSpan.FromSeconds(duration), cancellationToken: ct);
                 _isHitStunned = false;
                 // 전투나 추격 상태였고 이동 잠금 중이 아니면 이동 다시 재개
                 if (_agent != null && _agent.enabled && !_health.IsDead && !_followPaused && !_movementLocked && _stateMachine.State != CompanionState.Attack)
@@ -478,7 +481,7 @@ namespace MySecondWorld.Combat.Companion
                     SetAgentStopped(false);
                 }
             }
-
+            catch (OperationCanceledException) { }
         }
         #endregion
 
@@ -518,11 +521,15 @@ namespace MySecondWorld.Combat.Companion
 
                 await UniTask.WhenAny(
                    _deathAnimationTcs.Task,
-                   UniTask.Delay(TimeSpan.FromSeconds(_stats.DeathDuration), 
+                   UniTask.Delay(TimeSpan.FromSeconds(_stats.DeathDuration),
                    cancellationToken: this.GetCancellationTokenOnDestroy()));
 
+                // 사망 VFX는 여기(실전투 사망 경로)에서만 재생한다 — MarkDead()에 넣으면
+                // 재접속 시 "죽은 채 무음 재소환" 경로에서도 재사용돼 재접속마다 오발동한다.
+                var serverState = GetComponent<CompanionServerState>();
+                serverState?.PlayDeathVfx(transform.position);
                 // 죽음 애니메이션 '재생 완료 후' 비활성화되도록 호출. MarkDead() => _isAlive = false;
-                GetComponent<CompanionServerState>()?.MarkDead();
+                serverState?.MarkDead();
             }
             catch (OperationCanceledException)
             {
