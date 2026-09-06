@@ -24,7 +24,6 @@ namespace MySecondWorld.UI
         private CharacterAppearanceService _appearanceService;
         private readonly List<InventorySlotButton> _spawnedSlots = new();
 
-
         // Open() 시점에 구독한 인스턴스를 기억 — Close() 때 다른 인스턴스로 바뀌어도 정확히 해당 구독만 해제
         private Cleverous.VaultInventory.Inventory _subscribedInventory;
         private IWeaponEquipActionsProvider _subscribedWeaponActions;
@@ -115,7 +114,18 @@ namespace MySecondWorld.UI
                    isEquippable,
                    isConsumable,
                    isEquippedWeapon,
-                   onDiscard: () => _inventoryProvider.Actions?.DiscardItem(capturedIndex), // UI에서 "버리기" 버튼 클릭 시 그 슬롯의 아이템을 '전량 제거'.
+                   onDiscard: () =>
+                   {
+                       // 로컬 예측: 버리려는 아이템이 현재 장착 무기면 즉시 로컬 비주얼 해제
+                       if (_inventoryProvider.WeaponActions != null 
+                           && stack.Source is EquipmentItem weaponItem
+                           && _inventoryProvider.WeaponActions.CurrentMainHandDbKey == weaponItem.GetDbKey())
+                       {
+                           _inventoryProvider.WeaponActions.UnequipMainHand();
+                       }
+
+                       _inventoryProvider.Actions?.DiscardItem(capturedIndex); // UI에서 "버리기" 버튼 클릭 시 그 슬롯의 아이템을 '전량 제거'.
+                   },
                    onAction: ResolveEquipAction(stack.Source, capturedIndex));
 
                 _spawnedSlots.Add(slot);

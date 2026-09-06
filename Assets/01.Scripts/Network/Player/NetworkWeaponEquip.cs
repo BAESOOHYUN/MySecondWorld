@@ -102,10 +102,13 @@ namespace MySecondWorld.Network
 
         // 서버 전용 — 다른 컴포넌트(인벤토리 버리기/거래 등)가 이 무기의 장착 상태를 강제로 해제할 때 호출.
         // 넘긴 dbKey가 현재 장착 중인 것과 다르면 무시한다(엉뚱한 무기가 실수로 풀리는 것 방지).
+        [Server]
         public void ServerUnequipIfMatches(int dbKey)
         {
             if (_mainHandDbKey == dbKey)
-                CmdEquipMainHand(Unequipped);
+            {
+                _mainHandDbKey = Unequipped; // [Command] 우회 없이 서버 변수 직접 대입 -> [SyncVar] 훅 발동하여 모든 클라이언트로 전파
+            }
         }
 
         [Command]
