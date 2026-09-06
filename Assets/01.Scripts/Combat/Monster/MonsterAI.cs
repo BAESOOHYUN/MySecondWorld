@@ -425,8 +425,14 @@ namespace MySecondWorld.Combat.Monster
         private void UpdateMoveAnimation()
         {
             if (_animator == null || _agent == null) return;
-            // 에이전트가 정지 상태가 아니고, 실제로 이동 속도가 있을 때만 true!
-            bool isActuallyMoving = !_agent.isStopped && _agent.velocity.sqrMagnitude > 0.05f;
+
+            // 실제 속도(velocity)만 보면 안 된다.
+            // 여러 마리가 같은 표적으로 몰리면 NavMeshAgent끼리 회피하다 velocity가 0으로 눌리는데,
+            // 이때도 주변 에이전트에 밀려 위치는 조금씩 움직인다.
+            // 속도만 기준으로 삼으면 그 순간 Idle로 떨어져 "가만히 선 채 미끄러지는" 그림이 된다.
+            // desiredVelocity(가려는 의지)를 함께 보면 서로 막혔을 때 제자리걸음이 되어 훨씬 자연스럽다.
+            bool isActuallyMoving = !_agent.isStopped
+                && (_agent.velocity.sqrMagnitude > 0.05f || _agent.desiredVelocity.sqrMagnitude > 0.05f);
             _animator.SetBool(IsMoving, isActuallyMoving);
         }
 
