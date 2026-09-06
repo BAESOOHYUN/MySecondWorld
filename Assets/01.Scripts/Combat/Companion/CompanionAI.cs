@@ -16,7 +16,7 @@ namespace MySecondWorld.Combat.Companion
     [RequireComponent(typeof(SphereCollider))]
     [RequireComponent(typeof(Health))]
     [RequireComponent(typeof(Rigidbody))]   // 몬스터 감지 트리거가 (MonsterAI와) 같은 이유로 부실할 수 있어 선제 조치
-    public class CompanionAI : MonoBehaviour
+    public class CompanionAI : MonoBehaviour, IStunnable
     {
         #region State Machine 정의
 
@@ -74,6 +74,7 @@ namespace MySecondWorld.Combat.Companion
         public bool IsOwnerInCombat =>
             _owner != null && _owner.TryGetComponent(out PlayerAttackController attackController) && attackController.IsInCombat;
         public bool IsFollowPaused => _followPaused;
+        public bool IsStunned => _isHitStunned;
 
         #endregion
 
@@ -430,6 +431,11 @@ namespace MySecondWorld.Combat.Companion
             //  [피격 경직] 0.5초간 이동 정지
             ApplyHitStun().Forget();
         }
+
+        /// <summary>
+        /// IStunnable 구현 — 외부 CC기 및 피격 경직 공통 진입점
+        /// </summary>
+        public void ApplyStun(float duration) => ApplyHitStun(duration).Forget();
 
         private async UniTaskVoid ApplyHitStun(float duration = 0.5f)
         {

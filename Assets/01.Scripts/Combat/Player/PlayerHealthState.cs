@@ -14,7 +14,7 @@ namespace MySecondWorld.Combat.Player
     /// </summary>
     [RequireComponent(typeof(Health))]
     [DisallowMultipleComponent]
-    public class PlayerHealthState : NetworkBehaviour, IHealthView
+    public class PlayerHealthState : NetworkBehaviour, IHealthView, IStunnable
     {
         #region Constants & Statics
 
@@ -63,6 +63,7 @@ namespace MySecondWorld.Combat.Player
         private ServerZoneService _zoneService;
         private UniTaskCompletionSource _deathAnimationTcs;
         private float _lastHitTime = -999f;
+        private bool _isStunned;
 
         #endregion
 
@@ -71,6 +72,7 @@ namespace MySecondWorld.Combat.Player
         public Transform Anchor => transform;      // 화면 고정 바에서는 안 쓰이지만 계약이라 채운다
         public float CurrentHP => _currentHP;
         public float MaxHP => _maxHP;
+        public bool IsStunned => _isStunned;
         public event Action HPChanged;
         public event Action OnLocalDied;
         public event Action OnLocalRespawned;
@@ -159,9 +161,15 @@ namespace MySecondWorld.Combat.Player
             ApplyHitStun().Forget();
         }
 
+        /// <summary>
+        /// IStunnable 구현 — 외부 CC기 및 피격 경직 공통 진입점
+        /// </summary>
+        public void ApplyStun(float duration) => ApplyHitStun(duration).Forget();
+
         private async UniTaskVoid ApplyHitStun(float duration = 0.5f)
         {
             if (_movement == null) return;
+            _isStunned = true;
             _movement.MovementLocked = true;
             try
             {
@@ -170,6 +178,7 @@ namespace MySecondWorld.Combat.Player
             catch (OperationCanceledException) { }
             finally
             {
+                _isStunned = false;
                 // 사망 상태가 아닐 때만 이동 락 해제
                 if (_movement != null && !_health.IsDead)
                     _movement.MovementLocked = false;

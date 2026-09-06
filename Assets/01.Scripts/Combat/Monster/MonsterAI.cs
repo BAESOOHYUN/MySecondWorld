@@ -17,7 +17,7 @@ namespace MySecondWorld.Combat.Monster
     [RequireComponent(typeof(PooledObject))]
     [RequireComponent(typeof(Rigidbody))] // Rigidbody 없이는 CharacterController가 꺼진 원격 플레이어와
                                           // OnTriggerEnter 자체가 발생하지 않는다 (Unity 물리 규칙)
-    public class MonsterAI : MonoBehaviour
+    public class MonsterAI : MonoBehaviour, IStunnable
     {
         #region State Machine 정의
 
@@ -92,6 +92,8 @@ namespace MySecondWorld.Combat.Monster
         // 실제로 풀에 반납된 시점(=죽는 애니메이션까지 완전히 끝난 시점) 통지
         // — MonsterWaveSpawner가 웨이브 전환 타이밍으로 구독
         public event Action OnReturnedToPool;
+
+        public bool IsStunned => _actionLocked;
 
         #endregion
 
@@ -588,6 +590,11 @@ namespace MySecondWorld.Combat.Monster
             // [피격 경직] 0.5초간 몬스터 이동 및 행동 일시 정지
             ApplyHitStun().Forget();
         }
+
+        /// <summary>
+        /// IStunnable 구현 — 외부 CC기 및 피격 경직 공통 진입점
+        /// </summary>
+        public void ApplyStun(float duration) => ApplyHitStun(duration).Forget();
 
         private async UniTaskVoid ApplyHitStun(float duration = 0.5f)
         {
