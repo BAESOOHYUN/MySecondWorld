@@ -30,6 +30,7 @@ namespace MySecondWorld.UI
         [SerializeField] private TMP_Text _confirmText;
         [SerializeField] private Button _confirmYesButton;
         [SerializeField] private Button _confirmNoButton;
+        [SerializeField] private Button _confirmCloseButton;
 
         [Header("버튼")]
         [SerializeField] private Button _closeButton;
@@ -37,17 +38,20 @@ namespace MySecondWorld.UI
         [SerializeField] private Button _confirmBackdropButton; // 확인 팝업 허공 클릭 시 팝업 닫기
 
         private LocalPlayerInventoryProvider _inventoryProvider;
+        private InventoryUI _inventoryUI;
         private readonly List<ShopSlotButton> _spawnedSlots = new();
         private EquipmentItem _pendingPurchase; // 구매 대기중인 장비 아이템
+        private EquipmentItem _pendingSale;     // 판매 대기중인 장비 아이템
+        private readonly Subject<Unit> _onCloseSubject = new();
 
-        public Observable<Unit> OnClose => _backdropButton != null
-            ? Observable.Merge(_closeButton.OnClickAsObservable().AsUnitObservable(), _backdropButton.OnClickAsObservable().AsUnitObservable())
-            : _closeButton.OnClickAsObservable().AsUnitObservable();
+        public Observable<Unit> OnClose => _onCloseSubject;
+        public bool IsOpen => _canvas != null && _canvas.enabled;
 
         [Inject]
-        public void Construct(LocalPlayerInventoryProvider inventoryProvider)
+        public void Construct(LocalPlayerInventoryProvider inventoryProvider, InventoryUI inventoryUI = null)
         {
             _inventoryProvider = inventoryProvider;
+            _inventoryUI = inventoryUI;
         }
 
         private void Start()
@@ -58,11 +62,31 @@ namespace MySecondWorld.UI
 
             _confirmYesButton.onClick.AddListener(ConfirmPurchase);
             _confirmNoButton.onClick.AddListener(() => _confirmPanel.SetActive(false));
+            if (_confirmCloseButton != null)
+                _confirmCloseButton.onClick.AddListener(() => _confirmPanel.SetActive(false));
             if (_confirmBackdropButton != null)
                 _confirmBackdropButton.onClick.AddListener(() => _confirmPanel.SetActive(false));
 
+            if (_inventoryUI != null)
+                _inventoryUI.OnClosed += OnInventoryClosedExternally;
+
             _confirmPanel.SetActive(false);
             _canvas.enabled = false;
+        }
+
+        private void OnDestroy()
+        {
+            if (_inventoryUI != null)
+                _inventoryUI.OnClosed -= OnInventoryClosedExternally;
+            _onCloseSubject.Dispose();
+        }
+
+        private void OnInventoryClosedExternally()
+        {
+            if (_canvas != null && _canvas.enabled)
+            {
+                Close();
+            }
         }
 
         private void Update()
@@ -80,12 +104,33 @@ namespace MySecondWorld.UI
         {
             _canvas.enabled = true;
             Refresh(catalog);
+
+            if (_inventoryUI != null)
+            {
+                if (!_inventoryUI.IsOpen) _inventoryUI.Open();
+                _inventoryUI.SetBackdropActive(false); // 상점 열릴 때 단일 백드롭 체제로 전환
+                _inventoryUI.SetShopMode(this);        // 인벤토리를 상점 연동 모드로 전환 (판매 지원)
+            }
         }
 
         public void Close()
         {
-            _confirmPanel.SetActive(false);
-            _canvas.enabled = false;
+            if (_canvas != null && !_canvas.enabled) return;
+
+            if (_confirmPanel != null)
+                _confirmPanel.SetActive(false);
+
+            if (_canvas != null)
+                _canvas.enabled = false;
+
+            if (_inventoryUI != null)
+            {
+                _inventoryUI.SetShopMode(null);
+                if (_inventoryUI.IsOpen)
+                    _inventoryUI.Close();
+            }
+
+            _onCloseSubject.OnNext(Unit.Default);
         }
 
         private void Refresh(IReadOnlyList<EquipmentItem> catalog)
@@ -104,23 +149,62 @@ namespace MySecondWorld.UI
             }
         }
 
-        // 항목 클릭 → 구매 확인 팝업 표시 (즉시 구매하지 않음)
+        // 상점 카탈로그 항목 클릭 → 구매 확인 팝업 표시
         private void RequestPurchase(EquipmentItem item)
         {
+            if (item == null) return;
+            _pendingSale = null;
             _pendingPurchase = item;
-            string costName = _costItem != null ? _costItem.name : "대가 아이템";
-            _confirmText.text = $"{item.name} 구매 — {costName} 1개 소모";
+
+            string costName = _costItem != null ? _costItem.name : "골드";
+            _confirmText.text = $"<color=#FFE066>{item.name}</color> 구매\n<size=13><color=#AAAAAA>비용: {costName} 1개 소모</color></size>";
+
+            var yesText = _confirmYesButton?.GetComponentInChildren<TMP_Text>(true);
+            if (yesText != null) yesText.text = "구매";
+
             _confirmPanel.SetActive(true);
         }
 
-        // 구매 확인
+        // 인벤토리 가방 아이템 클릭 → 판매 확인 팝업 표시
+        public void RequestSell(EquipmentItem item)
+        {
+            if (item == null) return;
+            _pendingPurchase = null;
+            _pendingSale = item;
+
+            string currencyName = _costItem != null ? _costItem.name : "골드";
+            _confirmText.text = $"<color=#FFE066>{item.name}</color> 판매\n<size=13><color=#AAAAAA>보상: {currencyName} 1개 획득</color></size>";
+
+            var yesText = _confirmYesButton?.GetComponentInChildren<TMP_Text>(true);
+            if (yesText != null) yesText.text = "판매";
+
+            _confirmPanel.SetActive(true);
+        }
+
+        // 구매/판매 확정 실행
         private void ConfirmPurchase()
         {
             _confirmPanel.SetActive(false);
-            if (_pendingPurchase == null || _costItem == null) return;
-            
-            _inventoryProvider.Actions?.TradeItem(_costItem.GetDbKey(), _pendingPurchase.GetDbKey());
-            _pendingPurchase = null; // 대가 아이템 소모
+
+            if (_pendingPurchase != null && _costItem != null)
+            {
+                // 구매: 대가(골드) 지불 -> 장비 획득
+                _inventoryProvider.Actions?.TradeItem(_costItem.GetDbKey(), _pendingPurchase.GetDbKey());
+                _pendingPurchase = null;
+            }
+            else if (_pendingSale != null && _costItem != null)
+            {
+                // 판매: 장비 지불 -> 대가(골드) 획득
+                // 장착 중인 무기를 판매하는 경우 로컬 무기 비주얼도 즉시 해제
+                if (_inventoryProvider.WeaponActions != null 
+                    && _inventoryProvider.WeaponActions.CurrentMainHandDbKey == _pendingSale.GetDbKey())
+                {
+                    _inventoryProvider.WeaponActions.UnequipMainHand();
+                }
+
+                _inventoryProvider.Actions?.TradeItem(_pendingSale.GetDbKey(), _costItem.GetDbKey());
+                _pendingSale = null;
+            }
         }
 
         private void ClearSlots()

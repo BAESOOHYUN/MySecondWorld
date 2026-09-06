@@ -1,8 +1,6 @@
 using Mirror;
 using UnityEngine;
-using Cleverous.VaultInventory;
 using MySecondWorld.Network.Player;
-using MySecondWorld.Customization;
 
 namespace MySecondWorld.UI
 {

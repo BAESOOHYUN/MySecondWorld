@@ -56,6 +56,23 @@ namespace MySecondWorld.UI
             _appearanceService = appearanceService;
         }
 
+        public bool IsOpen => gameObject.activeSelf;
+        public event System.Action OnClosed;
+        private ShopUI _activeShop;
+
+        public void SetShopMode(ShopUI shop)
+        {
+            _activeShop = shop;
+            if (gameObject.activeSelf)
+                Refresh();
+        }
+
+        public void SetBackdropActive(bool active)
+        {
+            if (_backdropButton != null)
+                _backdropButton.gameObject.SetActive(active);
+        }
+
         private void Start()
         {
             _closeButton.onClick.AddListener(Close);
@@ -90,6 +107,7 @@ namespace MySecondWorld.UI
         public void Open()
         {
             gameObject.SetActive(true);
+            SetBackdropActive(true);
             UpdateTabVisuals();
 
             _subscribedInventory = _inventoryProvider.Inventory;
@@ -105,6 +123,8 @@ namespace MySecondWorld.UI
 
         public void Close()
         {
+            if (!gameObject.activeSelf) return;
+
             if (_subscribedInventory != null)
                 _subscribedInventory.OnChanged -= OnInventoryChanged;
             _subscribedInventory = null;
@@ -114,6 +134,7 @@ namespace MySecondWorld.UI
             _subscribedWeaponActions = null;
 
             gameObject.SetActive(false);
+            OnClosed?.Invoke();
         }
 
         public void SetTab(InventoryCategoryTab tab)
@@ -220,6 +241,7 @@ namespace MySecondWorld.UI
                                     && weaponCheck.Category != WeaponCategory.None
                                     && weaponCheck.Category != WeaponCategory.Quiver
                                     && _inventoryProvider.WeaponActions?.CurrentMainHandDbKey == weaponCheck.GetDbKey();
+                bool isShopMode = _activeShop != null && _activeShop.IsOpen;
 
                 slot.Setup(
                    stack.Source.UiIcon,
@@ -229,6 +251,12 @@ namespace MySecondWorld.UI
                    isEquippedWeapon,
                    onDiscard: () =>
                    {
+                       if (isShopMode && stack.Source is EquipmentItem eqItem)
+                       {
+                           _activeShop.RequestSell(eqItem);
+                           return;
+                       }
+
                        // 로컬 예측: 버리려는 아이템이 현재 장착 무기면 즉시 로컬 비주얼 해제
                        if (_inventoryProvider.WeaponActions != null 
                            && stack.Source is EquipmentItem weaponItem
@@ -239,7 +267,8 @@ namespace MySecondWorld.UI
 
                        _inventoryProvider.Actions?.DiscardItem(capturedIndex); // UI에서 "버리기" 버튼 클릭 시 그 슬롯의 아이템을 '전량 제거'.
                    },
-                   onAction: ResolveEquipAction(stack.Source, capturedIndex));
+                   onAction: ResolveEquipAction(stack.Source, capturedIndex),
+                   isShopMode: isShopMode);
 
                 _spawnedSlots.Add(slot);
             }

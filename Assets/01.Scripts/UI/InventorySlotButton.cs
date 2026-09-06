@@ -15,13 +15,21 @@ namespace MySecondWorld.UI
 
         public void Setup(Sprite icon, int stackSize,
                         bool isPart, bool isConsumable, bool isEquipped, 
-                        Action onDiscard, Action onAction)
+                        Action onDiscard, Action onAction, bool isShopMode = false)
         {
             _icon.sprite = icon;
             _icon.enabled = icon != null;
             _stackSizeText.text = stackSize > 1 ? stackSize.ToString() : string.Empty;
             _discardButton.onClick.RemoveAllListeners();
             _discardButton.onClick.AddListener(() => onDiscard?.Invoke());
+
+            var discardImg = _discardButton.GetComponent<Image>();
+            if (discardImg != null)
+            {
+                discardImg.color = isShopMode 
+                    ? new Color(1.0f, 0.82f, 0.2f, 1f)   // 상점 판매 모드: 골드 틴트
+                    : new Color(0.85f, 0.25f, 0.25f, 0.9f); // 일반 모드: 레드 틴트
+            }
             _actionButton.onClick.RemoveAllListeners();
             var actionImage = _actionButton.GetComponent<Image>();
             if (isPart)

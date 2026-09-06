@@ -8,13 +8,24 @@ namespace MySecondWorld.UI
     {
         [SerializeField] private Image _icon;
         [SerializeField] private Button _buyButton;
+        [SerializeField] private Button _slotButton;
 
         public void Setup(Sprite icon, Action onBuy)
         {
             _icon.sprite = icon;
             _icon.enabled = icon != null;
-            _buyButton.onClick.RemoveAllListeners();
-            _buyButton.onClick.AddListener(() => onBuy?.Invoke());
+
+            if (_buyButton != null)
+            {
+                _buyButton.onClick.RemoveAllListeners();
+                _buyButton.onClick.AddListener(() => onBuy?.Invoke());
+            }
+
+            if (_slotButton != null)
+            {
+                _slotButton.onClick.RemoveAllListeners();
+                _slotButton.onClick.AddListener(() => onBuy?.Invoke());
+            }
         }
     }
 }

@@ -99,6 +99,8 @@ namespace MySecondWorld.Network
             if (leftover > 0) return; // 자리 없음 — 아무 것도 지불되지 않은 채로 거부
 
             _inventory.DoTake(payItem, 1);
+            if (TryGetComponent(out NetworkWeaponEquip weaponEquip))
+                weaponEquip.ServerUnequipIfMatches(payItem.GetDbKey());
         }
 
         [Command] // 소모품 사용
