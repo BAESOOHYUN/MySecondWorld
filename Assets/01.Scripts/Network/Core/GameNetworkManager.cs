@@ -37,6 +37,11 @@ namespace MySecondWorld.Network
         [Tooltip("이 Y 아래로 떨어지면 존 판정과 무관하게 마지막 안전 위치로 구조한다")]
         public float fallRescueY = -50f;
 
+        [Tooltip("던전 방 하나의 정원. 접속 순서대로 앞 방부터 채운다.\n" +
+                 "5명 입장 기준 → 정원 4: 4+1 / 정원 3: 3+2 / 정원 2: 2+2+1")]
+        [SerializeField, Range(1, 8)]
+        private int _maxPlayersPerRoom = DungeonRoomRegistry.DefaultMaxPlayersPerRoom;
+
         [Header("포탈 전환 페이드")]
         [SerializeField] private ScreenFadeUI _screenFadeUI;
         public ScreenFadeUI ScreenFadeUI => _screenFadeUI;
@@ -67,6 +72,12 @@ namespace MySecondWorld.Network
         public CancellationTokenSource Cts { get; private set; }
 
         private readonly Dictionary<string, AsyncOperationHandle<SceneInstance>> _serverSceneHandles = new();
+
+        // 존 씬 경로 → 그 씬에 들어있는 웨이브 스포너들.
+        // 방이 열리고 닫힐 때 어떤 스포너를 깨울지 찾기 위한 캐시다.
+        // SceneManager.GetSceneByPath로 그때그때 찾지 않는 이유는 아래 [S2] 주석과 같다 —
+        // Addressables 번들 씬은 경로로 조회가 안 되는 경우가 있어서, 로드 시점에 잡아둔다.
+        private readonly Dictionary<string, List<IRoomWaveSpawner>> _sceneSpawners = new();
         private readonly HashSet<int> _bundleReadyConnIds = new(); // 번들 준비 완료된 connectionId 목록
         public bool IsBundleReady(int connId) => _bundleReadyConnIds.Contains(connId);
 
@@ -181,7 +192,15 @@ namespace MySecondWorld.Network
             Debug.Log("[Server] OnStartServer");
             base.OnStartServer(); // Mirror가 onlineScene(MainScene)을 로드. 완료 후 → OnServerSceneChanged
             Cts = new CancellationTokenSource();
-            _roomRegistry = new DungeonRoomRegistry();
+            _roomRegistry = new DungeonRoomRegistry(_maxPlayersPerRoom);
+
+            // 던전은 씬 하나 안에 방이 여러 개 열린다. 방마다 자기 몬스터 세트를 가져야 하므로
+            // 방 생명주기를 그 씬의 스포너에 그대로 전달한다.
+            // 스포너(Combat 어셈블리)를 여기서 직접 참조할 수 없어 IRoomWaveSpawner를 거친다 —
+            // Combat → Network 참조만 있고 역방향은 없기 때문(순환참조 방지).
+            _roomRegistry.OnRoomOpened += HandleRoomOpened;
+            _roomRegistry.OnRoomClosed += HandleRoomClosed;
+
             _sessionService = new ServerSessionService(
                 this, _roomRegistry, _saveManager, _startingGoldItem, _startingGoldAmount,
                 _testSwordItem, _testRingItem, _testBowItem,
@@ -255,8 +274,15 @@ namespace MySecondWorld.Network
                     // ★ additive 씬의 NetworkIdentity를 수동 Spawn
                     // Addressables 번들 씬은 GetSceneByPath로 못 찾을 수 있음 → handle.Result.Scene으로 직접 접근
                     Scene loadedScene = handle.Result.Scene;
+
+                    // 방 생명주기에 반응할 스포너를 이 자리에서 잡아둔다.
+                    // 나중에 씬 경로로 다시 찾으려 하면 번들 씬에서 실패할 수 있다.
+                    var spawnersInScene = new List<IRoomWaveSpawner>();
+
                     foreach (GameObject rootObj in loadedScene.GetRootGameObjects())
                     {
+                        spawnersInScene.AddRange(rootObj.GetComponentsInChildren<IRoomWaveSpawner>());
+
                         foreach (var netId in rootObj.GetComponentsInChildren<NetworkIdentity>())
                         {
                             // netId == 0 → 아직 Spawn 안 된 오브젝트 → Spawn 해줘야 함
@@ -269,10 +295,31 @@ namespace MySecondWorld.Network
                                 match.matchId = SceneMatchId.GetMatchIdFromScene(zone.sceneName);
                         }
                     }
+
+                    _sceneSpawners[zone.sceneName] = spawnersInScene;
                 }
             }
 
             ServerReady = true;
+        }
+
+        // [S2-a] 방이 열렸다 → 그 씬 스포너들에 이 방 전용 몬스터 세트를 요청한다.
+        private void HandleRoomOpened(string scenePath, System.Guid roomId)
+        {
+            if (!_sceneSpawners.TryGetValue(scenePath, out var spawners)) return;
+
+            foreach (var spawner in spawners)
+                spawner?.StartWaves(roomId);
+        }
+
+        // [S2-b] 방이 닫혔다(마지막 인원 퇴장) → 그 방 몬스터를 회수한다.
+        // 안 하면 아무도 못 보는 몬스터가 씬에 계속 남아 서버 자원을 먹는다.
+        private void HandleRoomClosed(string scenePath, System.Guid roomId)
+        {
+            if (!_sceneSpawners.TryGetValue(scenePath, out var spawners)) return;
+
+            foreach (var spawner in spawners)
+                spawner?.StopWaves(roomId);
         }
 
         // [S3] → ServerSessionService.AddPlayer로 위임

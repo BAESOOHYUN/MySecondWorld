@@ -313,6 +313,10 @@ namespace MySecondWorld.Network
                 var roomId = _roomRegistry.AssignRoom(sceneName, conn.connectionId);
                 networkMatch.matchId = roomId; // MatchInterestManagement가 이 값으로 가시성 판단
                 session.roomId = roomId;       // 서버 내부 추적용
+
+                // 시연용 오버레이에 방을 알려준다(컴포넌트가 없으면 조용히 건너뜀)
+                if (conn.identity.TryGetComponent(out RoomIdDisplay roomDisplay))
+                    roomDisplay.SetRoom(roomId);
             }
             else
             {
@@ -324,6 +328,9 @@ namespace MySecondWorld.Network
                 }
                 // 필드→필드, 던전→필드 모두 항상 갱신
                 networkMatch.matchId = SceneMatchId.GetMatchIdFromScene(sceneName);
+
+                if (conn.identity.TryGetComponent(out RoomIdDisplay roomDisplay))
+                    roomDisplay.SetRoom(Guid.Empty);
 
                 // 필드 복귀 시 죽어있던 companion 부활
                 if (session.companionIdentity != null

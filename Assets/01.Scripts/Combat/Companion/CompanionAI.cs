@@ -408,6 +408,11 @@ namespace MySecondWorld.Combat.Companion
             {
                 if (hit.transform.gameObject.scene != gameObject.scene) continue; // 포탈 건너편 등 다른 씬의 몬스터는 후보에서 제외
 
+                // 같은 씬이어도 다른 방(match)의 몬스터는 제외한다.
+                // 인스턴싱된 던전은 방마다 몬스터가 같은 좌표에 겹쳐 있는데 이 AI는 서버에서 돌아
+                // 모든 방의 몬스터가 다 보인다 — 안 거르면 주인 눈에 안 보이는 몬스터에게 달려간다.
+                if (!MySecondWorld.Network.MatchScope.Same(gameObject, hit.gameObject)) continue;
+
                 var health = hit.GetComponentInParent<Health>();
                 if (health == null || health.IsDead) continue; // 죽음 애니메이션 재생 중인 시체는 후보에서 제외
 

@@ -204,6 +204,7 @@ namespace MySecondWorld.Combat.Player
                 MaxLifetime = _stats.ShootRange / Mathf.Max(_stats.ProjectileSpeed, 0.01f) + 0.3f,
                 HitMask = MonsterLayerMask,
                 BlockMask = _stats.BlockLayerMask,
+                Owner = gameObject, // 방(match) 판정용 — 다른 방 몬스터를 관통시킨다
                 SplashRadius = splashRadius,   // 완충 아니면 0 → 단일 타겟 폴백 그대로 유지
                 HomingTarget = homingTarget,
                 HomingTurnRateDegPerSec = turnRate,

@@ -18,6 +18,12 @@ namespace MySecondWorld.Combat
         public LayerMask HitMask;                   // 데미지 대상 (몬스터가 쏘면 Player, 반대면 Monster)
         public LayerMask BlockMask;                 // 벽·지형
 
+        // 쏜 주체. 데미지 귀속이 아니라 "어느 방(match)의 화살인가" 판정에 쓴다.
+        // 인스턴싱된 던전은 방마다 몬스터가 같은 좌표에 겹쳐 있는데 SphereCast는 matchId를 모른다.
+        // 이 값이 없으면 화살이 안 보이는 남의 방 몬스터에 걸려 허공에서 사라진다.
+        // 비워두면(null) 방 판정을 건너뛰고 기존과 동일하게 동작한다.
+        public GameObject Owner;
+
         // 0이면 스플래시 없음(단일 타겟 폴백). 0보다 크면 ProjectileSplashCastSO가
         // 명중 지점을 중심으로 이 반경만큼 재-OverlapSphere 한다.
         public float SplashRadius;

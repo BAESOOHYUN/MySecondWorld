@@ -89,6 +89,7 @@ namespace MySecondWorld.Combat.Monster
                 MaxLifetime = lifetime,
                 HitMask = LayerMask.GetMask("Player", "NPC"),
                 BlockMask = _stats.BlockLayerMask,
+                Owner = gameObject, // 방(match) 판정용 — 다른 방 플레이어를 관통시킨다
                 // 명중 순간 클라에 알려 표현 화살을 같은 지점에서 정리한다.
                 // 몬스터가 이미 죽어 디스폰됐으면 Rpc가 예외를 내므로 null 검사가 필요하다.
                 OnResolved = point =>

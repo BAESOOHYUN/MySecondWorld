@@ -57,7 +57,17 @@ namespace MySecondWorld.Combat
         {
             // 죽었거나, 소환 해제(IsTargetable == false) 상태면 데미지 완벽 무시
             if (IsDead || !_isTargetable || damage <= 0f) return;
+
+            // 다른 방(match)에서 온 공격은 무시한다.
+            // 인스턴싱된 던전은 방마다 몬스터 세트가 같은 좌표에 겹쳐 있는데,
+            // 물리 쿼리(SphereCast/OverlapSphere)는 matchId를 모르기 때문에
+            // 여기서 한 번 걸러 주지 않으면 남의 방 몬스터를 때리게 된다.
+            // 투사체·AoE·근접이 전부 이 메서드를 거치므로 차단은 여기 한 곳이면 충분하다.
+            if (attacker != null && !MySecondWorld.Network.MatchScope.Same(gameObject, attacker)) return;
             CurrentHP = Mathf.Max(0f, CurrentHP - damage);
+
+            Debug.Log($"<color=orange>[DamageTrack]</color> <b>{gameObject.name}</b> 피격! -{damage:F1} (남은 HP: {CurrentHP:F1}) | 공격자: {(attacker != null ? attacker.name : "None")}");
+
             OnDamaged?.Invoke(CurrentHP);
             OnDamagedWithAttacker?.Invoke(CurrentHP, attacker);
             if (CurrentHP <= 0)

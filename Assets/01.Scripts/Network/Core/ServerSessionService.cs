@@ -227,11 +227,18 @@ namespace MySecondWorld.Network
                 var roomId = _roomRegistry.AssignRoom(session.currentScene, conn.connectionId);
                 conn.identity.GetComponent<NetworkMatch>().matchId = roomId;
                 session.roomId = roomId;
+
+                // 시연용 오버레이에 방을 알려준다(컴포넌트가 없으면 조용히 건너뜀)
+                if (conn.identity.TryGetComponent(out RoomIdDisplay roomDisplay))
+                    roomDisplay.SetRoom(roomId);
             }
             else
             {
                 // session.roomId는 Guid.Empty 그대로 — 던전 방이 아니니까
                 conn.identity.GetComponent<NetworkMatch>().matchId = SceneMatchId.GetMatchIdFromScene(session.currentScene);
+
+                if (conn.identity.TryGetComponent(out RoomIdDisplay roomDisplay))
+                    roomDisplay.SetRoom(Guid.Empty);
             }
 
             // 이미 영입된 companion 자동 재소환

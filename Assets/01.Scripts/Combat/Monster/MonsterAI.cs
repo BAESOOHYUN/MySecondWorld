@@ -207,6 +207,12 @@ namespace MySecondWorld.Combat.Monster
             var damageable = other.GetComponentInParent<IDamageable>();
             if (damageable == null || damageable.Faction != CombatFaction.Player) return;
 
+            // 다른 방(match)의 플레이어는 어그로 대상이 아니다.
+            // 인스턴싱된 던전에선 방마다 몬스터가 같은 좌표에 겹쳐 있어서, 이 가드가 없으면
+            // 남의 방 몬스터가 나를 감지해 달려오고 안 보이는 곳에서 때린다.
+            // (OnTriggerExit은 _targetRefCounts에 없는 대상이면 어차피 그냥 반환하므로 가드 불필요)
+            if (!MySecondWorld.Network.MatchScope.Same(gameObject, other.gameObject)) return;
+
             var root = other.transform.root;
             // 죽었거나 소환 해제된 컴패니언은 애초에 어그로 목록에 진입조차 못하게 차단
             if (!IsValidTarget(root)) return;
@@ -453,7 +459,11 @@ namespace MySecondWorld.Combat.Monster
             foreach (var hit in hits)
             {
                 var damageable = hit.GetComponentInParent<IDamageable>();
-                if (damageable != null && damageable.Faction == CombatFaction.Player)
+                // 여기서도 방을 걸러야 한다. OnTriggerEnter가 어차피 막아주지만,
+                // 아래 break 때문에 남의 방 플레이어가 먼저 걸리면 스캔이 거기서 끝나
+                // 정작 같은 방 플레이어를 못 찾고 넘어간다.
+                if (damageable != null && damageable.Faction == CombatFaction.Player
+                    && MySecondWorld.Network.MatchScope.Same(gameObject, hit.gameObject))
                 {
                     var root = hit.transform.root;
                     if (IsValidTarget(root) && IsWithinLeash(root))

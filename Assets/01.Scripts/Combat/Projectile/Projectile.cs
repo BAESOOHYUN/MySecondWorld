@@ -35,6 +35,7 @@ namespace MySecondWorld.Combat
         private bool _resolved; // 결과 확정 1회 보장 — 중복 반납/중복 통지 차단
         private Vector3 _originalLocalScale;
         private System.Action<Vector3> _onResolved; // ProjectileRequest의 OnResolved 콜백을 부름
+        private GameObject _owner;                  // 쏜 주체 — 방(match) 판정용. null이면 판정 생략
         private UniTaskCompletionSource<IDamageable> _completionSource;
 
         // 권위 모드일 때 명중/소멸을 기다리는 채널.
@@ -143,6 +144,7 @@ namespace MySecondWorld.Combat
             _elapsed = 0f;
             _resolved = false;
             _onResolved = request.OnResolved;
+            _owner = request.Owner;
 
             _completionSource = new UniTaskCompletionSource<IDamageable>();
 
@@ -176,6 +178,12 @@ namespace MySecondWorld.Combat
             var target = hit.collider.GetComponentInParent<IDamageable>();
             if (target == null || target.IsDead || !target.IsTargetable)
                 return false; // IDamageable이 없거나 이미 죽은 대상 — 명중으로 치지 않고 계속 비행
+
+            // 다른 방(match)의 대상은 명중으로 치지 않고 관통시킨다.
+            // Health 쪽에서도 데미지는 어차피 막히지만, 여기서 안 걸러주면
+            // 화살이 "보이지 않는 무언가"에 맞아 허공에서 멈추는 것처럼 보인다.
+            if (_owner != null && !MySecondWorld.Network.MatchScope.Same(_owner, hit.collider.gameObject))
+                return false;
 
             SnapTipTo(hit.point);
             Resolve(target);

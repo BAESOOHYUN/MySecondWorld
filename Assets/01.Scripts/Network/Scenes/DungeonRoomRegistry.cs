@@ -8,24 +8,46 @@ namespace MySecondWorld.Network
     /// </summary>
     public class DungeonRoomRegistry
     {
-        private const int MaxPlayersPerRoom = 4;
+        public const int DefaultMaxPlayersPerRoom = 4;
+
+        // 방 정원. AssignRoom이 "빈자리 있는 첫 방부터 채우기" 방식이라 이 값이 곧 파티 분할 규칙이 된다.
+        // 접속 순서대로 앞에서부터 채우므로 5명 입장 시:
+        //   정원 4 → 4+1 / 정원 3 → 3+2 / 정원 2 → 2+2+1
+        // 시연 중에 구성을 바꿔볼 수 있도록 GameNetworkManager 인스펙터에서 주입한다.
+        private readonly int _maxPlayersPerRoom;
+
+        public DungeonRoomRegistry(int maxPlayersPerRoom = DefaultMaxPlayersPerRoom)
+        {
+            _maxPlayersPerRoom = Math.Max(1, maxPlayersPerRoom);
+        }
 
         private class DungeonRoom
         {
             public Guid roomId;
             public List<int> connIds;
-            public int maxPlayers = MaxPlayersPerRoom;
+            public int maxPlayers;
 
-            public DungeonRoom(Guid id)
+            public DungeonRoom(Guid id, int maxPlayers)
             {
                 roomId = id;
                 connIds = new List<int>();
+                this.maxPlayers = maxPlayers;
             }
         }
 
         // 같은 이름의 씬이라도 room은 여러개 있을 수 있다.
         private Dictionary<string, List<DungeonRoom>> _rooms
             = new Dictionary<string, List<DungeonRoom>>();
+
+        /// <summary>
+        /// 방이 새로 만들어졌을 때 (씬 경로, roomId). 그 방 전용 몬스터 세트를 스폰하는 신호.
+        /// </summary>
+        public event Action<string, Guid> OnRoomOpened;
+
+        /// <summary>
+        /// 마지막 인원이 나가 방이 사라졌을 때 (씬 경로, roomId). 그 방 몬스터를 정리하는 신호.
+        /// </summary>
+        public event Action<string, Guid> OnRoomClosed;
 
         /// <summary>
         /// 씬 경로가 던전 씬인지 판단한다.
@@ -60,9 +82,14 @@ namespace MySecondWorld.Network
             }
 
             // 빈 방 없음 → 새 방 생성 (던전 방 하나 생성 → 고유 roomId)
-            var newRoom = new DungeonRoom(Guid.NewGuid()); 
+            var newRoom = new DungeonRoom(Guid.NewGuid(), _maxPlayersPerRoom);
             newRoom.connIds.Add(connId);
             roomList.Add(newRoom);
+
+            // 목록에 넣은 뒤에 알린다 — 구독자(스포너 배선)가 곧바로
+            // GetRoomPlayerCount 같은 조회를 해도 일관된 상태가 보이도록.
+            OnRoomOpened?.Invoke(sceneName, newRoom.roomId);
+
             return newRoom.roomId;
         }
 
@@ -80,7 +107,16 @@ namespace MySecondWorld.Network
             foreach (var room in roomList)
                 room.connIds.Remove(connId);
 
-            roomList.RemoveAll(r => r.connIds.Count == 0);
+            // RemoveAll 대신 역순 루프 — 사라지는 방마다 OnRoomClosed를 발행해야 하기 때문.
+            // (역순이라 제거해도 남은 인덱스가 밀리지 않는다)
+            for (int i = roomList.Count - 1; i >= 0; i--)
+            {
+                if (roomList[i].connIds.Count > 0) continue;
+
+                Guid closedRoomId = roomList[i].roomId;
+                roomList.RemoveAt(i);
+                OnRoomClosed?.Invoke(sceneName, closedRoomId);
+            }
         }
 
         /// <summary>
