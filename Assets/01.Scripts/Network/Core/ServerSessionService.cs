@@ -224,13 +224,19 @@ namespace MySecondWorld.Network
             // 첫 접속 시 씬이 던전인지 판별하여 matchId ← roomId 배정
             if (_roomRegistry.IsDungeonScene(session.currentScene))
             {
-                var roomId = _roomRegistry.AssignRoom(session.currentScene, conn.connectionId);
+                var roomId = _roomRegistry.AssignRoom(session.currentScene, conn.connectionId, out bool isNewRoom);
                 conn.identity.GetComponent<NetworkMatch>().matchId = roomId;
                 session.roomId = roomId;
 
                 // 시연용 오버레이에 방을 알려준다(컴포넌트가 없으면 조용히 건너뜀)
                 if (conn.identity.TryGetComponent(out RoomIdDisplay roomDisplay))
                     roomDisplay.SetRoom(roomId);
+
+                // matchId를 세팅한 '뒤에' 스폰을 알린다.
+                // 순서가 반대면 몬스터가 스폰되는 시점에 이 플레이어가 아직 옛 match라
+                // 옵저버에서 빠지고, 서버에만 있는 안 보이는 몬스터가 된다.
+                if (isNewRoom)
+                    _roomRegistry.NotifyRoomOpened(session.currentScene, roomId);
             }
             else
             {

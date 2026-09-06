@@ -9,6 +9,7 @@ public class MenuUI : MonoBehaviour
     [SerializeField] private Toggle _robbyToggle;
     [SerializeField] private Toggle _settingsToggle;
     [SerializeField] private GameObject _settingsPanel;
+    [SerializeField] private Button _settingsBackdropButton;
     [SerializeField] private Button _customizerButton;
     [SerializeField] private Button _inventoryButton;
 
@@ -30,10 +31,25 @@ public class MenuUI : MonoBehaviour
             _robbyToggle.onValueChanged.AddListener(OnToggleRobby);
         if (_settingsToggle != null)
             _settingsToggle.onValueChanged.AddListener(isOn => _settingsPanel.SetActive(isOn));
+        if (_settingsBackdropButton != null)
+            _settingsBackdropButton.onClick.AddListener(() =>
+            {
+                if (_settingsToggle != null) _settingsToggle.isOn = false;
+                else if (_settingsPanel != null) _settingsPanel.SetActive(false);
+            });
         if (_customizerButton != null)
             _customizerButton.onClick.AddListener(() => _characterCustomizeUI.Open());
         if (_inventoryButton != null)
             _inventoryButton.onClick.AddListener(() => _inventoryUI.Open());
+    }
+
+    private void Update()
+    {
+        if (_settingsPanel != null && _settingsPanel.activeSelf && Input.GetKeyDown(KeyCode.Escape))
+        {
+            if (_settingsToggle != null) _settingsToggle.isOn = false;
+            else _settingsPanel.SetActive(false);
+        }
     }
 
     private void OnDestroy()
@@ -42,6 +58,8 @@ public class MenuUI : MonoBehaviour
             _robbyToggle.onValueChanged.RemoveListener(OnToggleRobby);
         if (_settingsToggle != null)
             _settingsToggle.onValueChanged.RemoveAllListeners();
+        if (_settingsBackdropButton != null)
+            _settingsBackdropButton.onClick.RemoveAllListeners();
         if (_customizerButton != null)
             _customizerButton.onClick.RemoveAllListeners();
         if (_inventoryButton != null)

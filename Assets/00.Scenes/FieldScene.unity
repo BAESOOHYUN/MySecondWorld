@@ -67296,7 +67296,7 @@ Transform:
   m_GameObject: {fileID: 147082597}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
-  m_LocalPosition: {x: 40.38, y: 24.53, z: 44.41}
+  m_LocalPosition: {x: 40.38, y: 25.030008, z: 44.41}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -204765,7 +204765,7 @@ MonoBehaviour:
   _spawnPoints:
   - {fileID: 1461570879}
   - {fileID: 147082598}
-  _spawnRadius: 5
+  _spawnRadius: 3
   _autoStartOnServer: 1
   _individualRespawnDelay: 5
   _loopDungeonWaves: 1
@@ -301240,7 +301240,7 @@ Transform:
   m_GameObject: {fileID: 683837940}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
-  m_LocalPosition: {x: 27.58, y: 24.81, z: 41.6}
+  m_LocalPosition: {x: 27.58, y: 23.77241, z: 41.6}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -535104,7 +535104,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1248830486500460, guid: b0039c0b258967342bdb96afc637b6cb, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1248830486500460, guid: b0039c0b258967342bdb96afc637b6cb, type: 3}
       propertyPath: m_StaticEditorFlags
@@ -601269,7 +601269,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1248830486500460, guid: b0039c0b258967342bdb96afc637b6cb, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1248830486500460, guid: b0039c0b258967342bdb96afc637b6cb, type: 3}
       propertyPath: m_StaticEditorFlags
@@ -644082,7 +644082,7 @@ Transform:
   m_GameObject: {fileID: 1461570878}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
-  m_LocalPosition: {x: 15.57, y: 24.903, z: 24.31}
+  m_LocalPosition: {x: 15.57, y: 24.808138, z: 24.31}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -838374,7 +838374,7 @@ MonoBehaviour:
   _spawnPoints:
   - {fileID: 683837941}
   - {fileID: 2006034582}
-  _spawnRadius: 5
+  _spawnRadius: 3
   _autoStartOnServer: 1
   _individualRespawnDelay: 5
   _loopDungeonWaves: 0
@@ -876343,7 +876343,7 @@ Transform:
   m_GameObject: {fileID: 2006034581}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
-  m_LocalPosition: {x: 24.3, y: 25.31, z: 50.9}
+  m_LocalPosition: {x: 24.3, y: 24.486591, z: 50.9}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

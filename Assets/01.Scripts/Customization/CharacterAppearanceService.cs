@@ -82,6 +82,16 @@ namespace MySecondWorld.Customization
         }
 
         /// <summary>
+        /// 해당 아이템이 현재 캐릭터의 성별에 적합한지 확인합니다.
+        /// </summary>
+        public bool IsItemMatchingGender(EquipmentItem item)
+        {
+            if (item == null || _avatarPartKeyTable == null) return true;
+            var data = _saveService.Load();
+            return _avatarPartKeyTable.IsItemMatchingGender(item, data.Gender);
+        }
+
+        /// <summary>
         /// 특정 파츠 슬롯의 장착을 해제하고 기본 상태(0)로 되돌립니다.
         /// 좌우 대칭 파츠도 함께 해제됩니다.
         /// </summary>

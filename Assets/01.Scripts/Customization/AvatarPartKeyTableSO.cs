@@ -152,6 +152,25 @@ namespace MySecondWorld.Customization
             return false;
         }
 
+        /// <summary>
+        /// 해당 아이템이 특정 성별의 캐릭터에게 적합한지 확인합니다.
+        /// 반대 성별 전용 요구 아이템 목록에 포함되어 있다면 false를 반환합니다.
+        /// </summary>
+        public bool IsItemMatchingGender(EquipmentItem item, Gender gender)
+        {
+            if (item == null) return true;
+
+            foreach (var entry in Entries)
+            {
+                if (gender == Gender.Male && entry.FemaleRequiredItems != null && entry.FemaleRequiredItems.Contains(item))
+                    return false;
+                if (gender == Gender.Female && entry.MaleRequiredItems != null && entry.MaleRequiredItems.Contains(item))
+                    return false;
+            }
+
+            return true;
+        }
+
 #if UNITY_EDITOR
         [ContextMenu("Auto-Populate Thumbnail Names")]
         private void AutoPopulateThumbnailNames()

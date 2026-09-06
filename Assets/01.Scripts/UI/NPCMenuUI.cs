@@ -13,12 +13,26 @@ namespace MySecondWorld.UI
         [SerializeField] private Button _talkButton;
         [SerializeField] private Button _shopButton;
         [SerializeField] private Button _closeButton;
+        [SerializeField] private Button _backdropButton;
 
         public Observable<Unit> OnSelectTalk => _talkButton.OnClickAsObservable().AsUnitObservable();
         public Observable<Unit> OnSelectShop => _shopButton.OnClickAsObservable().AsUnitObservable();
-        public Observable<Unit> OnClose => _closeButton.OnClickAsObservable().AsUnitObservable();
+        public Observable<Unit> OnClose => _backdropButton != null
+            ? Observable.Merge(_closeButton.OnClickAsObservable().AsUnitObservable(), _backdropButton.OnClickAsObservable().AsUnitObservable())
+            : _closeButton.OnClickAsObservable().AsUnitObservable();
 
-        private void Start() => _canvas.enabled = false;
+        private void Start()
+        {
+            _canvas.enabled = false;
+            if (_backdropButton != null)
+                _backdropButton.onClick.AddListener(Close);
+        }
+
+        private void Update()
+        {
+            if (_canvas != null && _canvas.enabled && Input.GetKeyDown(KeyCode.Escape))
+                Close();
+        }
 
         public void Open() => _canvas.enabled = true;
 

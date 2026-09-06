@@ -23,16 +23,27 @@ namespace MySecondWorld.UI
             _discardButton.onClick.RemoveAllListeners();
             _discardButton.onClick.AddListener(() => onDiscard?.Invoke());
             _actionButton.onClick.RemoveAllListeners();
+            var actionImage = _actionButton.GetComponent<Image>();
             if (isPart)
             {
                 _actionButton.gameObject.SetActive(true);
                 _actionButtonText.text = isEquipped ? "해제" : "장착";
+                if (actionImage != null)
+                {
+                    actionImage.color = isEquipped
+                        ? new Color(0.95f, 0.45f, 0.25f, 1f)  // 해제: 코랄/오렌지
+                        : new Color(0.18f, 0.68f, 0.95f, 1f); // 장착: 스카이블루
+                }
                 _actionButton.onClick.AddListener(() => onAction?.Invoke());
             }
             else if (isConsumable)
             {
                 _actionButton.gameObject.SetActive(true);
                 _actionButtonText.text = "사용";
+                if (actionImage != null)
+                {
+                    actionImage.color = new Color(0.2f, 0.82f, 0.5f, 1f); // 사용: 에메랄드 그린
+                }
                 _actionButton.onClick.AddListener(() => onAction?.Invoke());
             }
             else

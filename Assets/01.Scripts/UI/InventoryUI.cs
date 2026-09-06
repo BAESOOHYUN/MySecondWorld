@@ -11,18 +11,36 @@ using Cleverous.VaultInventory;
 
 namespace MySecondWorld.UI
 {
+    public enum InventoryCategoryTab
+    {
+        All,
+        Equipment,
+        Weapon,
+        Accessory,
+        Consumable
+    }
+
     public class InventoryUI : MonoBehaviour
     {
         [Header("슬롯")]
         [SerializeField] private Transform _slotContent; // GridLayoutGroup 부착
         [SerializeField] private InventorySlotButton _slotButtonPrefab;
 
+        [Header("카테고리 탭")]
+        [SerializeField] private Button _tabAllButton;
+        [SerializeField] private Button _tabEquipmentButton;
+        [SerializeField] private Button _tabWeaponButton;
+        [SerializeField] private Button _tabAccessoryButton;
+        [SerializeField] private Button _tabConsumableButton;
+
         [Header("버튼")]
         [SerializeField] private Button _closeButton;
+        [SerializeField] private Button _backdropButton; // 허공(배경) 클릭 시 닫기
 
         private LocalPlayerInventoryProvider _inventoryProvider;
         private CharacterAppearanceService _appearanceService;
         private readonly List<InventorySlotButton> _spawnedSlots = new();
+        private InventoryCategoryTab _currentTab = InventoryCategoryTab.All;
 
         // Open() 시점에 구독한 인스턴스를 기억 — Close() 때 다른 인스턴스로 바뀌어도 정확히 해당 구독만 해제
         private Cleverous.VaultInventory.Inventory _subscribedInventory;
@@ -41,7 +59,23 @@ namespace MySecondWorld.UI
         private void Start()
         {
             _closeButton.onClick.AddListener(Close);
+            if (_backdropButton != null)
+                _backdropButton.onClick.AddListener(Close);
+
+            if (_tabAllButton != null) _tabAllButton.onClick.AddListener(() => SetTab(InventoryCategoryTab.All));
+            if (_tabEquipmentButton != null) _tabEquipmentButton.onClick.AddListener(() => SetTab(InventoryCategoryTab.Equipment));
+            if (_tabWeaponButton != null) _tabWeaponButton.onClick.AddListener(() => SetTab(InventoryCategoryTab.Weapon));
+            if (_tabAccessoryButton != null) _tabAccessoryButton.onClick.AddListener(() => SetTab(InventoryCategoryTab.Accessory));
+            if (_tabConsumableButton != null) _tabConsumableButton.onClick.AddListener(() => SetTab(InventoryCategoryTab.Consumable));
+            UpdateTabVisuals();
+
             gameObject.SetActive(false);
+        }
+
+        private void Update()
+        {
+            if (gameObject.activeSelf && Input.GetKeyDown(KeyCode.Escape))
+                Close();
         }
 
         private void OnDestroy()
@@ -56,6 +90,7 @@ namespace MySecondWorld.UI
         public void Open()
         {
             gameObject.SetActive(true);
+            UpdateTabVisuals();
 
             _subscribedInventory = _inventoryProvider.Inventory;
             if (_subscribedInventory != null)
@@ -68,7 +103,7 @@ namespace MySecondWorld.UI
             Refresh();
         }
 
-        private void Close()
+        public void Close()
         {
             if (_subscribedInventory != null)
                 _subscribedInventory.OnChanged -= OnInventoryChanged;
@@ -79,6 +114,73 @@ namespace MySecondWorld.UI
             _subscribedWeaponActions = null;
 
             gameObject.SetActive(false);
+        }
+
+        public void SetTab(InventoryCategoryTab tab)
+        {
+            _currentTab = tab;
+            UpdateTabVisuals();
+            Refresh();
+        }
+
+        private void UpdateTabVisuals()
+        {
+            SetTabButtonVisual(_tabAllButton, _currentTab == InventoryCategoryTab.All);
+            SetTabButtonVisual(_tabEquipmentButton, _currentTab == InventoryCategoryTab.Equipment);
+            SetTabButtonVisual(_tabWeaponButton, _currentTab == InventoryCategoryTab.Weapon);
+            SetTabButtonVisual(_tabAccessoryButton, _currentTab == InventoryCategoryTab.Accessory);
+            SetTabButtonVisual(_tabConsumableButton, _currentTab == InventoryCategoryTab.Consumable);
+        }
+
+        private void SetTabButtonVisual(Button btn, bool isSelected)
+        {
+            if (btn == null) return;
+            var img = btn.GetComponent<Image>();
+            if (img != null)
+            {
+                img.color = isSelected 
+                    ? new Color(0.18f, 0.65f, 0.95f, 1f) 
+                    : new Color(0.12f, 0.18f, 0.28f, 0.85f);
+            }
+            var txt = btn.GetComponentInChildren<TMPro.TMP_Text>();
+            if (txt != null)
+            {
+                txt.color = isSelected ? Color.white : new Color(0.7f, 0.8f, 0.9f, 0.8f);
+                txt.fontStyle = isSelected ? TMPro.FontStyles.Bold : TMPro.FontStyles.Normal;
+            }
+        }
+
+        private bool MatchesCategory(RootItem item, InventoryCategoryTab tab)
+        {
+            if (tab == InventoryCategoryTab.All) return true;
+
+            if (item is ConsumableItem)
+                return tab == InventoryCategoryTab.Consumable;
+
+            if (item is EquipmentItem eq)
+            {
+                // 악세사리 판별 (화살통, 반지, 팔찌, 목걸이, 등/귀 장식)
+                bool isAccessory = eq.Category == WeaponCategory.Quiver
+                                   || eq.Category == WeaponCategory.Ring
+                                   || eq.Category == WeaponCategory.Bracelet
+                                   || eq.Category == WeaponCategory.Necklace
+                                   || (eq.Restriction != null && (eq.Restriction.Title == "BackAttachment" || eq.Restriction.Title == "Ear"));
+
+                if (isAccessory)
+                    return tab == InventoryCategoryTab.Accessory;
+
+                // 무기 판별 (검, 단검, 도끼, 창, 활 등)
+                bool isWeapon = eq.Category != WeaponCategory.None && eq.Category != WeaponCategory.Quiver;
+                if (isWeapon)
+                    return tab == InventoryCategoryTab.Weapon;
+
+                // 장비/방어구 판별 (상의, 하의, 장갑, 신발, 투구 등)
+                bool isEquipment = eq.Category == WeaponCategory.None && eq.Restriction != null;
+                if (isEquipment)
+                    return tab == InventoryCategoryTab.Equipment;
+            }
+
+            return false;
         }
 
         private void OnInventoryChanged(int index) => Refresh();
@@ -95,6 +197,17 @@ namespace MySecondWorld.UI
             {
                 var stack = inv.Get(i); // 특정 슬롯의 아이템을 읽어오는 Getter 메서드
                 if (stack?.Source == null) continue; // 빈 슬롯은 표시 안 함 — 보유한 것만 보여주는 게 이번 Phase의 핵심 결정
+
+                // 1. 성별 필터링: 이성 전용 장비는 가방 슬롯에서 숨김
+                if (stack.Source is EquipmentItem equipItem && _appearanceService != null)
+                {
+                    if (!_appearanceService.IsItemMatchingGender(equipItem))
+                        continue;
+                }
+
+                // 2. 카테고리 탭 필터링
+                if (!MatchesCategory(stack.Source, _currentTab))
+                    continue;
 
                 int capturedIndex = i;
                 var slot = Instantiate(_slotButtonPrefab, _slotContent);

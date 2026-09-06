@@ -33,12 +33,16 @@ namespace MySecondWorld.UI
 
         [Header("버튼")]
         [SerializeField] private Button _closeButton;
+        [SerializeField] private Button _backdropButton; // 허공(배경) 클릭 시 닫기
+        [SerializeField] private Button _confirmBackdropButton; // 확인 팝업 허공 클릭 시 팝업 닫기
 
         private LocalPlayerInventoryProvider _inventoryProvider;
         private readonly List<ShopSlotButton> _spawnedSlots = new();
         private EquipmentItem _pendingPurchase; // 구매 대기중인 장비 아이템
 
-        public Observable<Unit> OnClose => _closeButton.OnClickAsObservable().AsUnitObservable();
+        public Observable<Unit> OnClose => _backdropButton != null
+            ? Observable.Merge(_closeButton.OnClickAsObservable().AsUnitObservable(), _backdropButton.OnClickAsObservable().AsUnitObservable())
+            : _closeButton.OnClickAsObservable().AsUnitObservable();
 
         [Inject]
         public void Construct(LocalPlayerInventoryProvider inventoryProvider)
@@ -48,10 +52,28 @@ namespace MySecondWorld.UI
 
         private void Start()
         {
+            _closeButton.onClick.AddListener(Close);
+            if (_backdropButton != null)
+                _backdropButton.onClick.AddListener(Close);
+
             _confirmYesButton.onClick.AddListener(ConfirmPurchase);
             _confirmNoButton.onClick.AddListener(() => _confirmPanel.SetActive(false));
+            if (_confirmBackdropButton != null)
+                _confirmBackdropButton.onClick.AddListener(() => _confirmPanel.SetActive(false));
+
             _confirmPanel.SetActive(false);
             _canvas.enabled = false;
+        }
+
+        private void Update()
+        {
+            if (_canvas != null && _canvas.enabled && Input.GetKeyDown(KeyCode.Escape))
+            {
+                if (_confirmPanel != null && _confirmPanel.activeSelf)
+                    _confirmPanel.SetActive(false);
+                else
+                    Close();
+            }
         }
 
         public void Open(IReadOnlyList<EquipmentItem> catalog)

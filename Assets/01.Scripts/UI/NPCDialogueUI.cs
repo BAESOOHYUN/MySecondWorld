@@ -26,6 +26,7 @@ namespace MySecondWorld.UI
         [SerializeField] private TMP_InputField _playerInputField;
         [SerializeField] private Button _submitButton;
         [SerializeField] private Button _closeButton;
+        [SerializeField] private Button _backdropButton;
         [SerializeField] private ScrollRect _scrollRect;
 
         [Header("Chat Bubble Prefabs")]
@@ -55,7 +56,9 @@ namespace MySecondWorld.UI
         public Observable<string> OnSubmit => _submitButton.OnClickAsObservable()
             .Select(_ => _playerInputField.text.Trim())
             .Where(t => t.Length > 0);
-        public Observable<Unit> OnClose => _closeButton.OnClickAsObservable().AsUnitObservable();
+        public Observable<Unit> OnClose => _backdropButton != null
+            ? Observable.Merge(_closeButton.OnClickAsObservable().AsUnitObservable(), _backdropButton.OnClickAsObservable().AsUnitObservable())
+            : _closeButton.OnClickAsObservable().AsUnitObservable();
 
         [Inject]
         private void Construct(
@@ -186,6 +189,12 @@ namespace MySecondWorld.UI
             {
                 enabled = false;
             }
+        }
+
+        private void Update()
+        {
+            if (_canvas != null && _canvas.activeSelf && Input.GetKeyDown(KeyCode.Escape))
+                Close();
         }
         #endregion
 

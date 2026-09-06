@@ -324,16 +324,40 @@ namespace MySecondWorld.Combat.Monster
         /// </summary>
         private Vector3 GetRandomNavMeshPosition(Vector3 center, float radius)
         {
-            if (radius <= 0f) return center;
+            if (radius <= 0f) return SnapToGround(center);
+
             // 원 내부 무작위 2D 점 -> 3D XZ 평면 변환
             Vector2 randomCircle = UnityEngine.Random.insideUnitCircle * radius;
             Vector3 candidatePos = center + new Vector3(randomCircle.x, 0f, randomCircle.y);
-            // NavMesh 상의 가장 가까운 유효 지면 샘플링 (반경 3m 내 탐색)
+
+            // 1차: 후보 지점 바로 근처
             if (NavMesh.SamplePosition(candidatePos, out NavMeshHit hit, 3.0f, NavMesh.AllAreas))
-            {
                 return hit.position;
-            }
-            return center; // 탐색 실패 시 중심 위치로 폴백
+
+            // 2차: 탐색 반경을 넓혀 재시도.
+            // 스폰 원의 가장자리가 네비메시 밖(경사면·낭떠러지)으로 삐져나간 경우를 흡수한다.
+            if (NavMesh.SamplePosition(candidatePos, out hit, radius + 5f, NavMesh.AllAreas))
+                return hit.position;
+
+            // 3차: 중심점 기준으로 찾는다. 후보가 완전히 엉뚱한 곳이어도 스폰 지점 근처로 돌아온다.
+            if (NavMesh.SamplePosition(center, out hit, radius + 5f, NavMesh.AllAreas))
+                return hit.position;
+
+            // 전부 실패. 예전에는 center를 그대로 돌려줬는데, 스폰 지점이 지면보다 높으면
+            // MonsterAI가 중력을 꺼둔 탓에(NavMeshAgent가 이동 담당) 몬스터가 공중에 영구히 떠 있었다.
+            // 최소한 지면에는 붙여서 눈에 띄는 이상 상태를 줄인다.
+            return SnapToGround(center);
+        }
+
+        /// <summary>네비메시를 못 찾았을 때의 최후 보정 — 발밑 지형에라도 올려놓는다.</summary>
+        private static Vector3 SnapToGround(Vector3 position)
+        {
+            // 위쪽에서 아래로 훑어 첫 물리 바닥을 찾는다(트리거 제외).
+            if (Physics.Raycast(position + Vector3.up * 10f, Vector3.down,
+                    out RaycastHit groundHit, 60f, ~0, QueryTriggerInteraction.Ignore))
+                return groundHit.point;
+
+            return position;
         }
         #endregion
         #region 에디터 기즈모 (스폰 반경 시각화)

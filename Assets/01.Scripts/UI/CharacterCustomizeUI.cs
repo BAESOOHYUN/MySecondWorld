@@ -700,6 +700,17 @@ namespace MySecondWorld.UI
                 _currentIndices[part] = current[part];
         }
 
+        private void Update()
+        {
+            if (gameObject.activeSelf && Input.GetKeyDown(KeyCode.Escape))
+            {
+                if (_colorPicker != null && _colorPicker.gameObject.activeSelf)
+                    _colorPicker.gameObject.SetActive(false);
+                else
+                    Close();
+            }
+        }
+
         private void Close()
         {
             _colorPicker.gameObject.SetActive(false); // 닫을 때도 피커를 비활성화해 다음 열릴 때 OnEnable 재오염(빨간색 초기화) 방지

@@ -41,6 +41,11 @@ namespace MySecondWorld.Network
 
         /// <summary>
         /// 방이 새로 만들어졌을 때 (씬 경로, roomId). 그 방 전용 몬스터 세트를 스폰하는 신호.
+        ///
+        /// AssignRoom이 직접 발행하지 않고 호출부가 <see cref="NotifyRoomOpened"/>로 발행한다.
+        /// 이 신호를 받으면 몬스터가 그 자리에서 스폰되는데, 그 시점에 플레이어의 matchId가
+        /// 아직 새 방으로 안 바뀌어 있으면 Mirror가 옵저버를 계산할 때 플레이어를 빼버린다.
+        /// 결과는 "서버엔 있는데 클라엔 안 보이는 몬스터" — 반드시 matchId를 먼저 세팅할 것.
         /// </summary>
         public event Action<string, Guid> OnRoomOpened;
 
@@ -62,8 +67,17 @@ namespace MySecondWorld.Network
         /// 빈 자리가 있는 방이 있으면 그 방에 추가하고, 없으면 새 방을 만든다.
         /// </summary>
         /// <returns>배정된 방의 roomId</returns>
-        public Guid AssignRoom(string sceneName, int connId)
+        public Guid AssignRoom(string sceneName, int connId) => AssignRoom(sceneName, connId, out _);
+
+        /// <param name="isNewRoom">
+        /// 새 방이 만들어졌으면 true. 이때만 호출부가 matchId를 세팅한 뒤
+        /// <see cref="NotifyRoomOpened"/>를 불러야 한다.
+        /// 기존 방에 합류한 경우(false)는 그 방 몬스터가 이미 있으므로 발행하지 않는다.
+        /// </param>
+        public Guid AssignRoom(string sceneName, int connId, out bool isNewRoom)
         {
+            isNewRoom = false;
+
             //기존 방들 중 해당 씬 이름이 없으면, 해당 씬 이름으로 새로 방 목록 생성
             if (!_rooms.ContainsKey(sceneName))
                 _rooms[sceneName] = new List<DungeonRoom>();
@@ -86,11 +100,18 @@ namespace MySecondWorld.Network
             newRoom.connIds.Add(connId);
             roomList.Add(newRoom);
 
-            // 목록에 넣은 뒤에 알린다 — 구독자(스포너 배선)가 곧바로
-            // GetRoomPlayerCount 같은 조회를 해도 일관된 상태가 보이도록.
-            OnRoomOpened?.Invoke(sceneName, newRoom.roomId);
-
+            isNewRoom = true;
             return newRoom.roomId;
+        }
+
+        /// <summary>
+        /// 새 방이 열렸음을 알린다. 호출부가 플레이어의 matchId를 그 방으로 세팅한 '뒤에' 부를 것.
+        /// 순서가 뒤바뀌면 몬스터가 스폰되는 시점에 플레이어가 아직 옛 match에 속해 있어
+        /// 옵저버에서 제외되고, 서버에만 존재하는 몬스터가 된다.
+        /// </summary>
+        public void NotifyRoomOpened(string sceneName, Guid roomId)
+        {
+            OnRoomOpened?.Invoke(sceneName, roomId);
         }
 
         /// <summary>
