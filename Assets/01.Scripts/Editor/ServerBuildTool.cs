@@ -55,7 +55,7 @@ namespace MySecondWorld.Editor
             RunPowerShell($"scp -i \"{fullKeyPath}\" -r \"{fullServerBuild}\" {EC2User}@{EC2Host}:{EC2RemoteDir}/");
 
             Debug.Log("[Deploy] 🚀 [3/3] 실행 권한 부여 및 systemd 서비스 재시작...");
-            RunPowerShell($"ssh -i \"{fullKeyPath}\" {EC2User}@{EC2Host} \"chmod +x {EC2RemoteDir}/MySecondWorld.x86_64 && sudo systemctl restart mysecondworld\"");
+            RunPowerShell($"ssh -i \"{fullKeyPath}\" {EC2User}@{EC2Host} \"chmod +x {EC2RemoteDir}/MySecondWorld.x86_64; sudo systemctl restart mysecondworld\"");
 
             Debug.Log("🎉 [Deploy] Linux 전용 서버가 EC2에 완벽하게 배포 및 재시작되었습니다! 이제 접속 테스트를 진행하세요.");
             Debug.Log("[Deploy] ========================================================");
@@ -69,6 +69,9 @@ namespace MySecondWorld.Editor
         {
             Debug.Log("[Deploy-Android] ========================================================");
             Debug.Log("[Deploy-Android] 📱 Android 타겟으로 전환 중...");
+            var androidProfile = AssetDatabase.LoadAssetAtPath<UnityEditor.Build.Profile.BuildProfile>("Assets/Settings/Build Profiles/Android™.asset");
+            if (androidProfile != null)
+                UnityEditor.Build.Profile.BuildProfile.SetActiveBuildProfile(androidProfile);
             EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Android, BuildTarget.Android);
 
             Debug.Log("[Deploy-Android] 📱 Android용 Addressables 번들 빌드 시작...");
@@ -131,6 +134,9 @@ namespace MySecondWorld.Editor
         public static void BuildAddressablesRemote()
         {
             Debug.Log("[Build] StandaloneLinux64 타겟으로 전환 중...");
+            var linuxProfile = AssetDatabase.LoadAssetAtPath<UnityEditor.Build.Profile.BuildProfile>("Assets/Settings/Build Profiles/Linux Server.asset");
+            if (linuxProfile != null)
+                UnityEditor.Build.Profile.BuildProfile.SetActiveBuildProfile(linuxProfile);
             EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Standalone, BuildTarget.StandaloneLinux64);
 
             Debug.Log("[Build] Linux용 Addressables 번들 빌드 시작...");
