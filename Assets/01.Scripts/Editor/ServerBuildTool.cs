@@ -1,16 +1,24 @@
 #if UNITY_EDITOR
+using System;
+using System.Diagnostics;
 using System.IO;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 namespace MySecondWorld.Editor
 {
     public static class ServerBuildTool
     {
         private const string ServerBuildPath = "Builds/Server/MySecondWorld.x86_64";
+        private const string AndroidBuildPath = "Builds/Android/MySecondWorld.apk";
+        private const string KeyPath = "Builds/m2w-key.pem";
+        private const string EC2Host = "54.79.190.139";
+        private const string EC2User = "ubuntu";
+        private const string EC2RemoteDir = "/home/ubuntu/game-server";
 
         // 빌드에 포함할 필수 스타트업 씬 (나머지 존/던전은 Addressables로 로드됨)
         private static readonly string[] StartupScenes = new[]
@@ -19,7 +27,107 @@ namespace MySecondWorld.Editor
             "Assets/00.Scenes/MainScene.unity"
         };
 
-        [MenuItem("Tools/Build/1. Linux 전용 Addressables 번들 빌드 (Remote)")]
+        // =========================================================================
+        // 1. [1-Click] 리눅스 서버 완전 자동 배포
+        // =========================================================================
+        [MenuItem("Tools/Build/🚀 [1-Click] Linux 서버 빌드 + EC2 자동 배포 & 재시작", priority = 1)]
+        public static void BuildAndDeployLinuxServer()
+        {
+            Debug.Log("[Deploy] ========================================================");
+            Debug.Log("[Deploy] 🚀 [1/3] Linux 번들 및 서버 빌드 시작...");
+            if (!BuildAllInternal())
+            {
+                Debug.LogError("[Deploy] ❌ 빌드 실패로 인해 배포를 중단합니다.");
+                return;
+            }
+
+            string fullKeyPath = Path.GetFullPath(KeyPath).Replace("\\", "/");
+            string fullServerData = Path.GetFullPath("ServerData/StandaloneLinux64").Replace("\\", "/");
+            string fullServerBuild = Path.GetFullPath("Builds/Server").Replace("\\", "/") + "/*";
+
+            Debug.Log("[Deploy] 🚀 [2/3] EC2 기존 서버 안전 중지 및 파일 업로드 중 (잠시 대기)...");
+            // 실행 중인 바이너리 덮어쓰기 에러 방지를 위해 서비스 먼저 중지
+            RunPowerShell($"ssh -i \"{fullKeyPath}\" {EC2User}@{EC2Host} \"sudo systemctl stop mysecondworld\"");
+
+            // A: 리눅스 에셋번들 업로드
+            RunPowerShell($"scp -i \"{fullKeyPath}\" -r \"{fullServerData}\" {EC2User}@{EC2Host}:{EC2RemoteDir}/ServerData/");
+            // B: 리눅스 서버 바이너리 업로드
+            RunPowerShell($"scp -i \"{fullKeyPath}\" -r \"{fullServerBuild}\" {EC2User}@{EC2Host}:{EC2RemoteDir}/");
+
+            Debug.Log("[Deploy] 🚀 [3/3] 실행 권한 부여 및 systemd 서비스 재시작...");
+            RunPowerShell($"ssh -i \"{fullKeyPath}\" {EC2User}@{EC2Host} \"chmod +x {EC2RemoteDir}/MySecondWorld.x86_64 && sudo systemctl restart mysecondworld\"");
+
+            Debug.Log("🎉 [Deploy] Linux 전용 서버가 EC2에 완벽하게 배포 및 재시작되었습니다! 이제 접속 테스트를 진행하세요.");
+            Debug.Log("[Deploy] ========================================================");
+        }
+
+        // =========================================================================
+        // 2. [Android] 안드로이드 테스트 대비용 버튼
+        // =========================================================================
+        [MenuItem("Tools/Build/📱 [Android] 번들 빌드 + EC2 자동 업로드 (원격 리소스)", priority = 2)]
+        public static void BuildAndDeployAndroidBundles()
+        {
+            Debug.Log("[Deploy-Android] ========================================================");
+            Debug.Log("[Deploy-Android] 📱 Android 타겟으로 전환 중...");
+            EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Android, BuildTarget.Android);
+
+            Debug.Log("[Deploy-Android] 📱 Android용 Addressables 번들 빌드 시작...");
+            AddressableAssetSettings.BuildPlayerContent();
+            Debug.Log("[Deploy-Android] 📱 Android 번들 빌드 완료! (ServerData/Android/)");
+
+            string fullKeyPath = Path.GetFullPath(KeyPath).Replace("\\", "/");
+            string fullAndroidData = Path.GetFullPath("ServerData/Android").Replace("\\", "/");
+
+            Debug.Log("[Deploy-Android] 🚀 EC2 웹서버로 Android 번들 업로드 중...");
+            RunPowerShell($"scp -i \"{fullKeyPath}\" -r \"{fullAndroidData}\" {EC2User}@{EC2Host}:{EC2RemoteDir}/ServerData/");
+
+            Debug.Log("🎉 [Deploy-Android] Android 에셋번들이 EC2에 업로드되었습니다! 안드로이드 기기에서 접속 테스트가 가능합니다.");
+            Debug.Log("[Deploy-Android] ========================================================");
+        }
+
+        [MenuItem("Tools/Build/📱 [Android] 번들 빌드 + EC2 업로드 + APK 빌드 (ALL-IN-ONE)", priority = 3)]
+        public static void BuildAndDeployAndroidAll()
+        {
+            BuildAndDeployAndroidBundles();
+
+            Debug.Log("[Deploy-Android] 📱 Android APK 빌드 시작...");
+            string outputDir = Path.GetDirectoryName(AndroidBuildPath);
+            if (!Directory.Exists(outputDir))
+                Directory.CreateDirectory(outputDir);
+
+            BuildPlayerOptions buildPlayerOptions = new BuildPlayerOptions
+            {
+                scenes = StartupScenes,
+                locationPathName = AndroidBuildPath,
+                target = BuildTarget.Android,
+                options = BuildOptions.None
+            };
+
+            BuildReport report = BuildPipeline.BuildPlayer(buildPlayerOptions);
+            if (report.summary.result == BuildResult.Succeeded)
+            {
+                Debug.Log($"🎉 [Deploy-Android] APK 빌드 성공! 위치: {AndroidBuildPath}");
+                EditorUtility.RevealInFinder(outputDir);
+            }
+            else
+            {
+                Debug.LogError("[Deploy-Android] ❌ APK 빌드 실패!");
+            }
+        }
+
+        // =========================================================================
+        // 3. 서버 퀵 재시작 및 개별 빌드 메뉴
+        // =========================================================================
+        [MenuItem("Tools/Build/🔄 [EC2] 서버 재시작만 실행 (Quick Restart)", priority = 10)]
+        public static void RestartEC2ServerOnly()
+        {
+            string fullKeyPath = Path.GetFullPath(KeyPath).Replace("\\", "/");
+            Debug.Log("[Deploy] 🔄 EC2 서버 서비스 재시작 중...");
+            RunPowerShell($"ssh -i \"{fullKeyPath}\" {EC2User}@{EC2Host} \"sudo systemctl restart mysecondworld\"");
+            Debug.Log("🎉 [Deploy] EC2 서버 서비스 재시작 완료!");
+        }
+
+        [MenuItem("Tools/Build/1. Linux 전용 Addressables 번들 빌드 (Remote)", priority = 20)]
         public static void BuildAddressablesRemote()
         {
             Debug.Log("[Build] StandaloneLinux64 타겟으로 전환 중...");
@@ -30,60 +138,85 @@ namespace MySecondWorld.Editor
             Debug.Log("[Build] Linux용 Addressables 번들 빌드 완료! (ServerData/StandaloneLinux64/ 생성됨)");
         }
 
-        [MenuItem("Tools/Build/2. Linux Dedicated Server 빌드 (Headless)")]
-        public static void BuildLinuxServer()
+        [MenuItem("Tools/Build/2. Linux Dedicated Server 빌드 (Headless)", priority = 21)]
+        public static bool BuildLinuxServer()
         {
+            Debug.Log("[Build] StandaloneLinux64 타겟 강제 확인 중...");
+            EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Standalone, BuildTarget.StandaloneLinux64);
+
             Debug.Log("[Build] Linux Dedicated Server 빌드 시작...");
-            // 이미 BuildAddressablesRemote()로 번들을 만들어놨는데, BuildPipeline.BuildPlayer()가
-            // Addressables "Build on Player Build" 설정 때문에 또 한 번 자동으로 빌드를 시도한다.
-            // 이 자동 빌드가 Server subtarget을 못 다뤄서 실패하므로 여기서는 끈다.
             var addressableSettings = AddressableAssetSettingsDefaultObject.Settings;
             if (addressableSettings != null)
                 addressableSettings.BuildAddressablesWithPlayerBuild = AddressableAssetSettings.PlayerBuildOption.DoNotBuildWithPlayer;
 
-            // 빌드 디렉토리 확인 및 생성
             string outputDir = Path.GetDirectoryName(ServerBuildPath);
             if (!Directory.Exists(outputDir))
                 Directory.CreateDirectory(outputDir);
 
-            // 빌드 옵션 구성
             BuildPlayerOptions buildPlayerOptions = new BuildPlayerOptions
             {
-                // ① 빌드에 직접 집어넣을 씬 (스타트업 씬 2개만!)
-                // 나머지 존/던전 씬은 Addressables로 원격 로드하므로 빌드에 안 넣어서 서버 실행 파일 용량이 확 줄어듬.
                 scenes = StartupScenes,
-                // ② 빌드 결과물이 나올 위치 (Builds/Server/MySecondWorld.x86_64)
                 locationPathName = ServerBuildPath,
-                // ③ 타겟 OS: 64비트 리눅스 실행 파일 형식으로 컴파일
                 target = BuildTarget.StandaloneLinux64,
-                // ④ ★ 가장 핵심: 'Headless Server' 모드로 빌드 지정
-                // 모니터 화면 그리기(DirectX/Vulkan), 스피커 사운드 재생 등을 엔진 레벨에서 완전히 도려내고,
-                // 오직 "물리 충돌 계산 + 네트워크 통신"만 돌아가는 초경량 서버로 만듬
                 subtarget = (int)StandaloneBuildSubtarget.Server,
                 options = BuildOptions.None
             };
 
-            // ⑤ 유니티의 실제 빌드 엔진을 돌려서 컴파일 시작!
             BuildReport report = BuildPipeline.BuildPlayer(buildPlayerOptions);
-            // ⑥ 빌드가 성공했는지, 용량은 얼마인지, 에러는 없는지 결과표(Summary)를 받아서 콘솔에 출력
             BuildSummary summary = report.summary;
 
             if (summary.result == BuildResult.Succeeded)
             {
                 Debug.Log($"[Build] 🎉 서버 빌드 대성공! (크기: {summary.totalSize / (1024 * 1024):F1} MB, 위치: {ServerBuildPath})");
-                EditorUtility.RevealInFinder(outputDir);
+                return true;
             }
-            else if (summary.result == BuildResult.Failed)
+            else
             {
                 Debug.LogError($"[Build] ❌ 서버 빌드 실패! 에러 수: {summary.totalErrors}");
+                return false;
             }
         }
 
-        [MenuItem("Tools/Build/3. [ALL-IN-ONE] Linux 번들 + Linux 서버 일괄 빌드")]
-        public static void BuildAll()
+        [MenuItem("Tools/Build/3. [ALL-IN-ONE] Linux 번들 + Linux 서버 일괄 빌드", priority = 22)]
+        public static void BuildAll() => BuildAllInternal();
+
+        private static bool BuildAllInternal()
         {
             BuildAddressablesRemote();
-            BuildLinuxServer();
+            return BuildLinuxServer();
+        }
+
+        private static bool RunPowerShell(string command)
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = "powershell.exe",
+                Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{command}\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+            try
+            {
+                using var p = Process.Start(psi);
+                string stdout = p.StandardOutput.ReadToEnd();
+                string stderr = p.StandardError.ReadToEnd();
+                p.WaitForExit();
+
+                if (!string.IsNullOrEmpty(stdout)) Debug.Log($"[Deploy] {stdout.Trim()}");
+                if (p.ExitCode != 0)
+                {
+                    Debug.LogError($"[Deploy 실패 - Code {p.ExitCode}] {command}\n{stderr}");
+                    return false;
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[Deploy 예외] {ex.Message}");
+                return false;
+            }
         }
     }
 }
