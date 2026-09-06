@@ -5,6 +5,7 @@ using UnityEngine;
 using MySecondWorld.Foundation;
 using MySecondWorld.Move;
 using MySecondWorld.Network;
+using MySecondWorld.Combat.Vfx;
 
 namespace MySecondWorld.Combat.Player
 {
@@ -18,8 +19,8 @@ namespace MySecondWorld.Combat.Player
     {
         #region Constants & Statics
 
-        private const float DeathAnimationTimeoutSeconds = 3f; // Animation Event 배선 누락 시 안전장치
-        private const float HitCooldown = 1.2f;
+        private const float DeathAnimationTimeoutSeconds = 1.5f; // Animation Event 배선 누락 시 안전장치 (1.5초)
+        private const float HitCooldown = 0.7f; // 피격 연타 쿨다운 (0.35초 경직 후 최소 0.35초 탈출 윈도우 보장)
 
         private static readonly int DeathTrigger = Animator.StringToHash(nameof(DeathTrigger));
         private static readonly int HitTrigger = Animator.StringToHash(nameof(HitTrigger));
@@ -43,6 +44,9 @@ namespace MySecondWorld.Combat.Player
         [SerializeField] private NetworkAnimator _networkAnimator;
         [SerializeField] private Animator _animator;
         [SerializeField] private Collider _playerCollider;
+
+        [Header("VFX")]
+        [SerializeField] private CombatVfxDefaultsSO _vfxDefaults;
 
         #endregion
 
@@ -72,6 +76,7 @@ namespace MySecondWorld.Combat.Player
         public Transform Anchor => transform;      // 화면 고정 바에서는 안 쓰이지만 계약이라 채운다
         public float CurrentHP => _currentHP;
         public float MaxHP => _maxHP;
+        public bool IsDead => (_health != null && _health.IsDead) || _currentHP <= 0f;
         public bool IsStunned => _isStunned;
         public event Action HPChanged;
         public event Action OnLocalDied;
@@ -86,6 +91,7 @@ namespace MySecondWorld.Combat.Player
             if (_animator == null) _animator = GetComponentInChildren<Animator>();
             if (_playerCollider == null) _playerCollider = GetComponent<Collider>();
             if (_movement == null) _movement = GetComponent<MovementController>();
+            if (_health == null) _health = GetComponent<Health>();
         }
 
         public override void OnStartServer()
@@ -136,69 +142,117 @@ namespace MySecondWorld.Combat.Player
         {
             _currentHP = newCurrentHP;
             if (_health.IsDead) return;
-            
+
+            // 히트 VFX는 전원이 봐야 해서 쿨다운과 무관하게 매 타격 브로드캐스트한다
+            // (쿨다운은 피격 애니메이션/경직 스팸 방지용이지 데미지 표현용이 아니다).
+            RpcPlayHitVfx(transform.position);
+
             // [쿨다운] 플레이어도 잡몹 여러 마리한테 맞을 때 무한 윽윽 방지
             if (Time.time - _lastHitTime < HitCooldown) return;
             _lastHitTime = Time.time;
-            
+
             // 오너 클라이언트에게 피격 모션 트리거 지시
             TargetPlayHitAnimation(connectionToClient);
+        }
+
+        [ClientRpc]
+        private void RpcPlayHitVfx(Vector3 position)
+        {
+            if (_vfxDefaults == null || _vfxDefaults.HitVfxPrefab == null) return;
+            CombatVfxSpawner.Spawn(_vfxDefaults.HitVfxPrefab, position, Quaternion.identity);
         }
 
         [TargetRpc]
         private void TargetPlayHitAnimation(NetworkConnection target)
         {
-            // [슈퍼아머] 공격 중이거나 공격 태그("Attack") 상태일 때는 피격 모션으로 캔슬되지 않음
-            if (TryGetComponent(out ICombatant combatant) && combatant.IsAttacking)
-                return;
-            if (_animator != null && _animator.GetCurrentAnimatorStateInfo(0).IsTag("Attack"))
-                return;
+            bool wasCharging = false;
+            // 조준 중이었다면 피격으로 인해 조준 강제 취소 (슈퍼아머 취소)
+            if (TryGetComponent(out PlayerAttackController attackController))
+            {
+                wasCharging = attackController.IsCharging;
+                attackController.CancelAimCharge();
+            }
+
+            // [슈퍼아머] 조준 중이 아니었고, 실제 타격 공격(근접 공격 또는 화살 발사 프레임) 중일 때만 피격 캔슬 방지
+            if (!wasCharging)
+            {
+                if (TryGetComponent(out ICombatant combatant) && combatant.IsAttacking)
+                    return;
+                if (_animator != null && (
+                    _animator.GetCurrentAnimatorStateInfo(0).IsTag("Attack") ||
+                    (_animator.layerCount > 1 && _animator.GetCurrentAnimatorStateInfo(1).IsTag("Attack"))
+                ))
+                    return;
+            }
 
             if (_networkAnimator != null)
                 _networkAnimator.SetTrigger(HitTrigger);
             else if (_animator != null)
                 _animator.SetTrigger(HitTrigger);
 
-            // [피격 경직] 0.5초 동안 플레이어 조작/이동 잠금!
+            // [피격 경직] 0.35초 동안 플레이어 조작/이동 잠금 (조작 탈출감 개선)
             ApplyHitStun().Forget();
         }
 
         /// <summary>
         /// IStunnable 구현 — 외부 CC기 및 피격 경직 공통 진입점
         /// </summary>
-        public void ApplyStun(float duration) => ApplyHitStun(duration).Forget();
+        public void ApplyStun(float duration = 0.35f) => ApplyHitStun(duration).Forget();
 
-        private async UniTaskVoid ApplyHitStun(float duration = 0.5f)
+        private System.Threading.CancellationTokenSource _stunCts;
+
+        private async UniTaskVoid ApplyHitStun(float duration = 0.35f)
         {
+            if (_movement == null) _movement = GetComponent<MovementController>();
             if (_movement == null) return;
+
+            _stunCts?.Cancel();
+            _stunCts?.Dispose();
+            _stunCts = System.Threading.CancellationTokenSource.CreateLinkedTokenSource(this.GetCancellationTokenOnDestroy());
+            var ct = _stunCts.Token;
+
             _isStunned = true;
             _movement.MovementLocked = true;
             try
             {
-                await UniTask.Delay(TimeSpan.FromSeconds(duration), cancellationToken: this.GetCancellationTokenOnDestroy());
-            }
-            catch (OperationCanceledException) { }
-            finally
-            {
+                await UniTask.Delay(TimeSpan.FromSeconds(duration), cancellationToken: ct);
                 _isStunned = false;
                 // 사망 상태가 아닐 때만 이동 락 해제
-                if (_movement != null && !_health.IsDead)
+                if (_movement != null && !IsDead)
                     _movement.MovementLocked = false;
             }
+            catch (OperationCanceledException) { }
         }
         #endregion
 
         #region 사망 시퀀스
 
         // Death 클립 마지막 프레임 근처에 Animation Event로 연결
-        public void OnDeathAnimationEnd() => _deathAnimationTcs?.TrySetResult();
+        public void OnDeathAnimationEnd()
+        {
+            if (isServer)
+                _deathAnimationTcs?.TrySetResult();
+            else if (isClient)
+                CmdOnDeathAnimationEnd();
+        }
+
+        [Command]
+        private void CmdOnDeathAnimationEnd() => _deathAnimationTcs?.TrySetResult();
 
         [Server]
         private void HandleDied()
         {
             if (_movement != null) _movement.MovementLocked = true;
             if (_playerCollider != null) _playerCollider.enabled = false;
+            RpcPlayDeathVfx(transform.position);
             PlayDeathSequence().Forget();
+        }
+
+        [ClientRpc]
+        private void RpcPlayDeathVfx(Vector3 position)
+        {
+            if (_vfxDefaults == null || _vfxDefaults.DeathVfxPrefab == null) return;
+            CombatVfxSpawner.Spawn(_vfxDefaults.DeathVfxPrefab, position, Quaternion.identity);
         }
 
         private async UniTaskVoid PlayDeathSequence()
@@ -210,7 +264,7 @@ namespace MySecondWorld.Combat.Player
 
                 // 1. 오너 클라이언트에게 사망 애니메이션 트리거 위임
                 TargetPlayDeathAnimation(connectionToClient);
-                // 2. 애니메이션 종료 또는 3초 타임아웃 대기
+                // 2. 애니메이션 종료 또는 1.5초 타임아웃 대기
                 await UniTask.WhenAny(
                     _deathAnimationTcs.Task,
                     UniTask.Delay(TimeSpan.FromSeconds(DeathAnimationTimeoutSeconds), cancellationToken: ct));
@@ -227,9 +281,25 @@ namespace MySecondWorld.Combat.Player
         [TargetRpc]
         private void TargetPlayDeathAnimation(NetworkConnection target)
         {
-            if (_movement != null) _movement.MovementLocked = true; //죽었을 때 내 이동 조작 락
+            if (_movement != null) _movement.MovementLocked = true; // 죽었을 때 내 이동 조작 락
+
+            // 조준 또는 공격 진행 중이었다면 강제 취소 (사망 모션 덮어쓰기 및 벌떡 일어남 방지)
+            if (TryGetComponent(out PlayerAttackController attackController))
+            {
+                attackController.CancelAimCharge();
+                attackController.AbortAttack();
+            }
+
             if (_networkAnimator != null)
+            {
+                _networkAnimator.ResetTrigger(HitTrigger);
                 _networkAnimator.SetTrigger(DeathTrigger);
+            }
+            else if (_animator != null)
+            {
+                _animator.ResetTrigger(HitTrigger);
+                _animator.SetTrigger(DeathTrigger);
+            }
         }
 
         [TargetRpc]

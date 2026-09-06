@@ -95,7 +95,24 @@ namespace MySecondWorld.Move
 
         private void Update()
         {
-            if (MovementLocked) return;
+            if (_controller == null || !_controller.enabled || !gameObject.activeInHierarchy) return;
+
+            if (MovementLocked)
+            {
+                // 이동 락 상태: 입력 및 이동 방향을 즉시 0으로 초기화하고 애니메이터에 Speed = 0 발행 (어색한 모션 튐 방지)
+                _moveDirection = Vector3.zero;
+                _inputDirection = Vector3.zero;
+                InputMagnitude = 0f;
+                _speedPublisher?.Publish(new PlayerSpeedChangedEvent { Speed = 0f });
+
+                // 락 상태에서도 공중에 떠있지 않고 바닥에 정상 착지할 수 있도록 중력 처리 유지
+                IsGrounded = CheckGrounded();
+                if (IsGrounded && _velocity.y < 0)
+                    _velocity.y = GroundedVelocity;
+                ApplyGravity(Gravity);
+                return;
+            }
+
             //지면 상태(IsGrounded)를 먼저 확정한 뒤
             //이동 속도(_moveSpeed vs _moveSpeed * _airControlMultiplier)를 결정
             Jumping();
@@ -224,6 +241,7 @@ namespace MySecondWorld.Move
 
         private void ApplyGravity(float gravity)
         {
+            if (_controller == null || !_controller.enabled || !gameObject.activeInHierarchy) return;
             _velocity.y += gravity * Time.deltaTime;
             // 수평 + 수직 합산 후 한 번만 Move 호출
             _controller.Move((_moveDirection + _velocity) * Time.deltaTime);
