@@ -1,10 +1,10 @@
 using System;
+using Cysharp.Threading.Tasks;
 using Mirror;
 using UnityEngine;
 using MySecondWorld.Foundation;
 using MySecondWorld.Move;
 using MySecondWorld.Network;
-using Cysharp.Threading.Tasks;
 
 namespace MySecondWorld.Combat.Player
 {

@@ -47,6 +47,9 @@ namespace MySecondWorld.Combat.Monster
 
         private static readonly int AttackTrigger = Animator.StringToHash(nameof(AttackTrigger));
         private static readonly int DeathTrigger = Animator.StringToHash(nameof(DeathTrigger));
+        private static readonly int HitTrigger = Animator.StringToHash(nameof(HitTrigger));
+        private static readonly int IsMoving = Animator.StringToHash(nameof(IsMoving));
+        // (만약 나중에 float Speed를 사용한다면: private static readonly int Speed = Animator.StringToHash("Speed");)
 
         protected NavMeshAgent _agent;
         protected Health _health;
@@ -118,16 +121,20 @@ namespace MySecondWorld.Combat.Monster
         private void OnEnable()
         {
             _health.OnDied += HandleDied;
+            _health.OnDamaged += HandleDamaged;
         }
 
         private void OnDisable()
         {
             _health.OnDied -= HandleDied;
+            _health.OnDamaged -= HandleDamaged;
         }
 
         private void Update()
         {
             OnTick();
+            UpdateMoveAnimation();
+
             if (IsUpdatePaused) return;
 
             switch (_stateMachine.State)
@@ -225,69 +232,6 @@ namespace MySecondWorld.Combat.Monster
 
         #endregion
 
-        #region 표적추적
-
-        private Transform ChooseNearestTarget()
-        {
-            Transform nearest = null;
-            float nearestSqrDist = float.MaxValue;
-            List<Transform> invalids = null; // 순회 끝난 뒤 한꺼번에 제거하기 위한 임시 버퍼
-
-            foreach (var candidate in _targetRefCounts.Keys)
-            {
-                // 단일 통로: 죽어있는 대상은 후보에서 즉시 영구 퇴장
-                if (!IsValidTarget(candidate))
-                {
-                    // 무효 타겟이 하나도 없는 게 보통이라, 진짜 발견됐을 때만 리스트를 만들도록
-                    // 지연 생성(lazy initialization)함 (불필요한 GC 할당 방지)
-                    (invalids ??= new List<Transform>()).Add(candidate);
-                    continue;
-                }
-
-                float sqrDist = (candidate.position - transform.position).sqrMagnitude;
-                if (sqrDist < nearestSqrDist)
-                {
-                    nearestSqrDist = sqrDist;
-                    nearest = candidate;
-                }
-            }
-
-            if (invalids != null)
-                foreach (var invalid in invalids)
-                    HandleTargetDied(invalid); // foreach가 완전히 끝난 뒤에만 딕셔너리를 건드림
-
-            return nearest;
-        }
-
-        // 표적이 물리적으로 트리거를 나가지 않아도(죽은 채로 그 자리에 있어도) 후보에서 완전히 제거한다
-        private void HandleTargetDied(Transform root)
-        {
-            if (root == null) return; // _target이 이미 null인 채로 호출되는 경로 방어
-
-            _targetRefCounts.Remove(root);
-            UnsubscribeDeath(root);
-
-            if (_target == root)
-                _target = ChooseNearestTarget();
-
-            if (_targetRefCounts.Count == 0)
-            {
-                SafeFire(MonsterTrigger.PlayerLost);
-                _target = null;
-            }
-        }
-
-        private void UnsubscribeDeath(Transform root)
-        {
-            if (_targetDeathUnsubscribers.TryGetValue(root, out var unsubscribe))
-            {
-                unsubscribe?.Invoke();
-                _targetDeathUnsubscribers.Remove(root);
-            }
-        }
-
-        #endregion
-
         #region 팩토리 초기화
 
         // MonsterFactory가 AddComponent 직후(비활성 상태에서) 호출한다.
@@ -351,8 +295,10 @@ namespace MySecondWorld.Combat.Monster
 
             if (_animator != null)
             {
-                _animator.Rebind(); // 이전 생애의 트리거/상태(Death 등) 전부 초기화
+                _animator.Rebind(); // 이전 상태 초기화
                 _animator.Update(0);
+                _animator.SetBool(IsMoving, false); // IsMoving 초기화
+                _animator.ResetTrigger(HitTrigger);  // 혹시 남아있을 수 있는 피격 트리거 리셋
             }
 
             // 클라이언트는 이 재사용된 GameObject를 모름
@@ -370,18 +316,30 @@ namespace MySecondWorld.Combat.Monster
             _stateMachine = new StateMachine<MonsterState, MonsterTrigger>(MonsterState.Idle, FiringMode.Queued);
 
             _stateMachine.Configure(MonsterState.Idle)
-                .OnEntry(() => { _agent.isStopped = true; OnEnterIdle(); })
+                .OnEntry(() => {
+                    _agent.isStopped = true;
+                    SetMovingAnimation(false); // Idle 진입 시 이동 끔
+                    OnEnterIdle();
+                })
                 .Permit(MonsterTrigger.PlayerDetected, MonsterState.Chase)
                 .Permit(MonsterTrigger.Died, MonsterState.Dead);
 
             _stateMachine.Configure(MonsterState.Chase)
-                .OnEntry(() => { _agent.isStopped = false; _agent.updateRotation = true; })
+                .OnEntry(() => {
+                    _agent.isStopped = false;
+                    _agent.updateRotation = true;
+                    SetMovingAnimation(true); // Chase 진입 시 이동 켬
+                })
+                .OnExit(() => SetMovingAnimation(false)) // Chase 벗어날 때 끔
                 .Permit(MonsterTrigger.PlayerLost, MonsterState.Idle)
                 .Permit(MonsterTrigger.TargetInRange, MonsterState.Attack)
                 .Permit(MonsterTrigger.Died, MonsterState.Dead);
 
             _stateMachine.Configure(MonsterState.Attack)
-                .OnEntry(() => _agent.isStopped = true)
+                .OnEntry(() => {
+                    _agent.isStopped = true;
+                    SetMovingAnimation(false); // 공격 진입 시 이동 끔
+                })
                 .Permit(MonsterTrigger.TargetOutOfRange, MonsterState.Chase)
                 .Permit(MonsterTrigger.PlayerLost, MonsterState.Idle)   // 공격 중 타겟 소실 시 Idle 복귀
                 .Permit(MonsterTrigger.Died, MonsterState.Dead);
@@ -390,6 +348,20 @@ namespace MySecondWorld.Combat.Monster
                 .OnEntry(HandleEnterDead);
 
             _stateMachine.OnTransitioned(t => Debug.Log($"[MonsterAI] {t.Source} → {t.Destination} ({t.Trigger})"));
+        }
+
+        private void SetMovingAnimation(bool isMoving)
+        {
+            if (_animator != null)
+                _animator.SetBool(IsMoving, isMoving);
+        }
+
+        private void UpdateMoveAnimation()
+        {
+            if (_animator == null || _agent == null) return;
+            // 에이전트가 정지 상태가 아니고, 실제로 이동 속도가 있을 때만 true!
+            bool isActuallyMoving = !_agent.isStopped && _agent.velocity.sqrMagnitude > 0.05f;
+            _animator.SetBool(IsMoving, isActuallyMoving);
         }
 
         private void UpdateChase()
@@ -454,6 +426,7 @@ namespace MySecondWorld.Combat.Monster
             SafeFire(MonsterTrigger.PlayerLost);   // Idle 진입 → OnEntry가 isStopped = true로 세팅
             _agent.isStopped = false;              // 스폰 지점까지는 걸어가야 하므로 즉시 다시 풀어줌
             _agent.SetDestination(_spawnPosition);
+            SetMovingAnimation(true);
         }
 
         // 스킬 ID -> 실제 모션/이동 처리. 보스는 override해서 자기 트리거로 교체.
@@ -501,6 +474,89 @@ namespace MySecondWorld.Combat.Monster
 
         #endregion
 
+
+        #region 표적추적
+
+        private Transform ChooseNearestTarget()
+        {
+            Transform nearest = null;
+            float nearestSqrDist = float.MaxValue;
+            List<Transform> invalids = null; // 순회 끝난 뒤 한꺼번에 제거하기 위한 임시 버퍼
+
+            foreach (var candidate in _targetRefCounts.Keys)
+            {
+                // 단일 통로: 죽어있는 대상은 후보에서 즉시 영구 퇴장
+                if (!IsValidTarget(candidate))
+                {
+                    // 무효 타겟이 하나도 없는 게 보통이라, 진짜 발견됐을 때만 리스트를 만들도록
+                    // 지연 생성(lazy initialization)함 (불필요한 GC 할당 방지)
+                    (invalids ??= new List<Transform>()).Add(candidate);
+                    continue;
+                }
+
+                float sqrDist = (candidate.position - transform.position).sqrMagnitude;
+                if (sqrDist < nearestSqrDist)
+                {
+                    nearestSqrDist = sqrDist;
+                    nearest = candidate;
+                }
+            }
+
+            if (invalids != null)
+                foreach (var invalid in invalids)
+                    HandleTargetDied(invalid); // foreach가 완전히 끝난 뒤에만 딕셔너리를 건드림
+
+            return nearest;
+        }
+
+        // 표적이 물리적으로 트리거를 나가지 않아도(죽은 채로 그 자리에 있어도) 후보에서 완전히 제거한다
+        private void HandleTargetDied(Transform root)
+        {
+            if (root == null) return; // _target이 이미 null인 채로 호출되는 경로 방어
+
+            _targetRefCounts.Remove(root);
+            UnsubscribeDeath(root);
+
+            if (_target == root)
+                _target = ChooseNearestTarget();
+
+            if (_targetRefCounts.Count == 0)
+            {
+                SafeFire(MonsterTrigger.PlayerLost);
+                _target = null;
+            }
+        }
+
+        private void UnsubscribeDeath(Transform root)
+        {
+            if (_targetDeathUnsubscribers.TryGetValue(root, out var unsubscribe))
+            {
+                unsubscribe?.Invoke();
+                _targetDeathUnsubscribers.Remove(root);
+            }
+        }
+
+        #endregion
+
+        #region 피격
+
+        private void HandleDamaged(float currentHp)
+        {
+            // 1. 이미 죽었거나 사망 상태에 진입 중이면 피격 모션을 띄우지 않음 (사망 모션 우선)
+            if (_health.IsDead || _stateMachine.State == MonsterState.Dead)
+                return;
+            // 2. 공격 중 피격 모션으로 캔슬시킬지 여부:
+            //    만약 공격 모션 도중엔 피격 리액션을 무시하고 싶다면:
+            //    if (_actionLocked) return;
+            // 3. Mirror NetworkAnimator가 있으면 클라이언트에 동기화, 없으면 로컬 재생
+            if (_networkAnimator != null)
+                _networkAnimator.SetTrigger(HitTrigger);
+            else if (_animator != null)
+                _animator.SetTrigger(HitTrigger);
+        }
+
+        #endregion
+
         #region 사망 처리
 
         // Death 클립 마지막 프레임 근처에 Animation Event로 연결
@@ -515,6 +571,7 @@ namespace MySecondWorld.Combat.Monster
 
         private async UniTaskVoid PlayDeathSequence()
         {
+            _deathAnimationTcs = new UniTaskCompletionSource();
             var ct = this.GetCancellationTokenOnDestroy();
             try
             {
@@ -539,7 +596,6 @@ namespace MySecondWorld.Combat.Monster
                 // 대기 중 오브젝트가 파괴됨 — 정상 흐름, 별도 처리 불필요
             }
         }
-
 
         // MonsterAI.cs 내부 단일 생사 검증 통로
         private bool IsValidTarget(Transform target)

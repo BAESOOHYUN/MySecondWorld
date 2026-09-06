@@ -24,5 +24,6 @@ namespace MySecondWorld.Combat
         public void OnAttackShoot() { }
         // 보스 광역 이벤트 (BossAoEHitbox 대응)
         public void OnSlamImpact() { }
+        public void OnDeathAnimationEnd() { }
     }
 }
