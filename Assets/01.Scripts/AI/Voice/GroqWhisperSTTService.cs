@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
+using MySecondWorld.AI;
 
 namespace MySecondWorld.AI.Voice
 {
@@ -14,7 +15,7 @@ namespace MySecondWorld.AI.Voice
     /// 마이크 녹음 → WAV 인코딩 → Groq HTTP POST → 텍스트 반환.
     public class GroqWhisperSTTService : MonoBehaviour, ISTTService
     {
-        private const string API_KEY = "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";
+        private static readonly string API_KEY = SecretKeyLoader.Load("groq_api_key");
         private const string MODEL = "whisper-large-v3-turbo";
         [SerializeField] private int _sampleRate = 16000;
         [SerializeField] private int _maxDurationSec = 30;

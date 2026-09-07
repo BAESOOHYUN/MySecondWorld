@@ -146,6 +146,9 @@ crashlytics-build.properties
 # Gemma GGUF 모델 파일
 *.gguf
 
+# 로컬 전용 비밀키 (API 키 등) — git에 올리면 안 됨. SecretKeyLoader가 여기서 읽음.
+/Assets/Resources/Secrets/*.txt
+
 
 
 # These are some examples of commonly ignored file patterns.

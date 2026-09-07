@@ -10,7 +10,7 @@ namespace MySecondWorld.AI
     public class GroqLLMService : ILLMService
     {
         private const string API_URL = "https://api.groq.com/openai/v1/chat/completions";
-        private const string API_KEY = "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";
+        private static readonly string API_KEY = SecretKeyLoader.Load("groq_api_key");
 
         // 원하는 모델 지정 (둘 다 Groq에서 정상 동작 확인 완료)
         private const string MODEL = "qwen/qwen3.8-27b"; // ★ 가장 안정적인 한국어 지원 대화 모델
