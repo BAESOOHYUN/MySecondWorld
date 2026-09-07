@@ -15,6 +15,7 @@ namespace MySecondWorld.Customization
         private readonly CharacterSaveService _saveService;
         private readonly AvatarPartKeyTableSO _avatarPartKeyTable;
         private readonly IPublisher<CharacterAppearanceSyncRequestedEvent> _syncRequestPub;
+        public event System.Action OnAppearanceChanged;
 
         [Inject]
         public CharacterAppearanceService(
@@ -62,6 +63,7 @@ namespace MySecondWorld.Customization
             // 3. 로컬 세이브 저장 & 네트워크 동기화 브로드캐스트
             _saveService.Save(data);
             _syncRequestPub.Publish(new CharacterAppearanceSyncRequestedEvent(data));
+            OnAppearanceChanged?.Invoke();
 
             Debug.Log($"[CharacterAppearanceService] 파츠 장착 완료: {item.Title} (Part={part}, Index={index})");
             return true;
@@ -105,6 +107,7 @@ namespace MySecondWorld.Customization
             }
             _saveService.Save(data);
             _syncRequestPub.Publish(new CharacterAppearanceSyncRequestedEvent(data));
+            OnAppearanceChanged?.Invoke();
             Debug.Log($"[CharacterAppearanceService] 파츠 해제 완료: Part={part}");
             return true;
         }
@@ -142,6 +145,7 @@ namespace MySecondWorld.Customization
         {
             _saveService.Save(data);
             _syncRequestPub.Publish(new CharacterAppearanceSyncRequestedEvent(data));
+            OnAppearanceChanged?.Invoke();
             Debug.Log($"[CharacterAppearanceService] 전체 외형 저장 및 동기화 요청 완료 (Gender={data.Gender}, Head={data.Head}, Torso={data.Torso})");
         }
 

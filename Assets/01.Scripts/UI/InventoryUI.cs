@@ -37,6 +37,9 @@ namespace MySecondWorld.UI
         [SerializeField] private Button _closeButton;
         [SerializeField] private Button _backdropButton; // 허공(배경) 클릭 시 닫기
 
+        [Header("중앙 장비 페이퍼돌")]
+        [SerializeField] private EquipmentPaperdollUI _paperdollUI;
+
         private LocalPlayerInventoryProvider _inventoryProvider;
         private CharacterAppearanceService _appearanceService;
         private readonly List<InventorySlotButton> _spawnedSlots = new();
@@ -75,16 +78,24 @@ namespace MySecondWorld.UI
 
         private void Start()
         {
-            _closeButton.onClick.AddListener(Close);
+            if (_closeButton != null)
+                _closeButton.onClick.AddListener(Close);
             if (_backdropButton != null)
                 _backdropButton.onClick.AddListener(Close);
 
-            if (_tabAllButton != null) _tabAllButton.onClick.AddListener(() => SetTab(InventoryCategoryTab.All));
             if (_tabEquipmentButton != null) _tabEquipmentButton.onClick.AddListener(() => SetTab(InventoryCategoryTab.Equipment));
-            if (_tabWeaponButton != null) _tabWeaponButton.onClick.AddListener(() => SetTab(InventoryCategoryTab.Weapon));
             if (_tabAccessoryButton != null) _tabAccessoryButton.onClick.AddListener(() => SetTab(InventoryCategoryTab.Accessory));
+            if (_tabWeaponButton != null) _tabWeaponButton.onClick.AddListener(() => SetTab(InventoryCategoryTab.Weapon));
             if (_tabConsumableButton != null) _tabConsumableButton.onClick.AddListener(() => SetTab(InventoryCategoryTab.Consumable));
+            if (_tabAllButton != null) _tabAllButton.onClick.AddListener(() => SetTab(InventoryCategoryTab.All));
             UpdateTabVisuals();
+
+            if (_paperdollUI != null)
+            {
+                _paperdollUI.OnUnequipRequested += HandlePaperdollUnequip;
+                _paperdollUI.OnSlotSelected += HandlePaperdollSlotSelected;
+                _paperdollUI.OnTabChanged += HandlePaperdollTabChanged;
+            }
 
             gameObject.SetActive(false);
         }
@@ -102,12 +113,26 @@ namespace MySecondWorld.UI
 
             if (_subscribedWeaponActions != null)
                 _subscribedWeaponActions.OnMainHandStateChanged -= OnWeaponStateChanged;
+
+            if (_appearanceService != null)
+                _appearanceService.OnAppearanceChanged -= OnAppearanceStateChanged;
+
+            if (_paperdollUI != null)
+            {
+                _paperdollUI.OnUnequipRequested -= HandlePaperdollUnequip;
+                _paperdollUI.OnSlotSelected -= HandlePaperdollSlotSelected;
+                _paperdollUI.OnTabChanged -= HandlePaperdollTabChanged;
+            }
         }
 
         public void Open()
         {
             gameObject.SetActive(true);
             SetBackdropActive(true);
+            if (_currentTab == InventoryCategoryTab.All && (_tabAllButton == null || !_tabAllButton.gameObject.activeInHierarchy))
+            {
+                _currentTab = InventoryCategoryTab.Equipment;
+            }
             UpdateTabVisuals();
 
             _subscribedInventory = _inventoryProvider.Inventory;
@@ -117,7 +142,13 @@ namespace MySecondWorld.UI
             _subscribedWeaponActions = _inventoryProvider.WeaponActions;
             if (_subscribedWeaponActions != null)
                 _subscribedWeaponActions.OnMainHandStateChanged += OnWeaponStateChanged;
-         
+
+            if (_appearanceService != null)
+            {
+                _appearanceService.OnAppearanceChanged -= OnAppearanceStateChanged;
+                _appearanceService.OnAppearanceChanged += OnAppearanceStateChanged;
+            }
+
             Refresh();
         }
 
@@ -133,24 +164,50 @@ namespace MySecondWorld.UI
                 _subscribedWeaponActions.OnMainHandStateChanged -= OnWeaponStateChanged;
             _subscribedWeaponActions = null;
 
+            if (_appearanceService != null)
+                _appearanceService.OnAppearanceChanged -= OnAppearanceStateChanged;
+
             gameObject.SetActive(false);
             OnClosed?.Invoke();
         }
 
+        private bool _isChangingTab;
+
         public void SetTab(InventoryCategoryTab tab)
         {
-            _currentTab = tab;
-            UpdateTabVisuals();
-            Refresh();
+            if (_isChangingTab) return;
+            _isChangingTab = true;
+
+            try
+            {
+                _currentTab = tab;
+                UpdateTabVisuals();
+
+                if (_paperdollUI != null)
+                {
+                    if (tab == InventoryCategoryTab.Equipment && _paperdollUI.CurrentTab != PaperdollTab.Armor)
+                        _paperdollUI.SetTab(PaperdollTab.Armor);
+                    else if (tab == InventoryCategoryTab.Accessory && _paperdollUI.CurrentTab != PaperdollTab.Accessory)
+                        _paperdollUI.SetTab(PaperdollTab.Accessory);
+                    else if (tab == InventoryCategoryTab.Weapon)
+                        _paperdollUI.SelectSlot(EquipmentSlotType.Weapon);
+                }
+
+                Refresh();
+            }
+            finally
+            {
+                _isChangingTab = false;
+            }
         }
 
         private void UpdateTabVisuals()
         {
-            SetTabButtonVisual(_tabAllButton, _currentTab == InventoryCategoryTab.All);
             SetTabButtonVisual(_tabEquipmentButton, _currentTab == InventoryCategoryTab.Equipment);
-            SetTabButtonVisual(_tabWeaponButton, _currentTab == InventoryCategoryTab.Weapon);
             SetTabButtonVisual(_tabAccessoryButton, _currentTab == InventoryCategoryTab.Accessory);
+            SetTabButtonVisual(_tabWeaponButton, _currentTab == InventoryCategoryTab.Weapon);
             SetTabButtonVisual(_tabConsumableButton, _currentTab == InventoryCategoryTab.Consumable);
+            SetTabButtonVisual(_tabAllButton, _currentTab == InventoryCategoryTab.All);
         }
 
         private void SetTabButtonVisual(Button btn, bool isSelected)
@@ -175,27 +232,24 @@ namespace MySecondWorld.UI
         {
             if (tab == InventoryCategoryTab.All) return true;
 
-            if (item is ConsumableItem)
+            // 1. 소모품 탭: ConsumableItem이거나 화살통(Quiver)인 경우
+            if (item is ConsumableItem || (item is EquipmentItem quiverItem && quiverItem.Category == WeaponCategory.Quiver))
                 return tab == InventoryCategoryTab.Consumable;
 
             if (item is EquipmentItem eq)
             {
-                // 악세사리 판별 (화살통, 반지, 팔찌, 목걸이, 등/귀 장식)
-                bool isAccessory = eq.Category == WeaponCategory.Quiver
-                                   || eq.Category == WeaponCategory.Ring
-                                   || eq.Category == WeaponCategory.Bracelet
-                                   || eq.Category == WeaponCategory.Necklace
-                                   || (eq.Restriction != null && (eq.Restriction.Title == "BackAttachment" || eq.Restriction.Title == "Ear"));
+                // 2. 악세사리 탭: 등/귀 장식 등 순수 외형 장식만 판정 (반지/팔찌/목걸이는 캐스터 무기이므로 무기 탭으로 이동)
+                bool isAccessory = eq.Restriction != null && (eq.Restriction.Title == "BackAttachment" || eq.Restriction.Title == "Ear");
 
                 if (isAccessory)
                     return tab == InventoryCategoryTab.Accessory;
 
-                // 무기 판별 (검, 단검, 도끼, 창, 활 등)
+                // 3. 무기 탭: 화살통을 제외한 모든 무기 (검, 단검, 도끼, 창, 활, 반지, 팔찌, 목걸이 등)
                 bool isWeapon = eq.Category != WeaponCategory.None && eq.Category != WeaponCategory.Quiver;
                 if (isWeapon)
                     return tab == InventoryCategoryTab.Weapon;
 
-                // 장비/방어구 판별 (상의, 하의, 장갑, 신발, 투구 등)
+                // 4. 장비/방어구 탭 (상의, 하의, 장갑, 신발, 투구 등)
                 bool isEquipment = eq.Category == WeaponCategory.None && eq.Restriction != null;
                 if (isEquipment)
                     return tab == InventoryCategoryTab.Equipment;
@@ -206,12 +260,18 @@ namespace MySecondWorld.UI
 
         private void OnInventoryChanged(int index) => Refresh();
         private void OnWeaponStateChanged() => Refresh();
+        private void OnAppearanceStateChanged() => Refresh();
 
         private void Refresh()
         {
             ClearSlots();
 
-            var inv = _inventoryProvider.Inventory;
+            if (_paperdollUI != null)
+            {
+                _paperdollUI.Refresh(_appearanceService, _inventoryProvider?.WeaponActions, _subscribedInventory);
+            }
+
+            var inv = _inventoryProvider?.Inventory;
             if (inv == null) return;
 
             for (int i = 0; i < inv.MaxSlots; i++)
@@ -241,6 +301,14 @@ namespace MySecondWorld.UI
                                     && weaponCheck.Category != WeaponCategory.None
                                     && weaponCheck.Category != WeaponCategory.Quiver
                                     && _inventoryProvider.WeaponActions?.CurrentMainHandDbKey == weaponCheck.GetDbKey();
+
+                bool isEquippedPart = stack.Source is EquipmentItem partCheck
+                                    && partCheck.Category == WeaponCategory.None
+                                    && partCheck.Restriction != null
+                                    && _appearanceService != null
+                                    && _appearanceService.IsPartEquipped(partCheck);
+
+                bool isEquipped = isEquippedWeapon || isEquippedPart;
                 bool isShopMode = _activeShop != null && _activeShop.IsOpen;
 
                 slot.Setup(
@@ -248,7 +316,7 @@ namespace MySecondWorld.UI
                    stack.StackSize,
                    isEquippable,
                    isConsumable,
-                   isEquippedWeapon,
+                   isEquipped,
                    onDiscard: () =>
                    {
                        if (isShopMode && stack.Source is EquipmentItem eqItem)
@@ -265,6 +333,15 @@ namespace MySecondWorld.UI
                            _inventoryProvider.WeaponActions.UnequipMainHand();
                        }
 
+                       // 버리려는 아이템이 현재 착용 중인 파츠(장비/악세)면 즉시 장착 해제
+                       if (_appearanceService != null 
+                           && stack.Source is EquipmentItem discardedPart
+                           && discardedPart.Category == WeaponCategory.None
+                           && _appearanceService.IsPartEquipped(discardedPart))
+                       {
+                           _appearanceService.UnequipWearableItem(discardedPart);
+                       }
+
                        _inventoryProvider.Actions?.DiscardItem(capturedIndex); // UI에서 "버리기" 버튼 클릭 시 그 슬롯의 아이템을 '전량 제거'.
                    },
                    onAction: ResolveEquipAction(stack.Source, capturedIndex),
@@ -274,17 +351,11 @@ namespace MySecondWorld.UI
             }
         }
 
-        // 파츠 아이템 즉시 장착 : CharacterAppearanceService가 좌우 페어링, 세이브, 동기화까지 일괄 처리
-        private void EquipPart(EquipmentItem item)
-        {
-            _appearanceService.EquipWearableItem(item);
-        }
-
         // 클릭한 아이템 종류에 따라 실제로 무슨 액션을 실행할지 결정.
-        // 우선순위: 화살통 > 무기/액세서리 > 커스터마이징 파츠 > (그 외) 소모품 사용
+        // 우선순위: 화살통 > 무기 > 커스터마이징 파츠(장비/악세사리) > (그 외) 소모품 사용
         private System.Action ResolveEquipAction(RootItem source, int slotIndex)
         {
-            // 무기면 무기 장착
+            // 1. 무기면 무기 장착 / 해제
             if (source is EquipmentItem weaponItem 
                 && weaponItem.Category != WeaponCategory.None
                 && weaponItem.Category != WeaponCategory.Quiver
@@ -300,12 +371,76 @@ namespace MySecondWorld.UI
                         _inventoryProvider.WeaponActions?.EquipMainHand(dbKey);
                 };
 
-            // 커스터마이징 파츠면 파츠 장착
-            if (source is EquipmentItem partItem && partItem.Restriction != null)
-                return () => EquipPart(partItem);
+            // 2. 커스터마이징 파츠(장비/방어구, 악세사리)면 파츠 장착 / 해제
+            if (source is EquipmentItem partItem 
+                && partItem.Category == WeaponCategory.None 
+                && partItem.Restriction != null)
+                return () =>
+                {
+                    bool alreadyEquipped = _appearanceService != null && _appearanceService.IsPartEquipped(partItem);
+                    Debug.Log($"[Equip] 파츠 {(alreadyEquipped ? "해제" : "장착")} 클릭: {partItem.Title}");
+                    if (alreadyEquipped)
+                        _appearanceService?.UnequipWearableItem(partItem);
+                    else
+                        _appearanceService?.EquipWearableItem(partItem);
+                };
 
-            // 소모품이면 "사용"
+            // 3. 소모품이면 "사용"
             return () =>  _inventoryProvider.Actions?.UseItem(slotIndex);
+        }
+
+        private void HandlePaperdollUnequip(EquipmentSlotType slotType, EquipmentItem item)
+        {
+            if (item == null) return;
+
+            if (slotType == EquipmentSlotType.Weapon)
+            {
+                _inventoryProvider.WeaponActions?.UnequipMainHand();
+            }
+            else
+            {
+                _appearanceService?.UnequipWearableItem(item);
+            }
+            Refresh();
+        }
+
+        private void HandlePaperdollSlotSelected(EquipmentSlotType slotType, EquipmentItem item)
+        {
+            if (item == null)
+            {
+                switch (slotType)
+                {
+                    case EquipmentSlotType.Weapon:
+                    case EquipmentSlotType.Shield:
+                        SetTab(InventoryCategoryTab.Weapon);
+                        break;
+                    case EquipmentSlotType.HelmetAttachment:
+                    case EquipmentSlotType.ShoulderAttach:
+                    case EquipmentSlotType.ElbowAttach:
+                    case EquipmentSlotType.BackAttachment:
+                    case EquipmentSlotType.HipsAttachment:
+                    case EquipmentSlotType.Ear:
+                    case EquipmentSlotType.Ring:
+                    case EquipmentSlotType.Necklace:
+                        SetTab(InventoryCategoryTab.Accessory);
+                        break;
+                    default:
+                        SetTab(InventoryCategoryTab.Equipment);
+                        break;
+                }
+            }
+        }
+
+        private void HandlePaperdollTabChanged(PaperdollTab tab)
+        {
+            if (tab == PaperdollTab.Armor && _currentTab != InventoryCategoryTab.Equipment)
+            {
+                SetTab(InventoryCategoryTab.Equipment);
+            }
+            else if (tab == PaperdollTab.Accessory && _currentTab != InventoryCategoryTab.Accessory)
+            {
+                SetTab(InventoryCategoryTab.Accessory);
+            }
         }
 
         private void ClearSlots()
