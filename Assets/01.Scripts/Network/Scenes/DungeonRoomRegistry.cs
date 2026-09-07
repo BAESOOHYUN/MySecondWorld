@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 
 namespace MySecondWorld.Network
 {
@@ -38,6 +40,14 @@ namespace MySecondWorld.Network
         // 같은 이름의 씬이라도 room은 여러개 있을 수 있다.
         private Dictionary<string, List<DungeonRoom>> _rooms
             = new Dictionary<string, List<DungeonRoom>>();
+
+        // 인원 0명이 된 방을 즉시 닫지 않고 유예 중인 방의 취소 토큰.
+        // 씬 경계에서 판정이 깜빡이면 LeaveRoom→AssignRoom이 반복되는데,
+        // 즉시 닫아버리면 그때마다 몬스터가 소멸→재스폰을 반복하고,
+        // 소멸 중이던 몬스터의 matchId가 새로 배정된 방과 어긋나
+        // "서버엔 있는데 안 보이는데 때리는" 유령 몬스터가 된다.
+        private readonly Dictionary<Guid, CancellationTokenSource> _pendingClose = new();
+        private const float LeaveGraceSeconds = 3f;
 
         /// <summary>
         /// 방이 새로 만들어졌을 때 (씬 경로, roomId). 그 방 전용 몬스터 세트를 스폰하는 신호.
@@ -91,6 +101,13 @@ namespace MySecondWorld.Network
                 if (room.connIds.Count < room.maxPlayers)
                 {
                     room.connIds.Add(connId);
+                    // 유예 중이던 방이면 닫힘을 취소 — 경계 깜빡임으로 잠깐 나갔다 온 것과 동일 취급
+                    if (_pendingClose.TryGetValue(room.roomId, out var pendingCts))
+                    {
+                        pendingCts.Cancel();
+                        pendingCts.Dispose();
+                        _pendingClose.Remove(room.roomId);
+                    }
                     return room.roomId;
                 }
             }
@@ -128,15 +145,41 @@ namespace MySecondWorld.Network
             foreach (var room in roomList)
                 room.connIds.Remove(connId);
 
-            // RemoveAll 대신 역순 루프 — 사라지는 방마다 OnRoomClosed를 발행해야 하기 때문.
-            // (역순이라 제거해도 남은 인덱스가 밀리지 않는다)
+            // 즉시 삭제하지 않고, 빈 방마다 유예 기간을 건다.
+            foreach (var room in roomList)
+            {
+                if (room.connIds.Count > 0) continue;
+                if (_pendingClose.ContainsKey(room.roomId)) continue; // 이미 유예 중
+
+                var cts = new CancellationTokenSource();
+                _pendingClose[room.roomId] = cts;
+                DelayedCloseAsync(sceneName, room.roomId, cts.Token).Forget();
+            }
+        }
+
+        private async UniTaskVoid DelayedCloseAsync(string sceneName, Guid roomId, CancellationToken ct)
+        {
+            try
+            {
+                await UniTask.Delay(TimeSpan.FromSeconds(LeaveGraceSeconds), cancellationToken: ct);
+            }
+            catch (OperationCanceledException)
+            {
+                return; // 유예 중 재입장 — 닫지 않는다
+            }
+            finally
+            {
+                _pendingClose.Remove(roomId);
+            }
+
+            if (!_rooms.TryGetValue(sceneName, out var roomList)) return;
             for (int i = roomList.Count - 1; i >= 0; i--)
             {
-                if (roomList[i].connIds.Count > 0) continue;
-
-                Guid closedRoomId = roomList[i].roomId;
+                if (roomList[i].roomId != roomId) continue;
+                if (roomList[i].connIds.Count > 0) break; // 유예 중 다른 사람이 들어옴
                 roomList.RemoveAt(i);
-                OnRoomClosed?.Invoke(sceneName, closedRoomId);
+                OnRoomClosed?.Invoke(sceneName, roomId);
+                break;
             }
         }
 

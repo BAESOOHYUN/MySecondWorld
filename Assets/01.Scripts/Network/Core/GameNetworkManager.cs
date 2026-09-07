@@ -78,6 +78,10 @@ namespace MySecondWorld.Network
         // SceneManager.GetSceneByPath로 그때그때 찾지 않는 이유는 아래 [S2] 주석과 같다 —
         // Addressables 번들 씬은 경로로 조회가 안 되는 경우가 있어서, 로드 시점에 잡아둔다.
         private readonly Dictionary<string, List<IRoomWaveSpawner>> _sceneSpawners = new();
+        // 존 씬 경로 → 그 씬에 미리 배치된(웨이브 스폰이 아닌) NetworkMatch 목록.
+        // 던전 씬은 방마다 다른 랜덤 matchId를 쓰므로, 씬 로드 시점엔 matchId를 못 정하고
+        // 첫 방이 열릴 때(HandleRoomOpened) 그 방의 matchId를 받는다.
+        private readonly Dictionary<string, List<NetworkMatch>> _sceneStaticMatches = new();
         private readonly HashSet<int> _bundleReadyConnIds = new(); // 번들 준비 완료된 connectionId 목록
         public bool IsBundleReady(int connId) => _bundleReadyConnIds.Contains(connId);
 
@@ -278,6 +282,8 @@ namespace MySecondWorld.Network
                     // 방 생명주기에 반응할 스포너를 이 자리에서 잡아둔다.
                     // 나중에 씬 경로로 다시 찾으려 하면 번들 씬에서 실패할 수 있다.
                     var spawnersInScene = new List<IRoomWaveSpawner>();
+                    var staticMatchesInScene = new List<NetworkMatch>();
+                    bool isDungeon = _roomRegistry.IsDungeonScene(zone.sceneName);
 
                     foreach (GameObject rootObj in loadedScene.GetRootGameObjects())
                     {
@@ -290,13 +296,22 @@ namespace MySecondWorld.Network
                             if (netId.gameObject.activeInHierarchy && netId.netId == 0)
                                 NetworkServer.Spawn(netId.gameObject);
 
-                            // ★ 씬 오브젝트에 NetworkMatch가 있으면 해당 씬의 matchId 세팅
                             if (netId.TryGetComponent(out NetworkMatch match))
-                                match.matchId = SceneMatchId.GetMatchIdFromScene(zone.sceneName);
+                            {
+                                if (isDungeon)
+                                    // 던전은 방마다 다른 랜덤 matchId를 쓴다 — 씬 해시를 넣으면
+                                    // 어떤 플레이어의 방 Guid와도 절대 안 맞아 옵저버에서 영원히 빠진다
+                                    // ("서버엔 있는데 안 보이는데 때리는" 유령의 원인). 방이 열릴 때 세팅한다.
+                                    staticMatchesInScene.Add(match);
+                                else
+                                    // ★ 필드류 씬은 방 개념이 없다 — 씬 경로 해시를 matchId로 바로 세팅
+                                    match.matchId = SceneMatchId.GetMatchIdFromScene(zone.sceneName);
+                            }
                         }
                     }
 
                     _sceneSpawners[zone.sceneName] = spawnersInScene;
+                    _sceneStaticMatches[zone.sceneName] = staticMatchesInScene;
                 }
             }
 
@@ -306,6 +321,18 @@ namespace MySecondWorld.Network
         // [S2-a] 방이 열렸다 → 그 씬 스포너들에 이 방 전용 몬스터 세트를 요청한다.
         private void HandleRoomOpened(string scenePath, System.Guid roomId)
         {
+            // 씬에 미리 배치된(웨이브 스폰이 아닌) 보스/가드 등 고정물도 이 방의 matchId를 받는다.
+            // 물리적으로 하나뿐인 고정물이라 여러 방이 동시에 열리면 마지막으로 연 방이 갖는다 —
+            // 옵저버가 아예 없어 항상 유령이 되는 것보다는 낫다.
+            if (_sceneStaticMatches.TryGetValue(scenePath, out var staticMatches))
+            {
+                foreach (var match in staticMatches)
+                {
+                    if (match != null)
+                        match.matchId = roomId;
+                }
+            }
+
             if (!_sceneSpawners.TryGetValue(scenePath, out var spawners)) return;
 
             foreach (var spawner in spawners)
@@ -343,9 +370,28 @@ namespace MySecondWorld.Network
         }
 
         // 씬 접근용 메서드
-        public Scene GetServerScene(string sceneName) =>
-            _serverSceneHandles.TryGetValue(sceneName, out var handle)
-            ? handle.Result.Scene : SceneManager.GetSceneByPath(sceneName); //폴백
+        public Scene GetServerScene(string sceneName)
+        {
+            if (_serverSceneHandles.TryGetValue(sceneName, out var handle))
+                return handle.Result.Scene;
+
+            // 폴백1: GetSceneByPath — Addressables 번들 씬은 이걸로 못 찾는 경우가 있다(경로/이름 형식 불일치).
+            var byPath = SceneManager.GetSceneByPath(sceneName);
+            if (byPath.IsValid()) return byPath;
+
+            // 폴백2: 캐시 키가 zone.sceneName과 실제 로드된 씬의 path/name 표기가 달라서 어긋난 경우 대비 —
+            // 지금 로드된 씬 전체를 이름 기준으로도 훑는다. 이게 필요했다는 자체가 zones[] 설정 어딘가
+            // sceneName 문자열이 LoadAllZoneScenes가 캐싱한 값과 다르다는 신호이니 원본 데이터도 점검할 것.
+            string fileName = System.IO.Path.GetFileNameWithoutExtension(sceneName);
+            for (int i = 0; i < SceneManager.sceneCount; i++)
+            {
+                var loaded = SceneManager.GetSceneAt(i);
+                if (loaded.path == sceneName || loaded.name == fileName)
+                    return loaded;
+            }
+
+            return default;
+        }
 
         #endregion
 

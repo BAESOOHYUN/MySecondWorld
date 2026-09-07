@@ -265,11 +265,21 @@ namespace MySecondWorld.Network
 
             if (session.currentScene == sceneName) return;
 
+            var targetScene = _manager.GetServerScene(sceneName);
+            if (!targetScene.IsValid() || !targetScene.isLoaded)
+            {
+                // session.currentScene을 여기서 갱신해버리면 실제 GameObject는 예전 씬에 남는데
+                // 서버 상태만 새 씬으로 넘어간 것처럼 꼬인다(matchId·바운드 판정 전부 어긋남) —
+                // 그 예전 씬이 나중에 언로드될 때 클라의 "언로드 대피" 안전장치가 플레이어를
+                // MainScene으로 끌고 가는 사고로 이어진다. 그러느니 이번 전환은 그냥 취소한다.
+                Debug.LogError($"[Zone] '{sceneName}' 전환 실패 — GetServerScene이 로드된 씬을 못 찾음. conn={conn.connectionId}");
+                return;
+            }
+
             // LeaveRoom에서 이전 씬이 필요하므로 MoveGameObjectToScene 전에 저장
             string prevScene = session.currentScene;
 
-            var targetScene = _manager.GetServerScene(sceneName);
-            if (targetScene.IsValid() && targetScene.isLoaded && conn.identity != null)
+            if (conn.identity != null)
             {
                 var playerGo = conn.identity.gameObject;
                 if (playerGo.transform.parent != null)
@@ -279,7 +289,7 @@ namespace MySecondWorld.Network
             session.currentScene = sceneName;
 
             // 플레이어 씬 이동 직후에 companion도 같은 씬으로 이동
-            if (session.companionIdentity != null && targetScene.IsValid() && targetScene.isLoaded)
+            if (session.companionIdentity != null)
             {
                 var compGo = session.companionIdentity.gameObject;
                 if (compGo.transform.parent != null)
