@@ -559,7 +559,11 @@ namespace MySecondWorld.Network
         }
 
         // 안전 위치 결정 + 씬 이동 + 텔레포트 + 컴패니언 동반. RecoverFromFall/RespawnPlayer 공용.
+        // 목적지 씬이 클라에 없을 수 있어(던전 → 필드 탈출) 로드 완료를 기다려야 하므로 async다.
         private void TeleportToSafePosition(KeyValuePair<int, PlayerSession> session, NetworkConnectionToClient conn, bool toTown = false)
+            => TeleportToSafePositionAsync(session, conn, toTown).Forget();
+
+        private async UniTaskVoid TeleportToSafePositionAsync(KeyValuePair<int, PlayerSession> session, NetworkConnectionToClient conn, bool toTown = false)
         {
             // 안전 위치 결정
             Vector3 safePos;
@@ -598,27 +602,71 @@ namespace MySecondWorld.Network
                 }
             }
 
+            await MovePlayerToAsync(session, conn, safePos, safeScene);
+        }
+
+        /// <summary>
+        /// 서버 권위 텔레포트의 실행부. 목적지 씬이 클라에 없으면 로드 완료를 기다린 뒤 옮긴다.
+        /// 낙하 구조·사망 부활·탈출 버튼·NPC 순간이동이 전부 이 경로를 탄다 —
+        /// 좌표만 던지는 지름길을 새로 만들면 "클라에 지형이 없어 허공에 떨어지는" 버그가 그대로 재현된다.
+        /// </summary>
+        private async UniTask MovePlayerToAsync(
+            KeyValuePair<int, PlayerSession> session, NetworkConnectionToClient conn,
+            Vector3 targetPos, string targetScene)
+        {
             // 씬 이동을 먼저 — 목적지 씬으로 옮긴 뒤에 위치를 확정해야 가시성 판정이 어긋나지 않는다
-            if (session.Value.currentScene != safeScene)
+            if (session.Value.currentScene != targetScene)
             {
+                // 클라에 목적지 씬이 아직 없으면(던전 → 필드 탈출 등) 로드를 먼저 시키고 완료를 기다린다.
+                // 안 기다리면 서버가 소속만 바꾼 채 후속 스폰 메시지를 쏟아내고, 클라는 씬이 없어
+                // "Spawn scene object not found"로 그 오브젝트들을 영구히 잃는다(Mirror는 재시도하지 않음).
+                if (!session.Value.loadedScenes.Contains(targetScene))
+                {
+                    session.Value.isTransitioningPortal = true; // 대기 중 정기 루프가 또 구조하지 않도록 잠금
+                    try
+                    {
+                        conn.Send(new ScreenFadeMessage { fadeOut = true, duration = _manager.portalFadeDuration });
+                        session.Value.confirmedPortalScene = null;
+                        PlayerEnteredZone(conn, targetScene); // 씬 로드 요청
+
+                        var ackTask = UniTask.WaitUntil(() => session.Value.confirmedPortalScene == targetScene);
+                        var timeoutTask = UniTask.Delay(TimeSpan.FromSeconds(_manager.portalAckTimeoutSeconds));
+                        if (await UniTask.WhenAny(ackTask, timeoutTask) == 1)
+                            Debug.LogWarning($"[Rescue] conn={conn.connectionId} — '{targetScene}' 로드 ack 타임아웃, 강제 진행");
+
+                        conn.Send(new ScreenFadeMessage { fadeOut = false, duration = _manager.portalFadeDuration });
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogError($"[Rescue] conn={conn.connectionId} 목적지 씬 로드 대기 중 예외 — {e}");
+                    }
+                    finally
+                    {
+                        session.Value.isTransitioningPortal = false;
+                    }
+
+                    // 대기 도중 접속이 끊겼을 수 있다
+                    if (!NetworkServer.connections.ContainsKey(conn.connectionId) || conn.identity == null)
+                        return;
+                }
+
                 // PlayerChangedScene 재사용
                 // 직접 MoveGameObjectToScene만 하면 UpdateDungeonMatch(matchId 갱신)가 안 불려서
                 // 포탈 ack 타임아웃 강제진행 이후 재낙하 시 matchId가 안 풀리는 문제가 있었음
-                PlayerChangedScene(conn, safeScene);
-
+                PlayerChangedScene(conn, targetScene);
             }
 
             // transform.position 직접 대입은 다음 클라 스냅샷에 덮어써진다 (권한이 클라에 있음).
             // 반드시 소유 클라까지 내려가는 경로로 보낼 것.
             if (conn.identity.TryGetComponent(out MySecondWorld.Network.Player.NetworkPlayerController npc))
-                npc.ServerRescueTo(safePos);
+                npc.ServerRescueTo(targetPos);
 
-            // 낙하 구조 시에도 컴패니언을 플레이어 옆으로 동반 텔레포트
+            // 컴패니언도 옆으로 동반 텔레포트
             if (session.Value.companionIdentity != null && session.Value.companionPresent)
             {
                 if (session.Value.companionIdentity.TryGetComponent(out ICompanionServerState compState))
                 {
-                    compState.Warp(safePos + (Vector3.right * 1.0f));
+                    compState.Warp(targetPos + (Vector3.right * 1.0f));
                 }
             }
         }
