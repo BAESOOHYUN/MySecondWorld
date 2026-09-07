@@ -193,6 +193,10 @@ namespace MySecondWorld.Network.Player
             transform.position = position;
             Physics.SyncTransforms(); // PhysX 좌표 즉시 갱신
             _characterController.enabled = wasEnabled;
+
+            // 위치만 옮기면 누적된 낙하 속도가 남아 다음 프레임에 지형을 뚫고 박힌다.
+            if (_movementController != null)
+                _movementController.ResetVerticalVelocity();
         }
     }
 }

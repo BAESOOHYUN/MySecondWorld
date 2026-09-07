@@ -48,6 +48,15 @@ namespace MySecondWorld.Move
         private Vector3 _moveDirection; // 수평 이동 벡터 (JoyStickMove에서 계산, Gravity에서 사용)
         private Vector3 _velocity; // 현재 속도
 
+        /// <summary>
+        /// 텔레포트/구조 직후 누적된 수직 속도를 지운다.
+        ///
+        /// 위치만 옮기면 낙하 속도가 그대로 남는다(실측 -67m/s). 그 상태로 착지시키면
+        /// 다음 프레임에 CharacterController가 67×dt만큼 아래로 밀어붙여 지형을 뚫고 박힌다.
+        /// 구조는 "안전한 곳에 다시 세우는 것"이므로 속도까지 지워야 완결된다.
+        /// </summary>
+        public void ResetVerticalVelocity() => _velocity.y = 0f;
+
         private const float Gravity = -9.81f;
         private const float FallMultiplier = 2.5f; // 낙하 시 추가 가속도
         private const float DeadZone = 0.04f;  // magnitude 기준 0.2 이하 무시
