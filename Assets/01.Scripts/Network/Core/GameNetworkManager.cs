@@ -417,6 +417,7 @@ namespace MySecondWorld.Network
             NetworkClient.RegisterHandler<AdditiveSceneMessage>(_clientSyncService.OnAdditiveSceneMessage);
             NetworkClient.RegisterHandler<SpawnReadyMessage>(_clientSyncService.OnSpawnReadyMessage);
             NetworkClient.RegisterHandler<ScreenFadeMessage>(_clientSyncService.OnScreenFadeMessage);
+            NetworkClient.RegisterHandler<PlayerSceneChangedMessage>(_clientSyncService.OnPlayerSceneChangedMessage);
         }
 
         public override void OnClientConnect()

@@ -107,28 +107,9 @@ namespace MySecondWorld.Network
             string loadedSceneName = System.IO.Path.GetFileNameWithoutExtension(sceneName);
             string primaryName = System.IO.Path.GetFileNameWithoutExtension(_primaryTargetScene);
             if (loadedSceneName == primaryName && loadedScene.IsValid() && loadedScene.isLoaded)
-            {
-                SceneManager.SetActiveScene(loadedScene);
-                Debug.Log($"[Client] 공식 목적지 씬 ActiveScene 지정: {loadedScene.name}");
-                // 1. 로컬 플레이어 씬 이동
-                if (NetworkClient.localPlayer != null && NetworkClient.localPlayer.gameObject != null)
-                {
-                    var playerGo = NetworkClient.localPlayer.gameObject;
-                    if (playerGo.scene != loadedScene)
-                    {
-                        if (playerGo.transform.parent != null)
-                            playerGo.transform.SetParent(null);
-                        SceneManager.MoveGameObjectToScene(playerGo, loadedScene);
-                    }
-                }
-
-                // 2. 컴패니언 등 외부 시스템에 "목적지 씬 전환 완료" 알림
-                OnDestinationSceneActivated?.Invoke(loadedScene);
-            }
+                ActivateDestinationScene(loadedScene);
             else
-            {
                 Debug.Log($"[Client] 배경 프리로드 씬 로드 완료 (ActiveScene 유지): {loadedSceneName}");
-            }
 
             _completedSceneLoads++; // ACK 판정용: 씬이 몇 개나 로드되었나?
 
@@ -190,6 +171,12 @@ namespace MySecondWorld.Network
                             {
                                 Debug.LogError($"[Client] '{sceneName}' 언로드 직전 대피 실패 — 안전한 영구 씬을 찾지 못함");
                             }
+                            
+                            // [안전 대피 3] Mirror 스폰 오브젝트(몬스터·타 플레이어)도 같이 대피시킨다.
+                            // 지금까지 플레이어/컴패니언에만 대피 코드가 있어서 몬스터만 씬과 함께 파괴됐다.
+                            if (canEvacuate)
+                                RelocateSpawnedObjects(mainScene, unloadingScene);
+
                             // [안전 대피 2] 컴패니언에게 씬 언로드 전 대피 알림 발행
                             OnAdditiveSceneUnloading?.Invoke(unloadingScene);
                         }
@@ -228,6 +215,93 @@ namespace MySecondWorld.Network
             // No  : ReleaseLabel 호출 (모두 언로드됨)
             if (!string.IsNullOrEmpty(label) && !anyRemaining)
                 _zoneLoader.ReleaseLabel(label);
+        }
+
+
+        // [C2-c] 서버가 확정한 소속 씬 통보 수신.
+        // 서브씬 사이를 걸어서 이동할 때 클라의 ActiveScene을 서버에 맞추는 유일한 경로다.
+        // 기존에는 목적지가 "최초 1회"와 "포탈 전환" 때만 정해져서, 던전 안을 걸어다니면
+        // ActiveScene이 처음 밟은 씬에 잠긴 채 남았다.
+        public void OnPlayerSceneChangedMessage(PlayerSceneChangedMessage msg)
+        {
+            _primaryTargetScene = msg.sceneName;
+
+            // 이미 로드돼 있으면 즉시 적용. 아직이면 LoadAdditiveScene이 완료 시점에 적용한다.
+            Scene scene = FindLoadedScene(msg.sceneName);
+            if (scene.IsValid() && scene.isLoaded)
+                ActivateDestinationScene(scene);
+            else
+                Debug.Log($"[Client] 소속 씬 통보 '{msg.sceneName}' — 아직 미로드, 로드 완료 시 적용된다");
+        }
+
+        // 로드된 씬 조회. Addressables 씬은 scene.path가 비어 있어 GetSceneByPath로 못 찾으므로
+        // 핸들을 먼저 보고, 없으면 파일명으로 대조한다.
+        private Scene FindLoadedScene(string scenePath)
+        {
+            if (_sceneHandles.TryGetValue(scenePath, out var handle)
+                && handle.IsValid() && handle.IsDone)
+                return handle.Result.Scene;
+
+            string targetName = System.IO.Path.GetFileNameWithoutExtension(scenePath);
+            for (int i = 0; i < SceneManager.sceneCount; i++)
+            {
+                Scene s = SceneManager.GetSceneAt(i);
+                if (s.isLoaded && s.name == targetName) return s;
+            }
+            return default;
+        }
+
+        // 목적지 씬 확정 시 공통 처리 — ActiveScene 지정 + 캐릭터/스폰 오브젝트 이사 + 외부 알림.
+        // LoadAdditiveScene(로드가 나중에 끝남)과 OnPlayerSceneChangedMessage(이미 로드됨) 양쪽에서 부른다.
+        private void ActivateDestinationScene(Scene scene)
+        {
+            SceneManager.SetActiveScene(scene);
+            Debug.Log($"[Client] 공식 목적지 씬 ActiveScene 지정: {scene.name}");
+
+            // 1. 로컬 플레이어 씬 이동
+            if (NetworkClient.localPlayer != null && NetworkClient.localPlayer.gameObject != null)
+            {
+                var playerGo = NetworkClient.localPlayer.gameObject;
+                if (playerGo.scene != scene)
+                {
+                    if (playerGo.transform.parent != null)
+                        playerGo.transform.SetParent(null);
+                    SceneManager.MoveGameObjectToScene(playerGo, scene);
+                }
+            }
+
+            // 2. Mirror 스폰 오브젝트(몬스터·타 플레이어)도 같은 씬으로 모은다
+            RelocateSpawnedObjects(scene, null);
+
+            // 3. 컴패니언 등 외부 시스템에 "목적지 씬 전환 완료" 알림
+            OnDestinationSceneActivated?.Invoke(scene);
+        }
+
+        /// <summary>
+        /// Mirror가 스폰한 동적 오브젝트를 target 씬으로 옮긴다.
+        ///
+        /// Mirror의 클라 스폰은 그냥 Instantiate라 항상 그 시점의 ActiveScene에 들어간다.
+        /// 그 씬이 언로드되면 오브젝트가 통째로 파괴되는데, 서버는 옵저버 목록이 그대로라
+        /// 스폰 메시지를 다시 보내주지 않는다 → "서버엔 살아서 때리는데 화면엔 없는" 유령이 된다.
+        ///
+        /// sourceFilter를 주면 그 씬에 있는 것만 옮긴다(언로드 직전 대피용).
+        /// sceneId != 0인 씬 배치 오브젝트는 원래 자기 씬에 있어야 하므로 건드리지 않는다.
+        /// </summary>
+        private static void RelocateSpawnedObjects(Scene target, Scene? sourceFilter)
+        {
+            if (!target.IsValid() || !target.isLoaded) return;
+
+            foreach (var identity in NetworkClient.spawned.Values)
+            {
+                if (identity == null) continue;
+                if (identity.sceneId != 0) continue;          // 씬 배치 오브젝트는 제자리에
+                GameObject go = identity.gameObject;
+                if (go.transform.parent != null) continue;    // 자식은 부모를 따라간다
+                if (go.scene == target) continue;
+                if (sourceFilter.HasValue && go.scene != sourceFilter.Value) continue;
+
+                SceneManager.MoveGameObjectToScene(go, target);
+            }
         }
 
         // [C3] 서버가 보낸 기대 씬 수 저장

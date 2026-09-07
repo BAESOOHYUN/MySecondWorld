@@ -286,7 +286,10 @@ namespace MySecondWorld.Network
                     playerGo.transform.SetParent(null);
                 SceneManager.MoveGameObjectToScene(playerGo, targetScene);
             }
+
             session.currentScene = sceneName;
+            // 클라에도 소속 씬을 알린다 — 클라의 ActiveScene/캐릭터 소속을 서버 권위에 맞추는 유일한 경로.
+            conn.Send(new PlayerSceneChangedMessage { sceneName = sceneName });
 
             // 플레이어 씬 이동 직후에 companion도 같은 씬으로 이동
             if (session.companionIdentity != null)

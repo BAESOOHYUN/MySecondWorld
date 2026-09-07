@@ -77,4 +77,16 @@ namespace MySecondWorld.Network
     {
         public string sceneName;
     }
+
+    /// <summary>
+    /// 서버 → 클라이언트 : 이 플레이어의 소속 씬이 확정됐다.
+    ///
+    /// 서브씬 사이를 걸어서 이동할 때 클라의 ActiveScene을 따라오게 하는 유일한 경로다.
+    /// 이 통보가 없으면 ActiveScene이 최초로 로드된 씬에 잠긴 채 남고,
+    /// Mirror가 스폰하는 모든 오브젝트가 엉뚱한 씬에 들어간 뒤 그 씬과 함께 파괴된다.
+    /// </summary>
+    public struct PlayerSceneChangedMessage : NetworkMessage
+    {
+        public string sceneName;
+    }
 }
