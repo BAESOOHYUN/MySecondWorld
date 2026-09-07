@@ -37,6 +37,10 @@ namespace MySecondWorld.Network
         [Tooltip("이 Y 아래로 떨어지면 존 판정과 무관하게 마지막 안전 위치로 구조한다")]
         public float fallRescueY = -50f;
 
+        [Header("NPC 순간이동")]
+        [Tooltip("NPC 앞 순간이동 버튼의 목적지. 씬은 defaultSubScene(FieldScene)을 쓴다")]
+        public Vector3 npcTeleportPoint = new Vector3(-210.17f, 48.2f, 147.98f);
+
         [Tooltip("던전 방 하나의 정원. 접속 순서대로 앞 방부터 채운다.\n" +
                  "5명 입장 기준 → 정원 4: 4+1 / 정원 3: 3+2 / 정원 2: 2+2+1")]
         [SerializeField, Range(1, 8)]

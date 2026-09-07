@@ -344,6 +344,20 @@ namespace MySecondWorld.Combat.Player
         [TargetRpc]
         private void TargetHideDeathScreen() => OnLocalRespawned?.Invoke();
 
+        // NPC 앞으로 순간이동. 목적지 좌표는 서버(GameNetworkManager)가 들고 있다 —
+        // 클라가 좌표를 실어 보내면 어디든 갈 수 있는 치트가 된다.
+        [Command]
+        public void CmdTeleportToNpc()
+        {
+            var manager = NetworkManager.singleton as GameNetworkManager;
+            if (manager == null) return;
+
+            if (_zoneService == null)
+                _zoneService = manager.ZoneService;
+
+            _zoneService?.TeleportToPoint(connectionToClient, manager.npcTeleportPoint, manager.defaultSubScene);
+        }
+
         #endregion
     }
 }

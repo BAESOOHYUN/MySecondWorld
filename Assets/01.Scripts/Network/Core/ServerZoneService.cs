@@ -670,5 +670,42 @@ namespace MySecondWorld.Network
                 }
             }
         }
+
+        /// <summary>
+        /// 목적지를 발밑 지형 위로 보정한다.
+        ///
+        /// 서버는 LoadAllZoneScenes로 모든 존 씬을 들고 있어 지면을 직접 찾을 수 있다.
+        /// 인스펙터 좌표는 서버 빌드에 구워져 재빌드 없이는 못 고치므로,
+        /// 값이 조금 어긋나도 땅에 박히지 않도록 여기서 흡수한다.
+        /// 트리거는 제외하고(감지존 등), 위에서 아래로 훑어 첫 물리 바닥을 쓴다.
+        /// </summary>
+        private static Vector3 SnapToGround(Vector3 position)
+        {
+            if (Physics.Raycast(position + Vector3.up * 20f, Vector3.down,
+                    out RaycastHit hit, 80f, ~0, QueryTriggerInteraction.Ignore))
+                return hit.point + Vector3.up * 0.1f; // 살짝 띄워 콜라이더 겹침 방지
+
+            Debug.LogWarning($"[Teleport] {position} 발밑에서 지형을 못 찾음 — 좌표 그대로 사용");
+            return position;
+
+        }
+
+        /// <summary>
+        /// 지정 좌표로 이동. NPC 순간이동 버튼처럼 "구조가 아닌 의도적 이동"의 진입점.
+        /// 목적지는 서버가 정한다 — 클라가 좌표를 보내면 아무 데나 가는 치트가 된다.
+        /// </summary>
+        public void TeleportToPoint(NetworkConnectionToClient conn, Vector3 worldPos, string sceneName)
+        {
+            if (!_sessionService.Sessions.TryGetValue(conn.connectionId, out var playerSession))
+            {
+                Debug.LogWarning($"[ServerZoneService] TeleportToPoint — conn={conn.connectionId} 세션을 찾을 수 없음");
+                return;
+            }
+            if (playerSession.isTransitioningPortal) return; // 전환 중 연타 무시
+
+            MovePlayerToAsync(
+               new KeyValuePair<int, PlayerSession>(conn.connectionId, playerSession),
+               conn, SnapToGround(worldPos), sceneName).Forget();
+        }
     }
 }
