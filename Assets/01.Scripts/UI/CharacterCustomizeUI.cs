@@ -9,6 +9,7 @@ using Random = UnityEngine.Random;
 using VContainer;
 using MessagePipe;
 using MySecondWorld.Customization;
+using TMPro;
 
 namespace MySecondWorld.UI
 {
@@ -39,6 +40,15 @@ namespace MySecondWorld.UI
         [SerializeField] private ScrollRect _thumbnailScrollRect;
         [SerializeField] private Transform _thumbnailContent;  // GridLayoutGroup 부착
         [SerializeField] private PartThumbnailButton _thumbnailButtonPrefab;
+
+        [Header("도감(Codex) UI")]
+        [SerializeField] private TextMeshProUGUI _collectionRateText;
+        [SerializeField] private Slider _collectionProgressBar;
+        [SerializeField] private GameObject _detailCardRoot;
+        [SerializeField] private TextMeshProUGUI _detailCardName;
+        [SerializeField] private TextMeshProUGUI _detailCardRarity;
+        [SerializeField] private TextMeshProUGUI _detailCardStatus;
+        [SerializeField] private TextMeshProUGUI _detailCardDesc;
 
         [Header("색상")]
         [SerializeField] private Transform _colorRowParent;        // Content (VerticalLayoutGroup)
@@ -285,6 +295,11 @@ namespace MySecondWorld.UI
             _accessoryTabGroup.SetActive(index == 1);
             _colorPanel.SetActive(index == 2);
 
+            if (_thumbnailScrollRect != null)
+                _thumbnailScrollRect.gameObject.SetActive(index != 2);
+            if (_detailCardRoot != null)
+                _detailCardRoot.SetActive(index != 2);
+
             if (index == 0)
                 SwitchTab(_lastPartsTab);
             else if (index == 1)
@@ -331,6 +346,16 @@ namespace MySecondWorld.UI
             var names = _keyTable.GetThumbnailNames(part, _currentGender);
             int selectedIndex = _currentIndices[part];
 
+            // 도감 수집률 계산
+            int totalCount = names.Count;
+            int ownedCount = 0;
+            for (int i = 0; i < names.Count; i++)
+            {
+                if (IsPartOwned(part, _currentGender, i))
+                    ownedCount++;
+            }
+            UpdateCollectionProgress(ownedCount, totalCount);
+
             // 선택적 파츠: 맨 앞에 "없음(-1)" 슬롯 삽입
             if (_optionalParts.Contains(part))
             {
@@ -338,6 +363,7 @@ namespace MySecondWorld.UI
                 noneBtn.Setup(part, -1, null, OnThumbnailClicked);  // sprite null
                 noneBtn.SetSelected(selectedIndex == -1);
                 noneBtn.SetLocked(false); // "착용 안 함"은 항상 무료
+                noneBtn.SetLabel("해제");
                 _spawnedButtons.Add(noneBtn);
             }
 
@@ -353,8 +379,24 @@ namespace MySecondWorld.UI
                 btn.SetSelected(capturedIndex == selectedIndex);
                 // 잠금 체크
                 btn.SetLocked(!IsPartOwned(part, _currentGender, capturedIndex));
+
+                // 도감 라벨 및 등급 색상
+                var reqItem = _keyTable.GetRequiredItem(part, _currentGender, capturedIndex);
+                if (reqItem != null)
+                {
+                    btn.SetLabel(reqItem.Title);
+                    btn.SetRarity(reqItem.GetRarityColor());
+                }
+                else
+                {
+                    string sub = _keyTable.GetSubType(part, _currentGender, capturedIndex);
+                    btn.SetLabel(!string.IsNullOrEmpty(sub) && sub != "None" ? sub : $"#{capturedIndex + 1:D2}");
+                }
+
                 _spawnedButtons.Add(btn);
             }
+
+            UpdateDetailCard(part, selectedIndex);
         }
 
         // 썸네일 클릭시 해당 파트, 해당 인덱스로 변경
@@ -373,12 +415,73 @@ namespace MySecondWorld.UI
             // 예: 지금 Hair 탭이고, Hair 인덱스가 3이면 selected = 3
             int selected = _currentIndices[_currentTab];
 
-            // _spawnedButtons는 현재 탭의 썸네일 버튼들만 들어있다.
-            // Hair 탭을 클릭한 상황이라면:
-            // _spawnedButtons = [Hair썸네일0, Hair썸네일1, Hair썸네일2, Hair썸네일3, Hair썸네일4...]
-            // 인덱스가 3인 'Hair썸네일3'만 하이라이트 ON, 나머지는 OFF
             foreach (var btn in _spawnedButtons)
                 btn.SetSelected(btn.Index == selected);
+
+            UpdateDetailCard(_currentTab, selected);
+        }
+
+        private void UpdateCollectionProgress(int owned, int total)
+        {
+            if (_collectionRateText != null)
+            {
+                float pct = total > 0 ? ((float)owned / total * 100f) : 100f;
+                _collectionRateText.text = $"도감 수집률: <color=#FFE680>{owned}</color> / {total} ({pct:F0}%)";
+            }
+            if (_collectionProgressBar != null)
+            {
+                _collectionProgressBar.minValue = 0;
+                _collectionProgressBar.maxValue = total > 0 ? total : 1;
+                _collectionProgressBar.value = owned;
+            }
+        }
+
+        private void UpdateDetailCard(PartType part, int index)
+        {
+            if (_detailCardRoot == null) return;
+
+            if (index == -1)
+            {
+                if (_detailCardName != null) _detailCardName.text = "장착 해제 (미착용)";
+                if (_detailCardRarity != null) _detailCardRarity.text = "<color=#B0C4DE>[기본]</color>";
+                if (_detailCardStatus != null) _detailCardStatus.text = "<color=#4BC6DF>● 착용 안 함</color>";
+                if (_detailCardDesc != null) _detailCardDesc.text = "해당 부위의 외형 파츠를 착용하지 않습니다.";
+                return;
+            }
+
+            var reqItem = _keyTable.GetRequiredItem(part, _currentGender, index);
+            bool isOwned = IsPartOwned(part, _currentGender, index);
+
+            if (reqItem != null)
+            {
+                if (_detailCardName != null) _detailCardName.text = reqItem.Title;
+                if (_detailCardRarity != null)
+                {
+                    string colorHex = ColorUtility.ToHtmlStringRGB(reqItem.GetRarityColor());
+                    _detailCardRarity.text = $"<color=#{colorHex}>[{reqItem.Rarity}]</color>";
+                }
+                if (_detailCardStatus != null)
+                {
+                    _detailCardStatus.text = isOwned
+                        ? "<color=#55E88F>● 도감 수집 완료 (소유 중)</color>"
+                        : "<color=#FF8A8A>○ 미소유 (상점/던전 획득 필요)</color>";
+                }
+                if (_detailCardDesc != null) _detailCardDesc.text = reqItem.Description;
+            }
+            else
+            {
+                string sub = _keyTable.GetSubType(part, _currentGender, index);
+                string title = !string.IsNullOrEmpty(sub) && sub != "None" ? sub : $"{part} #{index + 1:D2}";
+                if (_detailCardName != null) _detailCardName.text = title;
+                if (_detailCardRarity != null) _detailCardRarity.text = "<color=#B0C4DE>[기본 외형]</color>";
+                if (_detailCardStatus != null)
+                {
+                    _detailCardStatus.text = isOwned
+                        ? "<color=#55E88F>● 기본 해금</color>"
+                        : "<color=#FF8A8A>○ 미소유</color>";
+                }
+                if (_detailCardDesc != null) _detailCardDesc.text = "모험가의 기본 외형 파츠입니다.";
+            }
         }
 
         // SetPart의 상호배제 연쇄가 끝난 뒤 UI 캐시와 하이라이트를 다시 맞춘다
