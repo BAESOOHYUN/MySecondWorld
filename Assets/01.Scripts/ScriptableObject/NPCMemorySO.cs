@@ -41,6 +41,10 @@ namespace MySecondWorld.AI
         [Tooltip("컨텍스트 오버플로우로 잘린 중요 사실 목록. NPCBrain이 세션 시작 시 systemPrompt에 주입한다.")]
         [SerializeField] private List<string> knownFacts = new();
 
+        [Header("Conversation History")]
+        [Tooltip("최근 대화 기록")]
+        [SerializeField] private List<DialogueHistoryEntry> dialogueHistory = new();
+
         // 읽기 전용 프로퍼티
         public float RelationScore => relationScore;
         public float FactionRelation => factionRelation; //클라이언트 로컬 캐시로 유지하되,
@@ -52,6 +56,7 @@ namespace MySecondWorld.AI
         public string FirstMetLocation => firstMetLocation;
         public int ConversationCount => conversationCount;
         public List<string> KnownFacts => knownFacts;
+        public List<DialogueHistoryEntry> DialogueHistory => dialogueHistory;
 
         // Mutator : 변수의 변경을 통제하기 위해 사용하는 메서드
         public void IncrementConversationCount() => conversationCount++;
@@ -73,6 +78,18 @@ namespace MySecondWorld.AI
         {
             if (!string.IsNullOrEmpty(fact) && !knownFacts.Contains(fact))
                 knownFacts.Add(fact);
+        }
+
+        public void AddHistoryEntry(string user, string npc)
+        {
+            if (string.IsNullOrWhiteSpace(user) && string.IsNullOrWhiteSpace(npc))
+                return;
+
+            dialogueHistory.Add(new DialogueHistoryEntry(user, npc));
+            if (dialogueHistory.Count > 30)
+            {
+                dialogueHistory.RemoveAt(0);
+            }
         }
 
         public void SyncFactionFromServer(float serverValue)
@@ -99,6 +116,7 @@ namespace MySecondWorld.AI
             public string firstMetLocation;
             public int conversationCount;
             public List<string> knownFacts;
+            public List<DialogueHistoryEntry> dialogueHistory;
         }
 
         public void Save(string npcKey)
@@ -112,7 +130,8 @@ namespace MySecondWorld.AI
                 firstMetDate = firstMetDate,
                 firstMetLocation = firstMetLocation,
                 conversationCount = conversationCount,
-                knownFacts = knownFacts
+                knownFacts = knownFacts,
+                dialogueHistory = dialogueHistory
             };
             File.WriteAllText(SavePath(npcKey), JsonUtility.ToJson(data));
         }
@@ -135,6 +154,7 @@ namespace MySecondWorld.AI
             firstMetLocation = data.firstMetLocation ?? "";
             conversationCount = data.conversationCount;
             knownFacts = data.knownFacts ?? new List<string>();
+            dialogueHistory = data.dialogueHistory ?? new List<DialogueHistoryEntry>();
         }
 
         public void Clear(string npcKey)
@@ -147,10 +167,28 @@ namespace MySecondWorld.AI
             firstMetLocation = "";
             conversationCount = 0;
             knownFacts.Clear();
+            dialogueHistory.Clear();
 
             string path = SavePath(npcKey);
             if (File.Exists(path))
                 File.Delete(path);
+        }
+    }
+
+    [Serializable]
+    public class DialogueHistoryEntry
+    {
+        public string timestamp;
+        public string userText;
+        public string npcText;
+
+        public DialogueHistoryEntry() { }
+
+        public DialogueHistoryEntry(string user, string npc, string time = null)
+        {
+            userText = user;
+            npcText = npc;
+            timestamp = time ?? DateTime.Now.ToString("yyyy-MM-dd HH:mm");
         }
     }
 }

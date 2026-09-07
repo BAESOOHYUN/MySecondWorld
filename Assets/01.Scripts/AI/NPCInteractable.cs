@@ -302,6 +302,7 @@ namespace MySecondWorld.AI
             _cts = null;
             _dialogueUI?.Close();
             _shopUI?.Close();
+            DialogueCameraController.Instance?.ReleaseFocus();
 
             OnConversationStateChanged(false);
         }
@@ -338,7 +339,8 @@ namespace MySecondWorld.AI
                 _cts?.Dispose();
                 _cts = new CancellationTokenSource();
 
-                _dialogueUI.Open(SessionKey);
+                _dialogueUI.Open(SessionKey, _brain != null ? _brain.Memory : null, _brain != null ? _brain.SystemPrompt : null);
+                DialogueCameraController.Instance?.FocusOnNPC(transform);
 
                 // R3 구독 — _cts 해제 시 자동으로 함께 해제된다
                 _dialogueUI.OnSubmit
@@ -420,6 +422,7 @@ namespace MySecondWorld.AI
             _dialogueUI?.Close();
             _shopUI?.Close();
             _menuUI?.Close();
+            DialogueCameraController.Instance?.ReleaseFocus();
             _cts?.Cancel();
             _cts?.Dispose();
             _cts = null;

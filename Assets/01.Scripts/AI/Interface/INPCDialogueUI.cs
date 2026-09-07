@@ -6,7 +6,7 @@ namespace MySecondWorld.AI
     {
         Observable<string> OnSubmit { get; }
         Observable<Unit> OnClose { get; }
-        void Open(string npcGuid);
+        void Open(string npcGuid, NPCMemorySO memory = null, NPCSystemPromptSO systemPrompt = null);
         void Close();
         void SetInputEnabled(bool enabled);
         void ShowThinking();

@@ -37,11 +37,32 @@ namespace MySecondWorld.UI
         [Header("Future: Voice")]
         [SerializeField] private Button _sttButton;
         [SerializeField] private Button _ttsStopButton;
+
+        [Header("Left Panel - Memory & History")]
+        [SerializeField] private GameObject _leftPanel;
+        [SerializeField] private Button _tabMemoryBtn;
+        [SerializeField] private Button _tabHistoryBtn;
+        [SerializeField] private GameObject _memoryView;
+        [SerializeField] private GameObject _historyView;
+
+        [Header("Memory Elements")]
+        [SerializeField] private Slider _relationSlider;
+        [SerializeField] private TextMeshProUGUI _relationText;
+        [SerializeField] private TextMeshProUGUI _firstMetText;
+        [SerializeField] private TextMeshProUGUI _conversationCountText;
+        [SerializeField] private Transform _knownFactsContent;
+        [SerializeField] private GameObject _knownFactItemPrefab;
+
+        [Header("History Elements")]
+        [SerializeField] private Transform _historyContent;
+        [SerializeField] private GameObject _historyItemPrefab;
         #endregion
 
         #region 필드 — 내부 상태
         private string _lastNpcGuid;
         private string _currentNpcGuid;
+        private NPCMemorySO _currentMemory;
+        private NPCSystemPromptSO _currentSystemPrompt;
         private ChatBubble _thinkingBubble;
         private CancellationTokenSource _thinkingAnimCts;
         private CancellationTokenSource _sttCts;
@@ -52,13 +73,15 @@ namespace MySecondWorld.UI
         private IPublisher<NPCStopTTSEvent> _stopTTSPub;
         private ISTTService _stt;
 
+        private readonly Subject<Unit> _closeSubject = new();
+
         // R3 구독
         public Observable<string> OnSubmit => _submitButton.OnClickAsObservable()
             .Select(_ => _playerInputField.text.Trim())
             .Where(t => t.Length > 0);
         public Observable<Unit> OnClose => _backdropButton != null
-            ? Observable.Merge(_closeButton.OnClickAsObservable().AsUnitObservable(), _backdropButton.OnClickAsObservable().AsUnitObservable())
-            : _closeButton.OnClickAsObservable().AsUnitObservable();
+            ? Observable.Merge(_closeButton.OnClickAsObservable().AsUnitObservable(), _backdropButton.OnClickAsObservable().AsUnitObservable(), _closeSubject)
+            : Observable.Merge(_closeButton.OnClickAsObservable().AsUnitObservable(), _closeSubject);
 
         [Inject]
         private void Construct(
@@ -114,6 +137,9 @@ namespace MySecondWorld.UI
                         // TTS 음성이 안 와서 문장이 한 번도 안 떴을 경우를 대비한 안전망 (2초 대기)
                         FallbackEnsureDialogueAsync(evt.Text, destroyCancellationToken).Forget();
                     }
+
+                    UpdateMemoryView(_currentMemory, _currentSystemPrompt);
+                    UpdateHistoryView(_currentMemory);
                 })
                 .AddTo(destroyCancellationToken);
 
@@ -185,41 +211,225 @@ namespace MySecondWorld.UI
                 valid = false;
             }
 
+            if (_closeButton != null)
+                _closeButton.onClick.AddListener(Close);
+            if (_backdropButton != null)
+                _backdropButton.onClick.AddListener(Close);
+
+            if (_tabMemoryBtn != null)
+                _tabMemoryBtn.onClick.AddListener(() => ShowTab(true));
+            if (_tabHistoryBtn != null)
+                _tabHistoryBtn.onClick.AddListener(() => ShowTab(false));
+
             if (!valid)
             {
                 enabled = false;
             }
         }
 
+        private void OnDestroy()
+        {
+            if (_closeButton != null)
+                _closeButton.onClick.RemoveListener(Close);
+            if (_backdropButton != null)
+                _backdropButton.onClick.RemoveListener(Close);
+            _closeSubject?.Dispose();
+        }
+
         private void Update()
         {
-            if (_canvas != null && _canvas.activeSelf && Input.GetKeyDown(KeyCode.Escape))
+            if ((_canvas != null && _canvas.activeSelf || gameObject.activeSelf) && Input.GetKeyDown(KeyCode.Escape))
                 Close();
         }
         #endregion
 
         #region 열기 / 닫기
-        public void Open(string npcGuid)
+        public void Open(string npcGuid) => Open(npcGuid, null, null);
+
+        public void Open(string npcGuid, NPCMemorySO memory = null, NPCSystemPromptSO systemPrompt = null)
         {
             _currentNpcGuid = npcGuid;
-            _canvas.SetActive(true);
+            _currentMemory = memory;
+            _currentSystemPrompt = systemPrompt;
+
+            gameObject.SetActive(true);
+            if (_canvas != null)
+                _canvas.SetActive(true);
             _playerInputField.text = string.Empty;
 
             // 같은 npc → 히스토리 유지, 다른 NPC → 초기화
-            if(npcGuid != _lastNpcGuid)
+            if (npcGuid != _lastNpcGuid)
             {
                 ClearChat();
                 if (_npcNameText != null)
-                    _npcNameText.text = string.Empty;
+                    _npcNameText.text = systemPrompt != null ? systemPrompt.NpcName : string.Empty;
                 _lastNpcGuid = npcGuid;
             }
+            else if (_npcNameText != null && systemPrompt != null)
+            {
+                _npcNameText.text = systemPrompt.NpcName;
+            }
+
+            UpdateMemoryView(memory, systemPrompt);
+            UpdateHistoryView(memory);
+            ShowTab(true);
+
             _playerInputField.ActivateInputField();
         }
 
         public void Close()
         {
-            _stopTTSPub.Publish(new NPCStopTTSEvent(_currentNpcGuid));
-            _canvas.SetActive(false);
+            _closeSubject.OnNext(Unit.Default);
+            _stopTTSPub?.Publish(new NPCStopTTSEvent(_currentNpcGuid));
+            DialogueCameraController.Instance?.ReleaseFocus();
+            if (_canvas != null)
+                _canvas.SetActive(false);
+            gameObject.SetActive(false);
+        }
+        #endregion
+
+        #region 기억 및 히스토리 패널
+        public void ShowTab(bool showMemory)
+        {
+            if (_memoryView != null) _memoryView.SetActive(showMemory);
+            if (_historyView != null) _historyView.SetActive(!showMemory);
+
+            if (_tabMemoryBtn != null && _tabMemoryBtn.image != null)
+            {
+                _tabMemoryBtn.image.color = showMemory ? Color.white : new Color(0.55f, 0.6f, 0.75f, 0.6f);
+                var memTmp = _tabMemoryBtn.GetComponentInChildren<TextMeshProUGUI>();
+                if (memTmp != null) memTmp.color = showMemory ? Color.white : new Color(0.7f, 0.75f, 0.85f, 0.7f);
+            }
+            if (_tabHistoryBtn != null && _tabHistoryBtn.image != null)
+            {
+                _tabHistoryBtn.image.color = !showMemory ? Color.white : new Color(0.55f, 0.6f, 0.75f, 0.6f);
+                var hisTmp = _tabHistoryBtn.GetComponentInChildren<TextMeshProUGUI>();
+                if (hisTmp != null) hisTmp.color = !showMemory ? Color.white : new Color(0.7f, 0.75f, 0.85f, 0.7f);
+            }
+        }
+
+        public void UpdateMemoryView(NPCMemorySO memory, NPCSystemPromptSO systemPrompt)
+        {
+            if (memory == null) return;
+
+            if (_relationSlider != null)
+            {
+                _relationSlider.minValue = -100f;
+                _relationSlider.maxValue = 100f;
+                _relationSlider.value = memory.RelationScore;
+            }
+
+            if (_relationText != null)
+            {
+                string relDesc = memory.RelationScore switch
+                {
+                    > 50 => "매우 친밀",
+                    > 20 => "호감",
+                    > -20 => "보통",
+                    > -50 => "경계",
+                    _ => "적대적"
+                };
+                _relationText.text = $"{relDesc} ({memory.RelationScore:F0})";
+            }
+
+            if (_firstMetText != null)
+            {
+                string date = string.IsNullOrEmpty(memory.FirstMetDate) ? "최근" : memory.FirstMetDate;
+                string loc = string.IsNullOrEmpty(memory.FirstMetLocation) ? "마을 광장" : memory.FirstMetLocation;
+                _firstMetText.text = $"{loc} ({date})";
+            }
+
+            if (_conversationCountText != null)
+            {
+                _conversationCountText.text = $"{memory.ConversationCount}회";
+            }
+
+            if (_knownFactsContent != null)
+            {
+                foreach (Transform child in _knownFactsContent)
+                    Destroy(child.gameObject);
+
+                if (memory.KnownFacts != null && memory.KnownFacts.Count > 0)
+                {
+                    foreach (var fact in memory.KnownFacts)
+                    {
+                        if (_knownFactItemPrefab != null)
+                        {
+                            var item = Instantiate(_knownFactItemPrefab, _knownFactsContent);
+                            var tmp = item.GetComponentInChildren<TextMeshProUGUI>();
+                            if (tmp != null) tmp.text = $"• {fact}";
+                        }
+                        else
+                        {
+                            var go = new GameObject("FactItem", typeof(RectTransform));
+                            go.transform.SetParent(_knownFactsContent, false);
+                            var tmp = go.AddComponent<TextMeshProUGUI>();
+                            tmp.text = $"• {fact}";
+                            tmp.fontSize = 15;
+                            tmp.color = new Color(0.9f, 0.9f, 0.95f, 0.9f);
+                        }
+                    }
+                }
+                else
+                {
+                    var go = new GameObject("EmptyFactItem", typeof(RectTransform));
+                    go.transform.SetParent(_knownFactsContent, false);
+                    var tmp = go.AddComponent<TextMeshProUGUI>();
+                    tmp.text = "아직 기억하고 있는 특별한 사실이 없습니다.";
+                    tmp.fontSize = 14;
+                    tmp.fontStyle = FontStyles.Italic;
+                    tmp.color = new Color(0.6f, 0.6f, 0.7f, 0.7f);
+                }
+            }
+        }
+
+        public void UpdateHistoryView(NPCMemorySO memory)
+        {
+            if (_historyContent == null) return;
+
+            foreach (Transform child in _historyContent)
+                Destroy(child.gameObject);
+
+            if (memory != null && memory.DialogueHistory != null && memory.DialogueHistory.Count > 0)
+            {
+                for (int i = memory.DialogueHistory.Count - 1; i >= 0; i--)
+                {
+                    var entry = memory.DialogueHistory[i];
+                    if (_historyItemPrefab != null)
+                    {
+                        var item = Instantiate(_historyItemPrefab, _historyContent);
+                        var texts = item.GetComponentsInChildren<TextMeshProUGUI>();
+                        if (texts.Length > 1)
+                        {
+                            texts[0].text = $"나: {entry.userText}";
+                            texts[1].text = $"NPC: {entry.npcText}";
+                        }
+                        else if (texts.Length == 1)
+                        {
+                            texts[0].text = $"[{entry.timestamp}]\n나: {entry.userText}\nNPC: {entry.npcText}";
+                        }
+                    }
+                    else
+                    {
+                        var go = new GameObject($"HistoryItem_{i}", typeof(RectTransform));
+                        go.transform.SetParent(_historyContent, false);
+                        var tmp = go.AddComponent<TextMeshProUGUI>();
+                        tmp.text = $"<color=#818cf8><b>나:</b></color> {entry.userText}\n<color=#f59e0b><b>NPC:</b></color> {entry.npcText}";
+                        tmp.fontSize = 14;
+                        tmp.color = Color.white;
+                    }
+                }
+            }
+            else
+            {
+                var go = new GameObject("EmptyHistoryItem", typeof(RectTransform));
+                go.transform.SetParent(_historyContent, false);
+                var tmp = go.AddComponent<TextMeshProUGUI>();
+                tmp.text = "이전 대화 기록이 없습니다.";
+                tmp.fontSize = 14;
+                tmp.fontStyle = FontStyles.Italic;
+                tmp.color = new Color(0.6f, 0.6f, 0.7f, 0.7f);
+            }
         }
         #endregion
 

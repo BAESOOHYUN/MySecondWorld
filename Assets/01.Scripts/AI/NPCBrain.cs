@@ -46,8 +46,9 @@ namespace MySecondWorld.AI
         // 대화 세션 버퍼 — 창 닫힐 때 한 번에 팩트 추출
         private readonly List<(string user, string npc)> _sessionBuffer = new();
 
-        // 외부 읽기 전용 접근 (NPCInteractable에서 npcName 접근용)
+        // 외부 읽기 전용 접근 (NPCInteractable에서 npcName 및 메모리 접근용)
         public NPCSystemPromptSO SystemPrompt => _systemPrompt;
+        public NPCMemorySO Memory => _memory;
         #endregion
 
         #region 에디터 디버그 툴
@@ -119,6 +120,7 @@ namespace MySecondWorld.AI
                         response));
                 _dialoguePub.Publish(new NPCDialogueEvent { NpcName = key, Message = response });
                 _sessionBuffer.Add((evt.Text, response));
+                _memory?.AddHistoryEntry(evt.Text, response);
             }
             catch (OperationCanceledException)
             {

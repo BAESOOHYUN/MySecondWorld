@@ -15,7 +15,8 @@
         "MySecondWorld.Input",
         "MySecondWorld.Inventory.Items",
         "MySecondWorld.Combat",
-        "MySecondWorld.Interaction"
+        "MySecondWorld.Interaction",
+        "Unity.Cinemachine"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
