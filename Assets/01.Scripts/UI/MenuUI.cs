@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using VContainer;
+using Cysharp.Threading.Tasks;
 using MySecondWorld.Network;
 using MySecondWorld.UI;
 
@@ -12,6 +13,7 @@ public class MenuUI : MonoBehaviour
     [SerializeField] private Button _settingsBackdropButton;
     [SerializeField] private Button _customizerButton;
     [SerializeField] private Button _inventoryButton;
+    [SerializeField] private Button _logoutButton;
 
     [Inject] private LoginUI _loginUI; 
     [Inject] private CharacterCustomizeUI _characterCustomizeUI;
@@ -41,6 +43,8 @@ public class MenuUI : MonoBehaviour
             _customizerButton.onClick.AddListener(() => _characterCustomizeUI.Open());
         if (_inventoryButton != null)
             _inventoryButton.onClick.AddListener(() => _inventoryUI.Open());
+        if (_logoutButton != null)
+            _logoutButton.onClick.AddListener(OnLogoutClicked);
     }
 
     private void Update()
@@ -64,16 +68,36 @@ public class MenuUI : MonoBehaviour
             _customizerButton.onClick.RemoveAllListeners();
         if (_inventoryButton != null)
             _inventoryButton.onClick.RemoveAllListeners();
+        if (_logoutButton != null)
+            _logoutButton.onClick.RemoveAllListeners();
+    }
+
+    private void OnLogoutClicked()
+    {
+        if (_settingsToggle != null) _settingsToggle.isOn = false;
+        else if (_settingsPanel != null) _settingsPanel.SetActive(false);
+
+        if (Mirror.NetworkManager.singleton is GameNetworkManager gnm)
+        {
+            gnm.CleanupAndReturnToRobbyAsync().Forget();
+        }
+        else
+        {
+            if (Mirror.NetworkServer.active && Mirror.NetworkClient.isConnected)
+                Mirror.NetworkManager.singleton.StopHost();
+            else if (Mirror.NetworkClient.isConnected || Mirror.NetworkClient.active)
+                Mirror.NetworkManager.singleton.StopClient();
+
+            UnityEngine.SceneManagement.SceneManager.LoadSceneAsync("OpenWorldRobby", UnityEngine.SceneManagement.LoadSceneMode.Single);
+        }
     }
 
     private void OnToggleRobby(bool isOn)
     {
-        if (_loginUI == null)
-        {
-            Debug.LogWarning("[MenuUI] LoginUI가 null임. ProjectLifetimeScope 연결 확인");
-            return;
-        }
+        if (!isOn) return;
+        if (_robbyToggle != null)
+            _robbyToggle.SetIsOnWithoutNotify(false);
 
-        _loginUI.gameObject.SetActive(isOn);
+        OnLogoutClicked();
     }
 }

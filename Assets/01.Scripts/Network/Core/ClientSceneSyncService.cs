@@ -276,5 +276,30 @@ namespace MySecondWorld.Network
         {
             _primaryTargetScene = targetSceneName; // 새 포탈 목적지 씬으로 교체
         }
+
+        public async UniTask UnloadAllScenesAsync()
+        {
+            var handles = _sceneHandles.Values.ToList();
+            _sceneHandles.Clear();
+
+            foreach (var handle in handles)
+            {
+                if (handle.IsValid())
+                {
+                    try
+                    {
+                        await Addressables.UnloadSceneAsync(handle, true).ToUniTask();
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogWarning($"[Client] UnloadSceneAsync 예외 (무시): {e.Message}");
+                    }
+                }
+            }
+
+            _primaryTargetScene = "";
+            _expectedSceneLoads = 0;
+            _completedSceneLoads = 0;
+        }
     }
 }

@@ -26,6 +26,15 @@ namespace MySecondWorld.Network
             _canvasGroup.blocksRaycasts = false;
         }
 
+        public void ResetFade()
+        {
+            if (_canvasGroup != null)
+            {
+                _canvasGroup.alpha = 0f;
+                _canvasGroup.blocksRaycasts = false;
+            }
+        }
+
         public async UniTask FadeOut(float duration)
         {
             await Fade(0f, 1f, duration);

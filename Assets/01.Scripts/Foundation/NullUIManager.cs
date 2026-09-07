@@ -6,5 +6,6 @@ namespace MySecondWorld.Network
     public class NullUIManager : IUIManager
     {
         public GameObject GetOrCreateDynamicCanvas<T>() where T : Component => null;
+        public void ResetToLobbyState() { }
     }
 }

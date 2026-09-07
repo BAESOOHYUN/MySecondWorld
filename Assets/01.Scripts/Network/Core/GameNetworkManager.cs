@@ -430,6 +430,16 @@ namespace MySecondWorld.Network
             base.OnClientDisconnect();
             Debug.LogWarning("[Client] OnClientDisconnect — 연결 끊김 또는 타임아웃");
             OnClientStopped?.Invoke();
+
+            if (SceneManager.GetActiveScene().name != "OpenWorldRobby" && !_isReturningToRobby)
+            {
+#if UNITY_EDITOR
+                if (EditorApplication.isPlayingOrWillChangePlaymode && EditorApplication.isPlaying)
+#endif
+                {
+                    CleanupAndReturnToRobbyAsync().Forget();
+                }
+            }
         }
 
         public void SetServerAddress(string address)
@@ -448,7 +458,7 @@ namespace MySecondWorld.Network
             return;
 #else
             if (isOn) StartHost();
-            else StopHost();
+            else CleanupAndReturnToRobbyAsync().Forget();
 #endif
         }
 
@@ -458,8 +468,106 @@ namespace MySecondWorld.Network
             return;
 #else
             if (isOn) StartClient();
-            else StopClient();
+            else CleanupAndReturnToRobbyAsync().Forget();
 #endif
+        }
+
+        private bool _isReturningToRobby;
+
+        public async UniTask UnloadAllServerScenesAsync()
+        {
+            var handles = _serverSceneHandles.Values.ToList();
+            _serverSceneHandles.Clear();
+            _sceneSpawners.Clear();
+            _sceneStaticMatches.Clear();
+            ServerReady = false;
+
+            foreach (var handle in handles)
+            {
+                if (handle.IsValid())
+                {
+                    try
+                    {
+                        await Addressables.UnloadSceneAsync(handle, true).ToUniTask();
+                    }
+                    catch (System.Exception e)
+                    {
+                        Debug.LogWarning($"[Server] UnloadSceneAsync 예외 (무시): {e.Message}");
+                    }
+                }
+            }
+        }
+
+        public async UniTask CleanupAndReturnToRobbyAsync()
+        {
+#if UNITY_EDITOR
+            if (!EditorApplication.isPlayingOrWillChangePlaymode || !EditorApplication.isPlaying)
+                return;
+#endif
+            if (_isReturningToRobby) return;
+            _isReturningToRobby = true;
+
+            try
+            {
+                Debug.Log("[Network] 로비(OpenWorldRobby) 복귀 및 씬 정리 시작...");
+
+                // 1. 네트워크 종료 (Host / Client 구분)
+                if (NetworkServer.active && NetworkClient.isConnected)
+                {
+                    StopHost();
+                }
+                else if (NetworkClient.isConnected || NetworkClient.active)
+                {
+                    StopClient();
+                }
+
+                // 2. 클라이언트 Addressables 서브씬 언로드
+                if (_clientSyncService != null)
+                {
+                    await _clientSyncService.UnloadAllScenesAsync();
+                }
+
+                // 3. 서버 Addressables 서브씬 언로드 (호스트인 경우)
+                await UnloadAllServerScenesAsync();
+
+                // 4. 존 에셋번들 라벨 참조 정리
+                if (_zoneLoader != null && zones != null)
+                {
+                    _zoneLoader.ReleaseAllZoneLabels(zones.Select(z => z.ZoneAssetLabel?.labelString));
+                }
+
+                // 5. OpenWorldRobby 씬으로 복귀 (Single 모드로 MainScene 및 잔여 씬 일괄 언로드)
+                const string robbySceneName = "OpenWorldRobby";
+                if (SceneManager.GetActiveScene().name != robbySceneName)
+                {
+                    var op = SceneManager.LoadSceneAsync(robbySceneName, LoadSceneMode.Single);
+                    if (op != null)
+                    {
+                        await op.ToUniTask();
+                        Debug.Log("[Network] OpenWorldRobby 씬 로드 완료");
+                    }
+                }
+
+                // 6. UI 정리: LoginUI를 제외한 모든 상시/팝업 UI 일괄 정리 및 페이드 리셋
+                _uiManager?.ResetToLobbyState();
+                if (_screenFadeUI != null)
+                {
+                    _screenFadeUI.ResetFade();
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[Network] 로비 복귀 중 오류 발생: {e}");
+            }
+            finally
+            {
+                _isReturningToRobby = false;
+            }
+        }
+
+        public void CleanupAndReturnToRobby()
+        {
+            CleanupAndReturnToRobbyAsync().Forget();
         }
         #endregion
     }

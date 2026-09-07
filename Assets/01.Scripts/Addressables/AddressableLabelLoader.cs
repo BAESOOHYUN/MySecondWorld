@@ -92,6 +92,19 @@ namespace MySecondWorld.Bundle
                 Debug.Log($"[Bundle] '{label}' 언로드 완료");
             }
         }
+
+        public void ReleaseAllZoneLabels(IEnumerable<string> labels)
+        {
+            if (labels == null) return;
+            foreach (var label in labels)
+            {
+                if (string.IsNullOrEmpty(label)) continue;
+                while (_refCounts.TryGetValue(label, out int count) && count > 0)
+                {
+                    ReleaseLabel(label);
+                }
+            }
+        }
     }
 }
 

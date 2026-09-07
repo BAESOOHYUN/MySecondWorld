@@ -9,5 +9,6 @@ namespace MySecondWorld.Network
         void SetServerAddress(string address);
         void ToggleHost(bool isOn);
         void ToggleClient(bool isOn);
+        void CleanupAndReturnToRobby();
     }
 }

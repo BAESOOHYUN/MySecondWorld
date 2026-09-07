@@ -14,6 +14,8 @@ namespace MySecondWorld.UI
         [SerializeField] private GameObject _loginCanvas;
         [SerializeField] private GameObject _chatCanvas;
         [SerializeField] private GameObject _joystickCanvas;
+        [SerializeField] private GameObject _combatHUDCanvas;
+        [SerializeField] private GameObject _debugCanvas;
         [Header("동적 캔버스 프리팹")]
         [SerializeField] private List<GameObject> _dynamicCanvasPrefabs = new List<GameObject>();
 
@@ -30,7 +32,22 @@ namespace MySecondWorld.UI
 
         private void Awake()
         {
-            SetLobbyState();
+            EnsureCanvasReferences();
+            ResetToLobbyState();
+        }
+
+        private void EnsureCanvasReferences()
+        {
+            if (_combatHUDCanvas == null)
+            {
+                var t = transform.Find("CombatHUDCanvas");
+                if (t != null) _combatHUDCanvas = t.gameObject;
+            }
+            if (_debugCanvas == null)
+            {
+                var t = transform.Find("DebugCanvas");
+                if (t != null) _debugCanvas = t.gameObject;
+            }
         }
 
         private void OnDestroy()
@@ -46,29 +63,96 @@ namespace MySecondWorld.UI
                 ResetToLobbyState();
         }
 
+        private void SetCanvasActive(GameObject go, bool active)
+        {
+            if (go == null) return;
+            go.SetActive(active);
+            if (active)
+            {
+                var canvas = go.GetComponent<Canvas>();
+                if (canvas != null && !canvas.enabled)
+                {
+                    canvas.enabled = true;
+                }
+            }
+        }
+
         private void SetLobbyState()
         {
-            if (_menuCanvas != null) _menuCanvas.SetActive(false);
-            if (_loginCanvas != null) _loginCanvas.SetActive(true);
-            if (_chatCanvas != null) _chatCanvas.SetActive(false);
-            if (_joystickCanvas != null) _joystickCanvas.SetActive(false);
+            SetCanvasActive(_loginCanvas, true);
+            SetCanvasActive(_menuCanvas, false);
+            SetCanvasActive(_chatCanvas, false);
+            SetCanvasActive(_joystickCanvas, false);
+            SetCanvasActive(_combatHUDCanvas, false);
+            SetCanvasActive(_debugCanvas, false);
         }
 
         private void SetGameState()
         {
-            if (_menuCanvas != null) _menuCanvas.SetActive(true);
-            if (_loginCanvas != null) _loginCanvas.SetActive(false);
-            if (_chatCanvas != null) _chatCanvas.SetActive(true);
-            if (_joystickCanvas != null) _joystickCanvas.SetActive(true);
+            SetCanvasActive(_loginCanvas, false);
+            SetCanvasActive(_menuCanvas, true);
+            SetCanvasActive(_chatCanvas, true);
+            SetCanvasActive(_joystickCanvas, true);
+            SetCanvasActive(_combatHUDCanvas, true);
+            SetCanvasActive(_debugCanvas, true);
         }
 
-        private void ResetToLobbyState()
+        public void ResetToLobbyState()
         {
+            // 1. 동적 생성된 캔버스 인스턴스(AI 다운로더, NPC 대화창 등) 정리
             foreach (var kvp in _dynamicCanvasInstances)
             {
                 if (kvp.Value != null)
                     kvp.Value.SetActive(false);
             }
+
+            // 2. UIManager 하위의 서브 캔버스(상점, NPC메뉴 등) 정리 및 Canvas.enabled 정상화
+            foreach (Transform child in transform)
+            {
+                if (child.name.Contains("ScreenFade"))
+                    continue;
+
+                // ShopUI, NPCMenuUI는 자체적으로 Canvas.enabled를 제어하므로 Close() 호출
+                var shop = child.GetComponent<ShopUI>();
+                if (shop != null)
+                {
+                    shop.Close();
+                    continue;
+                }
+
+                var npcMenu = child.GetComponent<NPCMenuUI>();
+                if (npcMenu != null)
+                {
+                    npcMenu.Close();
+                    continue;
+                }
+
+                // 일반 캔버스들은 Canvas 컴포넌트가 반드시 활성화(enabled=true) 상태여야
+                // 차후 GameObject.SetActive(true) 시 정상 렌더링됨
+                var canvas = child.GetComponent<Canvas>();
+                if (canvas != null && !canvas.enabled)
+                {
+                    canvas.enabled = true;
+                }
+
+                if (child.gameObject == _loginCanvas)
+                {
+                    child.gameObject.SetActive(true);
+                    continue;
+                }
+
+                // 상시 캔버스 외 서브 캔버스(인벤토리, 커스터마이징, 사망창 등) 비활성화
+                if (child.gameObject != _menuCanvas &&
+                    child.gameObject != _chatCanvas &&
+                    child.gameObject != _joystickCanvas &&
+                    child.gameObject != _combatHUDCanvas &&
+                    child.gameObject != _debugCanvas)
+                {
+                    child.gameObject.SetActive(false);
+                }
+            }
+
+            // 3. 상시 캔버스 상태 확정 (LoginCanvas ON, 나머지 상시 캔버스 OFF)
             SetLobbyState();
         }
 
