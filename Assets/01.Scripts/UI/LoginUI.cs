@@ -7,7 +7,7 @@ namespace MySecondWorld.Network
     public class LoginUI : MonoBehaviour
     {
         // ── 서버 IP 상수 ──
-        private const string CloudServerIp = "54.79.190.139";    // AWS 시드니 서버
+        private const string CloudServerIp = "32.236.54.192";    // AWS 시드니 서버
         private const string LocalPcIp     = "192.168.219.109";  // 내 컴퓨터 로컬 IP
 
         [Header("입력 및 버튼")]

@@ -18,7 +18,7 @@ namespace MySecondWorld.Editor
         private const string ServerBuildPath = "Builds/Server/MySecondWorld.x86_64";
         private const string AndroidBuildPath = "Builds/Android/MySecondWorld.apk";
         private const string KeyPath = "Builds/m2w-key.pem";
-        private const string EC2Host = "54.79.190.139";
+        private const string EC2Host = "32.236.54.192";
         private const string EC2User = "ubuntu";
         private const string EC2RemoteDir = "/home/ubuntu/game-server";
 
