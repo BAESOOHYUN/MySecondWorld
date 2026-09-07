@@ -189,12 +189,6 @@ namespace MySecondWorld.Network
                     if (candidateZone != null && candidateZone.WorldId == currentWorld)
                     {
                         detectedZone = candidateZone;
-                        Debug.Log($"[Zone] 바닥 감지 성공: 밟은 오브젝트='{hit.collider.name}', 씬='{hitScene.name}' ➔ Zone='{detectedZone.name}' (World: {currentWorld})");
-                    }
-                    else if (candidateZone != null)
-                    {
-                        // 다른 월드의 겹친 콜라이더(예: 던전 입구에서 FieldScene 지형)를 밟았을 때 가드가 정상 작동했음을 확인
-                        Debug.Log($"[Zone] 바닥 감지됐으나 월드 불일치로 무시: 밟은 씬='{hitScene.name}'(WorldId={candidateZone.WorldId}) ≠ currentWorld='{currentWorld}'");
                     }
                 }
             }
@@ -375,6 +369,12 @@ namespace MySecondWorld.Network
 
             if (session.Value.fallTimer < 3f && session.Value.ungroundedTimer < 3f && !belowRescueLine)
                 return;
+
+            // 구조 발동은 "월드 밖으로 떨어졌다"는 비정상 신호다. 원인 추적의 유일한 흔적이라 남긴다.
+            Debug.LogWarning(
+                $"[Rescue] conn={conn.connectionId} — fall={session.Value.fallTimer:F1} " +
+                $"unground={session.Value.ungroundedTimer:F1} belowLine={belowRescueLine} " +
+                $"{conn.identity.transform.position} ➔ {session.Value.lastSafePosition}");
 
             TeleportToSafePosition(session, conn);
 
