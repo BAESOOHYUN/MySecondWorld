@@ -43,11 +43,6 @@ namespace MySecondWorld.Network
             OnAdditiveSceneUnloading = null;
         }
 
-        public void SetPrimaryTargetScene(string sceneName)
-        {
-            _primaryTargetScene = sceneName;
-        }
-
         // [C2] 서버의 씬 로드/언로드 명령 수신 → 코루틴 분기
         public void OnAdditiveSceneMessage(AdditiveSceneMessage msg)
         {
@@ -296,7 +291,8 @@ namespace MySecondWorld.Network
                 if (identity == null) continue;
                 if (identity.sceneId != 0) continue;          // 씬 배치 오브젝트는 제자리에
                 GameObject go = identity.gameObject;
-                if (go.transform.parent != null) continue;    // 자식은 부모를 따라간다
+                // MoveGameObjectToScene은 루트 오브젝트만 받는다. 자식은 부모가 옮겨질 때 따라가므로 건너뛰어도 된다
+                if (go.transform.parent != null) continue;
                 if (go.scene == target) continue;
                 if (sourceFilter.HasValue && go.scene != sourceFilter.Value) continue;
 
@@ -344,11 +340,6 @@ namespace MySecondWorld.Network
                 _manager.ScreenFadeUI.FadeOut(msg.duration).Forget();
             else
                 _manager.ScreenFadeUI.FadeIn(msg.duration).Forget();
-        }
-
-        public void OnPortalTransitionStarted(string targetSceneName)
-        {
-            _primaryTargetScene = targetSceneName; // 새 포탈 목적지 씬으로 교체
         }
 
         public async UniTask UnloadAllScenesAsync()
