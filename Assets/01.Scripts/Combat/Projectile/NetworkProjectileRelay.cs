@@ -9,7 +9,8 @@ namespace MySecondWorld.Combat
     // RangedMonsterHitbox 같은 스크립트가 아예 없다. 애니메이션 이벤트를 받을 컴포넌트가 없으니
     // "쐈다"는 사실을 서버가 직접 알려주는 수밖에 없다.
     //
-    // (Phase 5에서 플레이어용 CmdRequestShoot / LastAimDirection이 여기에 추가된다)
+    // 플레이어용 발사 Command(CmdRequestShoot)와 조준 방향(AimDirection)은 이 클래스가 아니라
+    // 서버 권위 판정을 맡는 PlayerAttackAuthority에 있다.
     public class NetworkProjectileRelay : NetworkBehaviour
     {
         // 투사체 프리팹의 단일 소유자.
