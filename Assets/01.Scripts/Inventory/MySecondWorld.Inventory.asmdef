@@ -1,7 +1,10 @@
 {
     "name": "MySecondWorld.Inventory",
     "rootNamespace": "",
-    "references": [],
+    "references": [
+        "VContainer",
+        "R3"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

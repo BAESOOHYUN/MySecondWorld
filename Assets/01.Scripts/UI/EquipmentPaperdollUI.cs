@@ -129,6 +129,20 @@ namespace MySecondWorld.UI
             if (_currentTab == tab && _armorSlotsContainer != null && _armorSlotsContainer.activeSelf == (tab == PaperdollTab.Armor))
                 return;
 
+            // 이전에 선택한 슬롯의 하이라이트 제거
+            if (_currentSelectedSlot.HasValue)
+            {
+                foreach (var slot in _slots)
+                {
+                    if (slot.SlotType == _currentSelectedSlot)
+                    {
+                        slot.SetSelected(false);
+                        break;
+                    }
+                }
+                _currentSelectedSlot = null;  // 선택 초기화
+            }
+
             _currentTab = tab;
             UpdateTabVisuals();
             OnTabChanged?.Invoke(_currentTab);

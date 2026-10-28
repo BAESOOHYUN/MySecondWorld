@@ -1,83 +1,114 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 using R3;
 using VContainer;
 using Cleverous.VaultInventory;
 using MySecondWorld.AI;
 using MySecondWorld.Customization;
+using MySecondWorld.Inventory;
 using MySecondWorld.Inventory.Items;
+using MySecondWorld.Network;
 
 namespace MySecondWorld.UI
 {
     public class ShopUI : MonoBehaviour, IShopUI
     {
-        [SerializeField] private Canvas _canvas;   // ShopCanvas의 Canvas 컴포넌트
+        [SerializeField] private Canvas _canvas;
 
         [Header("카탈로그")]
         [SerializeField] private Transform _slotContent; // GridLayoutGroup 부착
         [SerializeField] private ShopSlotButton _slotButtonPrefab;
 
-
         [Header("물물교환 대가")]
         [Tooltip("이번 테스트 슬라이스에서 모든 구매에 공통으로 쓰이는 대가 아이템 1개")]
         [SerializeField] private RootItem _costItem;
 
-
-        [Header("구매 확인 팝업")]
-        [SerializeField] private GameObject _confirmPanel;
-        [SerializeField] private TMP_Text _confirmText;
-        [SerializeField] private Button _confirmYesButton;
-        [SerializeField] private Button _confirmNoButton;
-        [SerializeField] private Button _confirmCloseButton;
-
         [Header("버튼")]
         [SerializeField] private Button _closeButton;
         [SerializeField] private Button _backdropButton; // 허공(배경) 클릭 시 닫기
-        [SerializeField] private Button _confirmBackdropButton; // 확인 팝업 허공 클릭 시 팝업 닫기
+
+        [Header("성별 필터 탭")]
+        [SerializeField] private Toggle _shopTabAllGenderToggle;
+        [SerializeField] private Toggle _shopTabFemaleToggle;
+        [SerializeField] private Toggle _shopTabMaleToggle;
 
         private LocalPlayerInventoryProvider _inventoryProvider;
         private InventoryUI _inventoryUI;
+        private CharacterGenderFilterService _genderFilterService;
+        private IUIManager _uiManager;
+        private ConfirmPanelUI _confirmPanel; // 독립 캔버스(높은 소트오더)로 UIManager가 지연 생성
         private readonly List<ShopSlotButton> _spawnedSlots = new();
         private EquipmentItem _pendingPurchase; // 구매 대기중인 장비 아이템
-        private EquipmentItem _pendingSale;     // 판매 대기중인 장비 아이템
+        private EquipmentItem _pendingSale; // 판매 대기중인 장비 아이템
         private readonly Subject<Unit> _onCloseSubject = new();
+        private IDisposable _genderFilterSubscription; // 인벤토리 쪽에서 필터가 바뀌어도 상점 토글이 따라 바뀌게
+        private int _openedFrame = -1; // Open()과 같은 프레임에 들어온 잔여 클릭(백드롭 등)으로 즉시 닫히는 것 방지
+        private IReadOnlyList<EquipmentItem> _lastCatalog; // 상점이 열려있는 동안 토글이 바뀌면 이 원본 카탈로그를 다시 필터링
 
         public Observable<Unit> OnClose => _onCloseSubject;
         public bool IsOpen => _canvas != null && _canvas.enabled;
 
         [Inject]
-        public void Construct(LocalPlayerInventoryProvider inventoryProvider, InventoryUI inventoryUI = null)
+        public void Construct(
+            LocalPlayerInventoryProvider inventoryProvider,
+            InventoryUI inventoryUI = null,
+            CharacterGenderFilterService genderFilterService = null,
+            IUIManager uiManager = null)
         {
             _inventoryProvider = inventoryProvider;
             _inventoryUI = inventoryUI;
+            _genderFilterService = genderFilterService;
+            _uiManager = uiManager;
         }
 
         private void Start()
         {
+            // 상점 닫기 버튼
             _closeButton.onClick.AddListener(Close);
             if (_backdropButton != null)
                 _backdropButton.onClick.AddListener(Close);
 
-            _confirmYesButton.onClick.AddListener(ConfirmPurchase);
-            _confirmNoButton.onClick.AddListener(() => _confirmPanel.SetActive(false));
-            if (_confirmCloseButton != null)
-                _confirmCloseButton.onClick.AddListener(() => _confirmPanel.SetActive(false));
-            if (_confirmBackdropButton != null)
-                _confirmBackdropButton.onClick.AddListener(() => _confirmPanel.SetActive(false));
+            // 구매 확인 팝업 — UIManager 동적 캔버스로 지연 생성 (독립 소트오더)
+            _confirmPanel = _uiManager?.GetOrCreateDynamicCanvas<ConfirmPanelUI>()?.GetComponent<ConfirmPanelUI>();
+
+            // 성별 필터 토글
+            if (_shopTabAllGenderToggle != null)
+                _shopTabAllGenderToggle.onValueChanged.AddListener(isOn => { if (isOn) _genderFilterService?.SetGenderFilter(CharacterGenderFilter.All); });
+            if (_shopTabFemaleToggle != null)
+                _shopTabFemaleToggle.onValueChanged.AddListener(isOn => { if (isOn) _genderFilterService?.SetGenderFilter(CharacterGenderFilter.Female); });
+            if (_shopTabMaleToggle != null)
+                _shopTabMaleToggle.onValueChanged.AddListener(isOn => { if (isOn) _genderFilterService?.SetGenderFilter(CharacterGenderFilter.Male); });
+
+            _genderFilterSubscription = _genderFilterService?.OnGenderFilterChanged.Subscribe(_ =>
+            {
+                UpdateGenderFilterVisuals();
+                if (IsOpen)
+                    Refresh(FilterCatalogByGender(_lastCatalog)); // 열려있는 동안 토글이 바뀌면 즉시 다시 필터링
+            });
+            UpdateGenderFilterVisuals();
 
             if (_inventoryUI != null)
                 _inventoryUI.OnClosed += OnInventoryClosedExternally;
 
-            _confirmPanel.SetActive(false);
             _canvas.enabled = false;
+        }
+
+        private void Update()
+        {
+            if (_canvas == null || !_canvas.enabled || !Input.GetKeyDown(KeyCode.Escape)) return;
+            if (_confirmPanel != null && _confirmPanel.IsOpen) return; // ConfirmPanelUI가 자체적으로 Escape 처리
+
+            Close();
         }
 
         private void OnDestroy()
         {
             if (_inventoryUI != null)
                 _inventoryUI.OnClosed -= OnInventoryClosedExternally;
+
+            _genderFilterSubscription?.Dispose();
             _onCloseSubject.Dispose();
         }
 
@@ -89,36 +120,35 @@ namespace MySecondWorld.UI
             }
         }
 
-        private void Update()
-        {
-            if (_canvas != null && _canvas.enabled && Input.GetKeyDown(KeyCode.Escape))
-            {
-                if (_confirmPanel != null && _confirmPanel.activeSelf)
-                    _confirmPanel.SetActive(false);
-                else
-                    Close();
-            }
-        }
-
         public void Open(IReadOnlyList<EquipmentItem> catalog)
         {
+            _openedFrame = Time.frameCount;
             _canvas.enabled = true;
-            Refresh(catalog);
+            _lastCatalog = catalog;
+
+            // 성별 필터 적용된 카탈로그로 표시
+            var filteredCatalog = FilterCatalogByGender(catalog);
+            Refresh(filteredCatalog);
 
             if (_inventoryUI != null)
             {
-                if (!_inventoryUI.IsOpen) _inventoryUI.Open();
-                _inventoryUI.SetBackdropActive(false); // 상점 열릴 때 단일 백드롭 체제로 전환
-                _inventoryUI.SetShopMode(this);        // 인벤토리를 상점 연동 모드로 전환 (판매 지원)
+                _inventoryUI.Open(); // 이미 열려있어도 항상 강제로 재호출 (Open()이 중복 호출에 안전하도록 아래에서 처리)
+                _inventoryUI.SetTab(InventoryCategoryTab.All);
+                _inventoryUI.SetBackdropActive(false);
+                _inventoryUI.SetShopMode(this);
+            }
+            else
+            {
+                Debug.LogWarning("[ShopUI] InventoryUI가 주입되지 않아 상점과 함께 열 수 없습니다.");
             }
         }
 
         public void Close()
         {
             if (_canvas != null && !_canvas.enabled) return;
+            if (Time.frameCount == _openedFrame) return; // 상점이 열린 바로 그 프레임의 Close 요청은 잔여 클릭이므로 무시
 
-            if (_confirmPanel != null)
-                _confirmPanel.SetActive(false);
+            _confirmPanel?.Hide();
 
             if (_canvas != null)
                 _canvas.enabled = false;
@@ -156,13 +186,11 @@ namespace MySecondWorld.UI
             _pendingSale = null;
             _pendingPurchase = item;
 
-            string costName = _costItem != null ? _costItem.name : "골드";
-            _confirmText.text = $"<color=#FFE066>{item.name}</color> 구매\n<size=13><color=#AAAAAA>비용: {costName} 1개 소모</color></size>";
+            // 아이템 이름은 Title 사용, 가격은 "코인" 같은 간단한 이름으로
+            string costName = _costItem != null ? _costItem.Title : "코인";
+            string message = $"<color=#FFE066>{item.Title}</color> 구매\n<size=13><color=#AAAAAA>비용: {costName} 1개 소모</color></size>";
 
-            var yesText = _confirmYesButton?.GetComponentInChildren<TMP_Text>(true);
-            if (yesText != null) yesText.text = "구매";
-
-            _confirmPanel.SetActive(true);
+            _confirmPanel?.Show(message, "구매", ConfirmPurchase);
         }
 
         // 인벤토리 가방 아이템 클릭 → 판매 확인 팝업 표시
@@ -172,20 +200,15 @@ namespace MySecondWorld.UI
             _pendingPurchase = null;
             _pendingSale = item;
 
-            string currencyName = _costItem != null ? _costItem.name : "골드";
-            _confirmText.text = $"<color=#FFE066>{item.name}</color> 판매\n<size=13><color=#AAAAAA>보상: {currencyName} 1개 획득</color></size>";
+            string currencyName = _costItem != null ? _costItem.Title : "코인";
+            string message = $"<color=#FFE066>{item.Title}</color> 판매\n<size=13><color=#AAAAAA>보상: {currencyName} 1개 획득</color></size>";
 
-            var yesText = _confirmYesButton?.GetComponentInChildren<TMP_Text>(true);
-            if (yesText != null) yesText.text = "판매";
-
-            _confirmPanel.SetActive(true);
+            _confirmPanel?.Show(message, "판매", ConfirmPurchase);
         }
 
         // 구매/판매 확정 실행
         private void ConfirmPurchase()
         {
-            _confirmPanel.SetActive(false);
-
             if (_pendingPurchase != null && _costItem != null)
             {
                 // 구매: 대가(골드) 지불 -> 장비 획득
@@ -215,6 +238,48 @@ namespace MySecondWorld.UI
                     Destroy(slot.gameObject);
             }
             _spawnedSlots.Clear();
+        }
+
+        private void UpdateGenderFilterVisuals()
+        {
+            if (_genderFilterService == null) return;
+
+            var current = _genderFilterService.CurrentFilter;
+
+            _shopTabAllGenderToggle?.SetIsOnWithoutNotify(current == CharacterGenderFilter.All);
+            _shopTabFemaleToggle?.SetIsOnWithoutNotify(current == CharacterGenderFilter.Female);
+            _shopTabMaleToggle?.SetIsOnWithoutNotify(current == CharacterGenderFilter.Male);
+        }
+
+        private IReadOnlyList<EquipmentItem> FilterCatalogByGender(IReadOnlyList<EquipmentItem> catalog)
+        {
+            if (_genderFilterService == null || _genderFilterService.CurrentFilter == CharacterGenderFilter.All)
+                return catalog;
+
+            var filtered = new List<EquipmentItem>();
+            foreach (var item in catalog)
+            {
+                if (item == null) continue;
+
+                string itemName = item.name.ToLower();
+
+                // "female"은 부분 문자열로 "male"을 포함하므로 Contains만 쓰면 안 되고, "_" 토큰 단위로 정확히 비교
+                if (_genderFilterService.CurrentFilter == CharacterGenderFilter.Female && HasGenderToken(itemName, "female"))
+                    filtered.Add(item);
+                else if (_genderFilterService.CurrentFilter == CharacterGenderFilter.Male && HasGenderToken(itemName, "male"))
+                    filtered.Add(item);
+            }
+
+            return filtered;
+        }
+
+        private static bool HasGenderToken(string lowerName, string token)
+        {
+            foreach (var part in lowerName.Split('_'))
+            {
+                if (part == token) return true;
+            }
+            return false;
         }
     }
 }

@@ -1,13 +1,14 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using Cleverous.VaultInventory;
 using MessagePipe;
 using VContainer;
+using R3;
 using MySecondWorld.Customization;
 using MySecondWorld.Inventory.Items;
-using MySecondWorld.Save;
 using MySecondWorld.Inventory;
-using Cleverous.VaultInventory;
 
 namespace MySecondWorld.UI
 {
@@ -33,63 +34,77 @@ namespace MySecondWorld.UI
         [SerializeField] private Button _tabAccessoryButton;
         [SerializeField] private Button _tabConsumableButton;
 
-        [Header("버튼")]
-        [SerializeField] private Button _closeButton;
-        [SerializeField] private Button _backdropButton; // 허공(배경) 클릭 시 닫기
+        [Header("성별 필터 탭")]
+        [SerializeField] private Toggle _tabAllGenderToggle;
+        [SerializeField] private Toggle _tabFemaleToggle;
+        [SerializeField] private Toggle _tabMaleToggle;
 
         [Header("중앙 장비 페이퍼돌")]
         [SerializeField] private EquipmentPaperdollUI _paperdollUI;
 
+        [Header("버튼")]
+        [SerializeField] private Button _closeButton;
+        [SerializeField] private Button _backdropButton; // 허공(배경) 클릭 시 닫기
+
         private LocalPlayerInventoryProvider _inventoryProvider;
         private CharacterAppearanceService _appearanceService;
+        private CharacterGenderFilterService _genderFilterService;
         private readonly List<InventorySlotButton> _spawnedSlots = new();
         private InventoryCategoryTab _currentTab = InventoryCategoryTab.All;
 
         // Open() 시점에 구독한 인스턴스를 기억 — Close() 때 다른 인스턴스로 바뀌어도 정확히 해당 구독만 해제
         private Cleverous.VaultInventory.Inventory _subscribedInventory;
         private IWeaponEquipActionsProvider _subscribedWeaponActions;
+        private IDisposable _genderFilterSubscription;
+        private bool _isChangingTab;
+
+        public bool IsOpen => gameObject.activeSelf;
+        public event Action OnClosed;
+        private ShopUI _activeShop;
 
         [Inject]
         public void Construct(
             LocalPlayerInventoryProvider inventoryProvider,
-            CharacterAppearanceService appearanceService
-            )
+            CharacterAppearanceService appearanceService,
+            CharacterGenderFilterService genderFilterService)
         {
             _inventoryProvider = inventoryProvider;
             _appearanceService = appearanceService;
+            _genderFilterService = genderFilterService;
         }
 
-        public bool IsOpen => gameObject.activeSelf;
-        public event System.Action OnClosed;
-        private ShopUI _activeShop;
-
-        public void SetShopMode(ShopUI shop)
-        {
-            _activeShop = shop;
-            if (gameObject.activeSelf)
-                Refresh();
-        }
-
-        public void SetBackdropActive(bool active)
-        {
-            if (_backdropButton != null)
-                _backdropButton.gameObject.SetActive(active);
-        }
 
         private void Start()
         {
+            // 버튼 리스너 등록
             if (_closeButton != null)
                 _closeButton.onClick.AddListener(Close);
             if (_backdropButton != null)
                 _backdropButton.onClick.AddListener(Close);
 
-            if (_tabEquipmentButton != null) _tabEquipmentButton.onClick.AddListener(() => SetTab(InventoryCategoryTab.Equipment));
-            if (_tabAccessoryButton != null) _tabAccessoryButton.onClick.AddListener(() => SetTab(InventoryCategoryTab.Accessory));
-            if (_tabWeaponButton != null) _tabWeaponButton.onClick.AddListener(() => SetTab(InventoryCategoryTab.Weapon));
-            if (_tabConsumableButton != null) _tabConsumableButton.onClick.AddListener(() => SetTab(InventoryCategoryTab.Consumable));
-            if (_tabAllButton != null) _tabAllButton.onClick.AddListener(() => SetTab(InventoryCategoryTab.All));
+            // 카테고리 탭 버튼
+            if (_tabEquipmentButton != null)
+                _tabEquipmentButton.onClick.AddListener(() => SetTab(InventoryCategoryTab.Equipment));
+            if (_tabAccessoryButton != null)
+                _tabAccessoryButton.onClick.AddListener(() => SetTab(InventoryCategoryTab.Accessory));
+            if (_tabWeaponButton != null)
+                _tabWeaponButton.onClick.AddListener(() => SetTab(InventoryCategoryTab.Weapon));
+            if (_tabConsumableButton != null)
+                _tabConsumableButton.onClick.AddListener(() => SetTab(InventoryCategoryTab.Consumable));
+            if (_tabAllButton != null)
+                _tabAllButton.onClick.AddListener(() => SetTab(InventoryCategoryTab.All));
             UpdateTabVisuals();
 
+            // 성별 필터 토글
+            if (_tabAllGenderToggle != null)
+                _tabAllGenderToggle.onValueChanged.AddListener(isOn => { if (isOn) _genderFilterService.SetGenderFilter(CharacterGenderFilter.All); });
+            if (_tabFemaleToggle != null)
+                _tabFemaleToggle.onValueChanged.AddListener(isOn => { if (isOn) _genderFilterService.SetGenderFilter(CharacterGenderFilter.Female); });
+            if (_tabMaleToggle != null)
+                _tabMaleToggle.onValueChanged.AddListener(isOn => { if (isOn) _genderFilterService.SetGenderFilter(CharacterGenderFilter.Male); });
+            UpdateGenderFilterVisuals();
+
+            // 페이퍼돌 이벤트
             if (_paperdollUI != null)
             {
                 _paperdollUI.OnUnequipRequested += HandlePaperdollUnequip;
@@ -117,6 +132,8 @@ namespace MySecondWorld.UI
             if (_appearanceService != null)
                 _appearanceService.OnAppearanceChanged -= OnAppearanceStateChanged;
 
+            _genderFilterSubscription?.Dispose();
+
             if (_paperdollUI != null)
             {
                 _paperdollUI.OnUnequipRequested -= HandlePaperdollUnequip;
@@ -135,10 +152,14 @@ namespace MySecondWorld.UI
             }
             UpdateTabVisuals();
 
+            if (_subscribedInventory != null)
+                _subscribedInventory.OnChanged -= OnInventoryChanged; // Open()이 중복 호출되어도 이중 구독 방지
             _subscribedInventory = _inventoryProvider.Inventory;
             if (_subscribedInventory != null)
                 _subscribedInventory.OnChanged += OnInventoryChanged; // 열려있는 동안만 구독 — 상점/바닥획득 등 다른 화면에서 바뀐 것도 즉시 반영
 
+            if (_subscribedWeaponActions != null)
+                _subscribedWeaponActions.OnMainHandStateChanged -= OnWeaponStateChanged;
             _subscribedWeaponActions = _inventoryProvider.WeaponActions;
             if (_subscribedWeaponActions != null)
                 _subscribedWeaponActions.OnMainHandStateChanged += OnWeaponStateChanged;
@@ -148,6 +169,10 @@ namespace MySecondWorld.UI
                 _appearanceService.OnAppearanceChanged -= OnAppearanceStateChanged;
                 _appearanceService.OnAppearanceChanged += OnAppearanceStateChanged;
             }
+
+            // 성별 필터 변화 구독
+            _genderFilterSubscription?.Dispose();
+            _genderFilterSubscription = _genderFilterService.OnGenderFilterChanged.Subscribe(OnGenderFilterChanged);
 
             Refresh();
         }
@@ -171,7 +196,19 @@ namespace MySecondWorld.UI
             OnClosed?.Invoke();
         }
 
-        private bool _isChangingTab;
+        public void SetShopMode(ShopUI shop)
+        {
+            _activeShop = shop;
+            if (gameObject.activeSelf)
+                Refresh();
+        }
+
+        public void SetBackdropActive(bool active)
+        {
+            if (_backdropButton != null)
+                _backdropButton.gameObject.SetActive(active);
+        }
+
 
         public void SetTab(InventoryCategoryTab tab)
         {
@@ -208,6 +245,48 @@ namespace MySecondWorld.UI
             SetTabButtonVisual(_tabWeaponButton, _currentTab == InventoryCategoryTab.Weapon);
             SetTabButtonVisual(_tabConsumableButton, _currentTab == InventoryCategoryTab.Consumable);
             SetTabButtonVisual(_tabAllButton, _currentTab == InventoryCategoryTab.All);
+        }
+
+        private void UpdateGenderFilterVisuals()
+        {
+            var current = _genderFilterService.CurrentFilter;
+
+            _tabAllGenderToggle?.SetIsOnWithoutNotify(current == CharacterGenderFilter.All);
+            _tabFemaleToggle?.SetIsOnWithoutNotify(current == CharacterGenderFilter.Female);
+            _tabMaleToggle?.SetIsOnWithoutNotify(current == CharacterGenderFilter.Male);
+        }
+
+        private void OnGenderFilterChanged(CharacterGenderFilter filter)
+        {
+            UpdateGenderFilterVisuals();
+            Refresh();
+        }
+
+        // 아이템 필터링 로직 (Refresh 호출 시)
+        private bool ShouldShowItem(EquipmentItem item)
+        {
+            if (_genderFilterService.CurrentFilter == CharacterGenderFilter.All)
+                return true;
+
+            // 아이템 이름의 "_" 구분 토큰 중 "Female"/"Male"이 정확히 있는지로 판단
+            // ("female"은 부분 문자열로 "male"을 포함하므로 Contains만 쓰면 안 됨)
+            string itemName = item.name.ToLower();
+
+            if (_genderFilterService.CurrentFilter == CharacterGenderFilter.Female)
+                return HasGenderToken(itemName, "female");
+            else if (_genderFilterService.CurrentFilter == CharacterGenderFilter.Male)
+                return HasGenderToken(itemName, "male");
+
+            return true;
+        }
+
+        private static bool HasGenderToken(string lowerName, string token)
+        {
+            foreach (var part in lowerName.Split('_'))
+            {
+                if (part == token) return true;
+            }
+            return false;
         }
 
         private void SetTabButtonVisual(Button btn, bool isSelected)
@@ -279,12 +358,9 @@ namespace MySecondWorld.UI
                 var stack = inv.Get(i); // 특정 슬롯의 아이템을 읽어오는 Getter 메서드
                 if (stack?.Source == null) continue; // 빈 슬롯은 표시 안 함 — 보유한 것만 보여주는 게 이번 Phase의 핵심 결정
 
-                // 1. 성별 필터링: 이성 전용 장비는 가방 슬롯에서 숨김
-                if (stack.Source is EquipmentItem equipItem && _appearanceService != null)
-                {
-                    if (!_appearanceService.IsItemMatchingGender(equipItem))
-                        continue;
-                }
+                // 1. 성별 필터링: 남/녀/모두 토글로 선택한 성별만 표시
+                if (stack.Source is EquipmentItem equipItem && !ShouldShowItem(equipItem))
+                    continue;
 
                 // 2. 카테고리 탭 필터링
                 if (!MatchesCategory(stack.Source, _currentTab))

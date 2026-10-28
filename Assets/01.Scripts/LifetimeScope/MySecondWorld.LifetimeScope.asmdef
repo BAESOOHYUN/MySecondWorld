@@ -18,7 +18,8 @@
         "MySecondWorld.Save",
         "MySecondWorld.ScriptableObject",
         "MySecondWorld.Interaction",
-        "MySecondWorld.Combat"
+        "MySecondWorld.Combat",
+        "MySecondWorld.Inventory"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
