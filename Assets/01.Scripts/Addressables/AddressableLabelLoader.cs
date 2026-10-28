@@ -47,11 +47,33 @@ namespace MySecondWorld.Bundle
             var newHandle = Addressables.DownloadDependenciesAsync(label, false); // false는 "자동 Release 안 함" 옵션
             _handles[label] = newHandle;                                          // handle 저장 (나중에 Release 때 필요)
 
-            // 완료될 때까지 매 프레임 진행률 폴링 — AIModelDownloader와 동일 패턴
-            while (!newHandle.IsDone)
+            if (size > 0)
             {
-                onProgress?.Invoke(newHandle.GetDownloadStatus().Percent);
-                await UniTask.Yield(PlayerLoopTiming.Update, ct);
+                float lastProgress = -1f;
+                // 완료될 때까지 매 프레임 수신된 청크(DownloadedBytes)에 맞춰 진행률 폴링 — AIModelDownloader와 동일 패턴
+                while (!newHandle.IsDone)
+                {
+                    var status = newHandle.GetDownloadStatus();
+                    // status.TotalBytes가 0으로 집계되는 Addressables 버그 방지를 위해 사전 조회한 size를 분모로 사용
+                    long totalBytes = size > 0 ? size : status.TotalBytes;
+                    float currentProgress = totalBytes > 0
+                        ? (float)status.DownloadedBytes / totalBytes
+                        : status.Percent;
+
+                    currentProgress = Mathf.Clamp01(Mathf.Max(currentProgress, status.Percent));
+                    if (currentProgress > lastProgress)
+                    {
+                        lastProgress = currentProgress;
+                        onProgress?.Invoke(lastProgress);
+                    }
+
+                    await UniTask.Yield(PlayerLoopTiming.Update, ct);
+                }
+            }
+            else
+            {
+                // 이미 캐시되어 있는 경우 완료 대기
+                await newHandle.ToUniTask(cancellationToken: ct);
             }
 
             if (newHandle.Status == AsyncOperationStatus.Failed)
