@@ -325,7 +325,7 @@ namespace MySecondWorld.Editor
         // PowerShell이 중첩 따옴표를 벗겨내면서 ';' 뒤 명령들을 '로컬' 문장으로 쪼개 실행해버린다
         // (원격을 지우려던 rm -rf가 로컬에서 돌 뻔한, 조용하고 위험한 버그).
         // ssh.exe를 직접 띄우면 따옴표가 그대로 보존된다.
-        private static bool RunSsh(string remoteCommand)
+        public static bool RunSsh(string remoteCommand)
             => RunProcess("ssh", $"{KeyArg} {EC2User}@{EC2Host} \"{remoteCommand}\"");
 
         // localPaths를 원격 remoteDir로 업로드. 와일드카드(*)는 쓰지 않는다 —

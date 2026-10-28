@@ -1,3 +1,4 @@
+using System.Reflection;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -16,7 +17,8 @@ namespace MySecondWorld.Network
         [SerializeField] private Toggle _hostToggle;         // Host (에디터 전용)
         [SerializeField] private Toggle _cloudClientToggle;  // AWS 클라우드 접속
         [SerializeField] private Toggle _localClientToggle;  // 내 PC 로컬 접속
-        [SerializeField] private Button _playerPrefsDeleteAll;
+        [SerializeField] private Button _deletePlayerPrefsBtn;
+        [SerializeField] private Button _restartServerBtn;
         [SerializeField] private MonoBehaviour _networkManagerRaw;
         private IGameNetworkManager _networkManager => _networkManagerRaw as IGameNetworkManager;
 
@@ -33,8 +35,8 @@ namespace MySecondWorld.Network
             if (_localClientToggle != null)
                 _localClientToggle.onValueChanged.AddListener(isOn => OnToggleClient(isOn, LocalPcIp));
 
-            if (_playerPrefsDeleteAll != null)
-                _playerPrefsDeleteAll.onClick.AddListener(PlayerPrefsDeleteAll);
+            if (_restartServerBtn != null)
+                _restartServerBtn.onClick.AddListener(RestartServer);
 
             if (_networkManager != null)
                 _networkManager.OnClientStopped += ResetClientUI;
@@ -67,7 +69,7 @@ namespace MySecondWorld.Network
         {
             if (_localPlayerNameInput != null) _localPlayerNameInput.onValueChanged.RemoveListener(OnNameChanged);
             if (_hostToggle != null) _hostToggle.onValueChanged.RemoveListener(OnToggleHost);
-            if (_playerPrefsDeleteAll != null) _playerPrefsDeleteAll.onClick.RemoveListener(PlayerPrefsDeleteAll);
+            if (_restartServerBtn != null) _restartServerBtn.onClick.RemoveListener(RestartServer);
             if (_networkManager != null) _networkManager.OnClientStopped -= ResetClientUI;
         }
 
@@ -136,9 +138,28 @@ namespace MySecondWorld.Network
             _localPlayerPasswordInput.interactable = false;
         }
 
-        public void PlayerPrefsDeleteAll()
+        public void DeleteAllPlayerPrefs()
         {
             PlayerPrefs.DeleteAll();
+        }
+
+        public void RestartServer()
+        {
+#if UNITY_EDITOR
+            var toolType = System.Type.GetType("MySecondWorld.Editor.ServerBuildTool, Assembly-CSharp-Editor");
+            if (toolType != null)
+            {
+                var method = toolType.GetMethod("RestartEC2ServerOnly", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                if (method != null)
+                    method.Invoke(null, null);
+                else
+                    Debug.LogError("[Login] RestartEC2ServerOnly 메서드를 찾을 수 없습니다.");
+            }
+            else
+                Debug.LogError("[Login] ServerBuildTool 타입을 찾을 수 없습니다.");
+#else
+            Debug.LogWarning("[Login] RestartServer는 에디터에서만 사용 가능합니다.");
+#endif
         }
     }
 }
