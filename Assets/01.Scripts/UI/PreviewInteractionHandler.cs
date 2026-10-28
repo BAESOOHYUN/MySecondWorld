@@ -31,6 +31,58 @@ namespace MySecondWorld.UI
 
         private void Start()
         {
+            EnsureReferences();
+            InitCameraOrbit();
+        }
+
+        private void OnEnable()
+        {
+            EnsureReferences();
+            InitCameraOrbit();
+        }
+
+        private void EnsureReferences()
+        {
+            if (_characterRoot == null)
+            {
+                var customizer = Object.FindAnyObjectByType<MySecondWorld.Customization.LocalCharacterCustomizer>();
+                if (customizer != null)
+                {
+                    _characterRoot = customizer.transform;
+                }
+                else
+                {
+                    var pc = GameObject.Find("PreviewCharacter");
+                    if (pc != null) _characterRoot = pc.transform;
+                }
+            }
+
+            if (_previewCamera == null)
+            {
+                var rawImg = GetComponent<UnityEngine.UI.RawImage>();
+                if (rawImg != null && rawImg.texture != null)
+                {
+                    var cams = Object.FindObjectsByType<Camera>(FindObjectsSortMode.None);
+                    foreach (var cam in cams)
+                    {
+                        if (cam.targetTexture != null && cam.targetTexture == rawImg.texture)
+                        {
+                            _previewCamera = cam;
+                            break;
+                        }
+                    }
+                }
+
+                if (_previewCamera == null)
+                {
+                    var camGo = GameObject.Find("Preview Camera") ?? GameObject.Find("Camera");
+                    if (camGo != null) _previewCamera = camGo.GetComponent<Camera>();
+                }
+            }
+        }
+
+        private void InitCameraOrbit()
+        {
             if (_previewCamera == null || _characterRoot == null) return;
 
             // 씬에 배치된 카메라의 현재 위치로부터 distance/yaw/pitch 역산
@@ -48,6 +100,7 @@ namespace MySecondWorld.UI
 
         public void OnDrag(PointerEventData eventData)
         {
+            if (_characterRoot == null) EnsureReferences();
             if (_characterRoot == null) return;
 
             // 가로 드래그 → 캐릭터 자체 회전 (턴테이블)
@@ -60,6 +113,7 @@ namespace MySecondWorld.UI
 
         public void OnScroll(PointerEventData eventData)
         {
+            if (_previewCamera == null || _characterRoot == null) EnsureReferences();
             if (_previewCamera == null || _characterRoot == null) return;
 
             // 마우스/터치패드마다 휠 한 칸의 델타 크기가 달라서 ±1로 정규화 후 속도를 곱함
