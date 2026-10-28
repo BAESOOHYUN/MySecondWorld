@@ -117,8 +117,8 @@ namespace MySecondWorld.EditorTools
                 nameBadgeRect.anchorMin = new Vector2(0f, 1f);
                 nameBadgeRect.anchorMax = new Vector2(0f, 1f);
                 nameBadgeRect.pivot = new Vector2(0f, 1f);
-                nameBadgeRect.anchoredPosition = new Vector2(25f, -10f);
-                nameBadgeRect.sizeDelta = new Vector2(200f, 36f);
+                nameBadgeRect.anchoredPosition = new Vector2(25f, -8f);
+                nameBadgeRect.sizeDelta = new Vector2(230f, 40f);
 
                 var badgeImg = nameBadgeGo.GetComponent<Image>() ?? nameBadgeGo.AddComponent<Image>();
                 if (passFrame != null)
@@ -137,15 +137,15 @@ namespace MySecondWorld.EditorTools
                     nameTrans.SetParent(nameBadgeRect, false);
                     nameTrans.anchorMin = Vector2.zero;
                     nameTrans.anchorMax = Vector2.one;
-                    nameTrans.offsetMin = new Vector2(12f, 0f);
-                    nameTrans.offsetMax = new Vector2(-12f, 0f);
+                    nameTrans.offsetMin = new Vector2(14f, 0f);
+                    nameTrans.offsetMax = new Vector2(-14f, 0f);
 
                     var tmp = nameTrans.GetComponent<TextMeshProUGUI>();
                     if (tmp != null)
                     {
                         tmp.text = "NPC";
                         if (fontBold != null) tmp.font = fontBold;
-                        tmp.fontSize = 15;
+                        tmp.fontSize = 18;
                         tmp.fontStyle = FontStyles.Bold;
                         tmp.color = new Color(1f, 0.9f, 0.5f, 1f); // 따뜻한 골드 옐로우
                         tmp.alignment = TextAlignmentOptions.Center;
@@ -246,7 +246,7 @@ namespace MySecondWorld.EditorTools
                 tabRect.anchorMax = new Vector2(1f, 1f);
                 tabRect.pivot = new Vector2(0.5f, 1f);
                 tabRect.anchoredPosition = new Vector2(0f, -8f);
-                tabRect.sizeDelta = new Vector2(-16f, 32f);
+                tabRect.sizeDelta = new Vector2(-16f, 36f);
 
                 // TabMemoryBtn
                 var tabMemBtnGo = GetOrCreateChild(tabRect, "TabMemoryBtn");
@@ -263,7 +263,7 @@ namespace MySecondWorld.EditorTools
                     tabMemImg.type = Image.Type.Sliced;
                     tabMemImg.color = Color.white;
                 }
-                var tabMemTmp = GetOrCreateCenterTMP(tabMemBtnGo.transform, "Label", "기억", 13, fontBold);
+                var tabMemTmp = GetOrCreateCenterTMP(tabMemBtnGo.transform, "Label", "기억", 15, fontBold);
                 tabMemTmp.color = Color.white;
 
                 // TabHistoryBtn
@@ -281,7 +281,7 @@ namespace MySecondWorld.EditorTools
                     tabHisImg.type = Image.Type.Sliced;
                     tabHisImg.color = Color.white;
                 }
-                var tabHisTmp = GetOrCreateCenterTMP(tabHisBtnGo.transform, "Label", "대화 기록", 13, fontBold);
+                var tabHisTmp = GetOrCreateCenterTMP(tabHisBtnGo.transform, "Label", "대화 기록", 15, fontBold);
                 tabHisTmp.color = new Color(0.75f, 0.8f, 0.9f, 0.85f);
 
                 // 기억 뷰 (MemoryView)
@@ -290,7 +290,7 @@ namespace MySecondWorld.EditorTools
                 memViewRect.anchorMin = new Vector2(0f, 0f);
                 memViewRect.anchorMax = new Vector2(1f, 1f);
                 memViewRect.offsetMin = new Vector2(12f, 10f);
-                memViewRect.offsetMax = new Vector2(-12f, -46f);
+                memViewRect.offsetMax = new Vector2(-12f, -50f);
 
                 // 호감도 슬라이더
                 var sliderGo = GetOrCreateChild(memViewRect, "RelationSlider");
@@ -299,7 +299,7 @@ namespace MySecondWorld.EditorTools
                 sliderRect.anchorMax = new Vector2(1f, 1f);
                 sliderRect.pivot = new Vector2(0.5f, 1f);
                 sliderRect.anchoredPosition = new Vector2(0f, -6f);
-                sliderRect.sizeDelta = new Vector2(0f, 18f);
+                sliderRect.sizeDelta = new Vector2(0f, 20f);
 
                 var slider = sliderGo.GetComponent<Slider>() ?? sliderGo.AddComponent<Slider>();
                 slider.minValue = -100f;
@@ -336,40 +336,40 @@ namespace MySecondWorld.EditorTools
                 }
                 slider.fillRect = fillRect;
 
-                var relText = GetOrCreateTMP(memViewRect, "RelationText", "호감도: +38 (호감)", 12, fontBold);
+                var relText = GetOrCreateTMP(memViewRect, "RelationText", "호감도: +38 (호감)", 14, fontBold);
                 var relTextRect = relText.rectTransform;
                 relTextRect.anchorMin = new Vector2(0f, 1f);
                 relTextRect.anchorMax = new Vector2(1f, 1f);
                 relTextRect.pivot = new Vector2(0f, 1f);
-                relTextRect.anchoredPosition = new Vector2(2f, -28f);
-                relTextRect.sizeDelta = new Vector2(0f, 18f);
+                relTextRect.anchoredPosition = new Vector2(2f, -30f);
+                relTextRect.sizeDelta = new Vector2(0f, 20f);
                 relText.color = new Color(0.92f, 0.94f, 1f, 1f);
 
-                var firstMetText = GetOrCreateTMP(memViewRect, "FirstMetText", "첫 만남: 마을 광장 (최근)", 11, fontRegular);
+                var firstMetText = GetOrCreateTMP(memViewRect, "FirstMetText", "첫 만남: 마을 광장 (최근)", 13, fontRegular);
                 var firstMetRect = firstMetText.rectTransform;
                 firstMetRect.anchorMin = new Vector2(0f, 1f);
                 firstMetRect.anchorMax = new Vector2(1f, 1f);
                 firstMetRect.pivot = new Vector2(0f, 1f);
-                firstMetRect.anchoredPosition = new Vector2(2f, -48f);
-                firstMetRect.sizeDelta = new Vector2(0f, 16f);
+                firstMetRect.anchoredPosition = new Vector2(2f, -54f);
+                firstMetRect.sizeDelta = new Vector2(0f, 18f);
                 firstMetText.color = new Color(0.75f, 0.8f, 0.9f, 0.85f);
 
-                var convCountText = GetOrCreateTMP(memViewRect, "ConvCountText", "14회 대화함", 11, fontRegular);
+                var convCountText = GetOrCreateTMP(memViewRect, "ConvCountText", "14회 대화함", 13, fontRegular);
                 var convRect = convCountText.rectTransform;
                 convRect.anchorMin = new Vector2(0f, 1f);
                 convRect.anchorMax = new Vector2(1f, 1f);
                 convRect.pivot = new Vector2(0f, 1f);
-                convRect.anchoredPosition = new Vector2(2f, -66f);
-                convRect.sizeDelta = new Vector2(0f, 16f);
+                convRect.anchoredPosition = new Vector2(2f, -76f);
+                convRect.sizeDelta = new Vector2(0f, 18f);
                 convCountText.color = new Color(0.75f, 0.8f, 0.9f, 0.85f);
 
-                var factsTitle = GetOrCreateTMP(memViewRect, "FactsTitle", "알고 있는 사실들:", 12, fontBold);
+                var factsTitle = GetOrCreateTMP(memViewRect, "FactsTitle", "알고 있는 사실들:", 14, fontBold);
                 var factsTitleRect = factsTitle.rectTransform;
                 factsTitleRect.anchorMin = new Vector2(0f, 1f);
                 factsTitleRect.anchorMax = new Vector2(1f, 1f);
                 factsTitleRect.pivot = new Vector2(0f, 1f);
-                factsTitleRect.anchoredPosition = new Vector2(2f, -88f);
-                factsTitleRect.sizeDelta = new Vector2(0f, 18f);
+                factsTitleRect.anchoredPosition = new Vector2(2f, -100f);
+                factsTitleRect.sizeDelta = new Vector2(0f, 20f);
                 factsTitle.color = new Color(0.6f, 0.78f, 1f, 1f);
 
                 var factsContentGo = GetOrCreateChild(memViewRect, "KnownFactsContent");
@@ -377,11 +377,11 @@ namespace MySecondWorld.EditorTools
                 factsContentRect.anchorMin = new Vector2(0f, 0f);
                 factsContentRect.anchorMax = new Vector2(1f, 1f);
                 factsContentRect.offsetMin = new Vector2(2f, 2f);
-                factsContentRect.offsetMax = new Vector2(-2f, -110f);
+                factsContentRect.offsetMax = new Vector2(-2f, -126f);
                 var factsVlg = factsContentGo.GetComponent<VerticalLayoutGroup>() ?? factsContentGo.AddComponent<VerticalLayoutGroup>();
                 factsVlg.childControlWidth = true;
                 factsVlg.childControlHeight = false;
-                factsVlg.spacing = 4f;
+                factsVlg.spacing = 5f;
 
                 // 히스토리 뷰 (HistoryView)
                 var hisViewGo = GetOrCreateChild(leftRect, "HistoryView");
@@ -459,14 +459,14 @@ namespace MySecondWorld.EditorTools
                         {
                             phTmp.text = "NPC에게 메시지 입력... (Enter로 전송)";
                             if (fontRegular != null) phTmp.font = fontRegular;
-                            phTmp.fontSize = 14;
+                            phTmp.fontSize = 15;
                             phTmp.fontStyle = FontStyles.Normal;
                             phTmp.color = new Color(0.6f, 0.65f, 0.75f, 0.6f);
                         }
                         if (tmpInput.textComponent != null)
                         {
                             if (fontRegular != null) tmpInput.textComponent.font = fontRegular;
-                            tmpInput.textComponent.fontSize = 14;
+                            tmpInput.textComponent.fontSize = 15;
                             tmpInput.textComponent.color = Color.white;
                         }
                     }
@@ -526,7 +526,7 @@ namespace MySecondWorld.EditorTools
                         btnImg.color = Color.white;
                     }
 
-                    var tmp = GetOrCreateCenterTMP(submitTrans, "Text (TMP)", "전송", 14, fontBold);
+                    var tmp = GetOrCreateCenterTMP(submitTrans, "Text (TMP)", "전송", 15, fontBold);
                     tmp.gameObject.SetActive(true);
                     tmp.color = Color.white;
                 }
@@ -604,7 +604,7 @@ namespace MySecondWorld.EditorTools
                 if (tmp != null)
                 {
                     if (font != null) tmp.font = font;
-                    tmp.fontSize = 15;
+                    tmp.fontSize = 16;
                     tmp.color = Color.white;
                 }
                 PrefabUtility.SaveAsPrefabAsset(root, path);
