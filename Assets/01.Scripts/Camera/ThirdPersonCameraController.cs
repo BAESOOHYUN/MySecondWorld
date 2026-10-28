@@ -36,8 +36,11 @@ namespace MySecondWorld.CameraSystem
         public float CameraYAngle => _cinemachineCamera.transform.eulerAngles.y;
 
         [Inject]
-        private void Construct(TouchEventListener touchEventListener)
+        private void Construct(TouchEventListener touchEventListener = null)
         {
+            // 헤드리스 데디케이티드 서버엔 TouchEventListener가 등록되지 않는다(ProjectLifetimeScope.cs의
+            // #if !UNITY_SERVER || UNITY_EDITOR 가드) — 기본값 null로 옵션 주입해야 서버 스폰 시
+            // VContainerException(연쇄 NRE)이 안 난다.
             _touchEventListener = touchEventListener;
         }
 
@@ -46,6 +49,8 @@ namespace MySecondWorld.CameraSystem
             _horizontalValue = _orbitFollow.HorizontalAxis.Value;
             _verticalValue = _orbitFollow.VerticalAxis.Value;
 
+            if (_touchEventListener == null) return;
+
             _touchEventListener.OnPriDrag += Rotation;
             _touchEventListener.OnSecDrag += Rotation;
             _touchEventListener.OnZoom += Zoom;
@@ -53,6 +58,8 @@ namespace MySecondWorld.CameraSystem
 
         private void OnDisable()
         {
+            if (_touchEventListener == null) return;
+
             _touchEventListener.OnPriDrag -= Rotation;
             _touchEventListener.OnSecDrag -= Rotation;
             _touchEventListener.OnZoom -= Zoom;
