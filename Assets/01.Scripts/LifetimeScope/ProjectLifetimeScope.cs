@@ -47,7 +47,6 @@ public class ProjectLifetimeScope : LifetimeScope
         builder.RegisterComponentInHierarchy<LoginUI>();
         builder.RegisterComponentInHierarchy<MenuUI>();
         builder.RegisterComponentInHierarchy<ChatUI>();
-        builder.RegisterComponentInHierarchy<SettingsUI>();
         builder.RegisterComponentInHierarchy<CharacterCustomizeUI>();
         builder.RegisterComponentInHierarchy<InventoryUI>();
         builder.RegisterComponentInHierarchy<ShopUI>().As<IShopUI>();
@@ -73,8 +72,8 @@ public class ProjectLifetimeScope : LifetimeScope
         builder.Register<PasswordCredentialStore>(Lifetime.Singleton);
         builder.Register<CharacterSaveService>(Lifetime.Singleton);
         builder.Register<CharacterAppearanceService>(Lifetime.Singleton);
-        builder.Register<CharacterGenderFilterService>(Lifetime.Singleton);
         builder.Register<LocalPlayerInventoryProvider>(Lifetime.Singleton);
+        builder.Register<CharacterGenderFilterService>(Lifetime.Singleton);
 
         builder.RegisterComponentInHierarchy<GameNetworkManager>();
         builder.RegisterComponentInHierarchy<PlayerAuthenticator>();

@@ -348,6 +348,19 @@ namespace MySecondWorld.Combat.Player
         [TargetRpc]
         private void TargetHideDeathScreen() => OnLocalRespawned?.Invoke();
 
+        // 지형 갇힘 등 탈출 리스폰: 현재 체력 그대로 마을 스폰 장소로 이동
+        [Command]
+        public void CmdRequestEscape()
+        {
+            if (_zoneService == null)
+                _zoneService = (NetworkManager.singleton as GameNetworkManager)?.ZoneService;
+
+            _zoneService?.RespawnPlayer(connectionToClient, toTown: true);
+            Physics.SyncTransforms();
+            if (_playerCollider != null) _playerCollider.enabled = true;
+            if (_movement != null) _movement.MovementLocked = false;
+        }
+
         // NPC 앞으로 순간이동. 목적지 좌표는 서버(GameNetworkManager)가 들고 있다 —
         // 클라가 좌표를 실어 보내면 어디든 갈 수 있는 치트가 된다.
         [Command]
