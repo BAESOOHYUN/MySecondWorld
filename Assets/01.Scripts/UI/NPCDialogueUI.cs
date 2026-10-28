@@ -68,6 +68,7 @@ namespace MySecondWorld.UI
         private CancellationTokenSource _thinkingAnimCts;
         private CancellationTokenSource _sttCts;
         private bool _hasReceivedSentence = false;
+        private string _lastPlayerText; // Stores last player input for memory logging
         #endregion
 
         #region DI
@@ -230,6 +231,8 @@ namespace MySecondWorld.UI
 
         private void OnDestroy()
         {
+            if (_currentMemory != null)
+                _currentMemory.OnMemoryChanged -= OnMemoryStateChanged;
             if (_closeButton != null)
                 _closeButton.onClick.RemoveListener(Close);
             if (_backdropButton != null)
@@ -249,9 +252,15 @@ namespace MySecondWorld.UI
 
         public void Open(string npcGuid, NPCMemorySO memory = null, NPCSystemPromptSO systemPrompt = null)
         {
+            if (_currentMemory != null)
+                _currentMemory.OnMemoryChanged -= OnMemoryStateChanged;
+
             _currentNpcGuid = npcGuid;
             _currentMemory = memory;
             _currentSystemPrompt = systemPrompt;
+
+            if (_currentMemory != null)
+                _currentMemory.OnMemoryChanged += OnMemoryStateChanged;
 
             gameObject.SetActive(true);
             if (_canvas != null)
@@ -280,12 +289,21 @@ namespace MySecondWorld.UI
 
         public void Close()
         {
+            if (_currentMemory != null)
+                _currentMemory.OnMemoryChanged -= OnMemoryStateChanged;
+
             _closeSubject.OnNext(Unit.Default);
             _stopTTSPub?.Publish(new NPCStopTTSEvent(_currentNpcGuid));
             DialogueCameraController.Instance?.ReleaseFocus();
             if (_canvas != null)
                 _canvas.SetActive(false);
             gameObject.SetActive(false);
+        }
+
+        private void OnMemoryStateChanged()
+        {
+            UpdateMemoryView(_currentMemory, _currentSystemPrompt);
+            UpdateHistoryView(_currentMemory);
         }
         #endregion
 

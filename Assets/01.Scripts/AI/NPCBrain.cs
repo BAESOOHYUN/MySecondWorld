@@ -114,13 +114,21 @@ namespace MySecondWorld.AI
                 _thinkingPub.Publish(new NPCThinkingStartedEvent(key));
                 var response = await GenerateResponseAsync(evt.Text, key, evt.CT);
                 Debug.Log($"[NPCBrain] '{name}' LLM 응답 완료: {response}");
+
+                // 1. 대화 히스토리 즉시 반영 및 영구 저장
+                _sessionBuffer.Add((evt.Text, response));
+                _memory?.AddHistoryEntry(evt.Text, response);
+                _memory?.Save(UniqueId);
+
+                // 2. 응답 이벤트 발행 (UI 업데이트)
                 _responsePub.Publish(new NPCResponseReceivedEvent(
                         key,
                         _systemPrompt?.NpcName ?? name,
                         response));
                 _dialoguePub.Publish(new NPCDialogueEvent { NpcName = key, Message = response });
-                _sessionBuffer.Add((evt.Text, response));
-                _memory?.AddHistoryEntry(evt.Text, response);
+
+                // 3. 대화창을 닫기 전에도 새 팩트가 실시간으로 쌓이도록 즉시 백그라운드 팩트 추출 구동
+                ExtractAndSaveFactAsync(new List<(string user, string npc)> { (evt.Text, response) }, destroyCancellationToken).Forget();
             }
             catch (OperationCanceledException)
             {

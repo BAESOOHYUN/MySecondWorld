@@ -45,6 +45,9 @@ namespace MySecondWorld.AI
         [Tooltip("최근 대화 기록")]
         [SerializeField] private List<DialogueHistoryEntry> dialogueHistory = new();
 
+        // 이벤트
+        public event Action OnMemoryChanged;
+
         // 읽기 전용 프로퍼티
         public float RelationScore => relationScore;
         public float FactionRelation => factionRelation; //클라이언트 로컬 캐시로 유지하되,
@@ -59,7 +62,11 @@ namespace MySecondWorld.AI
         public List<DialogueHistoryEntry> DialogueHistory => dialogueHistory;
 
         // Mutator : 변수의 변경을 통제하기 위해 사용하는 메서드
-        public void IncrementConversationCount() => conversationCount++;
+        public void IncrementConversationCount()
+        {
+            conversationCount++;
+            OnMemoryChanged?.Invoke();
+        }
 
         public void SetFirstMet(string date, string location)
         {
@@ -67,17 +74,22 @@ namespace MySecondWorld.AI
                 return; // 첫만남 날짜 이미 기록됐으면 스킵
             firstMetDate = date;
             firstMetLocation = location;
+            OnMemoryChanged?.Invoke();
         }
 
         public void AddRelationScore(float delta)
         {
             relationScore = Mathf.Clamp(relationScore + delta, -100f, 100f);
+            OnMemoryChanged?.Invoke();
         }
 
         public void AddKnowFact(string fact)
         {
             if (!string.IsNullOrEmpty(fact) && !knownFacts.Contains(fact))
+            {
                 knownFacts.Add(fact);
+                OnMemoryChanged?.Invoke();
+            }
         }
 
         public void AddHistoryEntry(string user, string npc)
@@ -90,6 +102,7 @@ namespace MySecondWorld.AI
             {
                 dialogueHistory.RemoveAt(0);
             }
+            OnMemoryChanged?.Invoke();
         }
 
         public void SyncFactionFromServer(float serverValue)
