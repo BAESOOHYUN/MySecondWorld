@@ -127,6 +127,13 @@ namespace MySecondWorld.UI
                     continue;
                 }
 
+                var deathUI = child.GetComponent<PlayerDeathUI>();
+                if (deathUI != null)
+                {
+                    deathUI.Close();
+                    continue;
+                }
+
                 // 일반 캔버스들은 Canvas 컴포넌트가 반드시 활성화(enabled=true) 상태여야
                 // 차후 GameObject.SetActive(true) 시 정상 렌더링됨
                 var canvas = child.GetComponent<Canvas>();

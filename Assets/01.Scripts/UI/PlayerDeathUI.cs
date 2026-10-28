@@ -10,9 +10,16 @@ namespace MySecondWorld.UI
         [SerializeField] private Button _respawnButton;     // 제자리 부활
         [SerializeField] private Button _townRespawnButton; // 마을 부활
 
+        private Canvas _canvas;
+
+        private void Awake()
+        {
+            _canvas = GetComponent<Canvas>();
+            Close();
+        }
+
         private void Start()
         {
-            _panel.SetActive(false);
             if (_respawnButton != null)
                 _respawnButton.onClick.AddListener(OnImmediateRespawnClicked);
             if (_townRespawnButton != null)
@@ -46,11 +53,21 @@ namespace MySecondWorld.UI
             state.OnLocalRespawned -= HidePanel;
         }
 
-        private void ShowPanel() => _panel.SetActive(true);
+        public void Close()
+        {
+            HidePanel();
+        }
+
+        private void ShowPanel()
+        {
+            if (_canvas != null) _canvas.enabled = true;
+            if (_panel != null) _panel.SetActive(true);
+        }
 
         private void HidePanel()
         {
-            _panel.SetActive(false);
+            if (_panel != null) _panel.SetActive(false);
+            if (_canvas != null) _canvas.enabled = false;
             SetButtonsInteractable(true);
         }
 
@@ -60,7 +77,7 @@ namespace MySecondWorld.UI
             PlayerHealthState.Local?.CmdRequestRespawn(toTown: false); // 제자리 부활
         }
 
-        private void OnTownRespawnClicked()
+        public void OnTownRespawnClicked()
         {
             SetButtonsInteractable(false);
             PlayerHealthState.Local?.CmdRequestRespawn(toTown: true);  // 마을 부활
