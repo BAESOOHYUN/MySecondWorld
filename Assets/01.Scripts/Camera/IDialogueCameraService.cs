@@ -1,10 +1,10 @@
 using UnityEngine;
 
-namespace MySecondWorld.AI
+namespace MySecondWorld.CameraSystem
 {
     /// <summary>
     /// NPC 대화 시 카메라 클로즈업 및 복귀를 제어하는 서비스 인터페이스.
-    /// 순환 참조를 방지하기 위해 AI 어셈블리에 인터페이스를 둡니다.
+    /// 구현체와 함께 Camera 어셈블리에 둔다. AI/UI는 Camera를 단방향으로 참조한다.
     /// </summary>
     public interface IDialogueCameraService
     {

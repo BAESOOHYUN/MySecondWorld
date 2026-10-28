@@ -28,7 +28,8 @@
         "Cleverous.VaultSystem",
         "MySecondWorld.Interaction",
         "MySecondWorld.Combat",
-        "MySecondWorld.ScriptableObject"
+        "MySecondWorld.ScriptableObject",
+        "MySecondWorld.Camera"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

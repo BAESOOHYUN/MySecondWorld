@@ -27,6 +27,10 @@ namespace MySecondWorld.Combat.Player
         public static PlayerHealthState Local { get; private set; }
         public static event Action<PlayerHealthState> LocalReady;
 
+        // Mirror를 참조하지 않는 어셈블리(AI/Camera)용 접근자.
+        // Local.transform은 NetworkBehaviour 상속 멤버라 Mirror 참조가 없으면 CS0012가 난다.
+        public static Transform LocalTransform => Local != null ? Local.transform : null;
+
         // Domain Reload OFF — static이 플레이 세션을 넘어 살아남으면 파괴된 객체를 가리킨다.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()

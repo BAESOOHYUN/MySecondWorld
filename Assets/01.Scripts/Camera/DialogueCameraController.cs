@@ -1,12 +1,12 @@
 using UnityEngine;
 using Unity.Cinemachine;
 
-namespace MySecondWorld.AI
+namespace MySecondWorld.CameraSystem
 {
     /// <summary>
     /// NPC 대화 시 NPC 얼굴/상체로 카메라를 클로즈업하고,
     /// 대화 종료 시 플레이어 원래 3인칭 카메라로 복귀시키는 컨트롤러.
-    /// Cinemachine 3.x 가상 카메라 블렌딩을 활용합니다.
+    /// Cinemachine 3.x 가상 카메라 블렌딩을 활용.
     /// </summary>
     public class DialogueCameraController : MonoBehaviour, IDialogueCameraService
     {
@@ -94,30 +94,20 @@ namespace MySecondWorld.AI
                 headPos = npcTransform.position + Vector3.up * _defaultHeadHeight;
             }
 
-            // 2. 바라보는 방향 계산 (NPC에서 플레이어 쪽 또는 정면)
-            Vector3 lookDir;
-            if (playerTransform != null)
-            {
-                lookDir = playerTransform.position - npcTransform.position;
-                lookDir.y = 0f;
-                if (lookDir.sqrMagnitude > 0.01f)
-                    lookDir.Normalize();
-                else
-                    lookDir = npcTransform.forward;
-            }
-            else
-            {
-                lookDir = npcTransform.forward;
-                lookDir.y = 0f;
-                lookDir.Normalize();
-            }
+            // 2. NPC 정면 방향 계산 (플레이어 방향 무시하고 항상 정면)
+            Vector3 lookDir = -npcTransform.forward;
+            lookDir.y = 0f;
+            lookDir.Normalize();
 
-            // 3. 시네마틱 3/4 앵글 위치 계산 (정면에서 약간 우측 오프셋)
-            Vector3 rightDir = Vector3.Cross(Vector3.up, lookDir).normalized;
-            Vector3 camPos = headPos + (lookDir * _cameraDistance) + (rightDir * _lateralOffset) + (Vector3.up * _verticalOffset);
+            // 3. 카메라 위치: NPC 머리 정면에서 바라봄 (우측 오프셋 제거)
+            Vector3 camPos = headPos - (lookDir * _cameraDistance) + (Vector3.up * _verticalOffset);
+
+            Vector3 lookTarget = headPos - camPos;
+            Quaternion camRot = lookTarget.sqrMagnitude > 0.001f ? Quaternion.LookRotation(lookTarget) : Quaternion.identity;
 
             _dialogueCamera.transform.position = camPos;
-            _dialogueCamera.transform.LookAt(headPos);
+            _dialogueCamera.transform.rotation = camRot;
+            _dialogueCamera.ForceCameraPosition(camPos, camRot);
 
             // 4. 가상 카메라 활성화 및 우선순위 상향
             _dialogueCamera.Priority = _activePriority;

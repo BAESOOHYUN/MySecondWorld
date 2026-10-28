@@ -9,6 +9,8 @@ using VContainer;
 using System.Collections.Generic;
 using MySecondWorld.Inventory.Items;
 using MySecondWorld.Interaction;
+using MySecondWorld.Combat.Player;
+using MySecondWorld.CameraSystem;
 
 namespace MySecondWorld.AI
 {
@@ -340,7 +342,7 @@ namespace MySecondWorld.AI
                 _cts = new CancellationTokenSource();
 
                 _dialogueUI.Open(SessionKey, _brain != null ? _brain.Memory : null, _brain != null ? _brain.SystemPrompt : null);
-                DialogueCameraController.Instance?.FocusOnNPC(transform);
+                DialogueCameraController.Instance?.FocusOnNPC(transform, PlayerHealthState.LocalTransform);
 
                 // R3 구독 — _cts 해제 시 자동으로 함께 해제된다
                 _dialogueUI.OnSubmit

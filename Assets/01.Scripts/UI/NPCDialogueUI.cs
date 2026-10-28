@@ -7,6 +7,7 @@ using VContainer;
 using MessagePipe;
 using MySecondWorld.AI;
 using MySecondWorld.AI.Voice;
+using MySecondWorld.CameraSystem;
 using System.Threading;
 using UnityEngine.EventSystems;
 
