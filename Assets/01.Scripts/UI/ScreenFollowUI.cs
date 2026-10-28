@@ -15,6 +15,8 @@ namespace MySecondWorld.UI
         [SerializeField, Tooltip("대상 피벗 기준 오프셋(m). 머리 위에 띄우려면 Y를 올린다")]
         private Vector3 _worldOffset = new(0f, 2f, 0f);
 
+        [SerializeField, Tooltip("최대 표시 거리(m). 이 이상 떨어지면 HPBar 숨김")]
+        private float _maxDistance = 25f;
         private RectTransform _rect;
         private RectTransform _parentRect;
         private CanvasGroup _canvasGroup;
@@ -56,12 +58,6 @@ namespace MySecondWorld.UI
             SetVisible(false);
         }
 
-        public void SetTarget(Transform target)
-        {
-            _target = target;
-            if (target == null) SetVisible(false);
-        }
-
         private void LateUpdate()
         {
             // 풀 반납은 파괴가 아니라 SetActive(false)라서 null 검사만으론 못 거른다.
@@ -73,6 +69,14 @@ namespace MySecondWorld.UI
 
             Camera cam = Camera.main;
             if (cam == null) { SetVisible(false); return; }
+
+            // 타겟과 거리 체크 (안하면 거리가 아주 멀어도 HPBar가 보이는 참사가 일어난다)
+            float distance = Vector3.Distance(cam.transform.position, _target.position);
+            if (distance > _maxDistance)
+            {
+                SetVisible(false);
+                return;
+            }
 
             Vector3 screen = cam.WorldToScreenPoint(_target.position + _worldOffset);
 
@@ -88,6 +92,12 @@ namespace MySecondWorld.UI
 
             _rect.localPosition = local;
             SetVisible(true);
+        }
+
+        public void SetTarget(Transform target)
+        {
+            _target = target;
+            if (target == null) SetVisible(false);
         }
 
         private void SetVisible(bool value)
