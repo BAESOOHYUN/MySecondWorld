@@ -15,7 +15,7 @@ namespace MySecondWorld.AI.Voice
     /// 마이크 녹음 → WAV 인코딩 → Groq HTTP POST → 텍스트 반환.
     public class GroqWhisperSTTService : MonoBehaviour, ISTTService
     {
-        private static readonly string API_KEY = SecretKeyLoader.Load("groq_api_key");
+        private static string API_KEY { get; set; }
         private const string MODEL = "whisper-large-v3-turbo";
         [SerializeField] private int _sampleRate = 16000;
         [SerializeField] private int _maxDurationSec = 30;
@@ -24,6 +24,8 @@ namespace MySecondWorld.AI.Voice
 
         private async void Start()
         {
+            if (API_KEY == null)
+                API_KEY = SecretKeyLoader.Load("groq_api_key");
             // 마이크 권한 요청 — WhisperSTTService와 동일 패턴
             await Application.RequestUserAuthorization(UserAuthorization.Microphone);
             if (!Application.HasUserAuthorization(UserAuthorization.Microphone))
