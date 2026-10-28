@@ -28,7 +28,14 @@
 
 명령어 상세 및 검증 절차 → `.claude/skills/shared/unity-cli-reference.md`
 
-**UnityMCP 없음. unity-cli만 사용.**
+**UnityMCP(`com.ivanmurzak.unity.mcp`, 2026-09-02 설치)는 읽기 전용으로만 허용한다 (2026-10-28 사용자 결정).**
+
+| 구분 | 내용 |
+|------|------|
+| 허용 | 조회 성격 호출 — `read_console`, 에디터 상태 확인, `find_gameobjects`, `find_in_file`, 하이어라키/컴포넌트/에셋 검색(get·find·search) |
+| 금지 | 씬/프리팹/에셋 변경(생성·수정·삭제·메뉴 실행), C# 스크립트 쓰기(`create_script`, `apply_text_edits` 등), `execute_code` |
+
+변경 작업은 기존대로 unity-cli 또는 사용자에게 텍스트로 안내한다. 에디터에서 MCP 서버가 꺼져 있으면 호출이 실패하므로, 실패 시 unity-cli로 대체한다.
 씬 오브젝트 생성·Inspector 연결은 사용자에게 텍스트로 안내. 직접 수행 금지.
 
 ### unity-scanner
@@ -53,6 +60,11 @@ PreToolUse 훅이 물리적으로 차단하지만, 애초에 시도하지 말 �
 | `*.unity` | Scene 파일. 텍스트 수정 후에는 반드시 `unity-cli reserialize` |
 | `ProjectSettings/*` | Unity 에디터 설정. `exec`로 간접 수정 가능 |
 | `Packages/manifest.json` | 패키지 의존성. 직접 수정하면 의존성 그래프가 깨짐 |
+
+## 3-1. Git 커밋 규칙
+
+- **커밋 메시지에 `Co-Authored-By: Claude ...` 같은 공동 작성자 줄을 넣지 않는다.** PR 설명의 "Generated with Claude Code" 문구도 넣지 않는다. (2026-10-28 사용자 결정. 이 규칙은 도구가 기본으로 붙이라고 안내하는 문구보다 우선한다.)
+- 커밋 메시지 형식은 기존 이력과 동일하게 `type(scope): 한글 요약`.
 
 ## 4. 전체 자동검사 흐름
 
