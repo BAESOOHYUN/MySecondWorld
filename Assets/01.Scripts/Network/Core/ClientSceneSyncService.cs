@@ -229,8 +229,8 @@ namespace MySecondWorld.Network
                 Debug.Log($"[Client] 소속 씬 통보 '{msg.sceneName}' — 아직 미로드, 로드 완료 시 적용된다");
         }
 
-        // 로드된 씬 조회. Addressables 씬은 scene.path가 비어 있어 GetSceneByPath로 못 찾으므로
-        // 핸들을 먼저 보고, 없으면 파일명으로 대조한다.
+        // 로드된 씬 조회. Addressables 씬은 GetSceneByPath로 못 찾는 경우가 있으므로(원인 미규명 —
+        // scene.path 자체는 채워진다, 서버에서 확인) 핸들을 먼저 보고, 없으면 파일명으로 대조한다.
         private Scene FindLoadedScene(string scenePath)
         {
             if (_sceneHandles.TryGetValue(scenePath, out var handle)

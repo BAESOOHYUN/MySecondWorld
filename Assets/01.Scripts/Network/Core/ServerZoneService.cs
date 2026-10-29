@@ -171,7 +171,7 @@ namespace MySecondWorld.Network
             var controller = conn.identity.GetComponent<CharacterController>();
             Vector3 origin = conn.identity.transform.position + (controller != null ? controller.center : Vector3.up);
             float radius = controller != null ? Mathf.Max(0.2f, controller.radius - controller.skinWidth) : 0.3f;
-            float distance = (controller != null ? (controller.height / 2f) : 1f) + 2.5f; // 계단 경사로 감안 넉넉한 거리
+            float distance = (controller != null ? (controller.height / 2f) : 1f) + 2.5f; // 계단 경사로를 감안한 넉넉한 거리
                                                                                           // 트리거를 제외한 바닥 물리 콜라이더를 SphereCast로 확실하게 검출
             if (Physics.SphereCast(origin, radius, Vector3.down, out RaycastHit hit, distance, ~0, QueryTriggerInteraction.Ignore))
             {
@@ -179,7 +179,8 @@ namespace MySecondWorld.Network
                 if (hitScene.IsValid() && !string.IsNullOrEmpty(hitScene.name))
                 {
                     // 1단계: 밟은 콜라이더의 씬과 일치하는 ZoneDefinitionSO 탐색
-                    //  핵심: Addressables 씬은 scene.path가 비어있으므로 scene.name으로 비교
+                    //  Addressables 씬도 scene.path는 채워진다(서버에서 확인, buildIndex만 -1).
+                    //  환경에 따라 path가 빌 때를 대비해 scene.name 비교를 안전망으로 남겨 둔다.
                     var candidateZone = _manager.zones.FirstOrDefault(z =>
                         z.sceneName == hitScene.path ||
                         System.IO.Path.GetFileNameWithoutExtension(z.sceneName) == hitScene.name ||
