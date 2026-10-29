@@ -10,6 +10,7 @@ using MySecondWorld.Save;
 using MySecondWorld.Combat.Companion;
 using MySecondWorld.Customization;
 using MySecondWorld.Network.Companion;
+using Cleverous.VaultSystem;
 
 namespace MySecondWorld.Network
 {
@@ -203,6 +204,8 @@ namespace MySecondWorld.Network
             // 신규 플레이어에게만 시작 골드 지급 (재접속 시 중복 지급 방지)
             if (session.isNewPlayer)
                 GrantStartingGold(conn);
+            else
+                RestoreInventory(conn, session);
 
             session.currentScene = session.pendingSpawnScene;
             var targetScene = _manager.GetServerScene(session.currentScene);
@@ -287,7 +290,9 @@ namespace MySecondWorld.Network
                             lastPosition = posToSave,
                             recruitedCompanionIds = session.recruitedCompanionIds,
                             companionAlive = session.companionAlive,
-                            companionPresent = session.companionPresent
+                            companionPresent = session.companionPresent,
+                            inventorySlots = BuildInventorySave(conn),
+                            mainHandDbKey = -1,   // 장착 무기는 다음 단계에서. 지금은 임시로 "장착 안 함"
                         });
                     }
                 }
@@ -367,6 +372,50 @@ namespace MySecondWorld.Network
                 newIds[ids.Length] = companionId;
                 //  세션에 반영
                 session.recruitedCompanionIds = newIds;
+            }
+        }
+
+        // 인벤토리를 읽어 InventorySlotSave[] 를 돌려줌
+        private InventorySlotSave[] BuildInventorySave(NetworkConnectionToClient conn)
+        {
+            var inventory = conn.identity != null
+                            ? conn.identity.GetComponent<Cleverous.VaultInventory.Inventory>()
+                            : null;
+
+            if (inventory == null) return null;     // ← 여기로 이동
+            var state = inventory.ToState();
+            var slots = new InventorySlotSave[state.ItemDbKeys.Count];
+            for (int i = 0; i < slots.Length; i++)
+            {
+                slots[i] = new InventorySlotSave
+                {
+                    dbKey = state.ItemDbKeys[i],
+                    count = state.ItemStackCounts[i]
+                };
+            }
+
+            return slots;
+        }
+
+        // 세이브를 읽어 인벤토리를 채움
+        private void RestoreInventory(NetworkConnectionToClient conn, PlayerSession session)
+        {
+            // ① 인벤토리를 얻는다 (저장 때와 같은 방식)
+            var inventory = conn.identity != null
+                            ? conn.identity.GetComponent<Cleverous.VaultInventory.Inventory>()
+                            : null;
+            if (inventory == null) return;
+
+            // ② 세이브를 읽는다. 없거나, 인벤토리 필드가 비어 있으면(옛 세이브) 아무것도 안 한다
+            var loaded = _saveManager.Load(session.playerId);
+            if (loaded == null || loaded.Value.inventorySlots == null) return;
+
+            // ③ 슬롯을 한 칸씩 돌며 아이템을 다시 넣는다
+            foreach (var slot in loaded.Value.inventorySlots)
+            {
+                if (slot.dbKey == -1 || slot.count <= 0) continue;        // 빈 슬롯
+                if (Vault.Get(slot.dbKey) is not RootItem item) continue; // 아이템 데이터가 없어졌으면 건너뜀
+                inventory.DoAdd(new RootItemStack(item, slot.count));
             }
         }
 
