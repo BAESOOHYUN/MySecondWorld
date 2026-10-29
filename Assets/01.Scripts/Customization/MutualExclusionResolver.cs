@@ -3,7 +3,12 @@ using System.Collections.Generic;
 namespace MySecondWorld.Customization
 {
     // ── 상호배제 규칙 분류 (2026-07-18 확정) ──────────────────────────────────────
+    // ※ 번호가 서로 반대다: Type-1(가림)은 Stage 2, Type-2(취소)는 Stage 1에서 처리한다.
+    //   (Type = 규칙 종류, Stage = 실행 순서. Stage 1이 desired를 고친 뒤 Stage 2가 읽으므로 순서는 바꿀 수 없다)
+    //
     // Type-1 (임시 가림) : desired는 절대 안 바뀜. ComputeVisibleAppearance가 매번 새로 계산.
+    //   왜: 가림의 원인(헬멧 등)이 사라지면 사용자가 고른 원래 파츠(예: 머리카락 3번)가 그대로 돌아와야 한다.
+    //       desired를 바꿔 버리면 "몇 번이었는지"를 잃는다.
     //   - HelmetAttachment 착용 → (전제조건) Head가 No_Elements 상태로 강제 전환
     //   - HeadCoverings = No_Hair       → Hair 가림
     //   - HeadCoverings = No_FacialHair → FacialHair 가림
@@ -14,6 +19,10 @@ namespace MySecondWorld.Customization
     //      desired.Head==No_Elements 조건으로 처리.)
     //
     // Type-2 (영구 취소) : desired 자체가 바뀜. ApplyDirectSelectionRules가 직접 수정.
+    //   왜: 사용자가 "방금 직접 고른 것"이 기존 선택과 양립할 수 없으면 직접 선택이 이긴다.
+    //       이걸 가림으로 처리하면 방금 고른 파츠가 안 보이는 모순이 생긴다(예: 후드를 쓴 채 머리카락을 골랐는데 머리가 안 보임).
+    //       그래서 충돌하는 쪽을 desired에서 지운다. 직접 고르는 순간(SetPart/SetPartPair)에만 실행하고,
+    //       불러오기·랜덤(ApplyAppearance)에서는 실행하지 않는다.
     //   - 헬멧 쓴 채 Head(All_Elements) 직접 선택 → HelmetAttachment desired = 0
     //   - HeadCoverings 직접 선택(착용) → HelmetAttachment desired = 0
     //     (헤드커버와 헬멧장신구는 동시 착용 불가 — Head case의 대칭 규칙, 2026-07-19 버그 수정으로 추가)
@@ -61,7 +70,7 @@ namespace MySecondWorld.Customization
         // visible = "그 의도를 지금 이 순간 화면에 구현한 결과" (저장 안 됨, 매번 재계산, "미리보기"보다는 "실제 표시값"에 가까움)
 
 
-        // Stage 1 — desired를 직접 수정하는 "영구 취소" 규칙.
+        // Stage 1 [Type-2] — desired를 직접 수정하는 "영구 취소" 규칙.
         // changedPart/newIndex는 "방금 사용자가 요청한 변경"이며,
         // 호출 전에 이미 desired[changedPart] = newIndex는 반영되어 있어야 한다(호출자 책임).
         public static void ApplyDirectSelectionRules(
@@ -129,7 +138,7 @@ namespace MySecondWorld.Customization
             }
         }
 
-        // Stage 2 — desired는 절대 변형하지 않고 매번 새 값을 반환하는 "임시 가림" 규칙.
+        // Stage 2 [Type-1] — desired는 절대 변형하지 않고 매번 새 값을 반환하는 "임시 가림" 규칙.
         // 상태를 전혀 기억하지 않는 순수 함수 — 몇 번을 호출해도 같은 desired에 대해 항상 같은 visible을 반환한다.
         public static CharacterAppearanceData ComputeVisibleAppearance(
             CharacterAppearanceData desired,

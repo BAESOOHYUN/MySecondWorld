@@ -36,6 +36,7 @@ namespace MySecondWorld.Customization
         private readonly Dictionary<string, Transform> _boneMap = new();
         private readonly HashSet<PartType> _loadingParts = new(); //연타방지
         private readonly SemaphoreSlim _appearanceLock = new(1, 1); //동시에 ApplyAppearance/SetPart가 겹쳐 돌지 못하게 세마포어로 직렬화
+                                                                    //(처음 허용 수, 최대 허용 수)한 번에 한 작업만 들어가고 나머지는 줄을 섬
         public event System.Action AppearanceApplied;    // 파츠 인스턴스화 완료 시점 알림 — 초상화 캡처처럼 "완성된 모습"이 필요한 쪽에서 구독
         
         // 파츠별 subtype 후보가 여러 개일 때, 사용자가 마지막으로 직접 고른 인덱스를 기억 —
