@@ -4,6 +4,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
 using VContainer;
 
 namespace MySecondWorld.Customization
@@ -19,7 +20,19 @@ namespace MySecondWorld.Customization
         #region 상태
         protected CharacterAppearanceData _currentAppearance;   // desired — 사용자가 마지막으로 "직접 고른" 값
         private CharacterAppearanceData _lastAppliedVisible;    // visible — 직전에 실제로 렌더링(인스턴스화)한 값
-        private readonly Dictionary<PartType, GameObject> _activePartInstances = new();
+        private readonly struct PartInstance
+        {
+            public readonly GameObject Instance;
+            public readonly AsyncOperationHandle<GameObject> Handle;
+
+            public PartInstance(GameObject instance, AsyncOperationHandle<GameObject> handle)
+            {
+                Instance = instance;
+                Handle = handle;
+            }
+        }
+
+        private readonly Dictionary<PartType, PartInstance> _activePartInstances = new();
         private readonly Dictionary<string, Transform> _boneMap = new();
         private readonly HashSet<PartType> _loadingParts = new(); //연타방지
         private readonly SemaphoreSlim _appearanceLock = new(1, 1); //동시에 ApplyAppearance/SetPart가 겹쳐 돌지 못하게 세마포어로 직렬화
@@ -264,8 +277,8 @@ namespace MySecondWorld.Customization
 
             foreach (var instance in _activePartInstances.Values)
             {
-                if (instance == null) continue;
-                var smr = instance.GetComponent<SkinnedMeshRenderer>();
+                if (instance.Instance == null) continue;
+                var smr = instance.Instance.GetComponent<SkinnedMeshRenderer>();
                 if (smr != null)
                     smr.material.SetColor(prop, color);
             }
@@ -315,8 +328,9 @@ namespace MySecondWorld.Customization
 
             try
             {
-                var instance = await Addressables.InstantiateAsync(candidates[index], _partRoot).ToUniTask();
-                _activePartInstances[part] = instance;
+                var handle = Addressables.InstantiateAsync(candidates[index], _partRoot);
+                var instance = await handle.ToUniTask();
+                _activePartInstances[part] = new PartInstance(instance, handle);
 
                 OnPartInstantiated(instance);
 
@@ -334,10 +348,17 @@ namespace MySecondWorld.Customization
 
         private void ReleasePartInstance(PartType part)
         {
-            if (_activePartInstances.TryGetValue(part, out var old) && old != null)
+            if (_activePartInstances.TryGetValue(part, out var old))
             {
-                Addressables.ReleaseInstance(old);
-                _activePartInstances.Remove(part);
+                if (old.Handle.IsValid())
+                    Addressables.ReleaseInstance(old.Handle); // 저장해 둔 핸들로 해제 — 오브젝트 파괴도 Addressables가 함
+                else
+                {
+                    Debug.LogWarning($"[ReleasePartInstance] 핸들 무효 → Destroy: {part} {old.Instance.name}");
+                    Destroy(old.Instance);                      // 핸들이 이미 없을 때만 안전망
+                }
+
+                _activePartInstances.Remove(part); // 착용 파츠를 착용목록 장부에서 삭제
             }
         }
 
