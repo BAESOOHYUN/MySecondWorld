@@ -136,15 +136,6 @@ namespace MySecondWorld.UI
 #endif
         }
 
-        private void OnEnable()
-        {
-#if !UNITY_SERVER
-            EnsureInitialized();
-            // UI가 켜질 때마다(Open()이든 SetActive(true)든) 최신 세이브를 읽어서 프리뷰 캐릭터 즉시 동기화!
-            ReloadFromSave().Forget();
-#endif
-        }
-
         private void Start()
         {
 #if UNITY_SERVER
@@ -196,11 +187,6 @@ namespace MySecondWorld.UI
             InitColorRows();
             if (_colorPicker != null)
                 _colorPicker.gameObject.SetActive(false);
-        }
-
-        public void OpenForFirstLaunch()
-        {
-            Open();
         }
 
         // 패널을 열 때마다 호출 — 저장된 외형으로 다시 초기화한다.
