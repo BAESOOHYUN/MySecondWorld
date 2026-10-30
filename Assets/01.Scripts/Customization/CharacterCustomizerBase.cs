@@ -32,7 +32,7 @@ namespace MySecondWorld.Customization
             }
         }
 
-        private readonly Dictionary<PartType, PartInstance> _activePartInstances = new();
+        private readonly Dictionary<PartType, PartInstance> _activePartInstances = new(); // 지금 캐릭터에 실제로 꽂혀 있는 파츠 오브젝트의 장부
         private readonly Dictionary<string, Transform> _boneMap = new();
         private readonly HashSet<PartType> _loadingParts = new(); //연타방지
         private readonly SemaphoreSlim _appearanceLock = new(1, 1); //동시에 ApplyAppearance/SetPart가 겹쳐 돌지 못하게 세마포어로 직렬화
@@ -112,47 +112,26 @@ namespace MySecondWorld.Customization
                 // ComputeVisibleAppearance(Stage2)가 매번 desired만 보고 일관된 visible을 계산한다.
                 var visible = MutualExclusionResolver.ComputeVisibleAppearance(
                     _currentAppearance, data.Gender, _avatarPartKeyTable, _lastSelectedIndexByPartAndSubtype);
-
-
                 Debug.Log($"[CustomizerBase] visible 계산 완료: Head={visible.Head}, Torso={visible.Torso}, Hair={visible.Hair}");
-
-
-                // 기존 인스턴스 전부 해제
-                foreach (var key in new List<PartType>(_activePartInstances.Keys))
-                    ReleasePartInstance(key);
 
                 // 본 맵을 병렬(25개 파츠를 동시에) 로드 전에 1회 구성 (race condition 방지)
                 // _boneMap은 이미 완성된 상태라 읽기만 하면 됨.
                 EnsureBoneMap();
 
-                // WhenAll로 동시 로드 — 전부 desired가 아니라 visible.X를 사용한다
-                await UniTask.WhenAll(
-                    InstantiatePart(PartType.Hair, visible.Hair, data.Gender),
-                    InstantiatePart(PartType.Head, visible.Head, data.Gender),
-                    InstantiatePart(PartType.Eyebrows, visible.Eyebrows, data.Gender),
-                    InstantiatePart(PartType.FacialHair, visible.FacialHair, data.Gender),
-                    InstantiatePart(PartType.Torso, visible.Torso, data.Gender),
-                    InstantiatePart(PartType.ArmUpperRight, visible.ArmUpperRight, data.Gender),
-                    InstantiatePart(PartType.ArmUpperLeft, visible.ArmUpperLeft, data.Gender),
-                    InstantiatePart(PartType.ArmLowerRight, visible.ArmLowerRight, data.Gender),
-                    InstantiatePart(PartType.ArmLowerLeft, visible.ArmLowerLeft, data.Gender),
-                    InstantiatePart(PartType.HandRight, visible.HandRight, data.Gender),
-                    InstantiatePart(PartType.HandLeft, visible.HandLeft, data.Gender),
-                    InstantiatePart(PartType.Hips, visible.Hips, data.Gender),
-                    InstantiatePart(PartType.LegRight, visible.LegRight, data.Gender),
-                    InstantiatePart(PartType.LegLeft, visible.LegLeft, data.Gender),
-                    InstantiatePart(PartType.HeadCoverings, visible.HeadCoverings, data.Gender),
-                    InstantiatePart(PartType.Ear, visible.Ear, data.Gender),
-                    InstantiatePart(PartType.HelmetAttachment, visible.HelmetAttachment, data.Gender),
-                    InstantiatePart(PartType.BackAttachment, visible.BackAttachment, data.Gender),
-                    InstantiatePart(PartType.ShoulderAttachRight, visible.ShoulderAttachRight, data.Gender),
-                    InstantiatePart(PartType.ShoulderAttachLeft, visible.ShoulderAttachLeft, data.Gender),
-                    InstantiatePart(PartType.ElbowAttachRight, visible.ElbowAttachRight, data.Gender),
-                    InstantiatePart(PartType.ElbowAttachLeft, visible.ElbowAttachLeft, data.Gender),
-                    InstantiatePart(PartType.KneeAttachRight, visible.KneeAttachRight, data.Gender),
-                    InstantiatePart(PartType.KneeAttachLeft, visible.KneeAttachLeft, data.Gender),
-                    InstantiatePart(PartType.HipsAttachment, visible.HipsAttachment, data.Gender)
-                );
+                bool fullRebuild = _lastAppliedVisible.Gender != data.Gender; // 성별이 다를 때만 풀빌드,
+                                                                              // 같은 성별인채 파츠만 바뀌면 개별 빌드
+                var tasks = new List<UniTask>();
+                foreach (PartType part in System.Enum.GetValues(typeof(PartType)))
+                {
+                    // 성별같고, 바꾸려는 파츠 번호도 직전과 같고, 안 입는 자리이거나 실제로 그 파츠가 이미 꽂혀 있다 -> 유지
+                    bool same = !fullRebuild && visible[part] == _lastAppliedVisible[part]
+                                && (visible[part] == -1 || _activePartInstances.ContainsKey(part));
+                    if (same) continue;
+                    tasks.Add(ReplacePartInstance(part, visible[part], data.Gender));
+                }
+
+                // WhenAll로 동시 로드
+                await UniTask.WhenAll(tasks);
 
                 _lastAppliedVisible = visible;
                 ReapplyColors();
@@ -318,6 +297,7 @@ namespace MySecondWorld.Customization
                 var handle = Addressables.InstantiateAsync(candidates[index], _partRoot);
                 var instance = await handle.ToUniTask();
                 _activePartInstances[part] = new PartInstance(instance, handle);
+                ApplyColorsTo(instance);
 
                 OnPartInstantiated(instance);
 
