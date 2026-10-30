@@ -148,7 +148,7 @@ namespace MySecondWorld.Network
             connectionsPendingDisconnect.Add(conn);
 
             // 클라이언트에게 실패 응답 보내기
-            conn.Send(new AuthResponseMessage { code = AuthResponseMessage.WrongPassword });
+            conn.Send(new AuthResponseMessage { code = code });
 
             // Mirror는 인증 성공 시 conn.isAuthenticated = true로 자동 설정한다.
             // else (거부)쪽에서 명시적으로 false로 되돌려
