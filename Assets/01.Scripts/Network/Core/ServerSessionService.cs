@@ -6,11 +6,11 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using Mirror;
 using Cleverous.VaultInventory;
+using Cleverous.VaultSystem;
 using MySecondWorld.Save;
 using MySecondWorld.Combat.Companion;
 using MySecondWorld.Customization;
 using MySecondWorld.Network.Companion;
-using Cleverous.VaultSystem;
 
 namespace MySecondWorld.Network
 {
@@ -274,28 +274,8 @@ namespace MySecondWorld.Network
         {
             if (Sessions.TryGetValue(conn.connectionId, out var session))
             {
-                // 1. 세이브 (스폰된 적 있고 playerId가 있을 때만)
-                if (session.isSpawned && !string.IsNullOrEmpty(session.playerId))
-                {
-                    // lastSafePosition 우선, 없으면 현재 위치 사용
-                    var posToSave = session.lastSafePosition != Vector3.zero
-                        ? session.lastSafePosition
-                        : conn.identity?.transform.position ?? Vector3.zero;
-
-                    if (posToSave != Vector3.zero)
-                    {
-                        _saveManager.Save(session.playerId, new SaveData
-                        {
-                            lastSceneNames = new string[] { session.currentScene },
-                            lastPosition = posToSave,
-                            recruitedCompanionIds = session.recruitedCompanionIds,
-                            companionAlive = session.companionAlive,
-                            companionPresent = session.companionPresent,
-                            inventorySlots = BuildInventorySave(conn),
-                            mainHandDbKey = BuildMainHandSave(conn),
-                        });
-                    }
-                }
+                // 1. 세이브
+                SavePlayer(conn, session);
 
                 if (session.companionIdentity != null)
                     NetworkServer.Destroy(session.companionIdentity.gameObject);
@@ -316,6 +296,47 @@ namespace MySecondWorld.Network
 
 
         #region 헬퍼
+        private void SavePlayer(NetworkConnectionToClient conn, PlayerSession session)
+        {
+            if (session.isSpawned && !string.IsNullOrEmpty(session.playerId))
+            {
+                // lastSafePosition 우선, 없으면 현재 위치 사용
+                var posToSave = session.lastSafePosition != Vector3.zero
+                    ? session.lastSafePosition
+                    : conn.identity?.transform.position ?? Vector3.zero;
+
+                if (posToSave != Vector3.zero)
+                {
+                    var prev = _saveManager.Load(session.playerId); // 이전 세이브 (없으면 null)
+                    _saveManager.Save(session.playerId, new SaveData
+                    {
+                        lastSceneNames = new string[] { session.currentScene },
+                        lastPosition = posToSave,
+                        recruitedCompanionIds = session.recruitedCompanionIds,
+                        companionAlive = session.companionAlive,
+                        companionPresent = session.companionPresent,
+                        inventorySlots = BuildInventorySave(conn) ?? prev?.inventorySlots,
+                        mainHandDbKey = BuildMainHandSave(conn) ?? prev?.mainHandDbKey ?? -1,
+                    });
+                }
+            }
+        }
+
+        public void SaveAllPlayers()
+        {
+            int count = 0;
+            foreach (var kv in Sessions.ToList())
+            {
+                if (!NetworkServer.connections.TryGetValue(kv.Key, out var conn))
+                    continue;
+
+                SavePlayer(conn, kv.Value);
+                count++;
+            }
+
+            if (count > 0)
+                Debug.Log($"[Save] 주기 저장 {count}명");
+        }
 
         private void SpawnCompanionFor(PlayerSession session, NetworkConnectionToClient conn, GameObject prefab)
         {
@@ -398,12 +419,12 @@ namespace MySecondWorld.Network
         }
 
         // 장착 중인 무기 dbKey를 읽음
-        private int BuildMainHandSave(NetworkConnectionToClient conn)
+        private int? BuildMainHandSave(NetworkConnectionToClient conn)
         {
             var equip = conn.identity != null
                 ? conn.identity.GetComponent<NetworkWeaponEquip>()
                 : null;
-            return equip == null ? -1 : equip.ServerGetMainHandDbKey();
+            return equip == null ? null : equip.ServerGetMainHandDbKey();
         }
 
         // 세이브를 읽어 인벤토리를 채움

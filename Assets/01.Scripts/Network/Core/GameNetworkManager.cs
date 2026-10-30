@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,8 +16,6 @@ using MySecondWorld.Save;
 using MySecondWorld.Bundle;
 using MySecondWorld.Network.Companion;
 using MySecondWorld.Customization;
-
-
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -53,6 +52,7 @@ namespace MySecondWorld.Network
         public float portalAckTimeoutSeconds = 15f;      // 로드완료 ack 대기 타임아웃(소프트락 방지 안전장치)
         public float portalReentryCooldownSeconds = 2f;  // 도착 직후 반대쪽 트리거 무시 시간(즉시 왕복 방지)
         public float portalCheckInterval = 0.1f;         // 포탈 감지 폴링 주기(zoneCheckInterval보다 훨씬 짧게 — 빠르게 지나가도 안 놓치도록)
+        public float autoSaveInterval = 60f;             // 주기 저장 간격(초) — 서버가 갑자기 죽어도 이 시간만큼만 잃는다
 
         [Header("신규 플레이어 시작 지급")]
         [SerializeField] private RootItem _startingGoldItem;
@@ -223,6 +223,7 @@ namespace MySecondWorld.Network
             NetworkServer.RegisterHandler<PortalSceneLoadedAckMessage>(_zoneService.OnPortalSceneLoadedAck);
             _zoneService.CheckZones(Cts.Token).Forget();
             _zoneService.CheckPortals(Cts.Token).Forget();
+            AutoSaveLoop(Cts.Token).Forget();
 
             ValidatePortals(); // 포탈 SO 설정 실수(zoneA/zoneB 누락 등) 조기 검증
         }
@@ -245,6 +246,20 @@ namespace MySecondWorld.Network
                 if (portal.zoneA.WorldId == portal.zoneB.WorldId)
                     Debug.LogError($"[Portal] {portal.name} — zoneA/zoneB가 같은 World({portal.zoneA.WorldId})임, 포탈 의미 없음", portal);
             }
+        }
+
+        // 오토세이브. 1분마다 "지금 접속 중인 모든 플레이어"를 한 번에 저장. 비정상 종료에 대한 보험.
+        private async UniTask AutoSaveLoop(CancellationToken ct)
+        {
+            try    // 서버 종료 시 ct가 취소되는 것 처리 — 루프 자체의 정상 종료
+            {
+                while (!ct.IsCancellationRequested)
+                {
+                    await UniTask.Delay(TimeSpan.FromSeconds(autoSaveInterval), cancellationToken: ct);  // 먼저 기다리고 저장
+                    _sessionService.SaveAllPlayers();
+                }
+            }
+            catch (OperationCanceledException) { } // 서버 종료 시 정상 종료
         }
 
         public override void OnStopServer()
