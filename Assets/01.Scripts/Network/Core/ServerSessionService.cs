@@ -292,7 +292,7 @@ namespace MySecondWorld.Network
                             companionAlive = session.companionAlive,
                             companionPresent = session.companionPresent,
                             inventorySlots = BuildInventorySave(conn),
-                            mainHandDbKey = -1,   // 장착 무기는 다음 단계에서. 지금은 임시로 "장착 안 함"
+                            mainHandDbKey = BuildMainHandSave(conn),
                         });
                     }
                 }
@@ -397,6 +397,15 @@ namespace MySecondWorld.Network
             return slots;
         }
 
+        // 장착 중인 무기 dbKey를 읽음
+        private int BuildMainHandSave(NetworkConnectionToClient conn)
+        {
+            var equip = conn.identity != null
+                ? conn.identity.GetComponent<NetworkWeaponEquip>()
+                : null;
+            return equip == null ? -1 : equip.ServerGetMainHandDbKey();
+        }
+
         // 세이브를 읽어 인벤토리를 채움
         private void RestoreInventory(NetworkConnectionToClient conn, PlayerSession session)
         {
@@ -417,6 +426,12 @@ namespace MySecondWorld.Network
                 if (Vault.Get(slot.dbKey) is not RootItem item) continue; // 아이템 데이터가 없어졌으면 건너뜀
                 inventory.DoAdd(new RootItemStack(item, slot.count));
             }
+
+            var equip = conn.identity != null
+                ? conn.identity.GetComponent<NetworkWeaponEquip>()
+                : null;
+            if (equip != null)
+                equip.ServerTryEquipMainHand(loaded.Value.mainHandDbKey);
         }
 
         #endregion

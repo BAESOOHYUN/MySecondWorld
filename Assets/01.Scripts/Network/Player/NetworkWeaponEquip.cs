@@ -14,9 +14,8 @@ namespace MySecondWorld.Network
     [RequireComponent(typeof(Cleverous.VaultInventory.Inventory))]
     public class NetworkWeaponEquip : NetworkBehaviour, IWeaponEquipActionsProvider
     {
-        // "미장착" 센티널. dbKey 기본값(int.MinValue, DataEntity 미등록 상태)과 동일하게 맞춰서 0을 쓰지 않는다
-        // (0은 실제로 등록된 아이템의 정상 dbKey일 수 있다.)
-        private const int Unequipped = int.MinValue;
+        // 미장착 표시. Vault도 빈 슬롯을 -1로 쓴다. 0은 실제 아이템 dbKey일 수 있어서 쓰지 않는다
+        private const int Unequipped = -1;
 
         // 이 Category 이외에는 MainHand 장착 자체를 거부한다(2026-07-20 스코프 조정 —
         // 둔기류/너클/Staff/Sceptre는 맞는 애니메이션이 없어 이번 Phase 제외).
@@ -111,37 +110,52 @@ namespace MySecondWorld.Network
             }
         }
 
-        [Command]
-        public void CmdEquipMainHand(int weaponDbKey)
+        // 세이브용 — 장착 중인 무기 dbKey. 미장착은 -1
+        [Server]
+        public int ServerGetMainHandDbKey() => _mainHandDbKey;
+
+        // 검증 후 장착. 성공 true / 거부 false. (클라 요청과 세이브 복원이 같이 사용)
+        [Server]
+        public bool ServerTryEquipMainHand(int weaponDbKey)
         {
-            Debug.Log($"[Equip][Server] CmdEquipMainHand 수신 dbKey={weaponDbKey}");
+            Debug.Log($"[Equip][Server] ServerTryEquipMainHand 호출 dbKey={weaponDbKey}");
             if (weaponDbKey == Unequipped)
             {
                 _mainHandDbKey = Unequipped;  // 해제 요청은 무조건 허용
                 Debug.Log("[Equip][Server] 해제 요청 처리");
-                return;
+                return true;
             }
 
-            if (Vault.Get(weaponDbKey) is not EquipmentItem item)// return;   // dbKey가 무기 아이템이 아님
+            if (Vault.Get(weaponDbKey) is not EquipmentItem item)// 장비 아님
             {
                 Debug.LogWarning($"[Equip][Server] 거부 — dbKey={weaponDbKey}가 EquipmentItem이 아님 (Vault.Get 결과: {Vault.Get(weaponDbKey)})");
-                return;
+                return false;
             }
-            if (!AllowedMainHandCategories.Contains(item.Category))// return; // 이번 Phase 제외 대상
+
+            // TODO: 둔기·너클·Staff·Sceptre는 애니메이션이 생기면 허용
+            if (!AllowedMainHandCategories.Contains(item.Category))
             {
                 Debug.LogWarning($"[Equip][Server] 거부 — Category={item.Category}가 허용 목록에 없음");
-                return;
+                return false;
             }
-            if (!(_inventory?.Contains(item, 1) ?? false))// return;          // 미소유면 제외
+
+            if (!(_inventory?.Contains(item, 1) ?? false))// 미보유
             {
+                // _inventory가 null            →  null  ?? false  →  false(인벤토리 없음) →  !false  →true
+                // _inventory 있고 아이템 보유O →  true  ?? false  →  true(인벤O,아이템O)  →  !true   →false
+                // _inventory 있고 아이템 보유X →  false ?? false  →  false(아이템 없음)   →  !false  →true
                 Debug.LogWarning($"[Equip][Server] 거부 — 인벤토리 미보유 (item={item.Title}, _inventory null? {_inventory == null})");
-                return;
+                return false;
             }
-            // _inventory가 null            →  null  ?? false  →  false(인벤토리 없음) →  !false  →true
-            // _inventory 있고 아이템 보유O →  true  ?? false  →  true(인벤O,아이템O)  →  !true   →false
-            // _inventory 있고 아이템 보유X →  false ?? false  →  false(아이템 없음)   →  !false  →true
 
             _mainHandDbKey = weaponDbKey; // 여기서 대입하며 [SyncVar] 훅 발동 → OnMainHandChanged 실행
+            return true;
+        }
+
+        [Command]
+        public void CmdEquipMainHand(int weaponDbKey)
+        {
+            ServerTryEquipMainHand(weaponDbKey);
         }
 
         // 장착된 메인핸드 무기의 Attack(Flat) 스탯 합. 미장착이거나 무기가 아니면 0.
