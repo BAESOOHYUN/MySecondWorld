@@ -187,6 +187,7 @@ namespace MySecondWorld.Network
 
         private void OnMainHandChanged(int oldKey, int newKey)
         {
+            if (newKey == _predictedMainHandDbKey) return;   // 로컬 예측해서 이미 적용한 값이면 건너뛰기.
             Debug.Log($"[Equip] OnMainHandChanged(SyncVar hook) {oldKey} → {newKey}");
             _equipToken++;
 #if !UNITY_SERVER
@@ -202,8 +203,13 @@ namespace MySecondWorld.Network
             if (dbKey == Unequipped)
             {
                 Debug.Log("[Equip] ApplyMainHandVisual — 해제 처리");
-                if (_animator != null)
+                // 같은 컨트롤러면 대입을 건너뛰고, 바꿨다면 바로 한 번
+                // 애니메이션 상태를 지금 즉시 계산해서 뼈대에 반영(Update(0f))
+                if (_animator != null && _animator.runtimeAnimatorController != _defaultController)
+                {
                     _animator.runtimeAnimatorController = _defaultController;
+                    _animator.Update(0f);
+                }
                 // 해제 경로
                 OnMainHandVisualApplied?.Invoke(WeaponCategory.None);
                 OnMainHandStateChanged?.Invoke();
@@ -266,8 +272,13 @@ namespace MySecondWorld.Network
             if (_animationMap != null && _animator != null)
             {
                 var controller = _animationMap.GetController(item.Category);
-                if (controller != null)
+
+                if (controller != null && _animator.runtimeAnimatorController != controller)
+                {
                     _animator.runtimeAnimatorController = controller;
+                    _animator.Update(0f);   // 애니메이션을 앞으로 흘리지 않고,
+                                            // 클립의 현재 시간에 해당하는 각 뼈의 회전·위치 계산만 지금 한 번 함 (T포즈 방지)
+                }
             }
             // 장착 성공 경로
             OnMainHandVisualApplied?.Invoke(item.Category);
