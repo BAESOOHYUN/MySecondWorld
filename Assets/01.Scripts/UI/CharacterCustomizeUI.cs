@@ -557,30 +557,14 @@ namespace MySecondWorld.UI
 
         private Color GetColorFromAppearance(ColorTarget target)
         {
-            var a = _previewCustomizer.GetCurrentAppearance();
+            var appearance = _previewCustomizer.GetCurrentAppearance();
 
             // 미로드 상태(모든 프리뷰 색상버튼 default(Color) = (0, 0, 0, 0) = 완전 투명) 방어
             // → SO 기본값으로 대체
-            if (a.PrimaryColor == default && a.SkinColor == default)
-                a = _defaultAppearanceSO.DefaultAppearance;
+            if (appearance.PrimaryColor == default && appearance.SkinColor == default)
+                appearance = _defaultAppearanceSO.DefaultAppearance;
 
-            return target switch
-            {
-                ColorTarget.Primary => a.PrimaryColor,
-                ColorTarget.Secondary => a.SecondaryColor,
-                ColorTarget.LeatherPrimary => a.LeatherPrimaryColor,
-                ColorTarget.LeatherSecondary => a.LeatherSecondaryColor,
-                ColorTarget.MetalPrimary => a.MetalPrimaryColor,
-                ColorTarget.MetalSecondary => a.MetalSecondaryColor,
-                ColorTarget.MetalDark => a.MetalDarkColor,
-                ColorTarget.Hair => a.HairColor,
-                ColorTarget.Skin => a.SkinColor,
-                ColorTarget.Stubble => a.StubbleColor,
-                ColorTarget.Scar => a.ScarColor,
-                ColorTarget.Eyes => a.EyesColor,
-                ColorTarget.BodyArt => a.BodyArtColor,
-                _ => Color.white
-            };
+            return appearance[target];
         }
 
         private void RefreshColorRows()

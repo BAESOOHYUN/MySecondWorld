@@ -42,6 +42,24 @@ namespace MySecondWorld.Customization
         // 파츠별 subtype 후보가 여러 개일 때, 사용자가 마지막으로 직접 고른 인덱스를 기억 —
         // FindSubtypeIndex가 무조건 첫 후보를 고르는 대신 "사용자의 최근 선택을 우선"하게 함
         private readonly Dictionary<(PartType part, string subtype), int> _lastSelectedIndexByPartAndSubtype = new();
+
+        private static readonly Dictionary<ColorTarget, string> ColorProps = new()
+        {
+            [ColorTarget.Primary]            = "_Color_Primary",
+            [ColorTarget.Secondary]          = "_Color_Secondary",
+            [ColorTarget.LeatherPrimary]     = "_Color_Leather_Primary",
+            [ColorTarget.LeatherSecondary]   = "_Color_Leather_Secondary",
+            [ColorTarget.MetalPrimary]       = "_Color_Metal_Primary",
+            [ColorTarget.MetalSecondary]     = "_Color_Metal_Secondary",
+            [ColorTarget.MetalDark]          = "_Color_Metal_Dark",
+            [ColorTarget.Hair]               = "_Color_Hair",
+            [ColorTarget.Skin]               = "_Color_Skin",
+            [ColorTarget.Stubble]            = "_Color_Stubble",
+            [ColorTarget.Scar]               = "_Color_Scar",
+            [ColorTarget.Eyes]               = "_Color_Eyes",
+            [ColorTarget.BodyArt]            = "_Color_BodyArt",
+        };
+
         #endregion
 
         #region 초기화
@@ -238,44 +256,10 @@ namespace MySecondWorld.Customization
         public void SetColor(ColorTarget target, Color color)
         {
             // SetColor는 한 번 호출에 하나의 ColorTarget만 처리
-            switch (target)
-            {
-                case ColorTarget.Primary: _currentAppearance.PrimaryColor = color; break;
-                case ColorTarget.Secondary: _currentAppearance.SecondaryColor = color; break;
-                case ColorTarget.LeatherPrimary: _currentAppearance.LeatherPrimaryColor = color; break;
-                case ColorTarget.LeatherSecondary: _currentAppearance.LeatherSecondaryColor = color; break;
-                case ColorTarget.MetalPrimary: _currentAppearance.MetalPrimaryColor = color; break;
-                case ColorTarget.MetalSecondary: _currentAppearance.MetalSecondaryColor = color; break;
-                case ColorTarget.MetalDark: _currentAppearance.MetalDarkColor = color; break;
-                case ColorTarget.Hair: _currentAppearance.HairColor = color; break;
-                case ColorTarget.Skin: _currentAppearance.SkinColor = color; break;
-                case ColorTarget.Stubble: _currentAppearance.StubbleColor = color; break;
-                case ColorTarget.Scar: _currentAppearance.ScarColor = color; break;
-                case ColorTarget.Eyes: _currentAppearance.EyesColor = color; break;
-                case ColorTarget.BodyArt: _currentAppearance.BodyArtColor = color; break;
-            }
-
+            _currentAppearance[target] = color;
             // prop 셰이더 코드 안의 프로퍼티 이름
-            var prop = target switch
-            {
-                ColorTarget.Primary => "_Color_Primary",
-                ColorTarget.Secondary => "_Color_Secondary",
-                ColorTarget.LeatherPrimary => "_Color_Leather_Primary",
-                ColorTarget.LeatherSecondary => "_Color_Leather_Secondary",
-                ColorTarget.MetalPrimary => "_Color_Metal_Primary",
-                ColorTarget.MetalSecondary => "_Color_Metal_Secondary",
-                ColorTarget.MetalDark => "_Color_Metal_Dark",
-                ColorTarget.Hair => "_Color_Hair",
-                ColorTarget.Skin => "_Color_Skin",
-                ColorTarget.Stubble => "_Color_Stubble",
-                ColorTarget.Scar => "_Color_Scar",
-                ColorTarget.Eyes => "_Color_Eyes",
-                ColorTarget.BodyArt => "_Color_BodyArt",
-                _ => null
-            };
-
-            if (prop == null) return;
-
+            if (!ColorProps.TryGetValue(target, out var prop)) return;
+            
             foreach (var instance in _activePartInstances.Values)
             {
                 if (instance.Instance == null) continue;
@@ -287,19 +271,21 @@ namespace MySecondWorld.Customization
 
         private void ReapplyColors()
         {
-            SetColor(ColorTarget.Primary, _currentAppearance.PrimaryColor);
-            SetColor(ColorTarget.Secondary, _currentAppearance.SecondaryColor);
-            SetColor(ColorTarget.LeatherPrimary, _currentAppearance.LeatherPrimaryColor);
-            SetColor(ColorTarget.LeatherSecondary, _currentAppearance.LeatherSecondaryColor);
-            SetColor(ColorTarget.MetalPrimary, _currentAppearance.MetalPrimaryColor);
-            SetColor(ColorTarget.MetalSecondary, _currentAppearance.MetalSecondaryColor);
-            SetColor(ColorTarget.MetalDark, _currentAppearance.MetalDarkColor);
-            SetColor(ColorTarget.Hair, _currentAppearance.HairColor);
-            SetColor(ColorTarget.Skin, _currentAppearance.SkinColor);
-            SetColor(ColorTarget.Stubble, _currentAppearance.StubbleColor);
-            SetColor(ColorTarget.Scar, _currentAppearance.ScarColor);
-            SetColor(ColorTarget.Eyes, _currentAppearance.EyesColor);
-            SetColor(ColorTarget.BodyArt, _currentAppearance.BodyArtColor);
+            foreach (var instance in _activePartInstances.Values)
+            {
+                if (instance.Instance != null)
+                    ApplyColorsTo(instance.Instance);
+            }
+        }
+
+        // 파츠 하나에 현재 색을 즉시 입힌다 (생성 직후 기본 색이 보이는 구간을 없앰)
+        private void ApplyColorsTo(GameObject instance)
+        {
+            var smr = instance.GetComponent<SkinnedMeshRenderer>();
+            if (smr == null) return;
+            var mat = smr.material;   // 인스턴스 머티리얼을 한 번만 얻는다
+            foreach(var kv in ColorProps)
+                mat.SetColor(kv.Value, _currentAppearance[kv.Key]);
         }
 
         public CharacterAppearanceData GetCurrentAppearance() => _currentAppearance;

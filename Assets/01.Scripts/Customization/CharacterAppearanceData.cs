@@ -53,7 +53,7 @@ namespace MySecondWorld.Customization
         public int KneeAttachRight;
         public int HelmetAttachment;
         public int HipsAttachment;
-        
+
         // 성별
         public Gender Gender;
 
@@ -171,68 +171,109 @@ namespace MySecondWorld.Customization
         // 인덱서 추가
         // 인덱서 : 배열 int[], string[] 등에서 쓰는 [] 문법을 내가 만든 class/struct에도 쓸 수 있게 해줌
         // this = CharacterAppearanceData struct 자기자신
-        // ex) _currentAppearance[part] 와 같이 사용한다.
+        // ex) _currentAppearance[part] = index 와 같이 사용한다.
         public int this[PartType part]
         {
             get => part switch
             {
 
-                PartType.Hair => Hair,
-                PartType.Head => Head,
-                PartType.Eyebrows => Eyebrows,
-                PartType.FacialHair => FacialHair,
-                PartType.Torso => Torso,
-                PartType.ArmUpperRight => ArmUpperRight,
-                PartType.ArmUpperLeft => ArmUpperLeft,
-                PartType.ArmLowerRight => ArmLowerRight,
-                PartType.ArmLowerLeft => ArmLowerLeft,
-                PartType.HandLeft => HandLeft,
-                PartType.HandRight => HandRight,
-                PartType.Hips => Hips,
-                PartType.LegLeft => LegLeft,
-                PartType.LegRight => LegRight,
-                PartType.Ear => Ear,
-                PartType.HeadCoverings => HeadCoverings,
-                PartType.BackAttachment => BackAttachment,
-                PartType.ShoulderAttachLeft => ShoulderAttachLeft,
+                PartType.Hair                => Hair,
+                PartType.Head                => Head,
+                PartType.Eyebrows            => Eyebrows,
+                PartType.FacialHair          => FacialHair,
+                PartType.Torso               => Torso,
+                PartType.ArmUpperRight       => ArmUpperRight,
+                PartType.ArmUpperLeft        => ArmUpperLeft,
+                PartType.ArmLowerRight       => ArmLowerRight,
+                PartType.ArmLowerLeft        => ArmLowerLeft,
+                PartType.HandLeft            => HandLeft,
+                PartType.HandRight           => HandRight,
+                PartType.Hips                => Hips,
+                PartType.LegLeft             => LegLeft,
+                PartType.LegRight            => LegRight,
+                PartType.Ear                 => Ear,
+                PartType.HeadCoverings       => HeadCoverings,
+                PartType.BackAttachment      => BackAttachment,
+                PartType.ShoulderAttachLeft  => ShoulderAttachLeft,
                 PartType.ShoulderAttachRight => ShoulderAttachRight,
-                PartType.ElbowAttachLeft => ElbowAttachLeft,
-                PartType.ElbowAttachRight => ElbowAttachRight,
-                PartType.KneeAttachLeft => KneeAttachLeft,
-                PartType.KneeAttachRight => KneeAttachRight,
-                PartType.HelmetAttachment => HelmetAttachment,
-                PartType.HipsAttachment => HipsAttachment,
-                _ => 0,
+                PartType.ElbowAttachLeft     => ElbowAttachLeft,
+                PartType.ElbowAttachRight    => ElbowAttachRight,
+                PartType.KneeAttachLeft      => KneeAttachLeft,
+                PartType.KneeAttachRight     => KneeAttachRight,
+                PartType.HelmetAttachment    => HelmetAttachment,
+                PartType.HipsAttachment      => HipsAttachment,
+                _                            => 0,
             };
-            set 
+            set
             {
                 switch (part)
                 {
-                    case PartType.Hair: Hair = value; break;
-                    case PartType.Head: Head = value; break;
-                    case PartType.Eyebrows: Eyebrows = value; break;
-                    case PartType.FacialHair: FacialHair = value; break;
-                    case PartType.Torso: Torso = value; break;
-                    case PartType.ArmUpperRight: ArmUpperRight = value; break;
-                    case PartType.ArmUpperLeft: ArmUpperLeft = value; break;
-                    case PartType.ArmLowerRight: ArmLowerRight = value; break;
-                    case PartType.ArmLowerLeft: ArmLowerLeft = value; break;
-                    case PartType.HandLeft: HandLeft = value; break;
-                    case PartType.HandRight: HandRight = value; break;
-                    case PartType.Hips: Hips = value; break;
-                    case PartType.LegLeft: LegLeft = value; break;
-                    case PartType.LegRight: LegRight = value; break;
-                    case PartType.Ear: Ear = value; break;
-                    case PartType.HeadCoverings: HeadCoverings = value; break;
-                    case PartType.BackAttachment: BackAttachment = value; break;
-                    case PartType.ShoulderAttachLeft: ShoulderAttachLeft = value; break;
-                    case PartType.ShoulderAttachRight: ShoulderAttachRight = value; break;
-                    case PartType.ElbowAttachLeft: ElbowAttachLeft = value; break;
-                    case PartType.ElbowAttachRight: ElbowAttachRight = value; break;
-                    case PartType.KneeAttachLeft: KneeAttachLeft = value; break;
-                    case PartType.KneeAttachRight: KneeAttachRight = value; break;
-                    case PartType.HelmetAttachment: HelmetAttachment = value; break;
-                    case PartType.HipsAttachment: HipsAttachment = value; break;
+                    case PartType.Hair:                  Hair                   = value; break;
+                    case PartType.Head:                  Head                   = value; break;
+                    case PartType.Eyebrows:              Eyebrows               = value; break;
+                    case PartType.FacialHair:            FacialHair             = value; break;
+                    case PartType.Torso:                 Torso                  = value; break;
+                    case PartType.ArmUpperRight:         ArmUpperRight          = value; break;
+                    case PartType.ArmUpperLeft:          ArmUpperLeft           = value; break;
+                    case PartType.ArmLowerRight:         ArmLowerRight          = value; break;
+                    case PartType.ArmLowerLeft:          ArmLowerLeft           = value; break;
+                    case PartType.HandLeft:              HandLeft               = value; break;
+                    case PartType.HandRight:             HandRight              = value; break;
+                    case PartType.Hips:                  Hips                   = value; break;
+                    case PartType.LegLeft:               LegLeft                = value; break;
+                    case PartType.LegRight:              LegRight               = value; break;
+                    case PartType.Ear:                   Ear                    = value; break;
+                    case PartType.HeadCoverings:         HeadCoverings          = value; break;
+                    case PartType.BackAttachment:        BackAttachment         = value; break;
+                    case PartType.ShoulderAttachLeft:    ShoulderAttachLeft     = value; break;
+                    case PartType.ShoulderAttachRight:   ShoulderAttachRight    = value; break;
+                    case PartType.ElbowAttachLeft:       ElbowAttachLeft        = value; break;
+                    case PartType.ElbowAttachRight:      ElbowAttachRight       = value; break;
+                    case PartType.KneeAttachLeft:        KneeAttachLeft         = value; break;
+                    case PartType.KneeAttachRight:       KneeAttachRight        = value; break;
+                    case PartType.HelmetAttachment:      HelmetAttachment       = value; break;
+                    case PartType.HipsAttachment:        HipsAttachment         = value; break;
+                }
+            }
+        }
+
+        // ex) _currentAppearance[target] = color; 와 같이 사용한다.
+        public Color this[ColorTarget target]
+        {
+            get => target switch
+            {
+                ColorTarget.Primary          => PrimaryColor,
+                ColorTarget.Secondary        => SecondaryColor,
+                ColorTarget.LeatherPrimary   => LeatherPrimaryColor,
+                ColorTarget.LeatherSecondary => LeatherSecondaryColor,
+                ColorTarget.MetalPrimary     => MetalPrimaryColor,
+                ColorTarget.MetalSecondary   => MetalSecondaryColor,
+                ColorTarget.MetalDark        => MetalDarkColor,
+                ColorTarget.Hair             => HairColor,
+                ColorTarget.Skin             => SkinColor,
+                ColorTarget.Stubble          => StubbleColor,
+                ColorTarget.Scar             => ScarColor,
+                ColorTarget.Eyes             => EyesColor,
+                ColorTarget.BodyArt          => BodyArtColor,
+                _                            => Color.white
+            };
+            set
+            {
+                switch (target)
+                {
+                    case ColorTarget.Primary:            PrimaryColor            = value; break;
+                    case ColorTarget.Secondary:          SecondaryColor          = value; break;
+                    case ColorTarget.LeatherPrimary:     LeatherPrimaryColor     = value; break;
+                    case ColorTarget.LeatherSecondary:   LeatherSecondaryColor   = value; break;
+                    case ColorTarget.MetalPrimary:       MetalPrimaryColor       = value; break;
+                    case ColorTarget.MetalSecondary:     MetalSecondaryColor     = value; break;
+                    case ColorTarget.MetalDark:          MetalDarkColor          = value; break;
+                    case ColorTarget.Hair:               HairColor               = value; break;
+                    case ColorTarget.Skin:               SkinColor               = value; break;
+                    case ColorTarget.Stubble:            StubbleColor            = value; break;
+                    case ColorTarget.Scar:               ScarColor               = value; break;
+                    case ColorTarget.Eyes:               EyesColor               = value; break;
+                    case ColorTarget.BodyArt:            BodyArtColor            = value; break;
                 }
             }
         }
