@@ -328,6 +328,18 @@ namespace MySecondWorld.Editor
                 return false;
             }
 
+            // 서버는 로컬 LLM(LlamaLib)을 쓰지 않는다. LLMUnity가 빌드 때 복사해 넣은 것을 결과물에서 제거한다 (약 538MB)
+            string streamingDir = Path.Combine(outputDir, "MySecondWorld_Data/StreamingAssets");
+            long freed = 0;
+            foreach (string dir in Directory.GetDirectories(streamingDir, "LlamaLib-*"))
+            {
+                // 지우기 전에 폴더 안 모든 파일(EnumerateFiles = 파일을 하나씩 꺼냄)의 크기를 합산해 둔다
+                freed += new DirectoryInfo(dir).EnumerateFiles("*", SearchOption.AllDirectories).Sum(f => f.Length);
+                Directory.Delete(dir, true);
+            }
+            if (freed > 0)
+                Debug.Log($"[Build] 🧹 서버 결과물에서 LlamaLib 제거 ({freed / (1024 * 1024)} MB 확보)");
+
             Debug.Log($"[Build] 🎉 서버 빌드 대성공! (크기: {summary.totalSize / (1024 * 1024):F1} MB, 위치: {ServerBuildPath})");
             return true;
         }
