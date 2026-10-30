@@ -133,6 +133,7 @@ namespace MySecondWorld.AI
         // MessagePipe 방식에선 응답 완료 시점을 NPCInteractable이 직접 알 수 없다.
         // 해결책: NPCResponseReceivedEvent를 NPCInteractable도 구독한다.
         // 응답이 도착하면 상태 머신을 ResponseReceived-> Talking으로 전이시킨다.
+#if !UNITY_SERVER
         [Inject]
         private void Construct(
             INPCDialogueUI dialogueUI,
@@ -157,6 +158,7 @@ namespace MySecondWorld.AI
                 })
                 .AddTo(destroyCancellationToken);
         }
+#endif
         #endregion
 
         #region 유니티 생명주기
@@ -168,22 +170,20 @@ namespace MySecondWorld.AI
 
         private void Start()
         {
+
+#if UNITY_SERVER
+            enabled = false;   // 서버는 대화 UI가 없어 NPC 상호작용을 쓰지 않는다 (Construct도 서버 빌드에서 제외됨)
+            return;
+#else
             if (_dialogueUI == null)
             {
                 Debug.LogError($"[NPCInteractable] {name}: NPCDialogueUI이 연결되지 않았습니다. 컴포넌트를 비활성화합니다.");
                 enabled = false;
                 return;
             }
-
-            if (_dialogueUI == null)
-            {
-                Debug.LogError($"[NPCInteractable] {name}: NPCDialogueUI이 연결되지 않았습니다. 컴포넌트를 비활성화합니다.");
-                enabled = false;
-                return;
-            }
-
             // 판정 캡슐은 이미 있는 몸통 콜라이더를 그대로 베껴 만든다.
             BuildTapCollider();
+#endif
         }
 
         private void OnDisable()
@@ -196,7 +196,7 @@ namespace MySecondWorld.AI
             _cts?.Cancel();
             _cts?.Dispose();
         }
-        #endregion
+#endregion
 
         #region 근접 트리거 감지
         // Trigger 감지 (TriggerRelay가 자식 오브젝트에서 대신 받아서 호출)
