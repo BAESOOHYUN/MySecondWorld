@@ -43,6 +43,29 @@ namespace MySecondWorld.Editor
                 return;
             }
 
+            DeployToEC2();
+        }
+
+        // =========================================================================
+        // 1-b. [Upload Only] 빌드 없이 직전 빌드 결과물만 EC2에 올린다
+        //      (업로드 실패 후 재시도용 — 코드를 고쳤다면 반드시 1-Click으로 다시 빌드할 것)
+        // =========================================================================
+        [MenuItem("Tools/Build/📤 [Upload Only] 빌드 없이 EC2 업로드 & 재시작", priority = 4)]
+        public static void DeployOnly()
+        {
+            if (!Directory.Exists("ServerData/StandaloneLinux64") || !Directory.Exists(Path.GetDirectoryName(ServerBuildPath)))
+            {
+                Debug.LogError("[Deploy] ❌ 빌드 결과물이 없다 — 먼저 [1-Click]으로 빌드하라.");
+                return;
+            }
+
+            Debug.Log("[Deploy] ========================================================");
+            DeployToEC2();
+        }
+
+        // 빌드 결과물(번들 + 서버 바이너리)을 EC2에 올리고 서비스를 재시작한다. 빌드는 하지 않는다.
+        private static bool DeployToEC2()
+        {
             Debug.Log("[Deploy] 🚀 [2/3] EC2 기존 서버 안전 중지 및 파일 업로드 중 (잠시 대기)...");
             // 실행 중인 바이너리 덮어쓰기 에러 방지를 위해 서비스 먼저 중지
             // + scp -r는 목적지에 같은 이름의 디렉터리가 이미 있으면 그 "안으로" 복사한다
@@ -53,14 +76,14 @@ namespace MySecondWorld.Editor
             if (!RunSsh($"sudo systemctl stop mysecondworld; rm -rf {EC2RemoteDir}/ServerData/StandaloneLinux64; mkdir -p {EC2RemoteDir}/ServerData; df -h /"))
             {
                 Debug.LogError("[Deploy] ❌ 서버 중지/정리 실패 — 배포 중단.");
-                return;
+                return false;
             }
 
             // A: 리눅스 에셋번들 업로드
             if (!RunScp(new[] { "ServerData/StandaloneLinux64" }, $"{EC2RemoteDir}/ServerData/"))
             {
                 Debug.LogError("[Deploy] ❌ 에셋번들 업로드 실패 — 배포 중단.");
-                return;
+                return false;
             }
             // B: 리눅스 서버 바이너리 업로드 (Builds/Server 하위 항목을 직접 펼쳐서 넘긴다)
             string serverBuildDir = Path.GetDirectoryName(ServerBuildPath);
@@ -68,7 +91,7 @@ namespace MySecondWorld.Editor
             if (!RunScp(serverBuildEntries, $"{EC2RemoteDir}/"))
             {
                 Debug.LogError("[Deploy] ❌ 서버 바이너리 업로드 실패 — 배포 중단.");
-                return;
+                return false;
             }
 
             Debug.Log("[Deploy] 🚀 [3/3] 실행 권한 부여 및 systemd 서비스 재시작...");
@@ -79,6 +102,7 @@ namespace MySecondWorld.Editor
 
             Debug.Log("🎉 [Deploy] Linux 전용 서버가 EC2에 배포 및 재시작되었습니다! 위 ls 출력에 aa/ 와 catalog_*.json 이 보이는지 확인하세요.");
             Debug.Log("[Deploy] ========================================================");
+            return true;
         }
 
         // =========================================================================
