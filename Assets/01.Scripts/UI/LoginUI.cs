@@ -57,11 +57,7 @@ namespace MySecondWorld.Network
             string savedName = PlayerPrefs.GetString("playerName", "");
             if (!string.IsNullOrEmpty(savedName))
                 _localPlayerNameInput.text = savedName;
-
-            string savedPassword = PlayerPrefs.GetString("playerPassword", "");
-            if (!string.IsNullOrEmpty(savedPassword))
-                _localPlayerPasswordInput.text = savedPassword;
-
+            PlayerPrefs.DeleteKey("playerPassword"); // 이전 버전이 저장해 둔 비밀번호 원문 제거 (S2)
             OnNameChanged(_localPlayerNameInput.text);
         }
 
@@ -133,7 +129,6 @@ namespace MySecondWorld.Network
 
         public void SetPlayerPassword(string password)
         {
-            PlayerPrefs.SetString("playerPassword", password);
             PlayerSession.LocalPlayerPassword = password;
             _localPlayerPasswordInput.interactable = false;
         }
