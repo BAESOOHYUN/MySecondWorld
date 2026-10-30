@@ -37,7 +37,15 @@ namespace MySecondWorld.Save
             {
                 string path = GetFilePath(playerId);
                 string json = JsonUtility.ToJson(data, true); // 보기 편하게 들여쓰기 포맷
-                File.WriteAllText(path, json);
+                string tempPath = path + ".tmp";
+
+                // 임시파일 → 교체 방식: 쓰는 도중 서버가 죽어도 원본 파일은 안전 (단일 파일 손상 리스크 완화)
+                File.WriteAllText(tempPath, json);
+                // File.Move(a, b, overwrite:true)는 .NET Standard 2.1엔 없어서 직접 지우고 교체
+                if (File.Exists(path))
+                    File.Delete(path);
+
+                File.Move(tempPath, path);
                 Debug.Log($"[Save] 저장 완료 ({playerId}) -> {path}");
             }
             catch (Exception ex)
