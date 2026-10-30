@@ -24,7 +24,9 @@ namespace MySecondWorld.Network
 
         private void Start()
         {
-            _localPlayerNameInput.onValueChanged.AddListener(OnNameChanged);
+            _localPlayerNameInput.onValueChanged.AddListener(OnInputChanged);
+            _localPlayerPasswordInput.onValueChanged.AddListener(OnInputChanged);
+
 
             if (_hostToggle != null)
                 _hostToggle.onValueChanged.AddListener(OnToggleHost);
@@ -58,12 +60,13 @@ namespace MySecondWorld.Network
             if (!string.IsNullOrEmpty(savedName))
                 _localPlayerNameInput.text = savedName;
             PlayerPrefs.DeleteKey("playerPassword"); // 이전 버전이 저장해 둔 비밀번호 원문 제거 (S2)
-            OnNameChanged(_localPlayerNameInput.text);
+            RefreshConnectButtons();
         }
 
         private void OnDestroy()
         {
-            if (_localPlayerNameInput != null) _localPlayerNameInput.onValueChanged.RemoveListener(OnNameChanged);
+            if (_localPlayerNameInput != null) _localPlayerNameInput.onValueChanged.RemoveListener(OnInputChanged);
+            if (_localPlayerPasswordInput != null) _localPlayerPasswordInput.onValueChanged.RemoveListener(OnInputChanged);
             if (_hostToggle != null) _hostToggle.onValueChanged.RemoveListener(OnToggleHost);
             if (_restartServerBtn != null) _restartServerBtn.onClick.RemoveListener(RestartServer);
             if (_networkManager != null) _networkManager.OnClientStopped -= ResetClientUI;
@@ -74,20 +77,12 @@ namespace MySecondWorld.Network
             if (_cloudClientToggle != null) _cloudClientToggle.SetIsOnWithoutNotify(false);
             if (_localClientToggle != null) _localClientToggle.SetIsOnWithoutNotify(false);
 
-            bool hasName = !string.IsNullOrEmpty(_localPlayerNameInput.text);
-            if (_hostToggle != null) _hostToggle.interactable = hasName;
-            if (_cloudClientToggle != null) _cloudClientToggle.interactable = hasName;
-            if (_localClientToggle != null) _localClientToggle.interactable = hasName;
+            RefreshConnectButtons();
             _localPlayerNameInput.interactable = true;
+            _localPlayerPasswordInput.interactable = true;
         }
 
-        private void OnNameChanged(string name)
-        {
-            bool hasName = !string.IsNullOrEmpty(name);
-            if (_hostToggle != null) _hostToggle.interactable = hasName;
-            if (_cloudClientToggle != null) _cloudClientToggle.interactable = hasName;
-            if (_localClientToggle != null) _localClientToggle.interactable = hasName;
-        }
+        private void OnInputChanged(string _) => RefreshConnectButtons();
 
         private void OnToggleHost(bool isOn)
         {
@@ -155,6 +150,19 @@ namespace MySecondWorld.Network
 #else
             Debug.LogWarning("[Login] RestartServer는 에디터에서만 사용 가능합니다.");
 #endif
+        }
+
+        // 이름과 비밀번호가 모두 있어야 접속 버튼을 켠다
+        private bool CanConnect() =>
+            !string.IsNullOrEmpty(_localPlayerNameInput.text) &&
+            !string.IsNullOrEmpty(_localPlayerPasswordInput.text);
+
+        private void RefreshConnectButtons()
+        {
+            bool can = CanConnect();
+            if (_hostToggle != null) _hostToggle.interactable = can;
+            if (_cloudClientToggle != null) _cloudClientToggle.interactable = can;
+            if (_localClientToggle != null) _localClientToggle.interactable = can;
         }
     }
 }

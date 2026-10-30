@@ -159,10 +159,6 @@ namespace MySecondWorld.Network
             DelayedDisconnect(conn, 1f).Forget();
             return;
         }
-                
-         
-
-            
 
         // UniTaskVoid — 호출하고 잊어버릴 때 (fire-and-forget). 호출쪽에서 결과를 await해서 받지 않음.
         // DelayedDisconnect(conn).Forget();
@@ -206,13 +202,15 @@ namespace MySecondWorld.Network
             // 이름 없이 연결 시도하면 null이 서버 playerNames에 등록될 수 있으므로 사전 차단
             if (string.IsNullOrWhiteSpace(PlayerSession.LocalPlayerName))
             {
-                Debug.LogWarning("[Auth] localPlayerName 비어있음 → 인증 메시지 미전송");
+                Debug.LogWarning("[Auth] localPlayerName 비어있음 → 인증 메시지 미전송, 연결 종료");
+                ClientReject();    // 연결을 끊어서 "반쯤 접속된 상태(씬 로드)"가 남지 않게 한다
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(PlayerSession.LocalPlayerPassword))
             {
-                Debug.LogWarning("[Auth] localPlayerPassword 비어있음 → 인증 메시지 미전송");
+                Debug.LogWarning("[Auth] localPlayerPassword 비어있음 → 인증 메시지 미전송, 연결 종료");
+                ClientReject();
                 return;
             }
 
@@ -238,6 +236,6 @@ namespace MySecondWorld.Network
                 ClientReject();
             }
         }
-        #endregion    
+        #endregion
     }
 }
