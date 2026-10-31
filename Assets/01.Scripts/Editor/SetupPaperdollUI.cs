@@ -136,12 +136,12 @@ namespace MySecondWorld.EditorTools
                 {
                     (EquipmentSlotType.HeadCoverings, "Slot_HeadCoverings", new Vector2(65f, 155f),  "투구", "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Knight_Helmet.Png", new Vector2(0f, 0.5f)),
                     (EquipmentSlotType.Torso,         "Slot_Torso",         new Vector2(65f, 55f),   "상체", "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Armor.Png",         new Vector2(0f, 0.5f)),
-                    (EquipmentSlotType.ArmUpper,      "Slot_ArmUpper",      new Vector2(65f, -45f),  "상완", "Assets/07.Textures/UI/PaperdollIcons/Silhouette_ArmUpper.png",                                                     new Vector2(0f, 0.5f)),
-                    (EquipmentSlotType.ArmLower,      "Slot_ArmLower",      new Vector2(65f, -145f), "하완", "Assets/07.Textures/UI/PaperdollIcons/Silhouette_ArmLower.png",                                                     new Vector2(0f, 0.5f)),
+                    (EquipmentSlotType.ArmUpper,      "Slot_ArmUpper",      new Vector2(65f, -45f),  "상완", "Assets/07.Textures/UI/PaperdollIcons/Silhouette_ArmUpper.png",                                                                    new Vector2(0f, 0.5f)),
+                    (EquipmentSlotType.ArmLower,      "Slot_ArmLower",      new Vector2(65f, -145f), "하완", "Assets/07.Textures/UI/PaperdollIcons/Silhouette_ArmLower.png",                                                                    new Vector2(0f, 0.5f)),
                     (EquipmentSlotType.Hands,         "Slot_Hands",         new Vector2(-65f, 155f), "장갑", "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Hand.Png",          new Vector2(1f, 0.5f)),
-                    (EquipmentSlotType.Hips,          "Slot_Hips",          new Vector2(-65f, 55f),  "하의", "Assets/07.Textures/UI/PaperdollIcons/Silhouette_Pants.png",                                                        new Vector2(1f, 0.5f)),
-                    (EquipmentSlotType.Legs,          "Slot_Legs",          new Vector2(-65f, -45f), "다리", "Assets/07.Textures/UI/PaperdollIcons/Silhouette_Greaves.png",                                                      new Vector2(1f, 0.5f)),
-                    (EquipmentSlotType.Knees,          "Slot_Feet",          new Vector2(-65f, -145f),"신발", "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Shoes.Png",         new Vector2(1f, 0.5f))
+                    (EquipmentSlotType.Hips,          "Slot_Hips",          new Vector2(-65f, 55f),  "하의", "Assets/07.Textures/UI/PaperdollIcons/Silhouette_Pants.png",                                                                       new Vector2(1f, 0.5f)),
+                    (EquipmentSlotType.Knees,         "Slot_Feet",          new Vector2(-65f, -145f),"무릎 각반", "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Shoes.Png",    new Vector2(1f, 0.5f)),
+                    (EquipmentSlotType.Legs,          "Slot_Legs",          new Vector2(-65f, -45f), "신발", "Assets/07.Textures/UI/PaperdollIcons/Silhouette_Greaves.png",                                                                     new Vector2(1f, 0.5f)),
                 };
 
                 foreach (var def in armorDefs)
