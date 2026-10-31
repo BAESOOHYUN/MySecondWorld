@@ -140,8 +140,8 @@ namespace MySecondWorld.EditorTools
                     (EquipmentSlotType.ArmLower,      "Slot_ArmLower",      new Vector2(65f, -145f), "하완", "Assets/07.Textures/UI/PaperdollIcons/Silhouette_ArmLower.png",                                                                    new Vector2(0f, 0.5f)),
                     (EquipmentSlotType.Hands,         "Slot_Hands",         new Vector2(-65f, 155f), "장갑", "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Hand.Png",          new Vector2(1f, 0.5f)),
                     (EquipmentSlotType.Hips,          "Slot_Hips",          new Vector2(-65f, 55f),  "하의", "Assets/07.Textures/UI/PaperdollIcons/Silhouette_Pants.png",                                                                       new Vector2(1f, 0.5f)),
-                    (EquipmentSlotType.Knees,         "Slot_Feet",          new Vector2(-65f, -145f),"무릎 각반", "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Shoes.Png",    new Vector2(1f, 0.5f)),
-                    (EquipmentSlotType.Legs,          "Slot_Legs",          new Vector2(-65f, -45f), "신발", "Assets/07.Textures/UI/PaperdollIcons/Silhouette_Greaves.png",                                                                     new Vector2(1f, 0.5f)),
+                    (EquipmentSlotType.Knees,         "Slot_Knees",         new Vector2(-65f, -45f), "무릎 각반", "Assets/07.Textures/UI/PaperdollIcons/Silhouette_Greaves.png",                                                                new Vector2(1f, 0.5f)),
+                    (EquipmentSlotType.Legs,          "Slot_Legs",          new Vector2(-65f, -145f),"신발", "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Shoes.Png",         new Vector2(1f, 0.5f)),
                 };
 
                 foreach (var def in armorDefs)
@@ -164,11 +164,8 @@ namespace MySecondWorld.EditorTools
                     (EquipmentSlotType.HelmetAttachment, "Slot_HelmetAttachment", new Vector2(65f, 155f),  "투구장식", "Assets/07.Textures/UI/PaperdollIcons/Silhouette_HelmetAttach.png",                                        new Vector2(0f, 0.5f)),
                     (EquipmentSlotType.ShoulderAttach,   "Slot_ShoulderAttach",   new Vector2(65f, 55f),   "어깨",     "Assets/07.Textures/UI/PaperdollIcons/Silhouette_Shoulder.png",                                            new Vector2(0f, 0.5f)),
                     (EquipmentSlotType.ElbowAttach,      "Slot_ElbowAttach",      new Vector2(65f, -45f),  "팔꿈치",   "Assets/07.Textures/UI/PaperdollIcons/Silhouette_Elbow.png",                                               new Vector2(0f, 0.5f)),
-                    (EquipmentSlotType.BackAttachment,   "Slot_BackAttachment",   new Vector2(65f, -145f), "등장식",   "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Wing.Png", new Vector2(0f, 0.5f)),
-                    (EquipmentSlotType.HipsAttachment,   "Slot_HipsAttachment",   new Vector2(-65f, 155f), "허리장식", "Assets/07.Textures/UI/PaperdollIcons/Silhouette_Belt.png",                                               new Vector2(1f, 0.5f)),
-                    (EquipmentSlotType.Ear,              "Slot_Ear",              new Vector2(-65f, 55f),  "이어링",   "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Earing.Png",       new Vector2(1f, 0.5f)),
-                    (EquipmentSlotType.Ring,             "Slot_Ring",             new Vector2(-65f, -45f), "반지",     "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Ring.Png",         new Vector2(1f, 0.5f)),
-                    (EquipmentSlotType.Necklace,         "Slot_Necklace",         new Vector2(-65f, -145f),"목걸이",   "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Necklace_1.Png",   new Vector2(1f, 0.5f))
+                    (EquipmentSlotType.BackAttachment,   "Slot_BackAttachment",   new Vector2(-65f, 155f), "등장식",   "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Wing.Png", new Vector2(0f, 0.5f)),
+                    (EquipmentSlotType.HipsAttachment,   "Slot_HipsAttachment",   new Vector2(-65f, 55f),  "허리장식", "Assets/07.Textures/UI/PaperdollIcons/Silhouette_Belt.png",                                               new Vector2(1f, 0.5f)),
                 };
 
                 foreach (var def in accDefs)
