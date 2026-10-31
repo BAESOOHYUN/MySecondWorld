@@ -189,6 +189,8 @@ namespace MySecondWorld.Network
             base.OnStartLocalPlayer();
 
             _localInventoryProvider.SetLocal(_inventory);
+            if (NetworkManager.singleton is GameNetworkManager gnm)
+                gnm.RevealScreen();
 
             // 로컬에 저장된 외형 데이터가 있으면 즉시 서버로 동기화 요청
             if (_saveService != null)

@@ -53,7 +53,7 @@ namespace MySecondWorld.Network
         public float portalReentryCooldownSeconds = 2f;  // 도착 직후 반대쪽 트리거 무시 시간(즉시 왕복 방지)
         public float portalCheckInterval = 0.1f;         // 포탈 감지 폴링 주기(zoneCheckInterval보다 훨씬 짧게 — 빠르게 지나가도 안 놓치도록)
         public float autoSaveInterval = 60f;             // 주기 저장 간격(초) — 서버가 갑자기 죽어도 이 시간만큼만 잃는다
-
+        
         [Header("신규 플레이어 시작 지급")]
         [SerializeField] private RootItem _startingGoldItem;
         [SerializeField] private int _startingGoldAmount = 100;
@@ -100,6 +100,7 @@ namespace MySecondWorld.Network
         private IUIManager _uiManager;
         private ISubscriber<AddressablesProgressEvent> _progressSub;
         private IPublisher<AddressablesProgressEvent> _progressPub;
+        private bool _isReturningToRobby;
 
         public CompanionAdminService CompanionService => _companionService;
         public ServerZoneService ZoneService => _zoneService;
@@ -452,6 +453,10 @@ namespace MySecondWorld.Network
         {
             base.OnClientDisconnect();
             Debug.LogWarning("[Client] OnClientDisconnect — 연결 끊김 또는 타임아웃");
+
+            if (_screenFadeUI != null) 
+                _screenFadeUI.ResetFade();
+
             OnClientStopped?.Invoke();
 
             if (SceneManager.GetActiveScene().name != "OpenWorldRobby" && !_isReturningToRobby)
@@ -495,7 +500,15 @@ namespace MySecondWorld.Network
 #endif
         }
 
-        private bool _isReturningToRobby;
+        public void CoverScreen()                       // 접속 중 화면을 즉시 덮고 클릭을 막는다
+        {
+            if (_screenFadeUI != null) _screenFadeUI.FadeOut(0f).Forget();
+        }
+
+        public void RevealScreen(float duration = 0.5f) // 플레이어가 준비되면 서서히 걷는다
+        {
+            if (_screenFadeUI != null) _screenFadeUI.FadeIn(duration).Forget();
+        }
 
         public async UniTask UnloadAllServerScenesAsync()
         {

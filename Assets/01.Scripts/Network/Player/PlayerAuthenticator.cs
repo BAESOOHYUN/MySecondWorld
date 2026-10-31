@@ -227,6 +227,9 @@ namespace MySecondWorld.Network
             Debug.Log($"[Auth] OnAuthResponseMessage — code={msg.code}");
             if (msg.code == AuthResponseMessage.Success)
             {
+                if (NetworkManager.singleton is GameNetworkManager gnm)
+                    gnm.CoverScreen(); // 접속 중 화면을 먼저 덮는다
+
                 // Mirror에 "클라이언트 인증 완료" 알림
                 ClientAccept();
                 _authPublisher?.Publish(new AuthStateChangedEvent(true));
