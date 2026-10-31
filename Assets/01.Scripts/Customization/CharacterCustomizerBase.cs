@@ -288,7 +288,9 @@ namespace MySecondWorld.Customization
 
             if (!candidates[index].RuntimeKeyIsValid()) // "인덱스는 유효하지만 내용물이 빈 참조"인 경우를 걸러냄
             {
-                Debug.LogWarning($"[CustomizerBase] {part} candidates[{index}] RuntimeKey 유효하지 않음!");
+                // 0번은 "맨몸/기본 상태" — 악세사리는 0번이 의도적으로 비어 있어 정상이다
+                if (index != 0)
+                    Debug.LogWarning($"[CustomizerBase] {part} candidates[{index}] RuntimeKey 유효하지 않음!");
                 return;
             }
 
