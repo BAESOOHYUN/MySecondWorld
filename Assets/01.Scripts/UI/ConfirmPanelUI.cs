@@ -11,6 +11,7 @@ namespace MySecondWorld.UI
     public class ConfirmPanelUI : MonoBehaviour
     {
         [SerializeField] private Canvas _canvas;
+        [SerializeField] private TMP_Text _titleText;   // 프리팹의 제목 글자("구매 확인")를 연결
         [SerializeField] private TMP_Text _messageText;
         [SerializeField] private Button _confirmButton;
         [SerializeField] private Button _cancelButton;
@@ -41,8 +42,14 @@ namespace MySecondWorld.UI
                 Hide();
         }
 
+        // 기존 호출(ShopUI)은 그대로 쓰도록 유지 — 제목은 반드시 "구매 확인"으로 되돌린다
         public void Show(string message, string confirmButtonLabel, Action onConfirm)
+            => Show("구매 확인", message, confirmButtonLabel, onConfirm);
+
+        // 로그아웃UI 등에서 Title변경
+        public void Show(string title, string message, string confirmButtonLabel, Action onConfirm)
         {
+            if (_titleText != null) _titleText.text = title;
             gameObject.SetActive(true); // GetOrCreateDynamicCanvas가 생성 직후 비활성화하므로 재활성화 필요
             _messageText.text = message;
 

@@ -14,8 +14,10 @@ public class MenuUI : MonoBehaviour
     [SerializeField] private Button _customizerButton;
     [SerializeField] private Button _inventoryButton;
 
+    [Inject] private IUIManager _uiManager;
     [Inject] private CharacterCustomizeUI _characterCustomizeUI;
     [Inject] private InventoryUI _inventoryUI;
+    private ConfirmPanelUI _confirmPanel;
 
     private void Start()
     {
@@ -29,6 +31,8 @@ public class MenuUI : MonoBehaviour
             _customizerButton.onClick.AddListener(() => _characterCustomizeUI.Open());
         if (_inventoryButton != null)
             _inventoryButton.onClick.AddListener(() => _inventoryUI.Open());
+
+        _confirmPanel = _uiManager?.GetOrCreateDynamicCanvas<ConfirmPanelUI>()?.GetComponent<ConfirmPanelUI>();
     }
 
     private void OnDestroy()
@@ -47,6 +51,27 @@ public class MenuUI : MonoBehaviour
 
     private void OnLogoutClicked()
     {
+        if (_confirmPanel == null) // 팝업이 없으면 예전처럼 바로 로그아웃(안전망)
+        {
+            DoLogout();
+            return;
+        }
+
+        _confirmPanel.Show("로그아웃", "로그아웃하시겠습니까?", "로그아웃", DoLogout);
+    }
+
+    private void OnEscapeClicked()
+    {
+        PlayerHealthState.Local?.CmdRequestEscape();
+    }
+
+    private void OnNpcTeleportClicked()
+    {
+        PlayerHealthState.Local?.CmdTeleportToNpc();
+    }
+
+    private void DoLogout()
+    {
         if (Mirror.NetworkManager.singleton is GameNetworkManager gnm)
         {
             gnm.CleanupAndReturnToRobbyAsync().Forget();
@@ -60,15 +85,5 @@ public class MenuUI : MonoBehaviour
 
             UnityEngine.SceneManagement.SceneManager.LoadSceneAsync("OpenWorldRobby", UnityEngine.SceneManagement.LoadSceneMode.Single);
         }
-    }
-
-    private void OnEscapeClicked()
-    {
-        PlayerHealthState.Local?.CmdRequestEscape();
-    }
-    
-    private void OnNpcTeleportClicked()
-    {
-        PlayerHealthState.Local?.CmdTeleportToNpc();
     }
 }
