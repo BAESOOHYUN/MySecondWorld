@@ -332,17 +332,21 @@ namespace MySecondWorld.UI
         // 아이템 필터링 로직 (Refresh 호출 시)
         private bool ShouldShowItem(EquipmentItem item)
         {
-            if (_genderFilterService.CurrentFilter == CharacterGenderFilter.All)
+            var filter = _genderFilterService.CurrentFilter;
+            if (filter == CharacterGenderFilter.All)
                 return true;
 
             // 아이템 이름의 "_" 구분 토큰 중 "Female"/"Male"이 정확히 있는지로 판단
             // ("female"은 부분 문자열로 "male"을 포함하므로 Contains만 쓰면 안 됨)
             string itemName = item.name.ToLower();
+            bool isFemaleOnly = HasGenderToken(itemName, "female");
+            bool isMaleOnly = HasGenderToken(itemName, "male");
 
-            if (_genderFilterService.CurrentFilter == CharacterGenderFilter.Female)
-                return HasGenderToken(itemName, "female");
-            else if (_genderFilterService.CurrentFilter == CharacterGenderFilter.Male)
-                return HasGenderToken(itemName, "male");
+            // 선택한 성별의 아이템 + 성별 표기가 없는 공용 아이템을 보여 준다
+            if (filter == CharacterGenderFilter.Female)
+                return isFemaleOnly || !isMaleOnly;
+            if (filter == CharacterGenderFilter.Male)
+                return isMaleOnly || !isFemaleOnly;
 
             return true;
         }
@@ -385,7 +389,7 @@ namespace MySecondWorld.UI
             if (item is EquipmentItem eq)
             {
                 // 2.커스터마이징 파츠(방어구 / 악세사리): 어느 탭인지는 GetPartTab이 결정
-                // (장비)	  상의, 상완, 하완, 손, 하의, 다리, 무릎(Feet), 머리 덮개
+                // (장비)	  상의, 상완, 하완, 손, 하의, 다리, 무릎(Knees), 머리 덮개
                 // (악세사리) 투구 장식, 어깨, 팔꿈치, 등, 허리 장식, 귀
                 if (eq.Category == WeaponCategory.None && eq.Restriction != null)
                     return tab == GetPartTab(eq);
