@@ -141,7 +141,7 @@ namespace MySecondWorld.EditorTools
                     (EquipmentSlotType.Hands,         "Slot_Hands",         new Vector2(-65f, 155f), "장갑", "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Hand.Png",          new Vector2(1f, 0.5f)),
                     (EquipmentSlotType.Hips,          "Slot_Hips",          new Vector2(-65f, 55f),  "하의", "Assets/07.Textures/UI/PaperdollIcons/Silhouette_Pants.png",                                                        new Vector2(1f, 0.5f)),
                     (EquipmentSlotType.Legs,          "Slot_Legs",          new Vector2(-65f, -45f), "다리", "Assets/07.Textures/UI/PaperdollIcons/Silhouette_Greaves.png",                                                      new Vector2(1f, 0.5f)),
-                    (EquipmentSlotType.Feet,          "Slot_Feet",          new Vector2(-65f, -145f),"신발", "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Shoes.Png",         new Vector2(1f, 0.5f))
+                    (EquipmentSlotType.Knees,          "Slot_Feet",          new Vector2(-65f, -145f),"신발", "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Shoes.Png",         new Vector2(1f, 0.5f))
                 };
 
                 foreach (var def in armorDefs)

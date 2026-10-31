@@ -17,8 +17,8 @@ namespace MySecondWorld.UI
         ArmLower,         // 하완 보호구
         Hands,            // 손 / 장갑
         Hips,             // 힙 / 하의
-        Legs,             // 다리 보호구
-        Feet,             // 신발 / 무릎 (KneeAttach)
+        Knees,            // 무릎 각반 (KneeAttach)
+        Legs,             // 다리 / 신발 (LegLeft/Right)
 
         // 2. 악세사리 / 부속 장비 (8종)
         HelmetAttachment, // 투구 장식
@@ -98,7 +98,6 @@ namespace MySecondWorld.UI
         [SerializeField] private GameObject _weaponSlotsContainer;
 
         [Header("탭 헤더 인디케이터")]
-        [SerializeField] private TMP_Text _modeLabelText;
         [SerializeField] private Button _tabArmorButton;
         [SerializeField] private Button _tabAccessoryButton;
 
@@ -157,11 +156,6 @@ namespace MySecondWorld.UI
 
             if (_weaponSlotsContainer != null)
                 _weaponSlotsContainer.SetActive(true); // 무기는 항상 노출!
-
-            if (_modeLabelText != null)
-            {
-                _modeLabelText.text = _currentTab == PaperdollTab.Armor ? "방어구 파츠" : "악세사리 파츠";
-            }
 
             SetTabBtnStyle(_tabArmorButton, _currentTab == PaperdollTab.Armor);
             SetTabBtnStyle(_tabAccessoryButton, _currentTab == PaperdollTab.Accessory);
@@ -302,13 +296,13 @@ namespace MySecondWorld.UI
                 case EquipmentSlotType.Hips:
                     return appearanceService?.GetEquippedItem(PartType.Hips);
 
-                case EquipmentSlotType.Legs:
-                    return appearanceService?.GetEquippedItem(PartType.LegLeft) 
-                        ?? appearanceService?.GetEquippedItem(PartType.LegRight);
-
-                case EquipmentSlotType.Feet:
-                    return appearanceService?.GetEquippedItem(PartType.KneeAttachLeft) 
+                case EquipmentSlotType.Knees:
+                    return appearanceService?.GetEquippedItem(PartType.KneeAttachLeft)
                         ?? appearanceService?.GetEquippedItem(PartType.KneeAttachRight);
+
+                case EquipmentSlotType.Legs:
+                    return appearanceService?.GetEquippedItem(PartType.LegLeft)
+                        ?? appearanceService?.GetEquippedItem(PartType.LegRight);
 
                 // 2. 악세사리 파츠 8종
                 case EquipmentSlotType.HelmetAttachment:
