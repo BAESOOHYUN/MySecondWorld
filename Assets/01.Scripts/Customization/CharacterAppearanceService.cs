@@ -76,11 +76,27 @@ namespace MySecondWorld.Customization
         {
             if (item == null || _avatarPartKeyTable == null) return false;
             var data = _saveService.Load();
+
+            // "아이템 → 파츠 종류" 조회
             if (_avatarPartKeyTable.TryFindPartIndex(item, data.Gender, out var part, out var index))
             {
                 return data[part] == index;
             }
             return false;
+        }
+
+
+        /// <summary>
+        /// 이 아이템이 어느 파츠(PartType)에 속하는지 알려 준다 (장착 여부와 무관)
+        /// </summary>
+        public bool TryGetPartType(EquipmentItem item, out PartType part)
+        {
+            part = default;
+            if (item == null || _avatarPartKeyTable == null) return false;
+            var data = _saveService.Load();
+
+            // "아이템 → 파츠 종류" 조회
+            return _avatarPartKeyTable.TryFindPartIndex(item, data.Gender, out part, out _);
         }
 
         /// <summary>

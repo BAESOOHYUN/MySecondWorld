@@ -105,13 +105,13 @@ namespace MySecondWorld.UI
         [Header("전체 페이퍼돌 장비 슬롯 리스트")]
         [SerializeField] private List<PaperdollSlotView> _slots = new();
 
-        public event Action<EquipmentSlotType, EquipmentItem> OnSlotSelected;
+        public event Action<EquipmentSlotType> OnSlotSelected;
         public event Action<EquipmentSlotType, EquipmentItem> OnUnequipRequested;
         public event Action<PaperdollTab> OnTabChanged;
-        private EquipmentSlotType? _currentSelectedSlot;
+        private EquipmentSlotType? _currentSelectedSlotType;
         private PaperdollTab _currentTab = PaperdollTab.Armor;
 
-        public EquipmentSlotType? CurrentSelectedSlot => _currentSelectedSlot;
+        public EquipmentSlotType? CurrentSelectedSlotType => _currentSelectedSlotType;
         public PaperdollTab CurrentTab => _currentTab;
 
         private void Awake()
@@ -130,17 +130,17 @@ namespace MySecondWorld.UI
                 return;
 
             // 이전에 선택한 슬롯의 하이라이트 제거
-            if (_currentSelectedSlot.HasValue)
+            if (_currentSelectedSlotType.HasValue)
             {
                 foreach (var slot in _slots)
                 {
-                    if (slot.SlotType == _currentSelectedSlot)
+                    if (slot.SlotType == _currentSelectedSlotType)
                     {
                         slot.SetSelected(false);
                         break;
                     }
                 }
-                _currentSelectedSlot = null;  // 선택 초기화
+                _currentSelectedSlotType = null;  // 선택 초기화
             }
 
             _currentTab = tab;
@@ -197,7 +197,7 @@ namespace MySecondWorld.UI
             {
                 EquipmentItem item = ResolveEquippedItem(slot.SlotType, appearanceService, weaponActions, inventory);
                 slot.Bind(item, HandleSlotClick);
-                slot.SetSelected(_currentSelectedSlot == slot.SlotType);
+                slot.SetSelected(_currentSelectedSlotType == slot.SlotType);
             }
         }
 
@@ -224,22 +224,24 @@ namespace MySecondWorld.UI
             return ResolveEquippedItem(slotType, appearanceService, weaponActions, inventory);
         }
 
+
+        // 알림 없이 하이라이트만 켠다 — 장착 결과를 보여 줄 때 쓴다 (탭은 옮기지 않음)
+        public void HighlightSlot(EquipmentSlotType slotType)
+        {
+            _currentSelectedSlotType = slotType;
+            foreach (var slot in _slots)
+                slot.SetSelected(slot.SlotType == slotType);
+        }
+
         public void SelectSlot(EquipmentSlotType slotType)
         {
-            _currentSelectedSlot = slotType;
-            foreach (var slot in _slots)
-            {
-                slot.SetSelected(slot.SlotType == slotType);
-                if (slot.SlotType == slotType)
-                {
-                    OnSlotSelected?.Invoke(slot.SlotType, slot.CurrentItem);
-                }
-            }
+            HighlightSlot(slotType);
+            OnSlotSelected?.Invoke(slotType);
         }
 
         public void ClearSelection()
         {
-            _currentSelectedSlot = null;
+            _currentSelectedSlotType = null;
             foreach (var slot in _slots)
             {
                 slot.SetSelected(false);
@@ -249,25 +251,27 @@ namespace MySecondWorld.UI
         private void HandleSlotClick(EquipmentSlotType slotType)
         {
             var slot = _slots.Find(s => s.SlotType == slotType);
-            if (slot != null && slot.CurrentItem != null)
+            if (slot == null) return;
+
+            if (_currentSelectedSlotType == slotType)
             {
-                // 장착 중인 아이템 클릭 시 장착 해제 요청 전달
-                OnUnequipRequested?.Invoke(slotType, slot.CurrentItem);
-            }
-            else
-            {
-                if (_currentSelectedSlot == slotType)
+                if (slot.CurrentItem != null) // 장착 아이템이 있을때
                 {
+                    // 선택된 장착 슬롯을 다시 누르면 해제
+                    OnUnequipRequested?.Invoke(slotType, slot.CurrentItem);
+                }
+                else                          // 장착 아이템이 없을때
+                {
+                    // 선택된 빈 슬롯을 다시 누르면 선택 취소
                     ClearSelection();
-                    OnSlotSelected?.Invoke(slotType, null);
+                    OnSlotSelected?.Invoke(slotType);
                 }
-                else
-                {
-                    SelectSlot(slotType);
-                }
+                return;
             }
+            SelectSlot(slotType); // 처음 누르면 장착 여부와 상관없이 선택
         }
 
+        // 슬롯 → 파츠(아이템)	: 이 슬롯에 지금 뭐가 끼워져 있나 (이미 있음)
         private EquipmentItem ResolveEquippedItem(
             EquipmentSlotType slotType, 
             CharacterAppearanceService appearanceService, 

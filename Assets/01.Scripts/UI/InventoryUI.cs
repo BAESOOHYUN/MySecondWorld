@@ -47,6 +47,51 @@ namespace MySecondWorld.UI
         [SerializeField] private Button _backdropButton; // 허공(배경) 클릭 시 닫기
 
         private LocalPlayerInventoryProvider _inventoryProvider;
+        private static readonly Dictionary<EquipmentSlotType, InventoryCategoryTab> SlotToTab = new() // 슬롯 → 탭 : 이 슬롯은 어느 탭에 속하나 (이미 있음)
+        {
+            { EquipmentSlotType.HeadCoverings,    InventoryCategoryTab.Equipment },
+            { EquipmentSlotType.Torso,            InventoryCategoryTab.Equipment },
+            { EquipmentSlotType.ArmUpper,         InventoryCategoryTab.Equipment },
+            { EquipmentSlotType.ArmLower,         InventoryCategoryTab.Equipment },
+            { EquipmentSlotType.Hands,            InventoryCategoryTab.Equipment },
+            { EquipmentSlotType.Hips,             InventoryCategoryTab.Equipment },
+            { EquipmentSlotType.Legs,             InventoryCategoryTab.Equipment },
+            { EquipmentSlotType.Feet,             InventoryCategoryTab.Equipment },
+            { EquipmentSlotType.HelmetAttachment, InventoryCategoryTab.Accessory },
+            { EquipmentSlotType.ShoulderAttach,   InventoryCategoryTab.Accessory },
+            { EquipmentSlotType.ElbowAttach,      InventoryCategoryTab.Accessory },
+            { EquipmentSlotType.BackAttachment,   InventoryCategoryTab.Accessory },
+            { EquipmentSlotType.HipsAttachment,   InventoryCategoryTab.Accessory },
+            { EquipmentSlotType.Ear,              InventoryCategoryTab.Accessory },
+            { EquipmentSlotType.Ring,             InventoryCategoryTab.Accessory },
+            { EquipmentSlotType.Necklace,         InventoryCategoryTab.Accessory },
+            { EquipmentSlotType.Weapon,           InventoryCategoryTab.Weapon },
+            { EquipmentSlotType.Shield,           InventoryCategoryTab.Weapon },
+        };
+        private static readonly Dictionary<PartType, EquipmentSlotType> PartToSlot = new() // 파츠 → 슬롯 : 이 파츠는 어느 슬롯에 들어가나 (새로 만듦)
+        {
+            { PartType.HeadCoverings,     EquipmentSlotType.HeadCoverings },
+            { PartType.Torso,             EquipmentSlotType.Torso },
+            { PartType.ArmUpperLeft,      EquipmentSlotType.ArmUpper },
+            { PartType.ArmUpperRight,     EquipmentSlotType.ArmUpper },
+            { PartType.ArmLowerLeft,      EquipmentSlotType.ArmLower },
+            { PartType.ArmLowerRight,     EquipmentSlotType.ArmLower },
+            { PartType.HandLeft,          EquipmentSlotType.Hands },
+            { PartType.HandRight,         EquipmentSlotType.Hands },
+            { PartType.Hips,              EquipmentSlotType.Hips },
+            { PartType.LegLeft,           EquipmentSlotType.Legs },
+            { PartType.LegRight,          EquipmentSlotType.Legs },
+            { PartType.KneeAttachLeft,    EquipmentSlotType.Feet },
+            { PartType.KneeAttachRight,   EquipmentSlotType.Feet },
+            { PartType.HelmetAttachment,  EquipmentSlotType.HelmetAttachment },
+            { PartType.ShoulderAttachLeft,  EquipmentSlotType.ShoulderAttach },
+            { PartType.ShoulderAttachRight, EquipmentSlotType.ShoulderAttach },
+            { PartType.ElbowAttachLeft,   EquipmentSlotType.ElbowAttach },
+            { PartType.ElbowAttachRight,  EquipmentSlotType.ElbowAttach },
+            { PartType.BackAttachment,    EquipmentSlotType.BackAttachment },
+            { PartType.HipsAttachment,    EquipmentSlotType.HipsAttachment },
+            { PartType.Ear,               EquipmentSlotType.Ear },
+        };
         private CharacterAppearanceService _appearanceService;
         private CharacterGenderFilterService _genderFilterService;
         private readonly List<InventorySlotButton> _spawnedSlots = new();
@@ -242,12 +287,14 @@ namespace MySecondWorld.UI
 
                 if (_paperdollUI != null)
                 {
+                    // 선택된 슬롯이 원래 속한 탭(SlotToTab[selected], 가운데 착용슬롯의 종류)이 이동할 탭(tab, 카테고리 버튼)과 다르면
+                    if (_paperdollUI.CurrentSelectedSlotType is EquipmentSlotType selected && SlotToTab[selected] != tab)
+                        _paperdollUI.ClearSelection(); //하이라이트 해제
+
                     if (tab == InventoryCategoryTab.Equipment && _paperdollUI.CurrentTab != PaperdollTab.Armor)
                         _paperdollUI.SetTab(PaperdollTab.Armor);
                     else if (tab == InventoryCategoryTab.Accessory && _paperdollUI.CurrentTab != PaperdollTab.Accessory)
                         _paperdollUI.SetTab(PaperdollTab.Accessory);
-                    else if (tab == InventoryCategoryTab.Weapon)
-                        _paperdollUI.SelectSlot(EquipmentSlotType.Weapon);
                 }
 
                 Refresh();
@@ -337,25 +384,37 @@ namespace MySecondWorld.UI
 
             if (item is EquipmentItem eq)
             {
-                // 2. 악세사리 탭: 등/귀 장식 등 순수 외형 장식만 판정 (반지/팔찌/목걸이는 캐스터 무기이므로 무기 탭으로 이동)
-                bool isAccessory = eq.Restriction != null && (eq.Restriction.Title == "BackAttachment" || eq.Restriction.Title == "Ear");
+                // 2.커스터마이징 파츠(방어구 / 악세사리): 어느 탭인지는 GetPartTab이 결정
+                // (장비)	  상의, 상완, 하완, 손, 하의, 다리, 무릎(Feet), 머리 덮개
+                // (악세사리) 투구 장식, 어깨, 팔꿈치, 등, 허리 장식, 귀
+                if (eq.Category == WeaponCategory.None && eq.Restriction != null)
+                    return tab == GetPartTab(eq);
 
-                if (isAccessory)
-                    return tab == InventoryCategoryTab.Accessory;
-
-                // 3. 무기 탭: 화살통을 제외한 모든 무기 (검, 단검, 도끼, 창, 활, 반지, 팔찌, 목걸이 등)
+                // 3. 무기 탭: 화살통을 제외한 모든 무기
+                // (무기)     검, 단검, 도끼, 창, 활, 반지, 팔찌, 목걸이 등
                 bool isWeapon = eq.Category != WeaponCategory.None && eq.Category != WeaponCategory.Quiver;
                 if (isWeapon)
                     return tab == InventoryCategoryTab.Weapon;
-
-                // 4. 장비/방어구 탭 (상의, 하의, 장갑, 신발, 투구 등)
-                bool isEquipment = eq.Category == WeaponCategory.None && eq.Restriction != null;
-                if (isEquipment)
-                    return tab == InventoryCategoryTab.Equipment;
             }
 
             return false;
         }
+
+        private static InventoryCategoryTab GetPartTab(EquipmentItem item)
+        {
+            // 아이템 = 택배 상자, 상자에 붙은 이름표(Restriction.Title)가 “ShoulderAttachLeft”
+            // 표 ①(PartToSlot) = "이 이름표는 어느 사물함(착용 슬롯)에 들어가나?" → 어깨 사물함
+            // 표 ②(SlotToTab) = "그 사물함은 어느 층(탭)에 있나?" → 악세사리 층
+
+            if (Enum.TryParse(item.Restriction.Title, out PartType part)
+                        && PartToSlot.TryGetValue(part, out var slot))
+                return SlotToTab[slot];
+
+            Debug.LogWarning($"[Inventory] 탭을 알 수 없는 파츠: {item.Title} ({item.Restriction.Title}) → 우선 장비 탭으로 표시");
+            return InventoryCategoryTab.Equipment;   // 표에 없는 파츠(Head 등)는 장비 탭
+                                                     // (*현재 도달할 일 없음. TODO : 소모품으로 영구 해금하기)
+        }
+
 
         private void OnInventoryChanged(int index) => Refresh();
         private void OnWeaponStateChanged() => Refresh();
@@ -449,11 +508,36 @@ namespace MySecondWorld.UI
         }
 
         // 클릭한 아이템 종류에 따라 실제로 무슨 액션을 실행할지 결정.
-        // 우선순위: 화살통 > 무기 > 커스터마이징 파츠(장비/악세사리) > (그 외) 소모품 사용
+        // 순서: 커스터마이징 파츠(장비/악세사리) → 무기 → (그 외) 소모품 사용
+        // 화살통(Quiver)은 어느 분기에도 안 걸린다 — 장착 버튼 자체가 없음(isEquippable에서 제외)
         private System.Action ResolveEquipAction(RootItem source, int slotIndex)
         {
-            // 1. 무기면 무기 장착 / 해제
-            if (source is EquipmentItem weaponItem 
+            // 1. 커스터마이징 파츠(장비/방어구, 악세사리)면 파츠 장착 / 해제
+            if (source is EquipmentItem partItem
+                && partItem.Category == WeaponCategory.None
+                && partItem.Restriction != null)
+                return () =>
+                {
+                    bool alreadyEquipped = _appearanceService != null && _appearanceService.IsPartEquipped(partItem);
+                    Debug.Log($"[Equip] 파츠 {(alreadyEquipped ? "해제" : "장착")} 클릭: {partItem.Title}");
+                 
+                    if (alreadyEquipped)
+                    {
+                        _appearanceService?.UnequipWearableItem(partItem);
+                        _paperdollUI?.ClearSelection();   // 해제하면 하이라이트도 끈다
+                    }
+                    else
+                    {
+                        _appearanceService?.EquipWearableItem(partItem);
+                        if (_appearanceService != null
+                            && _appearanceService.TryGetPartType(partItem, out var part)
+                            && PartToSlot.TryGetValue(part, out var slotType)) // TryGetValue로 조회하는 이유 : 머리카락, 얼굴, 눈썹 같은 파츠는 페이퍼돌 슬롯이 없어서 표에 없는 것이 정상이기 때문
+                            _paperdollUI?.HighlightSlot(slotType);   // 장착한 슬롯만 표시
+                    }
+                };
+
+            // 2. 무기면 무기 장착 / 해제
+            if (source is EquipmentItem weaponItem
                 && weaponItem.Category != WeaponCategory.None
                 && weaponItem.Category != WeaponCategory.Quiver
                 )
@@ -462,24 +546,17 @@ namespace MySecondWorld.UI
                     int dbKey = weaponItem.GetDbKey();
                     bool alreadyEquipped = _inventoryProvider.WeaponActions?.CurrentMainHandDbKey == dbKey;
                     Debug.Log($"[Equip] 무기 {(alreadyEquipped ? "해제" : "장착")} 클릭: {weaponItem.Title} dbKey={dbKey}");
-                    if (alreadyEquipped)
-                        _inventoryProvider.WeaponActions?.UnequipMainHand();
-                    else
-                        _inventoryProvider.WeaponActions?.EquipMainHand(dbKey);
-                };
 
-            // 2. 커스터마이징 파츠(장비/방어구, 악세사리)면 파츠 장착 / 해제
-            if (source is EquipmentItem partItem 
-                && partItem.Category == WeaponCategory.None 
-                && partItem.Restriction != null)
-                return () =>
-                {
-                    bool alreadyEquipped = _appearanceService != null && _appearanceService.IsPartEquipped(partItem);
-                    Debug.Log($"[Equip] 파츠 {(alreadyEquipped ? "해제" : "장착")} 클릭: {partItem.Title}");
                     if (alreadyEquipped)
-                        _appearanceService?.UnequipWearableItem(partItem);
+                    {
+                        _paperdollUI?.ClearSelection();
+                        _inventoryProvider.WeaponActions?.UnequipMainHand();
+                    }
                     else
-                        _appearanceService?.EquipWearableItem(partItem);
+                    {
+                        _inventoryProvider.WeaponActions?.EquipMainHand(dbKey);
+                        _paperdollUI?.HighlightSlot(EquipmentSlotType.Weapon); // 장착/해제 모두 "방금 건드린 슬롯"을 표시
+                    }
                 };
 
             // 3. 소모품이면 "사용"
@@ -498,34 +575,14 @@ namespace MySecondWorld.UI
             {
                 _appearanceService?.UnequipWearableItem(item);
             }
+            _paperdollUI?.ClearSelection();   // 슬롯을 눌러 해제해도 하이라이트를 끈다
             Refresh();
         }
 
-        private void HandlePaperdollSlotSelected(EquipmentSlotType slotType, EquipmentItem item)
+        // "(페이퍼돌)슬롯이 선택됐다"는 알림을 받았을 때 인벤토리 탭을 그 슬롯의 탭으로 옮기는 함수
+        private void HandlePaperdollSlotSelected(EquipmentSlotType slotType)
         {
-            if (item == null)
-            {
-                switch (slotType)
-                {
-                    case EquipmentSlotType.Weapon:
-                    case EquipmentSlotType.Shield:
-                        SetTab(InventoryCategoryTab.Weapon);
-                        break;
-                    case EquipmentSlotType.HelmetAttachment:
-                    case EquipmentSlotType.ShoulderAttach:
-                    case EquipmentSlotType.ElbowAttach:
-                    case EquipmentSlotType.BackAttachment:
-                    case EquipmentSlotType.HipsAttachment:
-                    case EquipmentSlotType.Ear:
-                    case EquipmentSlotType.Ring:
-                    case EquipmentSlotType.Necklace:
-                        SetTab(InventoryCategoryTab.Accessory);
-                        break;
-                    default:
-                        SetTab(InventoryCategoryTab.Equipment);
-                        break;
-                }
-            }
+            SetTab(SlotToTab[slotType]);
         }
 
         private void HandlePaperdollTabChanged(PaperdollTab tab)
