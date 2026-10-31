@@ -151,6 +151,8 @@ namespace MySecondWorld.UI
         
         public void Open()
         {
+            if (_inventoryProvider?.Inventory == null) return;   // 캐릭터 도착 전에는 열지 않는다
+
             _openRequested = true;          // Start()가 아직 안 돌았어도 "열려고 한 것"을 기억
             gameObject.SetActive(true);
             SetBackdropActive(true);
@@ -365,7 +367,8 @@ namespace MySecondWorld.UI
 
             if (_paperdollUI != null)
             {
-                _paperdollUI.Refresh(_appearanceService, _inventoryProvider?.WeaponActions, _subscribedInventory);
+                var appearance = _inventoryProvider?.Inventory != null ? _appearanceService : null;   // 인벤토리 도착 전엔 착용 슬롯도 비움
+                _paperdollUI.Refresh(appearance, _inventoryProvider?.WeaponActions, _subscribedInventory);
             }
 
             var inv = _inventoryProvider?.Inventory;

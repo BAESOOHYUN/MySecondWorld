@@ -195,6 +195,7 @@ namespace MySecondWorld.UI
         // 아틀라스 로드 + 슬롯 갱신이 안전하게 단일 실행됨
         public void Open()
         {
+            if (_inventoryProvider?.Inventory == null) return;   // 캐릭터 도착 전에는 열지 않는다
             EnsureInitialized();
             _openRequested = true;          // Start()가 아직 안 돌았어도 "열려고 한 것"을 기억
             gameObject.SetActive(true);
