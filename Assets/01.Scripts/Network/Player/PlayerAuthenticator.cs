@@ -210,6 +210,7 @@ namespace MySecondWorld.Network
             if (string.IsNullOrWhiteSpace(PlayerSession.LocalPlayerPassword))
             {
                 Debug.LogWarning("[Auth] localPlayerPassword 비어있음 → 인증 메시지 미전송, 연결 종료");
+                PlayerSession.LastAuthError = "비밀번호를 입력하세요";
                 ClientReject();
                 return;
             }
@@ -232,6 +233,10 @@ namespace MySecondWorld.Network
             }
             else
             {
+                PlayerSession.LastAuthError 
+                    = msg.code == AuthResponseMessage.WrongPassword
+                    ? "비밀번호가 올바르지 않습니다."
+                    : "접속할 수 없습니다.\n(이미 접속 중인 이름이거나 입력값이 올바르지 않습니다.)";
                 // Mirror에 "클라이언트 인증 실패" 알림
                 ClientReject();
             }

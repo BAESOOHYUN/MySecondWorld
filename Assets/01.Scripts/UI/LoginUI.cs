@@ -19,15 +19,15 @@ namespace MySecondWorld.Network
         [SerializeField] private Toggle _localClientToggle;  // 내 PC 로컬 접속
         [SerializeField] private Button _deletePlayerPrefsBtn;
         [SerializeField] private Button _restartServerBtn;
+        [SerializeField] private TMP_Text _statusText;
         [SerializeField] private MonoBehaviour _networkManagerRaw;
         private IGameNetworkManager _networkManager => _networkManagerRaw as IGameNetworkManager;
+        
+
+        private void OnEnable() => ShowStatus(PlayerSession.LastAuthError);   // 오류가 없으면 ""
 
         private void Start()
         {
-            _localPlayerNameInput.onValueChanged.AddListener(OnInputChanged);
-            _localPlayerPasswordInput.onValueChanged.AddListener(OnInputChanged);
-
-
             if (_hostToggle != null)
                 _hostToggle.onValueChanged.AddListener(OnToggleHost);
 
@@ -60,6 +60,9 @@ namespace MySecondWorld.Network
             if (!string.IsNullOrEmpty(savedName))
                 _localPlayerNameInput.text = savedName;
             PlayerPrefs.DeleteKey("playerPassword"); // 이전 버전이 저장해 둔 비밀번호 원문 제거 (S2)
+
+            _localPlayerNameInput.onValueChanged.AddListener(OnInputChanged);
+            _localPlayerPasswordInput.onValueChanged.AddListener(OnInputChanged);
             RefreshConnectButtons();
         }
 
@@ -76,18 +79,27 @@ namespace MySecondWorld.Network
         {
             if (_cloudClientToggle != null) _cloudClientToggle.SetIsOnWithoutNotify(false);
             if (_localClientToggle != null) _localClientToggle.SetIsOnWithoutNotify(false);
+            if (_hostToggle != null) _hostToggle.SetIsOnWithoutNotify(false);
 
+            ShowStatus(PlayerSession.LastAuthError);
             RefreshConnectButtons();
             _localPlayerNameInput.interactable = true;
             _localPlayerPasswordInput.interactable = true;
         }
 
-        private void OnInputChanged(string _) => RefreshConnectButtons();
+        private void OnInputChanged(string _)
+        {
+            PlayerSession.LastAuthError = null;
+            ShowStatus("");
+            RefreshConnectButtons();
+        }
 
         private void OnToggleHost(bool isOn)
         {
             if (isOn)
             {
+                PlayerSession.LastAuthError = null;
+                ShowStatus("");
                 SetPlayerName(_localPlayerNameInput.text);
                 SetPlayerPassword(_localPlayerPasswordInput.text);
             }
@@ -101,6 +113,8 @@ namespace MySecondWorld.Network
         {
             if (isOn)
             {
+                PlayerSession.LastAuthError = null;
+                ShowStatus("");
                 SetPlayerName(_localPlayerNameInput.text);
                 SetPlayerPassword(_localPlayerPasswordInput.text);
                 _networkManager.SetServerAddress(targetIp);
@@ -112,6 +126,15 @@ namespace MySecondWorld.Network
             if (_hostToggle != null) _hostToggle.interactable = !isOn;
             if (_cloudClientToggle != null && targetIp != CloudServerIp) _cloudClientToggle.interactable = !isOn;
             if (_localClientToggle != null && targetIp != LocalPcIp) _localClientToggle.interactable = !isOn;
+        }
+
+        private void ShowStatus(string msg)
+        {
+            if (_statusText == null) return;
+
+            bool hasMessage = !string.IsNullOrEmpty(msg);
+            _statusText.text = msg ?? "";                 // 켜기 전에 글자를 먼저 넣어서 한 프레임 깜박임을 막는다
+            _statusText.gameObject.SetActive(hasMessage); // 문구가 있을 때만 켜서 레이아웃 자리를 차지하게 한다
         }
 
         public void SetPlayerName(string username)

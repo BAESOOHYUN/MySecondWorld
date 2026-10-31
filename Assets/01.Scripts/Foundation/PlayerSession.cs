@@ -12,6 +12,7 @@ namespace MySecondWorld.Network
     {
         public static string LocalPlayerName { get; set; }
         public static string LocalPlayerPassword { get; set; }
+        public static string LastAuthError { get; set; }   // 마지막 인증 거절 사유 (로그인 화면에 표시)
 
         // Domain Reload OFF 환경에서도 매번 초기화
         #region 로컬 플레이어 이름 (정적, 세션과 무관 — 클라 로컬 표시용)
