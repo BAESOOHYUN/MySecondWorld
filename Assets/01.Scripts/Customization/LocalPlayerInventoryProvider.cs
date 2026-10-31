@@ -14,25 +14,38 @@ namespace MySecondWorld.Customization
     public class LocalPlayerInventoryProvider
     {
         private Cleverous.VaultInventory.Inventory _inventory;
-        public void SetLocal(Cleverous.VaultInventory.Inventory inventory) => _inventory = inventory;
-        
+
         // InventoryUI/ShopUI가 슬롯 목록을 직접 순회하기 위해 필요
         public Cleverous.VaultInventory.Inventory Inventory => _inventory;
+        public event System.Action OnProvided; // 로컬 플레이어의 인벤토리/액션이 채워졌을 때
+
+        public void SetLocal(Cleverous.VaultInventory.Inventory inventory)
+        {
+            _inventory = inventory;
+            OnProvided?.Invoke();
+        }
 
         // InventoryUI/ShopUI가 Command(버리기/거래/퀘스트보상)를 호출하기 위해 필요
         // NetworkInventoryActions가 OnStartLocalPlayer에서 채워준다.(SetLocal과 동일한 글루 패턴)
         public IInventoryActionsProvider Actions { get; private set; }
         public void SetActions(IInventoryActionsProvider actions) => Actions = actions;
 
+
         // InventoryUI가 무기/액세서리 즉시 장착을 호출하기 위해 필요
         // NetworkWeaponEquip이 OnStartLocalPlayer에서 채워준다.(SetActions와 동일한 글루 패턴)
         public IWeaponEquipActionsProvider WeaponActions { get; private set; }
-        public void SetWeaponActions(IWeaponEquipActionsProvider actions) => WeaponActions = actions;
+        public void SetWeaponActions(IWeaponEquipActionsProvider actions)
+        {
+            WeaponActions = actions;
+            OnProvided?.Invoke();
+        }
 
         public bool IsOwned(EquipmentItem requiredItem)
         {
             if (requiredItem == null) return true; // 요구 아이템 없음 = 무료 착용
             return _inventory != null && _inventory.Contains(requiredItem, 1);
         }
+
+        
     }
 }

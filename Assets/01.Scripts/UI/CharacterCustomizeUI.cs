@@ -106,6 +106,7 @@ namespace MySecondWorld.UI
         private readonly Dictionary<ColorTarget, ColorChannelRow> _colorRows = new();
         private readonly HashSet<PartType> _pendingParts = new();
         private bool _isOpeningPicker;
+        private bool _openRequested;
 
         [Inject]
         public void Construct(AvatarPartKeyTableSO keyTable,
@@ -144,8 +145,8 @@ namespace MySecondWorld.UI
             return;
 #else
             EnsureInitialized();
-            // 시작 시에는 캔버스를 닫아두고, 플레이어 스폰 시 Open() 호출로 단일 진입 로드
-            gameObject.SetActive(false);
+            if (!_openRequested) // 아직 아무도 안 열었을 때만 닫아 둔다
+                gameObject.SetActive(false);
 #endif
         }
 
@@ -195,6 +196,7 @@ namespace MySecondWorld.UI
         public void Open()
         {
             EnsureInitialized();
+            _openRequested = true;          // Start()가 아직 안 돌았어도 "열려고 한 것"을 기억
             gameObject.SetActive(true);
             ReloadFromSave().Forget(); 
         }

@@ -57,6 +57,7 @@ namespace MySecondWorld.UI
         private IWeaponEquipActionsProvider _subscribedWeaponActions;
         private IDisposable _genderFilterSubscription;
         private bool _isChangingTab;
+        private bool _openRequested; // 이 UI가 열린적이 있는지 체크
 
         public bool IsOpen => gameObject.activeSelf;
         public event Action OnClosed;
@@ -112,7 +113,8 @@ namespace MySecondWorld.UI
                 _paperdollUI.OnTabChanged += HandlePaperdollTabChanged;
             }
 
-            gameObject.SetActive(false);
+            if (!_openRequested) // 아직 아무도 안 열었을 때만 닫아 둔다. (Toggle이라 UI close로 시작시 첫번째 open 입력이 안먹히는 경우를 방지)
+                gameObject.SetActive(false);
         }
 
         private void Update()
@@ -123,6 +125,9 @@ namespace MySecondWorld.UI
 
         private void OnDestroy()
         {
+            if (_inventoryProvider != null)
+                _inventoryProvider.OnProvided -= HandleProvided;   // 닫혀 있는 동안은 신호를 받지 않는다
+
             if (_subscribedInventory != null)
                 _subscribedInventory.OnChanged -= OnInventoryChanged;
 
@@ -142,15 +147,25 @@ namespace MySecondWorld.UI
             }
         }
 
+        private void HandleProvided() => Open();   // 인벤토리가 뒤늦게 도착하면 구독과 목록을 다시 잡는다
+        
         public void Open()
         {
+            _openRequested = true;          // Start()가 아직 안 돌았어도 "열려고 한 것"을 기억
             gameObject.SetActive(true);
             SetBackdropActive(true);
+
             if (_currentTab == InventoryCategoryTab.All && (_tabAllButton == null || !_tabAllButton.gameObject.activeInHierarchy))
             {
                 _currentTab = InventoryCategoryTab.Equipment;
             }
             UpdateTabVisuals();
+
+            if (_inventoryProvider != null)
+            {
+                _inventoryProvider.OnProvided -= HandleProvided;   // 이미 구독 중이어도 안전하게 먼저 해제
+                _inventoryProvider.OnProvided += HandleProvided;   // 뒤늦게 인벤토리가 도착하면 Open()을 다
+            }
 
             if (_subscribedInventory != null)
                 _subscribedInventory.OnChanged -= OnInventoryChanged; // Open()이 중복 호출되어도 이중 구독 방지
@@ -180,6 +195,9 @@ namespace MySecondWorld.UI
         public void Close()
         {
             if (!gameObject.activeSelf) return;
+
+            if (_inventoryProvider != null)
+                _inventoryProvider.OnProvided -= HandleProvided;   // 닫혀 있는 동안은 신호를 받지 않는다
 
             if (_subscribedInventory != null)
                 _subscribedInventory.OnChanged -= OnInventoryChanged;
