@@ -378,6 +378,9 @@ namespace MySecondWorld.Network
         // [S-End] 세이브 + 세션 정리
         public override void OnServerDisconnect(NetworkConnectionToClient conn)
         {
+            // 호스트의 로컬 클라가 이미 끊긴 뒤 StopHost가 부르면 conn이 null이다. (인증에서 막혀서 세션이 만들어진 적 없음)
+            // if문으로 걸러주지 않으면 password를 틀리게 입력하고 접속해도 씬 진입을 시도하기 때문에, 오류.
+            if (conn == null) return;
             _bundleReadyConnIds.Remove(conn.connectionId);
             _sessionService?.RemovePlayer(conn);
             base.OnServerDisconnect(conn);
