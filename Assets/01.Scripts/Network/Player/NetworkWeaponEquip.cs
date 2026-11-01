@@ -154,11 +154,25 @@ namespace MySecondWorld.Network
         // 장착 방어는 3겹이다.
         // 1) 서버 검증: ServerTryEquipMainHand(요청 시), ServerValidateMainHand(인벤토리 변경 후). 진짜 상태는 항상 서버 기준.
         // 2) 클라 사전 차단: InventoryUI의 isEquippable. 이상한 요청이 애초에 안 나가게 한다.
-        // 3) 거부 후 클라 보정: 아직 없음(TODO B7 후속 5). 서버가 거부하면 요청한 클라의 예측 화면이 그대로 남는다.
+        // 3) 거부 후 클라 보정: CmdEquipMainHand가 거부되면 TargetResyncMainHand로 서버 값을 돌려보낸다.
 
-        // 거부(false)돼도 요청한 클라를 보정하지 않는다 — TODO B7 후속 5
+        // 클라가 보낸 장착 요청. 서버가 거부하면 요청한 클라의 예측 화면을 서버 값으로 되돌린다.
         [Command]
-        public void CmdEquipMainHand(int weaponDbKey, int inventorySlotIndex) => ServerTryEquipMainHand(weaponDbKey, inventorySlotIndex);
+        public void CmdEquipMainHand(int weaponDbKey, int inventorySlotIndex)
+        {
+            if (ServerTryEquipMainHand(weaponDbKey, inventorySlotIndex)) return; // ① 장착을 시도하고, 성공(true)이면 여기서 끝
+            TargetResyncMainHand(connectionToClient, _mainHandDbKey, _mainHandInventorySlotIndex); // ② 여기까지 내려왔다 = 거부(false) → 클라 보정
+        }
+
+        // 서버가 장착을 거부했을 때 (장착을)요청한 클라(1인)에게만 서버의 현재 장착 정보를 돌려준다.
+        // 클라는 로컬 예측값을 서버 값으로 덮어쓰고 모델을 다시 적용한다.
+        [TargetRpc]
+        private void TargetResyncMainHand(NetworkConnectionToClient target, int serverDbKey, int serverInventorySlotIndex)
+        {
+            _predictedMainHandInventorySlot = serverInventorySlotIndex;
+            _equipToken++;
+            ApplyMainHandVisual(serverDbKey, _equipToken).Forget();
+        }
 
         // 검증 후 장착. 성공 true / 거부 false. (클라 요청과 세이브 복원이 같이 사용)
         [Server]
