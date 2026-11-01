@@ -15,11 +15,851 @@ MonoBehaviour:
   m_GroupName: Remote_Weapons
   m_GUID: 56e5d0184e92bea4194671f4bafd399b
   m_SerializeEntries:
+  - m_GUID: 000ba31fdb0111d4584775b384f6efac
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Sword_16.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 010effb2630c6cb4a8bec43beb694183
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Prop_Bow_Rigged_02.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 011bf72b698b5d349bfaa51d08f4fd17
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Shield_15.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 01fea6cc6d70f874b9aa94876348b446
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Spear_09.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 020a0313a7a871140859265074b193d0
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Shield_Plank_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 02b50c2f99aa6f64b90172cff30899e9
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Sword_05.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 04355395e22dfe046a9cacf61b90d732
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Spear_02.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0666976312b49f643b0ecdb01f1f2fe2
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Axe_07.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 080d947ae6e174f40a9074519b0c184f
+    m_Address: Assets/Models/PolygonFantasyKingdom/Models/SM_Item_Bracelet_01.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 097ad0dbb81f2034e9e5329d1534deba
+    m_Address: Assets/Models/PolygonFantasyKingdom/Models/SM_Item_Bracelet_02.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0a5d9b51542336948b7d2a699f71cd8c
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Sword_Small_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0b32aaaec4d08aa45b8a2628f3cb7e71
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Shield_18.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0c14f3ea30af4174ba288b3c2042f665
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Sword_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0e2c93b26f53b644ab3b9fbeb0bbbbce
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Sword_12.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0edd4641d57e402479349a244200c246
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Staff_DoubleBlade_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 10083505f09268a4ba294fabe0b99d01
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Sceptre_06.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 118445e83ca15c74796cfe2a052ae2cf
+    m_Address: Assets/Models/PolygonFantasyKingdom/Models/SM_Item_Ring_06.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 11b84f6e8e1190b46b3d40c72c9fe522
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Crystal_Ornate_Straightsword_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 12d578ba423ecb0499f22068b393c104
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Sword_11.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 12d8a1596807fc546b7d9ecfb4336e7f
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Shield_Heater_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 13016dc9a7fb5a049ae8ce8cb5563986
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Ornate_Axe_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 163a6363aef06904fb7b53415438d261
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Sword_13.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 181c5c49a962f96468635ea191e01184
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Axe_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 18f2ba0d1444a324d8fb6bb013a6a7af
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Hammer_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 19ad29e8f6d41e9459f7a20da317f313
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Shield_06.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1a66284f93ee5da4faa156902261b154
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Sword_Rapier_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1afef196bdf44e742912a6741c879026
+    m_Address: Assets/Models/PolygonFantasyKingdom/Models/SM_Item_Bracelet_06.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1b1ca4dd2d263f145acc9e31a752b2a2
+    m_Address: Assets/Models/PolygonFantasyKingdom/Models/SM_Item_Bracelet_03.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1c757b8a6a985284aa7fd4a80e427dd9
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Banner_05.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1d4ad8c637079624cbcce5de4e3a81db
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_CorkScrew_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1db72481a17d2b6408fc638f2d5f1709
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Shield_19.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1f631036d5af2ae4b8eb451c5547ad1f
+    m_Address: Assets/Models/PolygonFantasyKingdom/Models/SM_Item_Necklace_Flat_03.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2105d87117cec60459395ab06ab7794a
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Hammer_Mace_Stone_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2288ccb479ddbc249bd87ff109381d68
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Shield_06.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 24088ade532cd2748addb0fca54f85f9
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Shield_05.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2414d91944a82d74dbe9abd3e6402300
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Sceptre_09.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 257085a123b302d4dafe4dbbd5f5b391
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Sword_04.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 26e92553ace791e4fa0f935ee0cc84c2
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Joust_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 28412349ec5d8ee4bb18902b20885d77
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Shield_Gravestone_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 28ee7d66c5b18a64b93436da8089e0ca
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Ornate_GreatAxe_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2b45f555d4028804c896ca9db0bfcaca
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Shield_Long_02.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2c2660b24c5d9e7489cc2abbb5b42e1c
+    m_Address: Assets/Models/PolygonFantasyKingdom/Models/SM_Item_Necklace_Hanging_05.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2c408d3c438774643b47f9dcf806637e
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Shield_09.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2d4e2f4e970d7a14291c65a743d3b837
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Shield_Long_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2d9a0557564d9ec499844a9500116dd1
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Sword_10.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 30360398eb32bd24390545be6837e97f
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Shield_Buckler_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3068d57202960404b8d79e3845baf3e8
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Mace_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 30e79f1ee8153bf42a01bf27c8a2d6f9
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Goblin_Bone_Axe_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 325d2ac0da6143b4aa9187f436ecec55
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Sceptre_08.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 333115a38baafb145a712bf764f1284d
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Axe_Rune_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 34576738923b14941a286d5fc7d3c9f6
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Goblin_Machete_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 35230b9677512fb4a80d28a9f766e8b6
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Shield_Chitin_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 35350a69b5005d14a93eff4b360c1209
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Sceptre_05.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 36c00758ce7625d448aca0b6502dde82
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Axe_02.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 378276c217bea344e90ab5e2eaa1d7c3
+    m_Address: Assets/Models/PolygonFantasyKingdom/Models/SM_Item_Ring_03.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 382204c13622ad14c99bb5a0e0e611cd
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Shield_Ornate_02.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3858bdcb8b9cc0e48ac002271ed74e57
+    m_Address: Assets/Models/PolygonFantasyKingdom/Models/SM_Item_Necklace_Flat_01.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 38784a6cdafced443a1aa774a2ae30eb
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Hammer_Mace_Sphere_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3abf356a89cf87c48bae802733f27ad1
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Shield_07.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3bff2d365f4e16843b4f7305d49075f5
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Hammer_04.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3ceded547f62c964cb227472f2bc1146
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Goblin_Halberd_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3d9fbbf00316ffc4485e2dc40e59aa93
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Goblin_Machete_Spikes_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3e567880dba875d4fbc7834ca7f5b289
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Goblin_Staff_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3e5b956849e5aea44bd2455cd53102b5
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Shield_08.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3e934459b9ca9e54f9b7068951b6ff77
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Shield_10.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4010303cc34eb3745802735643a4f59d
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Spear_03.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 43b1bad21e17ccf4ca8cd01cdb6ae93e
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Axe_10.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 43c24b2a40ba61a489ec5599715c1643
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Shield_Long_04.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4431544ce8669554484541bb31d3a17d
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Sceptre_02.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 44c766543c82cad43890eed0b8e47fa4
+    m_Address: Assets/Models/PolygonFantasyKingdom/Models/SM_Item_Necklace_Hanging_01.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 480820ba3b2b13c47bceece3c8d484b4
+    m_Address: Assets/Models/PolygonFantasyKingdom/Models/SM_Item_Ring_05.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 48610ef49478fca47a49e4e3c55f8c8a
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Crystal_Axe_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 48a47585ce7445a45be25cba3537114e
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Goblin_Axe_Spikes_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 4a01a880b0f849b428bbdf3d9493a1c2
     m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons
     m_ReadOnly: 0
     m_SerializedLabels:
     - 'weapons '
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4aeec2a8eb0265641938df66ebefe8cf
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Greatsword_Round_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4b12cbf8230d02b4890f46dba29baeff
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_BrokenSword_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4b6fcb8e3035f79438ac1e8d590423f0
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Axe_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4c80e23b6d36a884b966dfdc9a2b74c3
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Shield_05.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4c9c3be58f7bf504b8d46553bf4c66cc
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Staff_05.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4ca48ed0f045b6e4bad7a3a23758bf9f
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Shield_11.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4edbfa1dae0f77e4a802442113a3254a
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Sceptre_04.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 500564c520c80d94aa3adccfcd0f2891
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Shield_14.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 507a40406fcf0d24d806435dea69f538
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Dagger_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 515d8910ca702aa489e1054e47d46780
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Shield_Long_05.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 540a4181c60e5d24eb2e496a2cd4916c
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Prop_Bow_02.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5605eaff716f5324095b88c311a47bb3
+    m_Address: Assets/Models/PolygonFantasyKingdom/Models/SM_Item_Ring_09.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 56359a0b63e0cfa4787dc3ce3cd41229
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Shield_03.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 56c5780ef6bb93b47a1c3f13ffe36a34
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Shield_02.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 572468b361ffc194baa1979437b3653a
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Shield_Long_11.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 577a666f9d6ed794893e6d29e09bc76b
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Dagger_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 582bf6a9e98f49b45ab001b684b0729e
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Spear_07.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5840d6af3b225554a806309ac5f08f60
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Goblin_Axe_Large_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 58783ae86c0b92f4fad09c81798dc07b
+    m_Address: Assets/Models/PolygonFantasyKingdom/Models/SM_Item_Bracelet_05.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 59456e33868ba994aace2ff60bf4602e
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Hammer_Large_Metal_010.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5a14a93ec980be1498c8c71a9eb9f103
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Shield_Long_10.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5d0b23c887d44f14e9fe65d6cd75151b
+    m_Address: Assets/Models/PolygonFantasyKingdom/Models/SM_Item_Ring_07.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5d518eb9a65a45d4b846a7cf120d62c8
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_ThowingKnife_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5de4b1db53f2e654bab1e0448b16741e
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Axe_11.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5e1b3615fae79b348a7574ab7b36ee69
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Dagger_04.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5e6397d9339a99b438cb7326b1e5dac7
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Dagger_07.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 62a989f80c7fe164cae90ebeaa608b5c
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Staff_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6304131675f683241b1ab96d2de55c81
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Shield_04.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 630627b9fd11d4340a42d44621ddcfa7
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_GreatSword_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 640492bb106c8b9418a6b12840af2b22
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Sword_Small_Cover_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 691193207fb498347995d8573572685a
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Shield_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 69b6efaf003172244897531ea3ed74d2
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Shield_Long_14.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6bae11fe83d7e2b43be9aa55d10fcfbc
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_KnuckleDagger_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6c48a4d70726e3e489b2acd86226953d
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Shield_Long_07.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6c4eb298fc2aefa409bcb69e83f42108
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Goblin_Mace_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6d137d44990918a48bfc447d3dda3796
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Crystal_DoubleSword_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6db95b51172c2bf44bf5b975704c213f
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Shield_Bone_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6ecff5d00beabbd4bb0b49337c08cf31
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Hammer_06.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6f3863215fb2a2742b86223d07dfc298
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Mace_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 73fd1cd4a6214fb4789205f9c84ff66b
+    m_Address: Assets/Models/PolygonFantasyKingdom/Models/SM_Item_Necklace_Flat_05.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7618bf1eceed7fd4786bae1d1976ef37
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Staff_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 76e5869740b242247a097e9b9b65e634
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Shield_Ornate_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 779e5a6d75f5b1b4985da4860ddb05cf
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Spear_08.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 77b65a682fc825d4eb633f6c73894338
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Hammer_03.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7921028fb0081074d9fb82bb7648f1c9
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Hammer_Mace_Spikes_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7a167a044b06be94e8cf799be2cce3d2
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Hammer_Small_02.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7bc977ffb915da94b9fda3919d561229
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Dagger_06.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7c2b4de056174ed499e0881bf2d69242
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Knife_04.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7c82d9a32906fe7489ca56cc35bca5ee
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Mace_02.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7cd2b3efce714454cb1e4edbb26258a4
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Axe_09.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7e1e6ebbdfd1d8344b7dbdd624bf2408
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Hammer_Large_Wood_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 80e7764b5e77f814ba94c47968c33158
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Shield_Long_03.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 82cbe93341a49ee4bab82e2bb042e747
+    m_Address: Assets/Models/PolygonFantasyKingdom/Models/SM_Item_Ring_08.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 82ce4bcb79be5944dbf01c15d37b74b7
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Crystal_Axe_Large_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 843cd7f8f2fb4d1488ab944cd5e973d8
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Goblin_Spear_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 84692a3515a0823479f527be3ef8e6b6
+    m_Address: Assets/Models/PolygonFantasyKingdom/Models/SM_Item_Ring_02.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 88d488d0436b1f2419d0649eb60e0e1d
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Banner_03.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 892122ee87fc15149bc82d7f9d2cdb9f
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Sword_Large_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8e0ba5a27e6e44846a80b38bd2d8dbfd
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Mace_Blades_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8eb04366c54966144aa0a9d5a9f6bbc1
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Spear_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8edd6899813e120498636971e9e50fba
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Hammer_Large_Stone_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8f6aacdabe74a4f41bfc21e28bf8e3e8
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Knife_03.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8fd0d5f054eabd84a835357d1db51e19
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Sword_18.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9119d186ed5f8824da8756f69a439a82
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Goblin_Axe_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9209546c3f583ed45a05225e8c18f678
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Staff_04.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 92cd70a481699ac4b93380dc1184f864
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Straightsword_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 93df57e5d723bb3409dda0840e002b8d
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Shield_08.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 94a16c3d557d2e047944ed7d34d3da9e
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Crysta_Halberdl_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 962713b2326338e4396dfc9634c72b91
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Dagger_05.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9695911e504498140aa7aeea19670d11
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Cutlass_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 972d25f077480a44fb2de7fb9f6e52e9
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Shield_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 978e013e086901447ad224486298cff4
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Hammer_02.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 984357422a249c34e96a5e3550b4420b
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Axe_Nature_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 999de633b0a5f0848b10c37d407a9d10
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Prop_Bow_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9a3460fac6eccf446a920db0922d6fae
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Shield_Heater_02.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9ddd62d62e3c44842b38f8f7fe197350
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Handle_Metal_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9e52f80f1ddc92442a34ef25a0262e48
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Shield_07.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9f05ef6670f23e6489ec38160b33d1e4
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Sword_14.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9f24c604ced250f48925b63522e26d0f
+    m_Address: Assets/Models/PolygonFantasyKingdom/Models/SM_Item_Ring_10.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a0bde88e4f6d53249b99121677821072
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_IcePick_02.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a0e8e2ba9cb9e5b498192bf4610b8206
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Ornate_Spear_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a1179b3754a6656469126cba8b02cba5
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Sword_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a14784e5ad35af0478cb15062ce21b33
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Shield_Long_12.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a18eacac843138243964273ae0f18e8b
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Spear_04.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a2c97ac2ed0f912499b00d5fdd2d2014
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Shield_Round_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a5caec3cf905ef9409f3dd8e824ecac7
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Sword_08.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a673a81e9980e484cb26d760719c39bc
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Mace_05.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a7c7f803e613dea4db4fbdc17fe937c2
+    m_Address: Assets/Models/PolygonFantasyKingdom/Models/SM_Item_Necklace_Hanging_02.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: aafe4819ee380074c84dd31cc94ccf83
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Sword_15.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: adb80cd0553f7894f849adf84141a146
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Ornate_Axe_02.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ae09de03098be734ba0564ccdd73d447
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Handle_Wood_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ae52c84717a3593419b6167121b9f3d3
+    m_Address: Assets/Models/PolygonFantasyKingdom/Models/SM_Item_Necklace_Flat_02.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: af1f44d9cb6f51d4aa779310dcdbc8b1
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Axe_08.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: afd1345fc1f833043a856c36a6b5da2e
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Knife_02.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b00d2d2ce0fc7e241b341b2c9618f779
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Joust_02.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: b0ba16dbc1f30e74daaadfd4c590e837
     m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons
@@ -27,11 +867,436 @@ MonoBehaviour:
     m_SerializedLabels:
     - 'weapons '
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b1a73d9e29e72e147a50663f2f8ddac7
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Goblin_Gem_Hammer_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b23f7f5a05cd37149a5338efdc88484f
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Bone_02.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b2b33693823efd747aefbec6df5cd442
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Sceptre_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: b316c7598a1a6374c856fced703e9051
     m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons
     m_ReadOnly: 0
     m_SerializedLabels:
     - 'weapons '
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b429bb7ae3639b640acea828f986b6ab
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Banner_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b43bfa1513653534694fade06a14b8b2
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Staff_Gem_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b49d1bd56c6e6c141be6ab8a0bb9fce2
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Shield_13.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b59a087b2a4b41e449c3248cb619bbe3
+    m_Address: Assets/Models/PolygonFantasyKingdom/Models/SM_Item_Necklace_Hanging_04.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b5c2c0e653e241e4db3b01145a9263a4
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Banner_02.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b7290dd9a4b832e4f8566b940003ba62
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Sword_02.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ba0c920c66150f14991eb3302717ea37
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Axe_05.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: bae653b83f13cb34181154cde714a39c
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Shield_04.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: bba100a820f6d374694a3bb75837ea33
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Knife_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: bcaaef6ff4b03be43871886bf6d918eb
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Axe_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: be4857adbcd32de43aae6cd49a1a3245
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Dagger_02.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: bf823887e8a1cc94380c563ec5a0e5cd
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Shield_03.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c022f1fb1d1c9ed43968cee781855787
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Ornate_Spikes_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c04847634d1b54746b72d29aa9bb72fc
+    m_Address: Assets/Models/PolygonFantasyKingdom/Models/SM_Item_Bracelet_04.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c1207ee640adda5479b485c67963a8ca
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Spear_06.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c17b117a7e676e148b2ee325c1e6041d
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Ornate_Sword_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c1f04d4546e42a444acd39d2bc4e9b23
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Shield_17.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c2868d93385836e4385cabdb037a69cc
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Staff_08.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c2932925f2b7b2a4c9ba729e3f548532
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Spear_11.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c2dd40164096b6e4580abdd7d7679766
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Staff_02.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c50c05b371e039141afd3b8e98252ef5
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Mace_02.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c6735e7170b5177448a767c6d1bbd238
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Spear_12.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c7cf833ef01777540b5f24bc450e786a
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Staff_07.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c84607d7a26eac84ab52511146858b73
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Shield_Long_15.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c8941989c1aad7f43b8e7fe9931c6ece
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Halberd_06.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ca8d427b471a77745835639d65f3c276
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Sword_09.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cb000150d3243234ca9dc946436310c4
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Axe_06.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cb6232a083cec354face1959a8bfa209
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Prop_Bow_Rigged_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cc8e62a8f8ce5194faf0a937db835cf6
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Dagger_03.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cca28be0dfb20754fa84d037825df595
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Shield_Long_08.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cdcd31ac69744ec4d928e5d032e933a4
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Sword_Cover_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cf3a5c2462d00ed4c9ee956b9a48e0b8
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Goblin_Club_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d0a72705882da8547959d521e1cbf1a2
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Spear_02.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d2ef24c02f02e4d49aa3ed4e55815247
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Axe_03.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d468eb08e8b73f1458f42744781e9387
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Shield_Long_13.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d5535f7eb1bd7bf4da9e49a3964862b4
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Staff_09.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d655b346f6b0b2e4299d639bb86a35a4
+    m_Address: Assets/Models/PolygonFantasyKingdom/Models/SM_Item_Ring_04.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d6675a7e4e281ed4a8d05189c67a52d2
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Goblin_Shiv_Stone_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d6869b11ec4023a4b9853c8b8ee24688
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Hammer_Large_Metal_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d6c49010b560d8c4dbc68216b4d7fa25
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Mace_03.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d9197eec8ecc7714cbb8825a1467ae11
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Staff_02.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d921798c74882df4483690d74ef8599c
+    m_Address: Assets/Models/PolygonFantasyKingdom/Models/SM_Item_Necklace_Hanging_03.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d97af9500bf6b8643ae184f668c1630c
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Sword_17.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: dab4d3bfd0f0a6f4aa5249c2d0fce6e3
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Sword_Rapier_Cover_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: dc3395c6d7e56cb499938eabdc1d6a1f
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Axe_04.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: df7d13354c6fd5f438880a25ebd59596
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Goblin_Shiv_Bone_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: dfbafa915c5510449b7487e0d28dba05
+    m_Address: Assets/Models/PolygonFantasyKingdom/Models/SM_Item_Ring_01.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e243cdbf40ae09049834a4fdf1876343
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Bone_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e33dff63db8dbcd469662eafdaa153e9
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Mace_06.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e36ca024821fd9947bf0ba4bb6dd6dde
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Shield_10.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e424689f401e2c3489f80be092782c5e
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Ornate_Spikes_Long_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e5b3aeecd5587dd4c97be8dc299437ad
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Hammer_Small_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e6138525164fc714a9e749b7608ec9b3
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Greatsword_Curved_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e6a632e36b540b24aa74d53ac89e38f8
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Sceptre_07.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e6e095024649b0149836be3d122bd184
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Shield_Skull_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e6fa756c603368045a35e5b45a1b84cb
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Ornate_Sword_02.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e6fe276dabb97444b93546fe61f2bc07
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Staff_03.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e7196d0541b91bf4f8cab39924cb6d49
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Greatsword_Straight_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ea148a2f45083b94aa91f3dea67b26e8
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Shield_09.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ea2dbfa1557b6db49960715184f8470e
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Sword_06.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: eae3c73b7754a1449a67c050cad45f41
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Mace_04.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: eb838eeecbe944242b5777c1da782ec1
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Shield_20.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: eca7ededb3db2234c90bef2213ce5799
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_HandAxe_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ed3c1bce9753f4b42a88d436306d502a
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Spear_05.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: eee4a194e73e46f49b6854e0fc1c88b3
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Staff_10.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: eeeee4c8e7e6fac4d9221610c1d24ed6
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Spear_10.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ef32dfc4d6986a54f879704fda89f164
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Spear_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: efc8189be0ff92644a084f84928d1cf9
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Shield_12.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: efe9aff527910ec48866a9de4bd0ef34
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Hammer_05.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: efefb8d909ea1a744b15126aa57d76a1
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Staff_06.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f154921f4dd670a4b903eb56e4bd2bdd
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Joust_03.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f31ae95d248e8854bb5499cf38303350
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Sword_03.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f39580772f2449e429693e5e9fce32e2
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Sword_07.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f73be7b10fc184c439fd7018eccb210a
+    m_Address: Assets/Models/PolygonFantasyKingdom/Prefabs/Weapons/Weapons/SM_Wep_Sceptre_03.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f759a0c22da09ef4aa753208acf49944
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Shield_Long_09.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: fc1496590254be5459fdaf1220abf93b
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Shield_02.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: fd3dc9bb217448647b2117f11e73fc3f
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Shield_Long_16.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: fd86dca90d55fd84fa6e700fa04c1e8e
+    m_Address: Assets/Models/PolygonFantasyKingdom/Models/SM_Item_Necklace_Flat_04.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: fe0d37e888ff9374084a7354bdb8ddcd
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Shield_Spike_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: fe6f551a9a6401f4ca5660bdf84707a8
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Shield_16.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: febd483cbb56e99488e1112ca2ba8053
+    m_Address: Assets/Models/PolygonFantasyHeroCharacters/Prefabs/Weapons/SM_Wep_Shield_Long_06.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ff70520d25e17ed4b9c168c849d0ed29
+    m_Address: Assets/Models/PolygonDungeon/Prefabs/Weapons/SM_Wep_Banner_04.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: d2176961fdb6fe549bc4ce1763ceb434, type: 2}
