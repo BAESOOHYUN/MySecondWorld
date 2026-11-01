@@ -18,6 +18,11 @@ namespace MySecondWorld.Save
 
         // 장착 무기 (아이템 dbKey)
         public int mainHandDbKey;
+
+        // 장착한 인벤토리 칸 번호(저장 당시 배치 기준). 미장착은 -1
+        // 이 필드가 없는 파일은 0으로 읽히므로,
+        // 복원(RestoreInventory)은 그 칸에 그 무기가 없으면 같은 무기가 든 첫 칸으로 폴백한다.
+        public int mainHandInventorySlotIndex;
     }
 
     [System.Serializable]

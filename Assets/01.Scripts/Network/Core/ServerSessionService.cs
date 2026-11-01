@@ -317,6 +317,7 @@ namespace MySecondWorld.Network
                         companionPresent = session.companionPresent,
                         inventorySlots = BuildInventorySave(conn) ?? prev?.inventorySlots,
                         mainHandDbKey = BuildMainHandSave(conn) ?? prev?.mainHandDbKey ?? -1,
+                        mainHandInventorySlotIndex = BuildMainHandSlotSave(conn) ?? prev?.mainHandInventorySlotIndex ?? -1,
                     });
                 }
             }
@@ -427,6 +428,15 @@ namespace MySecondWorld.Network
             return equip == null ? null : equip.ServerGetMainHandDbKey();
         }
 
+        // 장착한 인벤토리 칸 번호를 읽음
+        private int? BuildMainHandSlotSave(NetworkConnectionToClient conn)
+        {
+            var equip = conn.identity != null
+                ? conn.identity.GetComponent<NetworkWeaponEquip>()
+                : null;
+            return equip == null ? null : equip.ServerGetMainHandInventorySlotIndex();
+        }
+
         // 세이브를 읽어 인벤토리를 채움
         private void RestoreInventory(NetworkConnectionToClient conn, PlayerSession session)
         {
@@ -452,8 +462,37 @@ namespace MySecondWorld.Network
                 ? conn.identity.GetComponent<NetworkWeaponEquip>()
                 : null;
             if (equip != null)
-                equip.ServerTryEquipMainHand(loaded.Value.mainHandDbKey, -1); // 세이브에는 칸 번호가 없다 → -1(모름)이면 처음 발견한 칸에 장착
+            {
+                // 저장했던 칸에 그 무기가 그대로 있으면 그 칸에, 아니면(옛 세이브 등) 같은 무기가 든 첫 칸에 장착한다.
+                int slot = ToRestoredSlotIndex(loaded.Value.inventorySlots, loaded.Value.mainHandInventorySlotIndex);
+                if (!equip.ServerTryEquipMainHand(loaded.Value.mainHandDbKey, slot))
+                    equip.ServerTryEquipMainHand(loaded.Value.mainHandDbKey, -1); // 세이브에는 칸 -1(없음/모름)이면 처음 발견한 칸에 장착
+            }
         }
+
+        // 저장할 때의 칸 번호를 복원 후의 칸 번호로 바꾼다.
+        // 복원은 빈 칸을 건너뛰고 앞에서부터 채우므로, 새 번호 = 저장 칸 앞에 있던 "실제로 채워진 칸"의 개수.
+        //
+        // 예) 도끼B(저장 4번 칸)를 장착한 채 저장했다면
+        //     저장:  0=도끼A  1=빈칸  2=활  3=빈칸  4=도끼B
+        //     복원:  0=도끼A  1=활  2=도끼B          ← 빈 칸이 사라져 앞으로 당겨짐
+        //     0~3번을 훑으며 채워진 칸(도끼A, 활)만 세면 2 → 도끼B의 새 번호
+        private static int ToRestoredSlotIndex(InventorySlotSave[] savedSlots, int savedIndex)
+        {
+            if (savedSlots == null || savedIndex < 0 || savedIndex >= savedSlots.Length) return -1; // // slot=-1이면 "칸 없음/모름"으로 처리
+
+            int restored = 0;
+            for (int i = 0; i < savedIndex; i++)
+            {
+                var s = savedSlots[i];
+                if (s.dbKey == -1 || s.count <= 0) continue; // 빈 칸. RestoreInventory가 건너뛰는 칸과 같은 조건
+                if (Vault.Get(s.dbKey) is not RootItem) continue; // 저장된 아이템 정의가 지금은 없어진 경우
+                restored++;
+            }
+            return restored;
+        }
+
+
 
         #endregion
 

@@ -244,6 +244,10 @@ namespace MySecondWorld.Network
         [Server]
         public int ServerGetMainHandDbKey() => _mainHandDbKey;
 
+        // 세이브용 — 장착한 인벤토리 칸 번호. 미장착은 -1
+        [Server]
+        public int ServerGetMainHandInventorySlotIndex() => _mainHandInventorySlotIndex;
+
         // 인벤토리를 0번 칸부터 훑어 item이 든 첫 칸의 번호를 돌려준다. 없으면 -1.
         private int FindInventorySlotOf(EquipmentItem item)
         {
