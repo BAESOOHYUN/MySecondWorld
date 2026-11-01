@@ -189,6 +189,108 @@ namespace MySecondWorld.Editor
         }
 
         // =========================================================================
+        // 2-2. [PC] 윈도우 클라이언트 독립 실행 빌드
+        // =========================================================================
+        private const string PcBuildPath = "Builds/PC/MySecondWorld.exe";
+        // Build Profiles 창에서 만든 Windows 프로필 (Platform: Windows, Multiplayer Role: Client)
+        private const string WindowsProfilePath = "Assets/Settings/Build Profiles/Windows Client.asset";
+
+        [MenuItem("Tools/Build/💻 [PC] 번들 빌드 + EC2 업로드 + PC 빌드 (ALL-IN-ONE)", priority = 5)]
+        public static void BuildAndDeployPcAll()
+        {
+            if (!EnsureWindowsClientTarget("Deploy-PC")) return;
+
+            Debug.Log("[Deploy-PC] 💻 Windows용 Addressables 번들 빌드 시작...");
+            AddressableAssetSettings.BuildPlayerContent(out var buildResult);
+            if (!string.IsNullOrEmpty(buildResult.Error))
+            {
+                Debug.LogError($"[Deploy-PC] ❌ Addressables 빌드 실패: {buildResult.Error}");
+                return;
+            }
+
+            string pcDataDir = Path.GetFullPath("ServerData/StandaloneWindows64");
+
+            // 빈 폴더를 올려서 "업로드 성공"으로 착각하는 걸 막는다
+            if (!Directory.Exists(pcDataDir) || Directory.GetFiles(pcDataDir, "catalog_*.json").Length == 0)
+            {
+                Debug.LogError($"[Deploy-PC] ❌ {pcDataDir} 에 카탈로그가 없다 — 업로드 중단. Addressables 프로파일의 Remote 경로를 확인하라.");
+                return;
+            }
+
+            PruneStaleBundles(pcDataDir, Directory.GetFiles(pcDataDir, "catalog_*.json").OrderByDescending(File.GetLastWriteTime).First());
+
+            Debug.Log("[Deploy-PC] 🚀 EC2 웹서버로 Windows 번들 업로드 중...");
+            // scp -r 중첩 방지 — 원격 디렉터리를 먼저 지운다 (Linux/Android 배포와 동일한 이유)
+            if (!RunSsh($"rm -rf {EC2RemoteDir}/ServerData/StandaloneWindows64; mkdir -p {EC2RemoteDir}/ServerData; df -h /"))
+                return;
+            if (!RunScp(new[] { "ServerData/StandaloneWindows64" }, $"{EC2RemoteDir}/ServerData/"))
+                return;
+
+            Debug.Log("🎉 [Deploy-PC] Windows 에셋번들이 EC2에 업로드되었습니다!");
+            BuildPcPlayer();
+        }
+
+        [MenuItem("Tools/Build/💻 [PC] PC 빌드만 (번들·업로드 없이)", priority = 6)]
+        public static void BuildPcOnly()
+        {
+            if (!EnsureWindowsClientTarget("Build-PC")) return;
+            BuildPcPlayer();
+        }
+
+        // Windows Client 프로필을 활성화한다. 전환이 필요했다면 재임포트가 끝난 뒤 한 번 더 실행해야 하므로 여기서 멈춘다.
+        // (서버 빌드 뒤 에디터가 Linux Server 프로필로 남는 함정에서 돌아오는 용도로도 쓸 수 있다.)
+        private static bool EnsureWindowsClientTarget(string tag)
+        {
+            var profile = AssetDatabase.LoadAssetAtPath<UnityEditor.Build.Profile.BuildProfile>(WindowsProfilePath);
+            if (profile == null)
+            {
+                Debug.LogError($"[{tag}] ❌ '{WindowsProfilePath}'가 없다 — Build Profiles 창에서 Windows 프로필(Multiplayer Role: Client)을 만들어 'Windows Client'로 저장하라.");
+                return false;
+            }
+
+            bool alreadyActive = EditorUserBuildSettings.activeBuildTarget == BuildTarget.StandaloneWindows64
+                              && EditorUserBuildSettings.standaloneBuildSubtarget == StandaloneBuildSubtarget.Player
+                              && UnityEditor.Build.Profile.BuildProfile.GetActiveBuildProfile() == profile;
+            if (alreadyActive)
+                return true;
+
+            Debug.LogWarning($"[{tag}] 💻 Windows Client 프로필로 전환을 시작한다.");
+            UnityEditor.Build.Profile.BuildProfile.SetActiveBuildProfile(profile);
+            EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Standalone, BuildTarget.StandaloneWindows64);
+
+            Debug.LogError($"[{tag}] ⛔ 전환/재임포트가 끝난 뒤 메뉴를 '한 번 더' 실행하라. 지금은 여기서 중단한다.");
+            return false;
+        }
+
+        private static void BuildPcPlayer()
+        {
+            Debug.Log("[Build-PC] 💻 PC 클라이언트 빌드 시작...");
+            string outputDir = Path.GetDirectoryName(PcBuildPath);
+            if (!Directory.Exists(outputDir))
+                Directory.CreateDirectory(outputDir);
+
+            BuildPlayerOptions buildPlayerOptions = new BuildPlayerOptions
+            {
+                scenes = StartupScenes,
+                locationPathName = PcBuildPath,
+                target = BuildTarget.StandaloneWindows64,
+                subtarget = (int)StandaloneBuildSubtarget.Player, // 서버(Server)가 아니라 일반 클라이언트(Player)로 빌드
+                options = BuildOptions.None
+            };
+
+            BuildReport report = BuildPipeline.BuildPlayer(buildPlayerOptions);
+            if (report.summary.result == BuildResult.Succeeded)
+            {
+                Debug.Log($"🎉 [Build-PC] PC 빌드 성공! 위치: {PcBuildPath}");
+                EditorUtility.RevealInFinder(outputDir);
+            }
+            else
+            {
+                Debug.LogError("[Build-PC] ❌ PC 빌드 실패!");
+            }
+        }
+
+        // =========================================================================
         // 3. 서버 퀵 재시작 및 개별 빌드 메뉴
         // =========================================================================
         [MenuItem("Tools/Build/🔄 [EC2] 서버 재시작만 실행 (Quick Restart)", priority = 10)]
