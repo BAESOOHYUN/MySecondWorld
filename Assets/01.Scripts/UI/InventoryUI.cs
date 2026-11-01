@@ -454,6 +454,7 @@ namespace MySecondWorld.UI
                 var slot = Instantiate(_slotButtonPrefab, _slotContent);
 
                 bool isConsumable = stack.Source is ConsumableItem; // 소모품(포션 등)인지 판별
+                // 장착 버튼을 보일지 정하는 사전 차단. 허용 목록(AllowedMainHandCategories)은 서버에만 있어서 서버가 한 번 더 검증한다.
                 bool isEquippable = stack.Source is EquipmentItem eq
                                     && eq.Category != WeaponCategory.Quiver
                                     && (eq.Category != WeaponCategory.None || eq.Restriction != null);
