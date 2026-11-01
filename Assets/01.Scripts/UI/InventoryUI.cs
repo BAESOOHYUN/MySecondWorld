@@ -482,7 +482,7 @@ namespace MySecondWorld.UI
                    {
                        if (isShopMode && stack.Source is EquipmentItem eqItem)
                        {
-                           _activeShop.RequestSell(eqItem);
+                           _activeShop.RequestSell(eqItem, capturedIndex);
                            return;
                        }
 

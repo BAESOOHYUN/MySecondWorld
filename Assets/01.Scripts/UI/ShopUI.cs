@@ -42,6 +42,7 @@ namespace MySecondWorld.UI
         private readonly List<ShopSlotButton> _spawnedSlots = new();
         private EquipmentItem _pendingPurchase; // 구매 대기중인 장비 아이템
         private EquipmentItem _pendingSale; // 판매 대기중인 장비 아이템
+        private int _pendingSaleSlotIndex = -1;
         private readonly Subject<Unit> _onCloseSubject = new();
         private IDisposable _genderFilterSubscription; // 인벤토리 쪽에서 필터가 바뀌어도 상점 토글이 따라 바뀌게
         private int _openedFrame = -1; // Open()과 같은 프레임에 들어온 잔여 클릭(백드롭 등)으로 즉시 닫히는 것 방지
@@ -190,20 +191,21 @@ namespace MySecondWorld.UI
             string costName = _costItem != null ? _costItem.Title : "코인";
             string message = $"<color=#FFE066>{item.Title}</color> 구매\n<size=13><color=#AAAAAA>비용: {costName} 1개 소모</color></size>";
 
-            _confirmPanel?.Show(message, "구매", ConfirmPurchase);
+            _confirmPanel?.Show("구매 확인", message, "구매", ConfirmPurchase);
         }
 
         // 인벤토리 가방 아이템 클릭 → 판매 확인 팝업 표시
-        public void RequestSell(EquipmentItem item)
+        public void RequestSell(EquipmentItem item, int inventorySlotIndex)
         {
             if (item == null) return;
             _pendingPurchase = null;
             _pendingSale = item;
+            _pendingSaleSlotIndex = inventorySlotIndex;   // 서버에 보낼 판매 칸 번호 기억
 
             string currencyName = _costItem != null ? _costItem.Title : "코인";
             string message = $"<color=#FFE066>{item.Title}</color> 판매\n<size=13><color=#AAAAAA>보상: {currencyName} 1개 획득</color></size>";
-
-            _confirmPanel?.Show(message, "판매", ConfirmPurchase);
+            
+            _confirmPanel?.Show("판매 확인", message, "판매", ConfirmPurchase);
         }
 
         // 구매/판매 확정 실행
@@ -212,15 +214,16 @@ namespace MySecondWorld.UI
             if (_pendingPurchase != null && _costItem != null)
             {
                 // 구매: 대가(골드) 지불 -> 장비 획득
-                _inventoryProvider.Actions?.TradeItem(_costItem.GetDbKey(), _pendingPurchase.GetDbKey());
+                _inventoryProvider.Actions?.TradeItem(_costItem.GetDbKey(), _pendingPurchase.GetDbKey(), -1); //-1은 슬롯 칸을 '모른다/상관없다' 의미
                 _pendingPurchase = null;
             }
             else if (_pendingSale != null && _costItem != null)
             {
                 // 판매: 장비 지불 -> 대가(골드) 획득
-                // TODO : 장착 중인 칸이 팔려서 비면 서버(ServerValidateMainHand)가 해제하고 동기화로 알려 준다
-                _inventoryProvider.Actions?.TradeItem(_pendingSale.GetDbKey(), _costItem.GetDbKey());
+                // 판매할 칸 번호를 서버에 보내고, 서버가 그 칸을 검증해서 뺀다. 장착 칸이 비면 ServerValidateMainHand가 해제
+                _inventoryProvider.Actions?.TradeItem(_pendingSale.GetDbKey(), _costItem.GetDbKey(), _pendingSaleSlotIndex);
                 _pendingSale = null;
+                _pendingSaleSlotIndex = -1;   // 다 쓴 값은 초기화
             }
         }
 
