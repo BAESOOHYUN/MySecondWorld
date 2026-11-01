@@ -335,16 +335,11 @@ namespace MySecondWorld.UI
                 case EquipmentSlotType.Weapon:
                     if (weaponActions != null && inventory != null)
                     {
-                        int dbKey = weaponActions.CurrentMainHandDbKey;
-                        if (dbKey > 0)
-                        {
-                            for (int i = 0; i < inventory.MaxSlots; i++)
-                            {
-                                var stack = inventory.Get(i);
-                                if (stack?.Source is EquipmentItem eq && eq.GetDbKey() == dbKey)
-                                    return eq;
-                            }
-                        }
+                        // 인벤토리에서 장착한 칸 번호의 아이템을 보여줌
+                        int slot = weaponActions.CurrentMainHandInventorySlotIndex;
+                        if (slot >= 0 && slot < inventory.MaxSlots
+                            && inventory.Get(slot)?.Source is EquipmentItem eq)
+                                return eq;
                     }
                     return null;
 

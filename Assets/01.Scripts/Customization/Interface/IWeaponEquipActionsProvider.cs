@@ -5,9 +5,10 @@ namespace MySecondWorld.Customization
     // (Network가 이미 Customization을 참조하므로 반대 방향을 추가하면 순환 참조가 생김).
     public interface IWeaponEquipActionsProvider
     {
-        void EquipMainHand(int weaponDbKey);
+        void EquipMainHand(int weaponDbKey, int slotIndex); // 어느 칸의 무기인지 함께 전달
         void UnequipMainHand();
         int CurrentMainHandDbKey { get; }
-        event System.Action OnMainHandStateChanged; // 장착/해제 시 발행 — InventoryUI가 버튼 라벨 갱신용으로 구독
+        int CurrentMainHandInventorySlotIndex { get; } 
+        event System.Action OnMainHandEquipChanged; // 장착/해제 시 발행 — InventoryUI가 버튼 라벨 갱신용으로 구독
     }
 }

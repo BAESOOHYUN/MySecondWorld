@@ -177,7 +177,7 @@ namespace MySecondWorld.UI
                 _subscribedInventory.OnChanged -= OnInventoryChanged;
 
             if (_subscribedWeaponActions != null)
-                _subscribedWeaponActions.OnMainHandStateChanged -= OnWeaponStateChanged;
+                _subscribedWeaponActions.OnMainHandEquipChanged -= OnWeaponStateChanged;
 
             if (_appearanceService != null)
                 _appearanceService.OnAppearanceChanged -= OnAppearanceStateChanged;
@@ -221,10 +221,10 @@ namespace MySecondWorld.UI
                 _subscribedInventory.OnChanged += OnInventoryChanged; // 열려있는 동안만 구독 — 상점/바닥획득 등 다른 화면에서 바뀐 것도 즉시 반영
 
             if (_subscribedWeaponActions != null)
-                _subscribedWeaponActions.OnMainHandStateChanged -= OnWeaponStateChanged;
+                _subscribedWeaponActions.OnMainHandEquipChanged -= OnWeaponStateChanged;
             _subscribedWeaponActions = _inventoryProvider.WeaponActions;
             if (_subscribedWeaponActions != null)
-                _subscribedWeaponActions.OnMainHandStateChanged += OnWeaponStateChanged;
+                _subscribedWeaponActions.OnMainHandEquipChanged += OnWeaponStateChanged;
 
             if (_appearanceService != null)
             {
@@ -251,7 +251,7 @@ namespace MySecondWorld.UI
             _subscribedInventory = null;
 
             if (_subscribedWeaponActions != null)
-                _subscribedWeaponActions.OnMainHandStateChanged -= OnWeaponStateChanged;
+                _subscribedWeaponActions.OnMainHandEquipChanged -= OnWeaponStateChanged;
             _subscribedWeaponActions = null;
 
             if (_appearanceService != null)
@@ -460,7 +460,7 @@ namespace MySecondWorld.UI
                 bool isEquippedWeapon = stack.Source is EquipmentItem weaponCheck
                                     && weaponCheck.Category != WeaponCategory.None
                                     && weaponCheck.Category != WeaponCategory.Quiver
-                                    && _inventoryProvider.WeaponActions?.CurrentMainHandDbKey == weaponCheck.GetDbKey();
+                                    && _inventoryProvider.WeaponActions?.CurrentMainHandInventorySlotIndex == capturedIndex; //장착한 칸 번호로 판단
 
                 bool isEquippedPart = stack.Source is EquipmentItem partCheck
                                     && partCheck.Category == WeaponCategory.None
@@ -485,10 +485,9 @@ namespace MySecondWorld.UI
                            return;
                        }
 
-                       // 로컬 예측: 버리려는 아이템이 현재 장착 무기면 즉시 로컬 비주얼 해제
+                       // 로컬 예측: 버리려는 칸이 지금 장착한 칸이면 즉시 로컬 비주얼 해제
                        if (_inventoryProvider.WeaponActions != null 
-                           && stack.Source is EquipmentItem weaponItem
-                           && _inventoryProvider.WeaponActions.CurrentMainHandDbKey == weaponItem.GetDbKey())
+                           && _inventoryProvider.WeaponActions.CurrentMainHandInventorySlotIndex == capturedIndex)
                        {
                            _inventoryProvider.WeaponActions.UnequipMainHand();
                        }
@@ -548,7 +547,7 @@ namespace MySecondWorld.UI
                 return () =>
                 {
                     int dbKey = weaponItem.GetDbKey();
-                    bool alreadyEquipped = _inventoryProvider.WeaponActions?.CurrentMainHandDbKey == dbKey;
+                    bool alreadyEquipped = _inventoryProvider.WeaponActions?.CurrentMainHandInventorySlotIndex == slotIndex;
                     Debug.Log($"[Equip] 무기 {(alreadyEquipped ? "해제" : "장착")} 클릭: {weaponItem.Title} dbKey={dbKey}");
 
                     if (alreadyEquipped)
@@ -558,7 +557,7 @@ namespace MySecondWorld.UI
                     }
                     else
                     {
-                        _inventoryProvider.WeaponActions?.EquipMainHand(dbKey);
+                        _inventoryProvider.WeaponActions?.EquipMainHand(dbKey, slotIndex);
                         _paperdollUI?.HighlightSlot(EquipmentSlotType.Weapon); // 장착/해제 모두 "방금 건드린 슬롯"을 표시
                     }
                 };

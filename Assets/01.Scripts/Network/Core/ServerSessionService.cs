@@ -452,7 +452,7 @@ namespace MySecondWorld.Network
                 ? conn.identity.GetComponent<NetworkWeaponEquip>()
                 : null;
             if (equip != null)
-                equip.ServerTryEquipMainHand(loaded.Value.mainHandDbKey);
+                equip.ServerTryEquipMainHand(loaded.Value.mainHandDbKey, -1); // 세이브에는 칸 번호가 없다 → -1(모름)이면 처음 발견한 칸에 장착
         }
 
         #endregion

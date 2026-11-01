@@ -44,23 +44,28 @@ namespace MySecondWorld.Network
         [SyncVar(hook = nameof(OnMainHandChanged))]
         private int _mainHandDbKey = Unequipped;
 
+        [SyncVar(hook = nameof(OnMainHandInventorySlotChanged))]
+        private int _mainHandInventorySlotIndex = Unequipped;
+
         private int _predictedMainHandDbKey = Unequipped; // 로컬 예측값 — SyncVar 왕복 안 기다리고 UI가 즉시 정답을 보게
+        private int _predictedMainHandInventorySlot = Unequipped;
+        private int _equipToken; // 빠른 연속 교체 시, 먼저 시작된 느린 로드가 나중에 끝나 최신 장착을 덮어쓰는 걸 막기 위한 토큰
         private bool _currentVisualIsAddressable;
         private GameObject _currentVisual;
         private GameObject _currentQuiverVisual;
         private Cleverous.VaultInventory.Inventory _inventory;
-        private int _equipToken; // 빠른 연속 교체 시, 먼저 시작된 느린 로드가 나중에 끝나 최신 장착을 덮어쓰는 걸 막기 위한 토큰
         private RuntimeAnimatorController _defaultController;
         private LocalPlayerInventoryProvider _localInventoryProvider;
 
         public int CurrentMainHandDbKey => _predictedMainHandDbKey;
+        public int CurrentMainHandInventorySlotIndex => _predictedMainHandInventorySlot;
 
         // 메인핸드 시각 오브젝트가 적용된 뒤 발행. 인자는 방금 장착된 카테고리(해제 시 None).
         // Combat 어셈블리의 타입을 쓰지 않는 게 중요하다 — 여기서 ArrowNockPoint를 직접 참조하면
         // Network → Combat 참조가 생겨 기존 Combat → Network 참조와 순환이 된다.
         // 이벤트로 뒤집으면 Combat 쪽이 일방적으로 구독하므로 방향이 하나로 유지된다.
-        public event System.Action<WeaponCategory> OnMainHandVisualApplied;
-        public event System.Action OnMainHandStateChanged;
+        public event System.Action<WeaponCategory> OnMainHandVisualApplied; // 무기 모델이 적용됨. 그 무기의 종류(카테고리)를 같이 넘김
+        public event System.Action OnMainHandEquipChanged; // 장착 상태가 바뀔 때 UI 새로고침 신호
 
         [Inject]
         public void Construct(LocalPlayerInventoryProvider localInventoryProvider)
@@ -83,21 +88,30 @@ namespace MySecondWorld.Network
         }
 
         // IWeaponEquipActionsProvider 구현 — InventoryUI는 이 메서드만 알면 되고, Command는 몰라도 된다
-        public void EquipMainHand(int weaponDbKey)
+        public void EquipMainHand(int weaponDbKey, int inventorySlotIndex)
         {
             Debug.Log($"[Equip] EquipMainHand(client) 호출 dbKey={weaponDbKey}");
 
             // [핵심] 서버 응답 기다리지 않고 내 손에 0.01초 즉시 무기 부착
             if (isLocalPlayer)
             {
-                _equipToken++;
-                ApplyMainHandVisual(weaponDbKey, _equipToken).Forget();
+                // 무기를 칸 번호로 장착
+                // 인벤토리에 같은 장비가 여러개일때, 어떤 슬롯(inventorySlotIndex) 장비를 사용하는지 찾아냄.
+                _predictedMainHandInventorySlot = weaponDbKey == Unequipped ? Unequipped : inventorySlotIndex;
+
+                if (weaponDbKey == _predictedMainHandDbKey)
+                    OnMainHandEquipChanged?.Invoke(); // 같은 무기의 다른 칸으로 바꾼 것 — 모델은 그대로, UI만 갱신
+                else
+                {
+                    _equipToken++;
+                    ApplyMainHandVisual(weaponDbKey, _equipToken).Forget();
+                }
             }
 
-            CmdEquipMainHand(weaponDbKey);
+            CmdEquipMainHand(weaponDbKey, inventorySlotIndex);
         }
 
-        public void UnequipMainHand() => EquipMainHand(Unequipped);
+        public void UnequipMainHand() => EquipMainHand(Unequipped, Unequipped);
 
         // 서버 전용 — 다른 컴포넌트(인벤토리 버리기/거래 등)가 이 무기의 장착 상태를 강제로 해제할 때 호출.
         // 넘긴 dbKey가 현재 장착 중인 것과 다르면 무시한다(엉뚱한 무기가 실수로 풀리는 것 방지).
@@ -116,11 +130,12 @@ namespace MySecondWorld.Network
 
         // 검증 후 장착. 성공 true / 거부 false. (클라 요청과 세이브 복원이 같이 사용)
         [Server]
-        public bool ServerTryEquipMainHand(int weaponDbKey)
+        public bool ServerTryEquipMainHand(int weaponDbKey, int inventorySlotIndex)
         {
             Debug.Log($"[Equip][Server] ServerTryEquipMainHand 호출 dbKey={weaponDbKey}");
             if (weaponDbKey == Unequipped)
             {
+                _mainHandInventorySlotIndex = Unequipped;
                 _mainHandDbKey = Unequipped;  // 해제 요청은 무조건 허용
                 Debug.Log("[Equip][Server] 해제 요청 처리");
                 return true;
@@ -139,25 +154,66 @@ namespace MySecondWorld.Network
                 return false;
             }
 
-            if (!(_inventory?.Contains(item, 1) ?? false))// 미보유
+            // 칸을 모르면(-1, 세이브 복원(로그인 직후, 서버가 스스로 장착을 복구하는 순간))
+            // 처음 발견한 칸(item 정보 == 슬롯정보인 칸)을 쓴다.
+            if (inventorySlotIndex < 0)
+                inventorySlotIndex = FindInventorySlotOf(item);
+
+            if (_inventory == null 
+                || inventorySlotIndex < 0 
+                || inventorySlotIndex >= _inventory.MaxSlots 
+                || _inventory.Get(inventorySlotIndex)?.Source != item) // 그 칸에 들어 있는 아이템이 장착하려는 아이템과 다르거나, 칸이 비어있다.
             {
-                // _inventory가 null            →  null  ?? false  →  false(인벤토리 없음) →  !false  →true
-                // _inventory 있고 아이템 보유O →  true  ?? false  →  true(인벤O,아이템O)  →  !true   →false
-                // _inventory 있고 아이템 보유X →  false ?? false  →  false(아이템 없음)   →  !false  →true
-                Debug.LogWarning($"[Equip][Server] 거부 — 인벤토리 미보유 (item={item.Title}, _inventory null? {_inventory == null})");
+                Debug.LogWarning($"[Equip][Server] 거부 — {inventorySlotIndex}번 칸에 {item.Title}이 없음");
                 return false;
             }
 
-            _mainHandDbKey = weaponDbKey; // 여기서 대입하며 [SyncVar] 훅 발동 → OnMainHandChanged 실행
+            _mainHandInventorySlotIndex = inventorySlotIndex;    // [SyncVar] 훅 발동 → OnMainHandInventorySlotChanged 실행
+            _mainHandDbKey = weaponDbKey;                   // [SyncVar] 훅 발동 → OnMainHandChanged 실행
             return true;
         }
 
-        [Command]
-        public void CmdEquipMainHand(int weaponDbKey)
+        private int FindInventorySlotOf(EquipmentItem item)
         {
-            ServerTryEquipMainHand(weaponDbKey);
+            for (int i = 0; i < _inventory.MaxSlots; i++)
+            {
+                if (_inventory.Get(i)?.Source == item)
+                    return i;
+            }
+            return -1; // 가방 어디에도 그 아이템이 없을 때
         }
 
+        // 인벤토리가 바뀐 뒤 호출. 장착한 칸이 비거나 다른 아이템으로 바뀌었으면 해제한다.
+        // 같은 무기가 다른 칸에 있어도 대신 장착하지 않는다.
+        // 예) 2번 칸 도끼 장착 중 → 2번을 버리면 해제, 5번을 버리면 모션 유지
+        [Server]
+        public void ServerValidateMainHand()
+        {
+            if (_mainHandDbKey == Unequipped) return;
+            // stack은 slot의 내용물
+            var stack = _inventory != null
+                        && _mainHandInventorySlotIndex >= 0 && _mainHandInventorySlotIndex < _inventory.MaxSlots
+                        ? _inventory.Get(_mainHandInventorySlotIndex) : null;
+            // 서버가 기억하는 장착 중인 무기(_mainHandDbKey)와 
+            // 장착한 칸(_mainHandInventorySlotIndex)에 지금 들어 있는 아이템의 종류 번호(stack.Source.GetDbKey())
+            bool steelThere = stack?.Source != null && stack.Source.GetDbKey() == _mainHandDbKey;
+            if (steelThere) return; // 칸에 아직 그 무기가 있음 → 그대로 둔다
+
+            // 여기까지 왔다면 칸이 비었거나 다른 아이템 → 해제
+            _mainHandInventorySlotIndex = Unequipped;
+            _mainHandDbKey = Unequipped;
+        }
+
+        private void OnMainHandInventorySlotChanged(int oldSlot, int newSlot)
+        {
+            if (newSlot == _predictedMainHandInventorySlot) return; // 이미 로컬 예측으로 반영한 값
+            _predictedMainHandInventorySlot = newSlot;
+            OnMainHandEquipChanged?.Invoke(); // UI (새로고침)
+        }
+
+       [Command]
+        public void CmdEquipMainHand(int weaponDbKey, int inventorySlotIndex) => ServerTryEquipMainHand(weaponDbKey, inventorySlotIndex);
+        
         // 장착된 메인핸드 무기의 Attack(Flat) 스탯 합. 미장착이거나 무기가 아니면 0.
         // Percent 모디파이어는 베이스 공격력 집계기가 없는 이번 슬라이스에서는 제외한다.
         public float GetMainHandAttack()
@@ -212,7 +268,7 @@ namespace MySecondWorld.Network
                 }
                 // 해제 경로
                 OnMainHandVisualApplied?.Invoke(WeaponCategory.None);
-                OnMainHandStateChanged?.Invoke();
+                OnMainHandEquipChanged?.Invoke();
                 return;
             }
             // 1. Vault에서 아이템 조회
@@ -282,7 +338,7 @@ namespace MySecondWorld.Network
             }
             // 장착 성공 경로
             OnMainHandVisualApplied?.Invoke(item.Category);
-            OnMainHandStateChanged?.Invoke();
+            OnMainHandEquipChanged?.Invoke();
         }
 
         private Transform GetSocket(WeaponCategory category)

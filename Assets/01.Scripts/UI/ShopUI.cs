@@ -218,13 +218,7 @@ namespace MySecondWorld.UI
             else if (_pendingSale != null && _costItem != null)
             {
                 // 판매: 장비 지불 -> 대가(골드) 획득
-                // 장착 중인 무기를 판매하는 경우 로컬 무기 비주얼도 즉시 해제
-                if (_inventoryProvider.WeaponActions != null 
-                    && _inventoryProvider.WeaponActions.CurrentMainHandDbKey == _pendingSale.GetDbKey())
-                {
-                    _inventoryProvider.WeaponActions.UnequipMainHand();
-                }
-
+                // TODO : 장착 중인 칸이 팔려서 비면 서버(ServerValidateMainHand)가 해제하고 동기화로 알려 준다
                 _inventoryProvider.Actions?.TradeItem(_pendingSale.GetDbKey(), _costItem.GetDbKey());
                 _pendingSale = null;
             }

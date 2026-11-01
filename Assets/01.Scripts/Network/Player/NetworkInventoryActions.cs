@@ -73,7 +73,7 @@ namespace MySecondWorld.Network
             _inventory.DoTake(slotIndex, stack.StackSize);
             // 버린 아이템이 지금 장착 중인 무기면 손에서도 내린다 — 안 그러면 인벤토리엔 없는데 계속 들고 있게 됨
             if (TryGetComponent(out NetworkWeaponEquip weaponEquip))
-                weaponEquip.ServerUnequipIfMatches(item.GetDbKey());
+                weaponEquip.ServerValidateMainHand();   // 장착한 칸이 비었으면 해제
 
             // 런타임 스폰 오브젝트는 GameNetworkManager의 자동 matchId 세팅을 안 거치므로 직접 복사
             if (TryGetComponent(out NetworkMatch myMatch) && floorItem.TryGetComponent(out NetworkMatch floorMatch))
@@ -100,7 +100,7 @@ namespace MySecondWorld.Network
 
             _inventory.DoTake(payItem, 1);
             if (TryGetComponent(out NetworkWeaponEquip weaponEquip))
-                weaponEquip.ServerUnequipIfMatches(payItem.GetDbKey());
+                weaponEquip.ServerValidateMainHand();
         }
 
         [Command] // 소모품 사용
