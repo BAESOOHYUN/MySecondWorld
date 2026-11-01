@@ -379,7 +379,7 @@ namespace MySecondWorld.UI
                 else
                 {
                     string sub = _keyTable.GetSubType(part, _currentGender, capturedIndex);
-                    btn.SetLabel(!string.IsNullOrEmpty(sub) && sub != "None" ? sub : $"#{capturedIndex + 1:D2}");
+                    btn.SetLabel(!string.IsNullOrEmpty(sub) && sub != "None" && part != PartType.Head ? sub : $"#{capturedIndex + 1:D2}");
                 }
 
                 _spawnedButtons.Add(btn);
@@ -460,7 +460,7 @@ namespace MySecondWorld.UI
             else
             {
                 string sub = _keyTable.GetSubType(part, _currentGender, index);
-                string title = !string.IsNullOrEmpty(sub) && sub != "None" ? sub : $"{part} #{index + 1:D2}";
+                string title = !string.IsNullOrEmpty(sub) && sub != "None" && part != PartType.Head ? sub : $"{part} #{index + 1:D2}";
                 if (_detailCardName != null) _detailCardName.text = title;
                 if (_detailCardRarity != null) _detailCardRarity.text = "<color=#B0C4DE>[기본 외형]</color>";
                 if (_detailCardStatus != null)
