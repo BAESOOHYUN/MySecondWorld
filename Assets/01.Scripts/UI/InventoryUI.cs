@@ -177,10 +177,10 @@ namespace MySecondWorld.UI
                 _subscribedInventory.OnChanged -= OnInventoryChanged;
 
             if (_subscribedWeaponActions != null)
-                _subscribedWeaponActions.OnMainHandEquipChanged -= OnWeaponStateChanged;
+                _subscribedWeaponActions.OnMainHandEquipChanged -= OnMainHandEquipChanged;
 
             if (_appearanceService != null)
-                _appearanceService.OnAppearanceChanged -= OnAppearanceStateChanged;
+                _appearanceService.OnAppearanceChanged -= OnAppearanceChanged;
 
             _genderFilterSubscription?.Dispose();
 
@@ -221,15 +221,15 @@ namespace MySecondWorld.UI
                 _subscribedInventory.OnChanged += OnInventoryChanged; // 열려있는 동안만 구독 — 상점/바닥획득 등 다른 화면에서 바뀐 것도 즉시 반영
 
             if (_subscribedWeaponActions != null)
-                _subscribedWeaponActions.OnMainHandEquipChanged -= OnWeaponStateChanged;
+                _subscribedWeaponActions.OnMainHandEquipChanged -= OnMainHandEquipChanged;
             _subscribedWeaponActions = _inventoryProvider.WeaponActions;
             if (_subscribedWeaponActions != null)
-                _subscribedWeaponActions.OnMainHandEquipChanged += OnWeaponStateChanged;
+                _subscribedWeaponActions.OnMainHandEquipChanged += OnMainHandEquipChanged;
 
             if (_appearanceService != null)
             {
-                _appearanceService.OnAppearanceChanged -= OnAppearanceStateChanged;
-                _appearanceService.OnAppearanceChanged += OnAppearanceStateChanged;
+                _appearanceService.OnAppearanceChanged -= OnAppearanceChanged;
+                _appearanceService.OnAppearanceChanged += OnAppearanceChanged;
             }
 
             // 성별 필터 변화 구독
@@ -251,11 +251,11 @@ namespace MySecondWorld.UI
             _subscribedInventory = null;
 
             if (_subscribedWeaponActions != null)
-                _subscribedWeaponActions.OnMainHandEquipChanged -= OnWeaponStateChanged;
+                _subscribedWeaponActions.OnMainHandEquipChanged -= OnMainHandEquipChanged;
             _subscribedWeaponActions = null;
 
             if (_appearanceService != null)
-                _appearanceService.OnAppearanceChanged -= OnAppearanceStateChanged;
+                _appearanceService.OnAppearanceChanged -= OnAppearanceChanged;
 
             gameObject.SetActive(false);
             OnClosed?.Invoke();
@@ -421,8 +421,8 @@ namespace MySecondWorld.UI
 
 
         private void OnInventoryChanged(int index) => Refresh();
-        private void OnWeaponStateChanged() => Refresh();
-        private void OnAppearanceStateChanged() => Refresh();
+        private void OnMainHandEquipChanged() => Refresh();
+        private void OnAppearanceChanged() => Refresh();
 
         private void Refresh()
         {
@@ -454,10 +454,14 @@ namespace MySecondWorld.UI
                 var slot = Instantiate(_slotButtonPrefab, _slotContent);
 
                 bool isConsumable = stack.Source is ConsumableItem; // 소모품(포션 등)인지 판별
-                // 장착 버튼을 보일지 정하는 사전 차단. 허용 목록(AllowedMainHandCategories)은 서버에만 있어서 서버가 한 번 더 검증한다.
-                bool isEquippable = stack.Source is EquipmentItem eq
-                                    && eq.Category != WeaponCategory.Quiver
-                                    && (eq.Category != WeaponCategory.None || eq.Restriction != null);
+
+                // 장착 버튼을 보일지 정하는 사전 차단. 파츠(방어구/악세사리)는 부위 정보(Restriction)가 있으면 보이고,
+                // 무기는 서버가 허용하는 종류(MainHandRules)만 보여서 서버 거부와 같은 기준을 쓴다.
+                bool isEquippable = stack.Source is EquipmentItem eq                // 아이템이 장비인가? ─ 아니오 ─> '장착' 버튼 없음
+                                    && (eq.Category == WeaponCategory.None          // ① 이 아이템은 무기가 아닌가? (= 상의 같은 파츠인가?)
+                                        ? eq.Restriction != null                    // ② 예: 파츠다 → "어느 부위 파츠인지 정보가 있나"를 본다. 부위 정보(Restriction)가 있으면 버튼 보임
+                                        : MainHandRules.IsAllowed(eq.Category));    // ③ 아니오: 무기다 → "서버가 허용하는 무기 종류인가"를 본다. 서버가 허용하는 종류(IsAllowed)면 버튼 보임
+
                 bool isEquippedWeapon = stack.Source is EquipmentItem weaponCheck
                                     && weaponCheck.Category != WeaponCategory.None
                                     && weaponCheck.Category != WeaponCategory.Quiver

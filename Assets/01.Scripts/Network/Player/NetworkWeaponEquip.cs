@@ -21,17 +21,6 @@ namespace MySecondWorld.Network
         // 미장착 표시. 장착한 무기의 dbKey와 인벤토리 칸 번호 양쪽에 쓴다.
         // 0은 실제 dbKey일 수도, 0번 칸일 수도 있어서 쓰지 않는다 (Vault도 빈 슬롯을 -1로 쓴다).
         private const int Unequipped = -1;
-
-        // 이 Category 이외에는 MainHand 장착 자체를 거부한다(2026-07-20 스코프 조정 —
-        // 둔기류/너클/Staff/Sceptre는 맞는 애니메이션이 없어 이번 Phase 제외).
-        // TODO: 해당 카테고리의 애니메이션이 생기면 허용
-        private static readonly HashSet<WeaponCategory> AllowedMainHandCategories = new()
-        {
-            WeaponCategory.Sword, WeaponCategory.Dagger, WeaponCategory.Axe, WeaponCategory.Polearm,
-            WeaponCategory.Bow,
-            WeaponCategory.Ring, WeaponCategory.Bracelet, WeaponCategory.Necklace,
-        };
-
         #endregion
 
         #region 인스펙터 설정
@@ -153,7 +142,7 @@ namespace MySecondWorld.Network
 
         // 장착 방어는 3겹이다.
         // 1) 서버 검증: ServerTryEquipMainHand(요청 시), ServerValidateMainHand(인벤토리 변경 후). 진짜 상태는 항상 서버 기준.
-        // 2) 클라 사전 차단: InventoryUI의 isEquippable. 이상한 요청이 애초에 안 나가게 한다.
+        // 2) 클라 사전 차단: InventoryUI의 isEquippable. 이상한 요청이 애초에 안 나가게 한다. (허용 기준은 MainHandRules를 서버와 같이 씀)
         // 3) 거부 후 클라 보정: CmdEquipMainHand가 거부되면 TargetResyncMainHand로 서버 값을 돌려보낸다.
 
         // 클라가 보낸 장착 요청. 서버가 거부하면 요청한 클라의 예측 화면을 서버 값으로 되돌린다.
@@ -193,7 +182,7 @@ namespace MySecondWorld.Network
                 return false;
             }
 
-            if (!AllowedMainHandCategories.Contains(item.Category))
+            if (!MainHandRules.IsAllowed(item.Category))
             {
                 Debug.LogWarning($"[Equip][Server] 거부 — Category={item.Category}가 허용 목록에 없음");
                 return false;
