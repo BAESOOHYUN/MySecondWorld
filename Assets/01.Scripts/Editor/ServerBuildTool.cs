@@ -176,7 +176,21 @@ namespace MySecondWorld.Editor
                 options = BuildOptions.None
             };
 
-            BuildReport report = BuildPipeline.BuildPlayer(buildPlayerOptions);
+            // 프로필에서 'Build App Bundle'이 켜져 있으면(스토어용 AAB 설정) .apk 이름의 AAB가 나와 폰에서 설치 오류가 난다.
+            // 폰 테스트용이므로 이번 빌드만 끄고, 끝나면 원래 값으로 되돌린다.
+            bool prevBuildAppBundle = EditorUserBuildSettings.buildAppBundle;
+            EditorUserBuildSettings.buildAppBundle = false;
+
+            BuildReport report;
+            try
+            {
+                report = BuildPipeline.BuildPlayer(buildPlayerOptions);
+            }
+            finally
+            {
+                EditorUserBuildSettings.buildAppBundle = prevBuildAppBundle;
+            }
+
             if (report.summary.result == BuildResult.Succeeded)
             {
                 Debug.Log($"🎉 [Deploy-Android] APK 빌드 성공! 위치: {AndroidBuildPath}");
