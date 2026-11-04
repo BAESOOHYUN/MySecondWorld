@@ -68,8 +68,10 @@ namespace MySecondWorld.AI
                 builder.RegisterInstance(localLLM).As<ILLMService>();
             }
 
-            // TTS는 Azure 한국어 감정 미지원으로 Edge 고정
-            builder.RegisterInstance(gameObject.AddComponent<TypecastTTSService>()).As<ITTSService>();
+            // TTS: Typecast. NPC별 보이스 ID는 NPCSystemPromptSO에서 받는다
+            var tts = gameObject.AddComponent<TypecastTTSService>();
+            tts.Init(brain != null && brain.SystemPrompt != null ? brain.SystemPrompt.VoiceId : null);
+            builder.RegisterInstance(tts).As<ITTSService>();
         }
     }
 }

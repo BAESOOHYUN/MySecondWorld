@@ -10,8 +10,9 @@ namespace MySecondWorld.AI.Voice
     public class TypecastTTSService : MonoBehaviour, ITTSService
     {
         private const string Url = "https://api.typecast.ai/v1/text-to-speech";
-        private const string VoiceId = "tc_694395d43f2c8d9d43e9a897"; // GET /v3/voices 또는 웹에서 복사
-                                                                      // TODO: 추후 NPC마다 목소리 변경해야함. 지금은 테스트
+        private const string DefaultVoiceId = "tc_694395d43f2c8d9d43e9a897"; // SO에 보이스가 비어 있을 때의 기본값
+                                                                             // 웹 (https://studio.typecast.ai/developers/api/voices)에서 복사
+        private string _voiceId = DefaultVoiceId;
 
         // SemaphoreSlim(n): 동시에 n개의 작업만 통과시키는 문.
         // WaitAsync()로 입장, Release()로 퇴장하고, 자리가 없으면 await로 줄을 선다.
@@ -26,7 +27,7 @@ namespace MySecondWorld.AI.Voice
         [Serializable] private class Output { public string audio_format = "wav"; }
         [Serializable] private class Req
         {
-            public string voice_id = VoiceId;
+            public string voice_id;
             public string text;
             public string model = "ssfm-v30";
             public string language = "kor";
@@ -34,12 +35,17 @@ namespace MySecondWorld.AI.Voice
             public Output output = new();
         }
 
+        public void Init(string voiceId)
+        {
+            if (!string.IsNullOrEmpty(voiceId)) _voiceId = voiceId;
+        }
+
         public async UniTask<AudioClip> FetchAsync(string text, CancellationToken ct = default)
         {
             _apiKey ??= MySecondWorld.AI.SecretKeyLoader.Load("typecast_api_key");
             if (string.IsNullOrEmpty(_apiKey)) return null;
 
-            string json = JsonUtility.ToJson(new Req { text = text });
+            string json = JsonUtility.ToJson(new Req { voice_id = _voiceId, text = text });
             await _gate.WaitAsync(ct);
             try
             {

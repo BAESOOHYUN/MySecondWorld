@@ -21,6 +21,10 @@ namespace MySecondWorld.AI
         [TextArea(3, 6)]
         [SerializeField] private string worldContext = "여기는 중세 판타지 마을입니다. 마법과 몬스터가 존재합니다.";
 
+        [Header("Voice")]
+        [Tooltip("현재 TTS 서비스가 쓰는 보이스 ID. 비워 두면 서비스의 기본 보이스 사용")]
+        [SerializeField] private string voiceId = "";
+
         [Header("Inference Settings")]
         [Tooltip("응답 최대 토큰 수. 저사양 기기에서는 30~50 권장")]
         [SerializeField] private int maxResponseTokens = 40;
@@ -36,6 +40,7 @@ namespace MySecondWorld.AI
         public string NpcName => npcName;
         public string NpcGuid => npcGuid;
         public string NpcLocation => npcLocation;
+        public string VoiceId => voiceId;
         public int MaxResponseTokens => maxResponseTokens;
 
         /// <summary>
@@ -76,7 +81,7 @@ namespace MySecondWorld.AI
                 sb.AppendLine();
             }
 
-            sb.AppendLine("짧고 자연스럽게 대답하세요. 한국어로 대화합니다.");
+            sb.AppendLine("반드시 두 문장 이내로, 짧고 자연스럽게 대답하세요. 한국어로 대화합니다.");
             return sb.ToString().Trim();
         }
 
