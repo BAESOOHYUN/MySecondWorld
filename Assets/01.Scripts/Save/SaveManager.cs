@@ -5,7 +5,7 @@ using UnityEngine;
 namespace MySecondWorld.Save
 {
     /// <summary>
-    /// 서버 전용 JSON 세이브 관리자 (Singleton).
+    /// 서버 전용 JSON 세이브 관리자 (VContainer Lifetime.Singleton으로 등록).
     /// 유저별 데이터(위치, 씬, 컴패니언 등)를 saves/{playerId}.json 파일로 안전하게 보관합니다.
     /// </summary>
     public class SaveManager

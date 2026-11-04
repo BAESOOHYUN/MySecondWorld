@@ -96,7 +96,7 @@ namespace MySecondWorld.AI.Voice
 
         /// <summary>
         /// WAV bytes를 Groq에 전송하고 텍스트를 반환한다.
-        /// UniTask.SwitchToThreadPool()으로 메인스레드 블로킹 방지.
+        /// UnityWebRequest(비동기)로 전송하므로 메인스레드를 막지 않는다.
         /// </summary>
         private async UniTask<string> TranscribeAsync(byte[] wavBytes, CancellationToken ct)
         {
@@ -216,6 +216,5 @@ namespace MySecondWorld.AI.Voice
 //  TrimClip() → 무음 30초 방지
 //  EncodeToWav() → float → short → RIFF 헤더
 //  TranscribeAsync()
-//    SwitchToThreadPool() → SDK 동기 호출 (HTTP POST to Groq)
-//    SwitchToMainThread() → 복귀
+//    UnityWebRequest.SendWebRequest() → HTTP POST to Groq (await, 스레드 전환 없음)
 //결과 텍스트 반환

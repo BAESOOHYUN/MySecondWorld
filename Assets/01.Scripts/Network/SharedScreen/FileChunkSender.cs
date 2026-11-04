@@ -8,7 +8,7 @@ using UnityEngine.Networking;
 namespace MySecondWorld.Network
 {
     /// <summary>
-    /// 로컬 파일을 byte[] 로 읽고, 64KB씩 잘라서 SharedScreenController의 Command를 호출
+    /// 로컬 파일을 byte[] 로 읽고, SharedScreenConstants.ChunkSize(12,000B)씩 잘라서 SharedScreenController의 Command를 호출
     /// byte[]를 보내는 쪽. <-> 받는 쪽(SharedScreenController.RpcReceiveFileChunk)
     /// </summary>
     public static class FileChunkSender
