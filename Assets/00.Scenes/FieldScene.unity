@@ -941436,6 +941436,11 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 11400000, guid: bde60364b1b4e7e469b282e54249044d,
         type: 2}
+    - target: {fileID: 3084234201633616361, guid: 301df057ffda16644a17fdacb19192bc,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3246674798632750291, guid: 301df057ffda16644a17fdacb19192bc,
         type: 3}
       propertyPath: sceneId
@@ -941453,6 +941458,11 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 11400000, guid: bde60364b1b4e7e469b282e54249044d,
         type: 2}
+    - target: {fileID: 5052978606636347911, guid: 301df057ffda16644a17fdacb19192bc,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5267820053518112160, guid: 301df057ffda16644a17fdacb19192bc,
         type: 3}
       propertyPath: _memory
@@ -941470,6 +941480,11 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 11400000, guid: bde60364b1b4e7e469b282e54249044d,
         type: 2}
+    - target: {fileID: 5572107130712189117, guid: 301df057ffda16644a17fdacb19192bc,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6205510044624858007, guid: 301df057ffda16644a17fdacb19192bc,
         type: 3}
       propertyPath: m_text
@@ -941480,6 +941495,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: NPC_Ari
       objectReference: {fileID: 0}
+    - target: {fileID: 6710140473376936914, guid: 301df057ffda16644a17fdacb19192bc,
+        type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: ffd645163b3203c46b183341ca4737d6, type: 2}
     - target: {fileID: 8213038841646741866, guid: 301df057ffda16644a17fdacb19192bc,
         type: 3}
       propertyPath: m_LocalScale.y

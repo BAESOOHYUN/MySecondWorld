@@ -1,4 +1,5 @@
 using Cysharp.Threading.Tasks;
+using MySecondWorld.Customization;
 using System.Threading;
 using UnityEngine;
 using VContainer;
@@ -7,28 +8,64 @@ namespace MySecondWorld.AI.Voice
 {
     public class NPCLipSyncController : MonoBehaviour
     {
-        [SerializeField] private MeshRenderer[] _facePlates;
+        // --- 인스펙터 ---
+        [SerializeField] private MeshRenderer[] _facePlates; // [0]=Female, [1]=Male 순서에 의존
         [SerializeField] private Material _neutral;
         [SerializeField] private Material _mouthSmall;
         [SerializeField] private Material _mouthMid;
         [SerializeField] private Material _mouthOpen;
 
+        // --- 튜닝 상수 ---
+        private const int FemaleIdx = 0;
+        private const int MaleIdx = 1;
+        private const float SMOOTH_SPEED = 5f; // 낮출수록 더 느리게 반응
+        private const float HOLD_TIME = 0.05f; // 입 모양 최소 유지 시간 (50ms)
+
+        // --- 주입받은 참조 ---
         private AudioSource[] _sources;
+        private NPCCharacterCustomizer _customizer;
+
+        // --- 진폭 샘플링 상태 ---
         //오디오는 초당 44,100개의 샘플(44.1kHz)로 이루어진 연속 스트림
         //지금 막 재생된 256개 묶음 (5.8ms, 0.0058초)   → "지금 얼마나 큰 소리인가"
         private readonly float[] _samples = new float[256];
         private float _smoothedAmplitude;
-        private const float SMOOTH_SPEED = 5f;  // 낮출수록 더 느리게 반응
         private float _holdTimer;
-        private const float HOLD_TIME = 0.05f; // 80ms 유지
+
+        // --- 립싱크 상태 ---
+        private MeshRenderer _activeFacePlate; // 지금 성별에 맞게 켜 둔 판때기
         private CancellationTokenSource _lipSyncCts;
 
         [Inject]
-        private void Construct(NPCVoicePlayer voicePlayer)
+        private void Construct(NPCVoicePlayer voicePlayer, NPCCharacterCustomizer customizer)
         {
+            _customizer = customizer;
+            _customizer.AppearanceApplied += ApplyFacePlateByGender;
             _sources = voicePlayer.Sources;
             voicePlayer.OnSpeakStarted += StartLipSync;
             voicePlayer.OnSpeakFinished += StopLipSync;
+            ShowFacePlate(-1); // 외형이 적용되기 전에는 얼굴 판때기를 숨긴다 (성별이 정해지면 하나만 켠다)
+        }
+
+        private void OnDestroy()
+        {
+            _customizer.AppearanceApplied -= ApplyFacePlateByGender;
+        }
+
+        // active 인덱스의 판때기만 켠다. -1이면 전부 끈다.
+        private void ShowFacePlate(int active)
+        {
+            for (int i = 0; i < _facePlates.Length; i++)
+                _facePlates[i].gameObject.SetActive(i == active); // 인덱스가 active인 판때기만 켜고 나머지는 끔
+
+            _activeFacePlate = active >= 0 ? _facePlates[active] : null;  // int로 active 된 플레이트를 대입, -1이면 전부 끔
+        }
+
+        private void ApplyFacePlateByGender()
+        {
+            bool female = _customizer.GetCurrentAppearance().Gender == Gender.Female;
+            ShowFacePlate(female ? FemaleIdx : MaleIdx);
+            SetMaterial(_neutral);
         }
 
         private void StartLipSync()
@@ -88,13 +125,8 @@ namespace MySecondWorld.AI.Voice
 
         private void SetMaterial(Material mat)
         {
-            foreach (var facePlate in _facePlates)
-            {
-                if (facePlate != null)
-                {
-                    facePlate.material = mat;
-                }
-            }
+            if (_activeFacePlate != null)
+                _activeFacePlate.material = mat;
         }
 
         private float SampleAmplitude()

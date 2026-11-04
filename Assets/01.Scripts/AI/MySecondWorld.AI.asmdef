@@ -16,7 +16,8 @@
         "MySecondWorld.Inventory.Items",
         "MySecondWorld.Combat",
         "MySecondWorld.Interaction",
-        "MySecondWorld.Camera"
+        "MySecondWorld.Camera",
+        "MySecondWorld.Customization"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
