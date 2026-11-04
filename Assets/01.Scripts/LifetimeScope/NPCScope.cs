@@ -69,7 +69,7 @@ namespace MySecondWorld.AI
             }
 
             // TTS는 Azure 한국어 감정 미지원으로 Edge 고정
-            builder.RegisterInstance(gameObject.AddComponent<EdgeTTSServiceNativeWebSocket>()).As<ITTSService>();
+            builder.RegisterInstance(gameObject.AddComponent<TypecastTTSService>()).As<ITTSService>();
         }
     }
 }
