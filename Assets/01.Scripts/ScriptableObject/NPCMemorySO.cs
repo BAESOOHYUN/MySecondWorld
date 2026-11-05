@@ -152,8 +152,11 @@ namespace MySecondWorld.AI
         public void Load(string npcKey)
         {
             string path = SavePath(npcKey);
-            if (!File.Exists(path))
+            if (!File.Exists(path)) // 새 계정이면 이전 계정 기억 비움 (파일 없으니 삭제는 안 일어남)
+            {
+                Clear(npcKey);
                 return;
+            }
 
             var data = JsonUtility.FromJson<SaveData>(File.ReadAllText(path));
             if (data == null)

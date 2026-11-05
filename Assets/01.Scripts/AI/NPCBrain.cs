@@ -8,6 +8,7 @@ using UnityEngine;
 using MessagePipe;
 using VContainer;
 using MySecondWorld.Network;
+using System.IO;
 
 namespace MySecondWorld.AI
 {
@@ -40,6 +41,18 @@ namespace MySecondWorld.AI
                         _cachedUniqueId = $"{name}_{GetInstanceID()}";
                 }
                 return _cachedUniqueId;
+            }
+        }
+        
+        public string MemoryKey
+        {
+            get 
+            {
+                string acc = MySecondWorld.Network.PlayerSession.LocalPlayerName;
+                if (string.IsNullOrEmpty(acc)) acc = "default";
+                foreach (char c in Path.GetInvalidFileNameChars())  // 파일 이름에 쓸 수 없는 글자들의 목록 \ / : * ? " < > | 등
+                    acc = acc.Replace(c, '_');                      // 금지 글자를 _로 교체
+                return $"{UniqueId}_{acc}";
             }
         }
 
@@ -118,7 +131,7 @@ namespace MySecondWorld.AI
                 // 1. 대화 히스토리 즉시 반영 및 영구 저장
                 _sessionBuffer.Add((evt.Text, response));
                 _memory?.AddHistoryEntry(evt.Text, response);
-                _memory?.Save(UniqueId);
+                _memory?.Save(MemoryKey);
 
                 // 2. 응답 이벤트 발행 (UI 업데이트)
                 _responsePub.Publish(new NPCResponseReceivedEvent(
@@ -158,7 +171,7 @@ namespace MySecondWorld.AI
 
         private void Start()
         {
-            _memory?.Load(UniqueId);
+            _memory?.Load(MemoryKey);
 
             // 서버 상태 => 로컬 메모리 동기화
             if (_serverState != null && _memory != null)
@@ -176,7 +189,7 @@ namespace MySecondWorld.AI
 
         private void OnDestroy()
         {
-            _memory?.Save(UniqueId);
+            _memory?.Save(MemoryKey);
         }
 
         #endregion
@@ -274,7 +287,7 @@ namespace MySecondWorld.AI
                 return string.Empty;
 
             _memory?.IncrementConversationCount();
-            _memory?.Save(UniqueId);
+            _memory?.Save(MemoryKey);
 
             return response;
         }
@@ -346,7 +359,7 @@ namespace MySecondWorld.AI
                 {
                     Debug.Log($"[NPCBrain] 새 팩트: {trimmed}");
                     _memory.AddKnowFact(trimmed);
-                    _memory.Save(UniqueId);
+                    _memory.Save(MemoryKey);
                 }
             }
             catch (OperationCanceledException) { }
@@ -354,7 +367,7 @@ namespace MySecondWorld.AI
 
         private void ResetMemory()
         {
-            _memory?.Clear(UniqueId);
+            _memory?.Clear(MemoryKey);
             _llmService?.ClearHistory(); // 대화 히스토리도 같이 초기화
         }
         #endregion
