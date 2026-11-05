@@ -23,13 +23,15 @@ namespace MySecondWorld.AI.Voice
 
         private static string _apiKey;
 
-        [Serializable] private class Prompt { public string emotion_preset = "normal"; public float emotion_intensity = 1f; }
+        //[Serializable] private class Prompt { public string emotion_preset = "normal"; public float emotion_intensity = 1f; }
+        //[Serializable] private class Prompt { public string emotion_type = "preset"; public string emotion_preset = "normal"; public float emotion_intensity = 1f; }
+        [Serializable] private class Prompt { public string emotion_type = "smart"; public string previous_text; public string next_text; }
         [Serializable] private class Output { public string audio_format = "wav"; }
         [Serializable] private class Req
         {
             public string voice_id;
             public string text;
-            public string model = "ssfm-v30";
+            public string model = "ssfm-v31";
             public string language = "kor";
             public Prompt prompt = new();
             public Output output = new();
@@ -47,6 +49,7 @@ namespace MySecondWorld.AI.Voice
 
             string json = JsonUtility.ToJson(new Req { voice_id = _voiceId, text = text });
             await _gate.WaitAsync(ct);
+
             try
             {
                 using var req = new UnityWebRequest(Url, "POST");
