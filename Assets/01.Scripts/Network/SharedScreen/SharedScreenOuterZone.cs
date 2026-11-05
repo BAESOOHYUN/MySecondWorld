@@ -1,5 +1,6 @@
 using UnityEngine;
 using MySecondWorld.Network.Player;
+using MySecondWorld.Utils;
 
 namespace MySecondWorld.Network
 {
@@ -31,5 +32,8 @@ namespace MySecondWorld.Network
             if (other.TryGetComponent(out NetworkPlayerController player) && player.isLocalPlayer)
                 _controller.CmdExitOuterZone();
         }
+
+        private void OnDrawGizmos() => GizmoUtils.DrawCollider(GetComponent<Collider>(), transform, Color.yellow, 0.15f);
+        private void OnDrawGizmosSelected() => GizmoUtils.DrawCollider(GetComponent<Collider>(), transform, Color.yellow, 0.35f);
     }
 }

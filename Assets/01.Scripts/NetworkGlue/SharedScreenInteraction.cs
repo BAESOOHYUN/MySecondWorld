@@ -2,6 +2,7 @@ using UnityEngine;
 using VContainer;
 using VContainer.Unity;
 using MySecondWorld.Network.Player;
+using MySecondWorld.Utils;
 
 namespace MySecondWorld.Network
 {
@@ -54,5 +55,8 @@ namespace MySecondWorld.Network
                     _screenUI.SetActive(false);
             }
         }
+
+        private void OnDrawGizmos() => GizmoUtils.DrawCollider(GetComponent<BoxCollider>(), transform, Color.cyan, 0.15f);
+        private void OnDrawGizmosSelected() => GizmoUtils.DrawCollider(GetComponent<BoxCollider>(), transform, Color.cyan, 0.35f);
     }
 }
