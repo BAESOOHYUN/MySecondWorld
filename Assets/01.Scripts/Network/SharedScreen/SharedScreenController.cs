@@ -207,9 +207,11 @@ namespace MySecondWorld.Network
 
             // [C2 서버 검증] 상한·정합성 검증 — 발표자 등록, 상태 변경, new byte[] 보다 먼저 해서 거짓 값이 서버 상태를 건드리지 못하게 한다
             //   totalSize: 0 이하이거나 MaxFileSize 초과면 거부 (거대한 값으로 서버 메모리를 소모시키는 것 방지)
-            if (totalSize <= 0 || totalSize > SharedScreenConstants.MaxFileSize) return;
+            if (totalSize <= 0 || totalSize > SharedScreenConstants.MaxFileSize)
+                return;
             //   totalChunkCount가 ceil(totalSize / ChunkSize)와 일치하는지 검사 (청크가 다 도착했는지가 아니라, 신고한 청크 수가 크기와 맞는지)
-            if (totalChunkCount != (totalSize + SharedScreenConstants.ChunkSize - 1) / SharedScreenConstants.ChunkSize) return;
+            if (totalChunkCount != (totalSize + SharedScreenConstants.ChunkSize - 1) / SharedScreenConstants.ChunkSize)
+                return;
 
             // 내부 발표자 등록 : 파일 여는 사람이 자동으로 발표자
             if (sender?.identity != null)
@@ -245,15 +247,19 @@ namespace MySecondWorld.Network
         [Command(requiresAuthority = false)]
         public void CmdSendFileChunk(int chunkIndex, byte[] data, NetworkConnectionToClient sender = null)
         {
-            if (sender?.identity == null || sender.identity.netId != _presenterId) return;
-            if (_cachedFileBuffer == null || data == null) return;
-            if (chunkIndex < 0 || chunkIndex >= _cachedTotalChunkCount) return;
+            if (sender?.identity == null || sender.identity.netId != _presenterId)
+                return;
+            if (_cachedFileBuffer == null || data == null)
+                return;
+            if (chunkIndex < 0 || chunkIndex >= _cachedTotalChunkCount)
+                return;
 
             // offset = 이 청크가 원본 파일 전체(byte[] 버퍼)에서 시작하는 위치 (바이트 단위, 0부터)
             //   chunkIndex 0 → 0, 1 → 12000, 2 → 24000 ... (ChunkSize = 12000B)
             var offset = chunkIndex * SharedScreenConstants.ChunkSize;
             // 이 조각을 offset에 꽂았을 때 버퍼 끝을 넘으면 거부 ([C2 서버 검증] 범위 검사 — 마지막 청크는 ChunkSize보다 짧을 수 있다)
-            if (offset + data.Length > _cachedFileBuffer.Length) return;
+            if (offset + data.Length > _cachedFileBuffer.Length)
+                return;
             
             Buffer.BlockCopy(data, 0, _cachedFileBuffer, offset, data.Length);
 
@@ -273,13 +279,15 @@ namespace MySecondWorld.Network
         [Command(requiresAuthority = false)]
         public void CmdSendFileEnd(int totalSize, NetworkConnectionToClient sender = null)
         {
-            if (sender?.identity == null || sender.identity.netId != _presenterId) return;
-            if (_cachedFileBuffer == null) return;
+            if (sender?.identity == null || sender.identity.netId != _presenterId)
+                return;
+            if (_cachedFileBuffer == null)
+                return;
 
             _currentPage = 0;  // 서버에서 SyncVar 세팅
             _isCacheReady = true;
             _cachedTotalPageCount = SharedScreenRenderer.GetPageCount(_cachedFileBuffer, _cachedFileType);
-            
+
             foreach (var conn in new List<NetworkConnectionToClient>(_outerObservers))
             {
                 if (_transferRecipients.Contains(conn))
@@ -317,6 +325,7 @@ namespace MySecondWorld.Network
                 _cachedFileBuffer = null;
             }
             _outerObservers.Remove(sender);
+            TargetRpcClearScreen(sender); // 존을 나가는 사람의 화면도 비운다 — 이후 발표 종료 신호를 못 받으므로
         }
 
         // 서버에 페이지 변경 요청

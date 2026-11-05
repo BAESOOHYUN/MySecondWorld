@@ -282,14 +282,6 @@ namespace MySecondWorld.Network
             nw = Mathf.Clamp01(nw);
             nh = Mathf.Clamp01(nh);
 
-            /* Debug.Log($"[ViewRect] nx={nx:F3} ny={ny:F3} nw={nw:F3} nh={nh:F3} " +
-                 $"anchoredPos=({pageContainer.anchoredPosition.x:F1},{pageContainer.anchoredPosition.y:F1}) " +
-                 $"containerPivot=({pageContainer.pivot.x:F2},{pageContainer.pivot.y:F2}) " +
-                 $"viewLT=({viewLeftX:F1},{viewTopY:F1}) " +
-                 $"pageLT=({pageLeftX:F1},{pageTopY:F1}) " +
-                 $"pageAnchor=({pageRT.anchoredPosition.x:F1},{pageRT.anchoredPosition.y:F1}) " +
-                 $"pagePivot=({pageRT.pivot.x:F2},{pageRT.pivot.y:F2})");*/
-
             return new Vector4(nx, ny, nw, nh);
         }
 

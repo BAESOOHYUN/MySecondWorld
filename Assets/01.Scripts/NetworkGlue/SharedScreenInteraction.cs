@@ -1,7 +1,7 @@
-using MySecondWorld.Network.Player;
 using UnityEngine;
 using VContainer;
 using VContainer.Unity;
+using MySecondWorld.Network.Player;
 
 namespace MySecondWorld.Network
 {
@@ -25,7 +25,7 @@ namespace MySecondWorld.Network
 
         private void OnTriggerEnter(Collider other)
         {
-            if (other.TryGetComponent(out NetworkPlayerController player))
+            if (other.TryGetComponent(out NetworkPlayerController player) && player.isLocalPlayer)
             {
                 if (_controller == null)
                 {
@@ -48,7 +48,7 @@ namespace MySecondWorld.Network
 
         private void OnTriggerExit(Collider other)
         {
-            if (other.TryGetComponent(out NetworkPlayerController player))
+            if (other.TryGetComponent(out NetworkPlayerController player) && player.isLocalPlayer)
             {
                 if (_screenUI != null)
                     _screenUI.SetActive(false);

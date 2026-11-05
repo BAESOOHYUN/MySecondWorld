@@ -1,8 +1,8 @@
 using UnityEngine;
+using MySecondWorld.Network.Player;
 
 namespace MySecondWorld.Network
 {
-    // 바깥 존(OuterZone) — 진입/퇴장을 서버에 알려 파일 수신 대상(_outerObservers)으로 등록·해제한다. (안쪽 존: SharedScreenInteraction)
     public class SharedScreenOuterZone : MonoBehaviour
     {
         [SerializeField] private SharedScreenController _controller;
@@ -14,7 +14,7 @@ namespace MySecondWorld.Network
 
         private void OnTriggerEnter(Collider other)
         {
-            if (other.TryGetComponent(out Player.NetworkPlayerController player))
+            if (other.TryGetComponent(out NetworkPlayerController player) && player.isLocalPlayer)
             {
                 if (_controller == null)
                 {
@@ -28,7 +28,7 @@ namespace MySecondWorld.Network
         
         private void OnTriggerExit(Collider other)
         {
-            if (other.TryGetComponent(out Player.NetworkPlayerController player))
+            if (other.TryGetComponent(out NetworkPlayerController player) && player.isLocalPlayer)
                 _controller.CmdExitOuterZone();
         }
     }
