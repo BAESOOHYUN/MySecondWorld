@@ -13,6 +13,7 @@ namespace MySecondWorld.Network
     /// </summary>
     public static class FileChunkSender
     {
+        // (청크 프로토콜) 보내는 쪽: 로컬 파일을 ChunkSize씩 잘라 CmdSendFileStart → CmdSendFileChunk × N → CmdSendFileEnd 순서로 호출
         public static void SendFileFromLocalstore(SharedScreenController controller, string filePath, FileType fileType, bool allowDownload = false)
         {
             string fileName = Path.GetFileName(filePath);
@@ -39,6 +40,7 @@ namespace MySecondWorld.Network
             controller.CmdSendFileEnd(totalSize);
         }
 
+        // (청크 프로토콜) 보내는 쪽: URL에서 내려받은 파일을 같은 방식(Start → Chunk × N → End)으로 전송
         public static async UniTask SendFileFromUrlAsync(SharedScreenController controller, string url, FileType fileType, bool allowDownload = false, CancellationToken ct = default)
         {
             try

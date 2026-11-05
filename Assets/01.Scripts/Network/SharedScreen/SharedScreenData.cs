@@ -38,5 +38,6 @@ namespace MySecondWorld.Network
     public static class SharedScreenConstants
     {
         public const int ChunkSize = 12000;
+        public const int MaxFileSize = 50 * 1024 * 1024; // 서버가 new byte[]로 잡는 상한 (EC2 t3.small 2GB 기준, 필요하면 조정)
     }
 }

@@ -8,6 +8,7 @@ namespace MySecondWorld.Network
     // TODO : 차후 인터랙티브 아이템을 늘리며 확대 예정
     /// <summary>
     /// 플레이어가 월드 스크린에 다가가서 인터랙션하면 UI를 띄우는 컴포넌트
+    /// 안쪽 존(InnerZone) 역할 — 클라 전용으로, 네트워크 호출 없이 UI만 켜고 끈다. (바깥 존: SharedScreenOuterZone)
     /// </summary>
     public class SharedScreenInteraction : MonoBehaviour
     {
