@@ -9,6 +9,23 @@ namespace MySecondWorld.Network
 {
     /// <summary>
     /// 월드 Quad에 붙는 컴포넌트
+    ///
+    /// [청크 프로토콜] 파일을 ChunkSize(12,000B)씩 잘라 Start → Chunk × N → End 순서로 보낸다.
+    /// 이 흐름에서 고친 두 문제 (master TODO의 C1·C2, known-issues 문서의 1·2번):
+    ///
+    /// C1 전송 중 입장자 (정상 사용자의 타이밍 버그)
+    ///   문제: 전송 도중 바깥 존에 들어온 사람은 Start를 못 받았는데 Chunk만 받아, 수신 버퍼가 없어 예외가 났다.
+    ///   해결: Start를 받은 사람(_transferRecipients)에게만 Chunk/End를 중계하고,
+    ///         도중 입장자는 End 때 서버 캐시를 처음부터(SendCachedFileToTarget) 받는다.
+    ///
+    /// C2 서버 검증 (비정상·악의적 입력에 대한 방어)
+    ///   문제: 서버가 클라이언트가 보낸 값을 믿고 있었다.
+    ///     ① 발표자가 아닌 사람도 Chunk/End를 호출할 수 있었다 (발표 중인 버퍼를 덮어쓸 수 있음)
+    ///     ② 범위 밖 chunkIndex / 버퍼를 넘는 크기는 서버 Buffer.BlockCopy 예외를 일으켰다
+    ///     ③ 거대한 totalSize는 new byte[totalSize]로 서버 메모리를 소모시켰다
+    ///     ④ End에서 클라가 보낸 totalSize를 그대로 모든 관객에게 중계했다
+    ///   해결: 발표자 검사(sender), chunkIndex·크기 범위 검사, MaxFileSize 상한 + 청크 수 정합성 검사,
+    ///         End는 서버가 Start에서 확정한 _cachedTotalSize를 쓴다.
     /// </summary>
     [RequireComponent(typeof(NetworkIdentity))]
     public class SharedScreenController : NetworkBehaviour
@@ -56,7 +73,7 @@ namespace MySecondWorld.Network
         private NetworkConnectionToClient _presenterConn;
         // 관찰자 목록 : 이 SharedScreen 오브젝트만의 로컬 상태
         private HashSet<NetworkConnectionToClient> _outerObservers = new HashSet<NetworkConnectionToClient>();
-        // [청크 프로토콜 · 전송 중 입장자 문제] 이번 전송의 Start를 실제로 받은 사람들.
+        // [청크 프로토콜 · C1 전송 중 입장자] 이번 전송의 Start를 실제로 받은 사람들.
         //   문제: 전송 도중 외곽 존에 들어온 사람은 Start를 못 받았는데 뒤이은 Chunk만 받아, 버퍼가 없어 예외가 났다.
         //   해결: Chunk/End는 이 목록에만 중계하고, 도중 입장자는 End 때 서버 캐시를 처음부터(Start → Chunk → End) 받는다.
         private readonly HashSet<NetworkConnectionToClient> _transferRecipients = new();
@@ -177,8 +194,8 @@ namespace MySecondWorld.Network
         }
 
         // [청크 프로토콜 1/3 Start] 발표자가 파일 정보를 알림 → 서버가 버퍼를 확보하고 이번 전송의 수신 대상을 확정
-        //   [전송 중 입장자] 이 시점의 _outerObservers만 _transferRecipients에 고정한다 (이후 입장자와 구분하려고)
-        //   [서버 검증] 발표자 검사 + 크기 상한(MaxFileSize) + 총 청크 수 정합성 — new byte[totalSize]로 메모리를 잡기 전에 검증
+        //   [C1 전송 중 입장자] 이 시점의 _outerObservers만 _transferRecipients에 고정한다 (이후 입장자와 구분하려고)
+        //   [C2 서버 검증] 발표자 검사 + 크기 상한(MaxFileSize) + 총 청크 수 정합성 — new byte[totalSize]로 메모리를 잡기 전에 검증
         [Command(requiresAuthority = false)]
         public void CmdSendFileStart(string fileName, FileType fileType, int totalSize, int totalChunkCount, bool allowDownload, NetworkConnectionToClient sender = null)
         {
@@ -188,7 +205,7 @@ namespace MySecondWorld.Network
             if (_presenterId != 0 && sender?.identity?.netId != _presenterId)
                 return;
 
-            // [서버 검증] 상한·정합성 검증 — 발표자 등록, 상태 변경, new byte[] 보다 먼저 해서 거짓 값이 서버 상태를 건드리지 못하게 한다
+            // [C2 서버 검증] 상한·정합성 검증 — 발표자 등록, 상태 변경, new byte[] 보다 먼저 해서 거짓 값이 서버 상태를 건드리지 못하게 한다
             //   totalSize: 0 이하이거나 MaxFileSize 초과면 거부 (거대한 값으로 서버 메모리를 소모시키는 것 방지)
             if (totalSize <= 0 || totalSize > SharedScreenConstants.MaxFileSize) return;
             //   totalChunkCount가 ceil(totalSize / ChunkSize)와 일치하는지 검사 (청크가 다 도착했는지가 아니라, 신고한 청크 수가 크기와 맞는지)
@@ -221,7 +238,7 @@ namespace MySecondWorld.Network
         }
 
         // [청크 프로토콜 2/3 Chunk] 발표자가 조각 1개를 보냄 → 서버가 버퍼에 이어 붙이고 수신 대상에게 중계
-        //   [서버 검증] 서버는 클라가 보낸 값을 믿지 않는다:
+        //   [C2 서버 검증] 서버는 클라가 보낸 값을 믿지 않는다:
         //     ① 발표자 검사 — sender가 현재 발표자가 아니면 거부 (아무나 Chunk를 보내 발표 중인 버퍼를 덮어쓰는 것 방지)
         //     ② 범위 검사 — chunkIndex가 [0, 총 청크 수) 안인지, offset + data.Length가 버퍼를 넘지 않는지
         //        (잘못된 값이면 Buffer.BlockCopy가 서버에서 예외를 던진다)
@@ -232,7 +249,10 @@ namespace MySecondWorld.Network
             if (_cachedFileBuffer == null || data == null) return;
             if (chunkIndex < 0 || chunkIndex >= _cachedTotalChunkCount) return;
 
+            // offset = 이 청크가 원본 파일 전체(byte[] 버퍼)에서 시작하는 위치 (바이트 단위, 0부터)
+            //   chunkIndex 0 → 0, 1 → 12000, 2 → 24000 ... (ChunkSize = 12000B)
             var offset = chunkIndex * SharedScreenConstants.ChunkSize;
+            // 이 조각을 offset에 꽂았을 때 버퍼 끝을 넘으면 거부 ([C2 서버 검증] 범위 검사 — 마지막 청크는 ChunkSize보다 짧을 수 있다)
             if (offset + data.Length > _cachedFileBuffer.Length) return;
             
             Buffer.BlockCopy(data, 0, _cachedFileBuffer, offset, data.Length);
@@ -245,11 +265,11 @@ namespace MySecondWorld.Network
         }
 
         // [청크 프로토콜 3/3 End] 전송 끝 → 페이지 수 계산, 캐시 확정(_isCacheReady), 수신자에게 End 전달
-        //   [서버 검증] 발표자 검사 + 버퍼가 null이면(= Start 없이 End만 호출) 거부
-        //   [서버 검증] 수신자에게 보내는 총 크기는 클라가 보낸 totalSize 인자가 아니라 서버가 Start에서 확정한 _cachedTotalSize여야 한다.
+        //   [C2 서버 검증] 발표자 검사 + 버퍼가 null이면(= Start 없이 End만 호출) 거부
+        //   [C2 서버 검증] 수신자에게 보내는 총 크기는 클라가 보낸 totalSize 인자가 아니라 서버가 Start에서 확정한 _cachedTotalSize여야 한다.
         //       클라 값을 그대로 중계하면 거짓 크기가 모든 관객에게 퍼진다 (관객은 이 값으로 버퍼 크기 일치를 검증하기 때문).
         //       totalSize 인자는 FileChunkSender 호환용으로만 남겨 둔다.
-        //   [전송 중 입장자] 전송 도중 입장한 사람은 Start를 못 받았으므로 End 대신 SendCachedFileToTarget으로 처음부터 받는다.
+        //   [C1 전송 중 입장자] 전송 도중 입장한 사람은 Start를 못 받았으므로 End 대신 SendCachedFileToTarget으로 처음부터 받는다.
         [Command(requiresAuthority = false)]
         public void CmdSendFileEnd(int totalSize, NetworkConnectionToClient sender = null)
         {
@@ -363,7 +383,10 @@ namespace MySecondWorld.Network
         private void TargetRpcReceiveFileChunk(NetworkConnection target, int chunkIndex, byte[] data)
         {
             // 핵심: 청크를 버퍼의 "올바른 위치"에 복사
-            // offset(시작 위치) 계산
+            // offset = 이 청크가 원본 파일 전체(수신 버퍼)에서 시작하는 위치 (바이트 단위, 0부터)
+            //   chunkIndex 0 → 0, 1 → 12000, 2 → 24000 ... 청크가 순서대로 오지 않아도 이 위치에 꽂으면 원본이 복원된다.
+            //   아래 Buffer.BlockCopy(data, 0, 버퍼, offset, data.Length)는
+            //   "조각 data의 0번째부터 data.Length바이트를 수신 버퍼의 offset 위치에 복사"라는 뜻이다.
             var offset = chunkIndex * SharedScreenConstants.ChunkSize;
             // 버퍼 받는 쪽이라 전체를 곱해서 원본 사이즈로 만듬.
             // 보내는 쪽(FileChunkSender)에서는 "파일 전체 크기/ChunkSize"로 나눔
@@ -531,7 +554,7 @@ namespace MySecondWorld.Network
         // 내부 헬퍼 
 
         // (청크 프로토콜) 특정 1명에게 서버 캐시를 Start → Chunk×N → End 순서로 재전송.
-        // 늦게 온 사람이 외곽 트리거 진입하면 호출 ([전송 중 입장자] 전송 도중 입장자는 End 때 여기로 보낸다)
+        // 늦게 온 사람이 외곽 트리거 진입하면 호출 ([C1 전송 중 입장자] 전송 도중 입장자는 End 때 여기로 보낸다)
         private void SendCachedFileToTarget(NetworkConnectionToClient conn)
         {
             if (_isCacheReady)
