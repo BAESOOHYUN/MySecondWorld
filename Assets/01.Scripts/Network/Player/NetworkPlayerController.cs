@@ -24,6 +24,12 @@ namespace MySecondWorld.Network.Player
         private AddressableLabelLoader _assetLoader;
         private GameNetworkManager _networkManager;
 
+        public static event System.Action LocalTeleported;   // 클래스 필드 영역
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() => LocalTeleported = null;
+
+
         [Inject]
         public void Construct(CharacterSaveService saveService,
                               NetworkCharacterAppearance networkAppearance,
@@ -157,6 +163,13 @@ namespace MySecondWorld.Network.Player
             // 위치만 옮기면 누적된 낙하 속도가 남아 다음 프레임에 지형을 뚫고 박힌다.
             if (_movementController != null)
                 _movementController.ResetVerticalVelocity();
+
+            // ApplyRescue는 소유 클라 한 곳에서만 실행되지 않는다.
+            // isOwned는 "이 객체의 소유자가 나(이 프로세스)인가"를 묻는다.
+            // 서버 사본이나 남의 객체에서는 false라서 거기서는 신호가 안 나간다.
+            // 이 이벤트는 내 화면의 존 UI를 닫으려는 것이므로 isOwned ==true일때만 발생시킨다.
+            if (isOwned) 
+                LocalTeleported?.Invoke();
         }
     }
 }
