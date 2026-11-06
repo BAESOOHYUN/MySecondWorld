@@ -69,9 +69,6 @@ namespace MySecondWorld.UI
         [Header("프리뷰 캐릭터")]
         [SerializeField] private LocalCharacterCustomizer _previewCustomizer;
 
-        // ── 상수 ──
-        private const string PrefKeyCustomized = "CharacterCustomized";
-
         // ── DI ──
         private AvatarPartKeyTableSO _keyTable;
         private CharacterAppearanceSO _defaultAppearanceSO;
@@ -142,20 +139,10 @@ namespace MySecondWorld.UI
 #endif
         }
 
-        // 창은 처음에 켜진 채로 생성되고, Start()가 맨 끝에서 SetActive(false)로 스스로 숨긴다.
-        // 이 때문에 Start()가 Open()보다 늦게 실행되는 순간이 문제가 된다. 
-        //
-        // [경쟁] Start는 오브젝트가 만들어진 뒤 첫 프레임 직전에 실행된다.
-        //        그런데 접속 직후 Open()이 Start보다 먼저 불릴 수 있다.
-        //        (예: 플레이어의 '접속 완료' 이벤트가 UI 생성 직후 도착)
-        //        이때 Start가 그대로 SetActive(false)하면, 방금 Open으로 연 창이 바로 닫혀 버린다.
-        //
-        // [표시] 그래서 Open()이 불리면 _openCalled = true 로 표시해 둔다.
-        //        Start는 _openCalled가 false일 때(= 아직 아무도 안 열었을 때)만 숨긴다.
-        //
-        // [외형 미저장 계정과의 관계] 외형 미저장 계정은 접속 직후 곧바로 Open(isInitialSetup: true)이 불려서
-        //        이 경쟁이 가장 잘 생기는 경우다. 하지만 이 값은 "미저장 계정인가"가 아니라
-        //        "Open이 이미 불렸는가"만 나타낸다. (메뉴로 열어도 false가 된다)
+        // 창은 켜진 채로 만들어지므로 Start에서 한 번 숨긴다.
+        // 단, Start보다 Open()이 먼저 불릴 수 있다. (예: 접속 직후 첫 설정 이벤트가 UI 생성 직후 도착)
+        // 이때 그대로 숨기면 방금 연 창이 바로 닫히므로, Open()이 _openCalled = true로 표시해 두고
+        // Start는 _openCalled가 false일 때(= 아직 아무도 안 열었을 때)만 숨긴다.
         private void Start()
         {
 #if UNITY_SERVER
@@ -203,7 +190,6 @@ namespace MySecondWorld.UI
                 _colorPicker.gameObject.SetActive(false);
         }
 
-        // 버튼 등록
         private void RegisterButtons()
         {
             if (_maleButton != null)
@@ -267,7 +253,6 @@ namespace MySecondWorld.UI
             if (_exitButton != null) _exitButton.onClick.AddListener(Close);
         }
 
-        // 색상
         private void InitColorRows()
         {
             foreach (ColorTarget target in System.Enum.GetValues(typeof(ColorTarget)))
@@ -289,9 +274,8 @@ namespace MySecondWorld.UI
             if (_inventoryProvider?.Inventory == null) return;  // 캐릭터 도착 전에는 열지 않는다
 
             _isInitialSetup = isInitialSetup;                   // 첫 설정 여부로 잠금 상태를 새로 정한다
-            if (_exitButton != null) 
+            if (_exitButton != null)
                 _exitButton.interactable = !isInitialSetup;     // 첫 설정 중에는 나가기 버튼을 누를 수 없게 한다
-
 
             _openCalled = true;             // Start()가 방금 연 창을 닫지 않게 표시
             gameObject.SetActive(true);
@@ -307,8 +291,6 @@ namespace MySecondWorld.UI
         #endregion
 
         #region 탭
-        // 탭 전환
-
         // 최상위 탭 전환 — 0=파츠, 1=액세서리, 2=색상
         public void ShowTopTab(int index)
         {
@@ -539,7 +521,6 @@ namespace MySecondWorld.UI
         #endregion
 
         #region 파츠·성별 적용
-        // 인덱스 초기화
         private void InitIndices(CharacterAppearanceData data)
         {
             // 저장된 외형을 로드해서 인덱스/ 프리뷰에 반영
@@ -568,7 +549,6 @@ namespace MySecondWorld.UI
             UpdateThumbnailSelection();
         }
 
-        // Gender
         private void SetGender(Gender gender)
         {
             if (gender == _currentGender) return; // 같은 성별 재클릭 무시
@@ -595,7 +575,6 @@ namespace MySecondWorld.UI
             SwitchTab(_currentTab);
         }
 
-        // 외형 적용
         private async UniTask ApplyCurrentAppearance()
         {
             await _previewCustomizer.ApplyAppearance(BuildData());
@@ -650,7 +629,6 @@ namespace MySecondWorld.UI
         #endregion
 
         #region 랜덤·리셋
-        // 랜덤
         private async UniTaskVoid ApplyRandom()
         {
             foreach (PartType part in System.Enum.GetValues(typeof(PartType)))
@@ -728,7 +706,6 @@ namespace MySecondWorld.UI
         }
 
 
-        // 리셋
         private async UniTaskVoid ResetToDefault()
         {
             var d = _defaultAppearanceSO.DefaultAppearance;
@@ -744,8 +721,6 @@ namespace MySecondWorld.UI
         #endregion
 
         #region 소유 검증
-        // 저장
-
         // 미소유 파츠를 fallback 값으로 되돌린 사본을 반환.
         // fallback 지정 시: 그 값(보통 "직전 저장값")으로 되돌림 — 서버 CmdSetAppearance와 동일하게
         //   "거부하고 이전 상태 유지" 의미. fallback의 그 값마저 미소유면(예: 그사이 아이템 상실) 맨몸(0)까지 떨어뜨림.
@@ -795,8 +770,6 @@ namespace MySecondWorld.UI
 
             _saveService.Save(data);
             _saveRequestPub.Publish(new CharacterAppearanceSyncRequestedEvent(data)); // 네트워크 동기화 요청
-            PlayerPrefs.SetInt(PrefKeyCustomized, 1);
-            PlayerPrefs.Save();
 
             // 검증 후 되돌려진 인덱스가 있으면 UI/미리보기도 즉시 그 모습으로 맞춘다
             InitIndices(data);
@@ -826,7 +799,6 @@ namespace MySecondWorld.UI
             RefreshColorRows(); // 색상 스와치/피커도 저장된 색으로 갱신
         }
 
-        // 유틸
         private CharacterAppearanceData BuildData()
         {
             var data = _previewCustomizer.GetCurrentAppearance(); // 현재 색상 유지

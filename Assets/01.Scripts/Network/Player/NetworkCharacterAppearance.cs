@@ -12,8 +12,6 @@ namespace MySecondWorld.Network
     [RequireComponent(typeof(Cleverous.VaultInventory.Inventory))]
     public class NetworkCharacterAppearance : NetworkBehaviour, IUseInventory
     {
-        private const string PrefKeyCustomized = "CharacterCustomized";
-
         [SyncVar(hook = nameof(OnAppearanceChanged))]
         private CharacterAppearanceData _appearance;
         [SyncVar] private bool _hasServerAppearance;
