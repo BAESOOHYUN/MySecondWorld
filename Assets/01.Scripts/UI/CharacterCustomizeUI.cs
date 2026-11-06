@@ -22,6 +22,8 @@ namespace MySecondWorld.UI
 
     public class CharacterCustomizeUI : MonoBehaviour
     {
+
+        #region 필드
         [Header("최상위 탭")]
         [SerializeField] private Toggle _partsTopTab;
         [SerializeField] private Toggle _accessoryTopTab;
@@ -109,6 +111,10 @@ namespace MySecondWorld.UI
         private bool _openCalled;
         private bool _isInitialSetup; // 첫 설정 중(외형 미저장 계정) 닫을 수 없다
 
+        private bool _isInitialized;
+        #endregion
+
+        #region 생명주기·초기화
         [Inject]
         public void Construct(AvatarPartKeyTableSO keyTable,
                             CharacterSaveService saveService,
@@ -127,8 +133,6 @@ namespace MySecondWorld.UI
             _previewCustomizer ??= GetComponentInChildren<LocalCharacterCustomizer>(true) ?? FindAnyObjectByType<LocalCharacterCustomizer>();
             _previewCustomizer?.Construct(keyTable, defaultAppearanceSO);
         }
-
-        private bool _isInitialized;
 
         private void Awake()
         {
@@ -181,22 +185,6 @@ namespace MySecondWorld.UI
                 Addressables.Release(_atlasHandle);
         }
 
-        private async UniTask<SpriteAtlas> EnsureAtlasLoadedAsync()
-        {
-            if (_thumbnailAtlas != null) return _thumbnailAtlas;
-            try
-            {
-                if (!_atlasHandle.IsValid())
-                    _atlasHandle = Addressables.LoadAssetAsync<SpriteAtlas>(_keyTable.ThumbnailAtlas);
-                _thumbnailAtlas = await _atlasHandle.ToUniTask();
-            }
-            catch (System.Exception ex)
-            {
-                Debug.LogError($"[CustomizeUI] SpriteAtlas 로드 실패: {ex.Message}");
-            }
-            return _thumbnailAtlas;
-        }
-
         private void EnsureInitialized()
         {
             if (_isInitialized) return;
@@ -213,39 +201,6 @@ namespace MySecondWorld.UI
             InitColorRows();
             if (_colorPicker != null)
                 _colorPicker.gameObject.SetActive(false);
-        }
-
-        // 패널을 열 때마다 호출 — 저장된 외형으로 다시 초기화한다.
-        // (저장 안 하고 닫았다가 다시 열면 편집 중이던 미저장 상태가 그대로 남아있던 버그 수정)
-        // isInitialSetup: 외형 미저장 계정의 첫 설정이면 true. 저장하기 전까지 닫을 수 없다.
-        //                 메뉴 등 일반 진입은 기본값(false)이라 자유롭게 닫을 수 있다.
-        public void Open(bool isInitialSetup = false)
-        {
-            if (_inventoryProvider?.Inventory == null) return;  // 캐릭터 도착 전에는 열지 않는다
-
-            _isInitialSetup = isInitialSetup;                   // 첫 설정 여부로 잠금 상태를 새로 정한다
-            if (_exitButton != null) 
-                _exitButton.interactable = !isInitialSetup;     // 첫 설정 중에는 나가기 버튼을 누를 수 없게 한다
-
-
-            _openCalled = true;             // Start()가 방금 연 창을 닫지 않게 표시
-            gameObject.SetActive(true);
-            ReloadFromSave().Forget();      // 저장된 외형으로 다시 채운다
-        }
-
-        private void Close()
-        {
-            if (_isInitialSetup) return;              // 첫 설정 중에는 닫을 수 없다 (저장하기 전까지)
-            _colorPicker.gameObject.SetActive(false); // 닫을 때도 피커를 비활성화해 다음 열릴 때 OnEnable 재오염(빨간색 초기화) 방지
-            gameObject.SetActive(false);
-        }
-
-        // 인덱스 초기화
-        private void InitIndices(CharacterAppearanceData data)
-        {
-            // 저장된 외형을 로드해서 인덱스/ 프리뷰에 반영
-            foreach (PartType part in System.Enum.GetValues(typeof(PartType)))
-                _currentIndices[part] = data[part];
         }
 
         // 버튼 등록
@@ -312,6 +267,46 @@ namespace MySecondWorld.UI
             if (_exitButton != null) _exitButton.onClick.AddListener(Close);
         }
 
+        // 색상
+        private void InitColorRows()
+        {
+            foreach (ColorTarget target in System.Enum.GetValues(typeof(ColorTarget)))
+            {
+                var row = Instantiate(_colorRowPrefab, _colorRowParent);
+                row.Setup(target, GetColorFromAppearance(target), OnColorChannelSelected);
+                _colorRows[target] = row;
+            }
+        }
+        #endregion
+
+        #region 열기·닫기
+        // 패널을 열 때마다 호출 — 저장된 외형으로 다시 초기화한다.
+        // (저장 안 하고 닫았다가 다시 열면 편집 중이던 미저장 상태가 그대로 남아있던 버그 수정)
+        // isInitialSetup: 외형 미저장 계정의 첫 설정이면 true. 저장하기 전까지 닫을 수 없다.
+        //                 메뉴 등 일반 진입은 기본값(false)이라 자유롭게 닫을 수 있다.
+        public void Open(bool isInitialSetup = false)
+        {
+            if (_inventoryProvider?.Inventory == null) return;  // 캐릭터 도착 전에는 열지 않는다
+
+            _isInitialSetup = isInitialSetup;                   // 첫 설정 여부로 잠금 상태를 새로 정한다
+            if (_exitButton != null) 
+                _exitButton.interactable = !isInitialSetup;     // 첫 설정 중에는 나가기 버튼을 누를 수 없게 한다
+
+
+            _openCalled = true;             // Start()가 방금 연 창을 닫지 않게 표시
+            gameObject.SetActive(true);
+            ReloadFromSave().Forget();      // 저장된 외형으로 다시 채운다
+        }
+
+        private void Close()
+        {
+            if (_isInitialSetup) return;              // 첫 설정 중에는 닫을 수 없다 (저장하기 전까지)
+            _colorPicker.gameObject.SetActive(false); // 닫을 때도 피커를 비활성화해 다음 열릴 때 OnEnable 재오염(빨간색 초기화) 방지
+            gameObject.SetActive(false);
+        }
+        #endregion
+
+        #region 탭
         // 탭 전환
 
         // 최상위 탭 전환 — 0=파츠, 1=액세서리, 2=색상
@@ -363,6 +358,24 @@ namespace MySecondWorld.UI
                 _keyTable.GetCount(PartType.FacialHair, Gender.Female) == 0; //여성용 수염 파츠가 0개인가?
 
             entry.Toggle.gameObject.SetActive(!hide); // 둘 다 맞으면 탭 버튼을 숨겨라
+        }
+        #endregion
+
+        #region 썸네일
+        private async UniTask<SpriteAtlas> EnsureAtlasLoadedAsync()
+        {
+            if (_thumbnailAtlas != null) return _thumbnailAtlas;
+            try
+            {
+                if (!_atlasHandle.IsValid())
+                    _atlasHandle = Addressables.LoadAssetAsync<SpriteAtlas>(_keyTable.ThumbnailAtlas);
+                _thumbnailAtlas = await _atlasHandle.ToUniTask();
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[CustomizeUI] SpriteAtlas 로드 실패: {ex.Message}");
+            }
+            return _thumbnailAtlas;
         }
 
         // 썸네일 스크롤뷰 채우기
@@ -510,6 +523,30 @@ namespace MySecondWorld.UI
             }
         }
 
+        private void ClearThumbnailContent()
+        {
+            foreach (var btn in _spawnedButtons)
+            {
+                if (btn != null)
+                    Destroy(btn.gameObject);
+            }
+            _spawnedButtons.Clear();
+
+            // 탭 전환 시 스크롤 맨 위로
+            if (_thumbnailScrollRect != null)
+                _thumbnailScrollRect.normalizedPosition = Vector2.up;
+        }
+        #endregion
+
+        #region 파츠·성별 적용
+        // 인덱스 초기화
+        private void InitIndices(CharacterAppearanceData data)
+        {
+            // 저장된 외형을 로드해서 인덱스/ 프리뷰에 반영
+            foreach (PartType part in System.Enum.GetValues(typeof(PartType)))
+                _currentIndices[part] = data[part];
+        }
+
         // SetPart의 상호배제 연쇄가 끝난 뒤 UI 캐시와 하이라이트를 다시 맞춘다
         private async UniTaskVoid ApplyPartChange(PartType part, int index)
         {
@@ -529,20 +566,6 @@ namespace MySecondWorld.UI
 
             SyncIndicesFromCustomizer();
             UpdateThumbnailSelection();
-        }
-
-        private void ClearThumbnailContent()
-        {
-            foreach (var btn in _spawnedButtons)
-            {
-                if (btn != null)
-                    Destroy(btn.gameObject);
-            }
-            _spawnedButtons.Clear();
-
-            // 탭 전환 시 스크롤 맨 위로
-            if (_thumbnailScrollRect != null)
-                _thumbnailScrollRect.normalizedPosition = Vector2.up;
         }
 
         // Gender
@@ -572,17 +595,26 @@ namespace MySecondWorld.UI
             SwitchTab(_currentTab);
         }
 
-        // 색상
-        private void InitColorRows()
+        // 외형 적용
+        private async UniTask ApplyCurrentAppearance()
         {
-            foreach (ColorTarget target in System.Enum.GetValues(typeof(ColorTarget)))
-            {
-                var row = Instantiate(_colorRowPrefab, _colorRowParent);
-                row.Setup(target, GetColorFromAppearance(target), OnColorChannelSelected);
-                _colorRows[target] = row;
-            }
+            await _previewCustomizer.ApplyAppearance(BuildData());
+
+            SyncIndicesFromCustomizer();
+            UpdateThumbnailSelection();
         }
 
+        // BuildData()의 반대 방향(customizer→UI) 동기화 함수
+        // customizer 내부 상호배제 연쇄로 바뀐 인덱스를 UI 캐시에 반영
+        private void SyncIndicesFromCustomizer()
+        {
+            var current = _previewCustomizer.GetCurrentAppearance();
+            foreach (PartType part in System.Enum.GetValues(typeof(PartType)))
+                _currentIndices[part] = current[part];
+        }
+        #endregion
+
+        #region 색상
         private void OnColorChannelSelected(ColorTarget target)
         {
             _activeColorTarget = target;
@@ -615,16 +647,9 @@ namespace MySecondWorld.UI
             if (_colorPicker.gameObject.activeSelf)
                 _colorPicker.color = GetColorFromAppearance(_activeColorTarget); // 색상탭 보고 있는 중이면 피커도 갱신
         }
+        #endregion
 
-        // 외형 적용
-        private async UniTask ApplyCurrentAppearance()
-        {
-            await _previewCustomizer.ApplyAppearance(BuildData());
-
-            SyncIndicesFromCustomizer();
-            UpdateThumbnailSelection();
-        }
-
+        #region 랜덤·리셋
         // 랜덤
         private async UniTaskVoid ApplyRandom()
         {
@@ -716,7 +741,9 @@ namespace MySecondWorld.UI
             UpdateThumbnailSelection(); // 새 성별 기준으로 현재 탭 썸네일 목록 재생성 + 선택 하이라이트
             RefreshColorRows(); // 색상 탭 스와치/피커도 갱신
         }
+        #endregion
 
+        #region 소유 검증
         // 저장
 
         // 미소유 파츠를 fallback 값으로 되돌린 사본을 반환.
@@ -758,7 +785,9 @@ namespace MySecondWorld.UI
             var requiredItem = _keyTable.GetRequiredItem(part, gender, index);
             return requiredItem == null || _inventoryProvider.IsOwned(requiredItem);
         }
+        #endregion
 
+        #region 저장·불러오기
         private void OnSaveClicked()
         {
             var previouslySaved = _saveService.Load(); // 검증 실패 파츠는 이 값(직전 저장 상태)으로 되돌림
@@ -806,14 +835,6 @@ namespace MySecondWorld.UI
                 data[part] = _currentIndices[part]; //인덱서로 직접 접근
             return data;
         }
-
-        // BuildData()의 반대 방향(customizer→UI) 동기화 함수
-        // customizer 내부 상호배제 연쇄로 바뀐 인덱스를 UI 캐시에 반영
-        private void SyncIndicesFromCustomizer()
-        {
-            var current = _previewCustomizer.GetCurrentAppearance();
-            foreach (PartType part in System.Enum.GetValues(typeof(PartType)))
-                _currentIndices[part] = current[part];
-        }
+        #endregion
     }
 }
