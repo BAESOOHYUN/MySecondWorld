@@ -38,7 +38,7 @@ namespace MySecondWorld.Network
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics() => LocalAppearanceReady = null; // Domain Reload OFF 대응
-        private IPublisher<RequestOpenCustomizeUIEvent> _openUIPublisher;
+        private IPublisher<RequestInitialCustomizeEvent> _initialCustomizePublisher;
 
         [Inject]
         public void Construct(
@@ -60,8 +60,8 @@ namespace MySecondWorld.Network
             // 진짜 ProjectLifetimeScope가 소유한 진짜 공유 브로커를 받으려면 Root에서 직접 resolve해야 한다.
             var scoped = (IScopedObjectResolver)resolver;
             var saveRequestSub = scoped.Root.Resolve<ISubscriber<CharacterAppearanceSyncRequestedEvent>>();
-            var openUISub = scoped.Root.Resolve<IPublisher<RequestOpenCustomizeUIEvent>>();
-            _openUIPublisher = openUISub;
+            var initialCustomizePub = scoped.Root.Resolve<IPublisher<RequestInitialCustomizeEvent>>();
+            _initialCustomizePublisher = initialCustomizePub;
 
             // isLocalPlayer로 필터링하는 이유:
             // 이 broker는 화면에 보이는 모든 캐릭터가 같이 구독한다.
@@ -211,7 +211,10 @@ namespace MySecondWorld.Network
             else if (_saveService.HasSaved())                               // 기존 계정 이관: 로컬 값을 서버에 1회 올림 (테스트 환경에서의 방어 코드)
                 CmdSetAppearance(_saveService.Load());
             else                                                            // 최초 접속(미커스터마이징) 유저면 커스터마이즈 UI 오픈
-                _openUIPublisher.Publish(new RequestOpenCustomizeUIEvent());
+            {
+                ApplyAndNotify(_saveService.Load()).Forget(); // 기록이 없으면 기본 외형(로컬에만 표시. 서버엔 저장 안 함)
+                _initialCustomizePublisher.Publish(new RequestInitialCustomizeEvent());
+            }
         }
     }
 }

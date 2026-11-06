@@ -106,7 +106,8 @@ namespace MySecondWorld.UI
         private readonly Dictionary<ColorTarget, ColorChannelRow> _colorRows = new();
         private readonly HashSet<PartType> _pendingParts = new();
         private bool _isOpeningPicker;
-        private bool _openRequested;
+        private bool _openCalled;
+        private bool _isInitialSetup; // 첫 설정 중(외형 미저장 계정) 닫을 수 없다
 
         [Inject]
         public void Construct(AvatarPartKeyTableSO keyTable,
@@ -114,14 +115,14 @@ namespace MySecondWorld.UI
                             CharacterAppearanceSO defaultAppearanceSO,
                             LocalPlayerInventoryProvider inventoryProvider,
                             IPublisher<CharacterAppearanceSyncRequestedEvent> saveRequestPub,
-                            ISubscriber<RequestOpenCustomizeUIEvent> openUISub)
+                            ISubscriber<RequestInitialCustomizeEvent> initialCustomizeSub)
         {
             _keyTable = keyTable;
             _saveService = saveService;
             _defaultAppearanceSO = defaultAppearanceSO;
             _inventoryProvider = inventoryProvider;
             _saveRequestPub = saveRequestPub;
-            openUISub.Subscribe(_ => Open()).AddTo(destroyCancellationToken);
+            initialCustomizeSub.Subscribe(_ => Open(isInitialSetup: true)).AddTo(destroyCancellationToken);
 
             _previewCustomizer ??= GetComponentInChildren<LocalCharacterCustomizer>(true) ?? FindAnyObjectByType<LocalCharacterCustomizer>();
             _previewCustomizer?.Construct(keyTable, defaultAppearanceSO);
@@ -137,6 +138,20 @@ namespace MySecondWorld.UI
 #endif
         }
 
+        // 창은 처음에 켜진 채로 생성되고, Start()가 맨 끝에서 SetActive(false)로 스스로 숨긴다.
+        // 이 때문에 Start()가 Open()보다 늦게 실행되는 순간이 문제가 된다. 
+        //
+        // [경쟁] Start는 오브젝트가 만들어진 뒤 첫 프레임 직전에 실행된다.
+        //        그런데 접속 직후 Open()이 Start보다 먼저 불릴 수 있다.
+        //        (예: 플레이어의 '접속 완료' 이벤트가 UI 생성 직후 도착)
+        //        이때 Start가 그대로 SetActive(false)하면, 방금 Open으로 연 창이 바로 닫혀 버린다.
+        //
+        // [표시] 그래서 Open()이 불리면 _openCalled = true 로 표시해 둔다.
+        //        Start는 _openCalled가 false일 때(= 아직 아무도 안 열었을 때)만 숨긴다.
+        //
+        // [외형 미저장 계정과의 관계] 외형 미저장 계정은 접속 직후 곧바로 Open(isInitialSetup: true)이 불려서
+        //        이 경쟁이 가장 잘 생기는 경우다. 하지만 이 값은 "미저장 계정인가"가 아니라
+        //        "Open이 이미 불렸는가"만 나타낸다. (메뉴로 열어도 false가 된다)
         private void Start()
         {
 #if UNITY_SERVER
@@ -144,10 +159,20 @@ namespace MySecondWorld.UI
             enabled = false;
             return;
 #else
-            EnsureInitialized();
-            if (!_openRequested) // 아직 아무도 안 열었을 때만 닫아 둔다
+            if (!_openCalled)             // Open이 아직 안 불렸으면 숨겨 둔다
                 gameObject.SetActive(false);
 #endif
+        }
+
+        private void Update()
+        {
+            if (gameObject.activeSelf && Input.GetKeyDown(KeyCode.Escape))
+            {
+                if (_colorPicker != null && _colorPicker.gameObject.activeSelf)
+                    _colorPicker.gameObject.SetActive(false);
+                else
+                    Close();
+            }
         }
 
         private void OnDestroy()
@@ -192,16 +217,28 @@ namespace MySecondWorld.UI
 
         // 패널을 열 때마다 호출 — 저장된 외형으로 다시 초기화한다.
         // (저장 안 하고 닫았다가 다시 열면 편집 중이던 미저장 상태가 그대로 남아있던 버그 수정)
-        // 아틀라스 로드 + 슬롯 갱신이 안전하게 단일 실행됨
-        public void Open()
+        // isInitialSetup: 외형 미저장 계정의 첫 설정이면 true. 저장하기 전까지 닫을 수 없다.
+        //                 메뉴 등 일반 진입은 기본값(false)이라 자유롭게 닫을 수 있다.
+        public void Open(bool isInitialSetup = false)
         {
-            if (_inventoryProvider?.Inventory == null) return;   // 캐릭터 도착 전에는 열지 않는다
-            EnsureInitialized();
-            _openRequested = true;          // Start()가 아직 안 돌았어도 "열려고 한 것"을 기억
+            if (_inventoryProvider?.Inventory == null) return;  // 캐릭터 도착 전에는 열지 않는다
+
+            _isInitialSetup = isInitialSetup;                   // 첫 설정 여부로 잠금 상태를 새로 정한다
+            if (_exitButton != null) 
+                _exitButton.interactable = !isInitialSetup;     // 첫 설정 중에는 나가기 버튼을 누를 수 없게 한다
+
+
+            _openCalled = true;             // Start()가 방금 연 창을 닫지 않게 표시
             gameObject.SetActive(true);
-            ReloadFromSave().Forget(); 
+            ReloadFromSave().Forget();      // 저장된 외형으로 다시 채운다
         }
 
+        private void Close()
+        {
+            if (_isInitialSetup) return;              // 첫 설정 중에는 닫을 수 없다 (저장하기 전까지)
+            _colorPicker.gameObject.SetActive(false); // 닫을 때도 피커를 비활성화해 다음 열릴 때 OnEnable 재오염(빨간색 초기화) 방지
+            gameObject.SetActive(false);
+        }
 
         // 인덱스 초기화
         private void InitIndices(CharacterAppearanceData data)
@@ -233,10 +270,10 @@ namespace MySecondWorld.UI
                     var part = entry.Part;
                     entry.Toggle?.onValueChanged.AddListener(isOn =>
                     {
-                        if (isOn) 
-                        { 
-                            _lastPartsTab = part; 
-                            SwitchTab(part); 
+                        if (isOn)
+                        {
+                            _lastPartsTab = part;
+                            SwitchTab(part);
                         }
                     });
                 }
@@ -249,10 +286,10 @@ namespace MySecondWorld.UI
                     var part = entry.Part;
                     entry.Toggle?.onValueChanged.AddListener(isOn =>
                     {
-                        if (isOn) 
-                        { 
+                        if (isOn)
+                        {
                             _lastAccessoryTab = part;
-                            SwitchTab(part); 
+                            SwitchTab(part);
                         }
                     });
                 }
@@ -293,7 +330,7 @@ namespace MySecondWorld.UI
                 SwitchTab(_lastPartsTab);
             else if (index == 1)
                 SwitchTab(_lastAccessoryTab);
-            
+
             if (index != 2)
                 _colorPicker.gameObject.SetActive(false);  // 색상 탭 벗어나면 피커 닫기
         }
@@ -320,11 +357,11 @@ namespace MySecondWorld.UI
             var entry = System.Array.Find(_partsTabEntries, e => e.Part == PartType.FacialHair);
             if (entry.Toggle == null)
                 return;
-           
+
             bool hide =
                 _currentGender == Gender.Female &&   //여성인가?
                 _keyTable.GetCount(PartType.FacialHair, Gender.Female) == 0; //여성용 수염 파츠가 0개인가?
-            
+
             entry.Toggle.gameObject.SetActive(!hide); // 둘 다 맞으면 탭 버튼을 숨겨라
         }
 
@@ -358,10 +395,10 @@ namespace MySecondWorld.UI
 
             for (int i = 0; i < names.Count; i++)
             {
-                Sprite sprite = 
+                Sprite sprite =
                     !string.IsNullOrEmpty(names[i]) ?
                     _thumbnailAtlas?.GetSprite(names[i]) : null;
-               
+
                 var btn = Instantiate(_thumbnailButtonPrefab, _thumbnailContent);
                 int capturedIndex = i;
                 btn.Setup(part, capturedIndex, sprite, OnThumbnailClicked);
@@ -392,8 +429,8 @@ namespace MySecondWorld.UI
         private void OnThumbnailClicked(PartType part, int index)
         {
             // 같은 파츠 처리중이면 무시
-            if (_pendingParts.Contains(part)) return; 
-            
+            if (_pendingParts.Contains(part)) return;
+
             _currentIndices[part] = index;
             UpdateThumbnailSelection();
             ApplyPartChange(part, index).Forget();
@@ -642,7 +679,7 @@ namespace MySecondWorld.UI
                     _currentIndices[PartType.Head] = noElementsCandidates[Random.Range(0, noElementsCandidates.Count)];
             }
 
-            var data = BuildData(); 
+            var data = BuildData();
             data.PrimaryColor = Random.ColorHSV(0f, 1f, 0f, 1f, 0f, 1f);
             data.SecondaryColor = Random.ColorHSV(0f, 1f, 0f, 1f, 0f, 1f);
             data.LeatherPrimaryColor = Random.ColorHSV(0f, 1f, 0f, 1f, 0f, 1f);
@@ -736,6 +773,9 @@ namespace MySecondWorld.UI
             InitIndices(data);
             _previewCustomizer.ApplyAppearance(data).Forget();
             UpdateThumbnailSelection();
+
+            _isInitialSetup = false;
+            if (_exitButton != null) _exitButton.interactable = true;
         }
 
         private async UniTask ReloadFromSave()
@@ -774,23 +814,6 @@ namespace MySecondWorld.UI
             var current = _previewCustomizer.GetCurrentAppearance();
             foreach (PartType part in System.Enum.GetValues(typeof(PartType)))
                 _currentIndices[part] = current[part];
-        }
-
-        private void Update()
-        {
-            if (gameObject.activeSelf && Input.GetKeyDown(KeyCode.Escape))
-            {
-                if (_colorPicker != null && _colorPicker.gameObject.activeSelf)
-                    _colorPicker.gameObject.SetActive(false);
-                else
-                    Close();
-            }
-        }
-
-        private void Close()
-        {
-            _colorPicker.gameObject.SetActive(false); // 닫을 때도 피커를 비활성화해 다음 열릴 때 OnEnable 재오염(빨간색 초기화) 방지
-            gameObject.SetActive(false);
         }
     }
 }

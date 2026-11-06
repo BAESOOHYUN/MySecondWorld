@@ -66,7 +66,7 @@ public class ProjectLifetimeScope : LifetimeScope
         builder.RegisterMessageBroker<AuthStateChangedEvent>(options);
         builder.RegisterMessageBroker<CharacterAppearanceSavedEvent>(options);
         builder.RegisterMessageBroker<CharacterAppearanceSyncRequestedEvent>(options);
-        builder.RegisterMessageBroker<RequestOpenCustomizeUIEvent>(options);
+        builder.RegisterMessageBroker<RequestInitialCustomizeEvent>(options);
 
         builder.Register<SaveManager>(Lifetime.Singleton);
         builder.Register<PasswordCredentialStore>(Lifetime.Singleton);
