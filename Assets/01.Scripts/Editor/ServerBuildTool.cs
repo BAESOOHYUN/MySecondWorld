@@ -32,7 +32,7 @@ namespace MySecondWorld.Editor
         // =========================================================================
         // 1. [1-Click] 리눅스 서버 완전 자동 배포
         // =========================================================================
-        [MenuItem("Tools/Build/🚀 [1-Click] Linux 서버 빌드 + EC2 자동 배포 & 재시작", priority = 1)]
+        [MenuItem("Tools/Build/Server (Linux)/1. 원클릭 - 번들+서버 빌드, EC2 업로드·재시작", priority = 1)]
         public static void BuildAndDeployLinuxServer()
         {
             Debug.Log("[Deploy] ========================================================");
@@ -50,7 +50,7 @@ namespace MySecondWorld.Editor
         // 1-b. [Upload Only] 빌드 없이 직전 빌드 결과물만 EC2에 올린다
         //      (업로드 실패 후 재시도용 — 코드를 고쳤다면 반드시 1-Click으로 다시 빌드할 것)
         // =========================================================================
-        [MenuItem("Tools/Build/📤 [Upload Only] 빌드 없이 EC2 업로드 & 재시작", priority = 4)]
+        [MenuItem("Tools/Build/Server (Linux)/5. 빌드 없이 업로드·재시작", priority = 5)]
         public static void DeployOnly()
         {
             if (!Directory.Exists("ServerData/StandaloneLinux64") || !Directory.Exists(Path.GetDirectoryName(ServerBuildPath)))
@@ -108,7 +108,7 @@ namespace MySecondWorld.Editor
         // =========================================================================
         // 2. [Android] 안드로이드 테스트 대비용 버튼
         // =========================================================================
-        [MenuItem("Tools/Build/📱 [Android] 번들 빌드 + EC2 자동 업로드 (원격 리소스)", priority = 2)]
+        [MenuItem("Tools/Build/Android/1. 번들 빌드, EC2 업로드", priority = 101)]
         public static void BuildAndDeployAndroidBundles()
         {
             Debug.Log("[Deploy-Android] ========================================================");
@@ -158,7 +158,7 @@ namespace MySecondWorld.Editor
             Debug.Log("[Deploy-Android] ========================================================");
         }
 
-        [MenuItem("Tools/Build/📱 [Android] 번들 빌드 + EC2 업로드 + APK 빌드 (ALL-IN-ONE)", priority = 3)]
+        [MenuItem("Tools/Build/Android/2. 번들+APK 빌드 (업로드 포함)", priority = 102)]
         public static void BuildAndDeployAndroidAll()
         {
             BuildAndDeployAndroidBundles();
@@ -209,7 +209,7 @@ namespace MySecondWorld.Editor
         // Build Profiles 창에서 만든 Windows 프로필 (Platform: Windows, Multiplayer Role: Client)
         private const string WindowsProfilePath = "Assets/Settings/Build Profiles/Windows Client.asset";
 
-        [MenuItem("Tools/Build/💻 [PC] 번들 빌드 + EC2 업로드 + PC 빌드 (ALL-IN-ONE)", priority = 5)]
+        [MenuItem("Tools/Build/PC (Windows)/1. 번들+PC 빌드 (업로드 포함)", priority = 201)]
         public static void BuildAndDeployPcAll()
         {
             if (!EnsureWindowsClientTarget("Deploy-PC")) return;
@@ -244,7 +244,7 @@ namespace MySecondWorld.Editor
             BuildPcPlayer();
         }
 
-        [MenuItem("Tools/Build/💻 [PC] PC 빌드만 (번들·업로드 없이)", priority = 6)]
+        [MenuItem("Tools/Build/PC (Windows)/2. PC 빌드만", priority = 202)]
         public static void BuildPcOnly()
         {
             if (!EnsureWindowsClientTarget("Build-PC")) return;
@@ -307,7 +307,7 @@ namespace MySecondWorld.Editor
         // =========================================================================
         // 3. 서버 퀵 재시작 및 개별 빌드 메뉴
         // =========================================================================
-        [MenuItem("Tools/Build/🔄 [EC2] 서버 재시작만 실행 (Quick Restart)", priority = 10)]
+        [MenuItem("Tools/Build/Server (Linux)/6. 재시작만", priority = 6)]
         public static void RestartEC2ServerOnly()
         {
             Debug.Log("[Deploy] 🔄 EC2 서버 서비스 재시작 중...");
@@ -315,7 +315,7 @@ namespace MySecondWorld.Editor
             Debug.Log("🎉 [Deploy] EC2 서버 서비스 재시작 완료!");
         }
 
-        [MenuItem("Tools/Build/1. Linux 전용 Addressables 번들 빌드 (Remote)", priority = 20)]
+        [MenuItem("Tools/Build/Server (Linux)/2. 번들만 빌드", priority = 2)]
         public static void BuildAddressablesRemoteMenu() => BuildAddressablesRemote();
 
         // 타겟 전환은 스크립트 재컴파일을 유발해 이 메서드 뒤쪽이 실행되지 않을 수 있다.
@@ -399,7 +399,7 @@ namespace MySecondWorld.Editor
                 Debug.Log($"[Build] 🧹 카탈로그 미참조 구버전 번들 {count}개 삭제 ({freed / (1024 * 1024)} MB 확보)");
         }
 
-        [MenuItem("Tools/Build/2. Linux Dedicated Server 빌드 (Headless)", priority = 21)]
+        [MenuItem("Tools/Build/Server (Linux)/3. 서버만 빌드", priority = 3)]
         public static bool BuildLinuxServer()
         {
             Debug.Log("[Build] StandaloneLinux64 타겟 강제 확인 중...");
@@ -460,7 +460,7 @@ namespace MySecondWorld.Editor
             return true;
         }
 
-        [MenuItem("Tools/Build/3. [ALL-IN-ONE] Linux 번들 + Linux 서버 일괄 빌드", priority = 22)]
+        [MenuItem("Tools/Build/Server (Linux)/4. 번들+서버 빌드 (업로드 없음)", priority = 4)]
         public static void BuildAll() => BuildAllInternal();
 
         private static bool BuildAllInternal()
