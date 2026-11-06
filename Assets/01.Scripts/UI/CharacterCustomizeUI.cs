@@ -285,7 +285,7 @@ namespace MySecondWorld.UI
         private void Close()
         {
             if (_isInitialSetup) return;              // 첫 설정 중에는 닫을 수 없다 (저장하기 전까지)
-            _colorPicker.gameObject.SetActive(false); // 닫을 때도 피커를 비활성화해 다음 열릴 때 OnEnable 재오염(빨간색 초기화) 방지
+            _colorPicker.gameObject.SetActive(false); // 피커가 켜질 때(FlexibleColorPicker.OnEnable) 시작색(빨강)으로 알림이 나가 색이 덮이는 걸 막으려, 닫을 때 피커를 꺼 둔다
             gameObject.SetActive(false);
         }
         #endregion
