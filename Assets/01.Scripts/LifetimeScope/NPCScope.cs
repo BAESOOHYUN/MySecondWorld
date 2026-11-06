@@ -65,7 +65,7 @@ namespace MySecondWorld.AI
             else
             {
                 var localLLM = gameObject.AddComponent<LocalLLMService>();
-                builder.RegisterInstance(localLLM).As<ILLMService>();
+                builder.RegisterComponent(localLLM).As<ILLMService>();
             }
 
             // TTS: Typecast. NPC별 보이스 ID는 NPCSystemPromptSO에서 받는다
