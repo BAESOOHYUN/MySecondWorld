@@ -560,6 +560,7 @@ namespace MySecondWorld.UI
         #region STT 헬퍼 메서드
         private void StartSTT()
         {
+            if (_stt.IsListening) return;   // 이미 녹음 중이면 두 번째 호출은 무시 (PointerDown이 중복 전달돼도 안전)
             _sttCts?.Cancel(); // 작업 멈춤
             _sttCts?.Dispose(); // 리소스 해제
             // CreateLinkedTokenSource : 두 개의 CancellationToken을 하나로 묶는 것
