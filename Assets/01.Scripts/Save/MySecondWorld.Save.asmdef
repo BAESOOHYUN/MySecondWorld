@@ -2,7 +2,8 @@
     "name": "MySecondWorld.Save",
     "rootNamespace": "",
     "references": [
-        "VContainer"
+        "VContainer",
+        "MySecondWorld.Customization"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

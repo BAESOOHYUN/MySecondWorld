@@ -50,9 +50,6 @@ namespace MySecondWorld.Network.Player
         {
             // 씬 로드 완료를 기다린 뒤 이동/중력 활성화 (아래 메서드)
             WaitForSceneThenEnableControl().Forget();
-            // 소유자 클라 전용. Awake() 시점엔 권한 미확정이라 CmdSetAppearance가 씹힐 수 있어
-            // 권한 확정 후 안전하게 재호출.
-            PreloadPartsAsync().Forget();
         }
 
         public override void OnStopAuthority() // "더 이상 네 꺼 아니야" → 조종 비활성화

@@ -112,8 +112,7 @@ namespace MySecondWorld.Network
             }
 
             var saveData = (!string.IsNullOrEmpty(session.playerId) && _saveManager != null)
-                ? _saveManager.Load(session.playerId)
-                : null;
+                          ? _saveManager.Load(session.playerId) : null;
             var hasSpawnData = saveData.HasValue;
             session.isNewPlayer = !hasSpawnData;
 
@@ -198,6 +197,14 @@ namespace MySecondWorld.Network
             GameObject player = MySecondWorld.Network.Player.PlayerFactory.Create(_manager.playerPrefab, spawnPos, Quaternion.identity);
             if (player == null)
                 return;
+            
+            if (!session.isNewPlayer && player.TryGetComponent(out NetworkCharacterAppearance app))
+            {
+                var saved = _saveManager.Load(session.playerId);
+                if (saved?.hasAppearance == true)
+                    app.ServerRestoreAppearance(saved.Value.appearance);
+            }
+
             NetworkServer.AddPlayerForConnection(conn, player);
 
             // After
@@ -307,7 +314,10 @@ namespace MySecondWorld.Network
 
                 if (posToSave != Vector3.zero)
                 {
-                    var prev = _saveManager.Load(session.playerId); // 이전 세이브 (없으면 null)
+                    var prev = _saveManager.Load(session.playerId);                   // 서버 디스크의 지난번 세이브 전체(없으면 null)
+                    bool hadSaved = prev?.hasAppearance ?? false;                     // 그 prev 중 외형이 예전 디스크 세이브에 있었는지만 뽑은 bool
+                    bool hasCurrent = BuildAppearanceSave(conn, out var currentApp);  // 지금 떠있는 서버 메모리에 외형이 있는지
+
                     _saveManager.Save(session.playerId, new SaveData
                     {
                         lastSceneNames = new string[] { session.currentScene },
@@ -316,6 +326,10 @@ namespace MySecondWorld.Network
                         companionAlive = session.companionAlive,
                         companionPresent = session.companionPresent,
                         inventorySlots = BuildInventorySave(conn) ?? prev?.inventorySlots,
+                        // 외형 기록 유무: 지금 서버 메모리에 있거나(hasCurrent), 디스크의 이전 세이브에 있었으면(hadSaved) true
+                        hasAppearance = hasCurrent || hadSaved,
+                        // 외형 값: 지금 서버 메모리 값이 있으면(hasCurrent)? 그걸 저장(currentApp) : 없으면 이전 세이브(디스크, prev?.appearance) 저장 ?? 이전 디스크 세이브도 없으면 빈 값(default)
+                        appearance = hasCurrent ? currentApp : (prev?.appearance ?? default),
                         mainHandDbKey = BuildMainHandSave(conn) ?? prev?.mainHandDbKey ?? -1,
                         mainHandInventorySlotIndex = BuildMainHandSlotSave(conn) ?? prev?.mainHandInventorySlotIndex ?? -1,
                     });
@@ -419,12 +433,31 @@ namespace MySecondWorld.Network
             return slots;
         }
 
+        // 서버에 저장된 외형이 있으면 true, 값은 data로 내보낸다 (out)
+        private bool BuildAppearanceSave(NetworkConnectionToClient conn, out CharacterAppearanceData data)
+        {
+            // out은 어느 경로로 끝나도 값을 채워야 해서, 아래에서 일찍 return해도 비지 않게 미리 채움
+            // 아래 한줄이 없으면 뜨는 에러 → "CS0177: 제어가 현재 메서드를 벗어나기 전에 out 매개 변수 'data'를 할당해야 합니다"
+            data = default;
+
+            if (conn.identity == null)
+            {
+                Debug.LogWarning($"[Save] 외형 저장 실패: conn={conn.connectionId} identity가 null");
+                return false;
+            }
+            if (!conn.identity.TryGetComponent(out NetworkCharacterAppearance appearance))
+            {
+                Debug.LogWarning($"[Save] 외형 저장 실패: conn={conn.connectionId} NetworkCharacterAppearance 컴포넌트 없음");
+                return false;
+            }
+            return appearance.ServerTryGetAppearance(out data); // false는 '외형 미저장 계정'을 뜻함. 정상이라 로그 없음
+        }
+
         // 장착 중인 무기 dbKey를 읽음
         private int? BuildMainHandSave(NetworkConnectionToClient conn)
         {
             var equip = conn.identity != null
-                ? conn.identity.GetComponent<NetworkWeaponEquip>()
-                : null;
+                ? conn.identity.GetComponent<NetworkWeaponEquip>() : null;
             return equip == null ? null : equip.ServerGetMainHandDbKey();
         }
 
@@ -432,8 +465,7 @@ namespace MySecondWorld.Network
         private int? BuildMainHandSlotSave(NetworkConnectionToClient conn)
         {
             var equip = conn.identity != null
-                ? conn.identity.GetComponent<NetworkWeaponEquip>()
-                : null;
+                ? conn.identity.GetComponent<NetworkWeaponEquip>() : null;
             return equip == null ? null : equip.ServerGetMainHandInventorySlotIndex();
         }
 
@@ -442,8 +474,7 @@ namespace MySecondWorld.Network
         {
             // ① 인벤토리를 얻는다 (저장 때와 같은 방식)
             var inventory = conn.identity != null
-                            ? conn.identity.GetComponent<Cleverous.VaultInventory.Inventory>()
-                            : null;
+                            ? conn.identity.GetComponent<Cleverous.VaultInventory.Inventory>() : null;
             if (inventory == null) return;
 
             // ② 세이브를 읽는다. 없거나, 인벤토리 필드가 비어 있으면(옛 세이브) 아무것도 안 한다
@@ -459,8 +490,7 @@ namespace MySecondWorld.Network
             }
 
             var equip = conn.identity != null
-                ? conn.identity.GetComponent<NetworkWeaponEquip>()
-                : null;
+                ? conn.identity.GetComponent<NetworkWeaponEquip>() : null;
             if (equip != null)
             {
                 // 저장했던 칸에 그 무기가 그대로 있으면 그 칸에, 아니면(옛 세이브 등) 같은 무기가 든 첫 칸에 장착한다.

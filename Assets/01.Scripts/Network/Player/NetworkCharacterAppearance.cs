@@ -16,7 +16,7 @@ namespace MySecondWorld.Network
 
         [SyncVar(hook = nameof(OnAppearanceChanged))]
         private CharacterAppearanceData _appearance;
-
+        [SyncVar] private bool _hasServerAppearance;
         private ObservableCharacterCustomizer _customizer;
         private AvatarPartKeyTableSO _avatarPartKeyTable;
         private LocalPlayerInventoryProvider _localInventoryProvider;
@@ -105,11 +105,25 @@ namespace MySecondWorld.Network
             _inventory.Initialize(this, resetContent: true);
         }
 
+        [Server]
+        public bool ServerTryGetAppearance(out CharacterAppearanceData data)
+        {
+            data = _appearance;
+            return _hasServerAppearance;
+        }
+        [Server]
+        public void ServerRestoreAppearance(CharacterAppearanceData data)
+        {
+            _appearance = data;
+            _hasServerAppearance = true;
+        }
+
         // 서버가 클라이언트가 보낸 외형 데이터를 받았을 때, 각 파츠 인덱스마다 "이거 살 자격 있어?"를 재검증.
         // 없으면 그 필드만 이전 값으로 되돌림. 이게 진짜 권위 있는 검증(클라 UI는 속여도 여긴 못 속임).
         [Command]
         public void CmdSetAppearance(CharacterAppearanceData data)
         {
+            _hasServerAppearance = true;
             try
             {
                 // 1. 성별 enum 유효성 검증
@@ -192,15 +206,11 @@ namespace MySecondWorld.Network
             if (NetworkManager.singleton is GameNetworkManager gnm)
                 gnm.RevealScreen();
 
-            // 로컬에 저장된 외형 데이터가 있으면 즉시 서버로 동기화 요청
-            if (_saveService != null)
-            {
-                var saved = _saveService.Load();
-                CmdSetAppearance(saved);
-            }
-
-            // 최초 접속(미커스터마이징) 유저면 커스터마이즈 UI 오픈
-            if (!PlayerPrefs.HasKey(PrefKeyCustomized))
+            if (_hasServerAppearance)                                       // 로컬 캐시를 서버 값에 맞춤
+                _saveService.Save(_appearance);
+            else if (_saveService.HasSaved())                               // 기존 계정 이관: 로컬 값을 서버에 1회 올림 (테스트 환경에서의 방어 코드)
+                CmdSetAppearance(_saveService.Load());
+            else                                                            // 최초 접속(미커스터마이징) 유저면 커스터마이즈 UI 오픈
                 _openUIPublisher.Publish(new RequestOpenCustomizeUIEvent());
         }
     }

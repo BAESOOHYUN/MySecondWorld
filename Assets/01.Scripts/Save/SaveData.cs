@@ -1,4 +1,5 @@
 using UnityEngine;
+using MySecondWorld.Customization;
 
 namespace MySecondWorld.Save
 {
@@ -13,8 +14,12 @@ namespace MySecondWorld.Save
         public bool companionAlive;   // 마지막으로 기록된 생존 여부
         public bool companionPresent; // 마지막으로 기록된 소환/소환해제 여부
 
-        // 인벤토리
-        public InventorySlotSave[] inventorySlots;   // null이면 인벤토리를 저장한 적 없는 옛 세이브
+        // 인벤토리: null이면 인벤토리를 저장한 적 없는 옛 세이브
+        public InventorySlotSave[] inventorySlots;
+
+        // 서버 보관 외형. hasAppearance가 false면 서버에 외형 기록이 없는 계정
+        public bool hasAppearance;
+        public CharacterAppearanceData appearance;
 
         // 장착 무기 (아이템 dbKey)
         public int mainHandDbKey;

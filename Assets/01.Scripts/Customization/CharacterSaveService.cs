@@ -33,5 +33,9 @@ namespace MySecondWorld.Customization
 
             return JsonUtility.FromJson<CharacterAppearanceData>(PlayerPrefs.GetString(Key));
         }
+
+        // 서버엔 없지만 내 기기엔 옷이 저장되어 있는 경우,
+        // PlayerPrefs를 서버로 보내서 서버 세이브에 저장한다. (배포전 테스트 환경에서의 방어코드)
+        public bool HasSaved() => PlayerPrefs.HasKey(Key);
     }
 }
