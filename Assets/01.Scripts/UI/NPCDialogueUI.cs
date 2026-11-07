@@ -167,6 +167,13 @@ namespace MySecondWorld.UI
                         .Subscribe(_ => _stopTTSPub.Publish(new NPCStopTTSEvent(_currentNpcGuid))) // NPCVoicePlayer가 구독
                         .AddTo(destroyCancellationToken);
 
+            // Enter로 바로 전송
+            _playerInputField.onSubmit.AddListener(_ =>
+            {
+                if (_submitButton.interactable) // 응답 생성 중(입력 비활성)에는 무시
+                    _submitButton.onClick.Invoke();
+            });
+
             _stt = stt;
             if (_sttButton != null)
             {
