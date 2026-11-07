@@ -1,8 +1,8 @@
 using Cysharp.Threading.Tasks;
-using MySecondWorld.Customization;
 using System.Threading;
 using UnityEngine;
 using VContainer;
+using MySecondWorld.Customization;
 
 namespace MySecondWorld.AI.Voice
 {
@@ -18,8 +18,17 @@ namespace MySecondWorld.AI.Voice
         // --- 튜닝 상수 ---
         private const int FemaleIdx = 0;
         private const int MaleIdx = 1;
-        private const float SMOOTH_SPEED = 5f; // 낮출수록 더 느리게 반응
-        private const float HOLD_TIME = 0.05f; // 입 모양 최소 유지 시간 (50ms)
+
+        [Header("튜닝")]
+        [Tooltip("입이 소리를 따라가는 속도. 낮을수록 느려 입이 늦는다")]
+        [SerializeField, Range(1f, 30f)] private float _smoothSpeed = 25f;
+        [Tooltip("입 모양을 바꾼 뒤 최소로 유지하는 시간(초)")]
+        [SerializeField, Range(0.01f, 0.2f)] private float _holdTime = 0.02f;
+
+        [Header("입 모양 경계 (진폭)")]
+        [Tooltip("이 값 미만 = 입 닫힘")][SerializeField] private float _neutralMax = 0.004f;
+        [Tooltip("이 값 미만 = AEI (작게)")][SerializeField] private float _smallMax = 0.009f;
+        [Tooltip("이 값 미만 = O, 이상 = A")][SerializeField] private float _midMax = 0.014f;
 
         // --- 주입받은 참조 ---
         private AudioSource[] _sources;
@@ -94,19 +103,19 @@ namespace MySecondWorld.AI.Voice
             while (!ct.IsCancellationRequested)
             {
                 float raw = IsAnySourcePlaying() ? SampleAmplitude() : 0f;
-                _smoothedAmplitude = Mathf.Lerp(_smoothedAmplitude, raw, Time.deltaTime * SMOOTH_SPEED);
-                //Debug.Log($"smoothed={_smoothedAmplitude:F4}");
+                _smoothedAmplitude = Mathf.Lerp(_smoothedAmplitude, raw, Time.deltaTime * _smoothSpeed);
+                Debug.Log($"smoothed={_smoothedAmplitude:F4}");
 
                 _holdTimer -= Time.deltaTime;
                 if (_holdTimer <= 0)
                 {
                     Material next;
-                    if (_smoothedAmplitude < 0.02f) next = _neutral;      // _
-                    else if (_smoothedAmplitude < 0.05f) next = _mouthSmall;   // AEI
-                    else if (_smoothedAmplitude < 0.10f) next = _mouthMid;     // O
+                    if (_smoothedAmplitude < _neutralMax) next = _neutral;      // _
+                    else if (_smoothedAmplitude < _smallMax) next = _mouthSmall;   // AEI
+                    else if (_smoothedAmplitude < _midMax) next = _mouthMid;     // O
                     else next = _mouthOpen;    // A
                     SetMaterial(next);
-                    _holdTimer = HOLD_TIME;
+                    _holdTimer = _holdTime;
                 }
 
                 await UniTask.Yield(cancellationToken: ct);
