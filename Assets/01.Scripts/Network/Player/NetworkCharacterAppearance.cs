@@ -5,7 +5,6 @@ using VContainer;
 using MessagePipe;
 using Cleverous.VaultInventory;
 using MySecondWorld.Customization;
-using MySecondWorld.Save;
 
 namespace MySecondWorld.Network
 {
@@ -34,7 +33,7 @@ namespace MySecondWorld.Network
         private CharacterAppearanceData _appearance;
         [SyncVar] private bool _hasServerAppearance;
 
-        // 서버가 기억하는 파츠별 장착 칸 번호 (배열 위치 = PartType 번호, 값 = 인벤토리 칸 번호, 미장착·모름은 -1)
+        // '서버가 기억하는' 파츠별 장착 칸 번호 (배열 위치 = PartType 번호, 값 = 인벤토리 칸 번호, 미장착·모름은 -1)
         // SyncVar가 아니라 서버 메모리에만 있고, 세이브에 쓰려고 들고 있는다.
         // 무기(NetworkWeaponEquip)의 _mainHandInventorySlotIndex에 해당
         private int[] _equippedPartSlots;
@@ -160,13 +159,12 @@ namespace MySecondWorld.Network
             if (NetworkManager.singleton is GameNetworkManager gnm)
                 gnm.RevealScreen();
 
-            if (_hasServerAppearance)                                       // 로컬 캐시를 서버 값에 맞춤
-                _saveService.Save(_appearance);
-            else if (_saveService.HasSaved())                               // 기존 계정 이관: 로컬 값을 서버에 1회 올림 (테스트 환경에서의 방어 코드)
-                CmdSetAppearance(_saveService.Load());
-            else                                                            // 최초 접속(미커스터마이징) 유저면 커스터마이즈 UI 오픈
+            if (_hasServerAppearance)
+                _saveService.Save(_appearance);                // 서버 값을 이 클라의 기억에 넣는다
+            else                                               // 최초 접속(미커스터마이징) 유저
             {
-                ApplyAndNotify(_saveService.Load()).Forget(); // 기록이 없으면 기본 외형(로컬에만 표시. 서버엔 저장 안 함)
+                _saveService.Clear();                          // 이전 계정의 기억이 남아 있으면 지운다
+                ApplyAndNotify(_saveService.Load()).Forget();  // 기본 외형 (로컬에만 표시, 서버엔 저장 안 함)
                 _initialCustomizePublisher.Publish(new RequestInitialCustomizeEvent());
             }
         }

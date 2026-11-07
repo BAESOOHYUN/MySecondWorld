@@ -8,7 +8,6 @@ using Mirror;
 using MySecondWorld.Move;
 using MySecondWorld.CameraSystem;
 using MySecondWorld.Bundle;
-using MySecondWorld.Customization;
 
 namespace MySecondWorld.Network.Player
 {
@@ -18,9 +17,6 @@ namespace MySecondWorld.Network.Player
         [SerializeField] private ThirdPersonCameraController _cameraController;
         [SerializeField] private CharacterController _characterController;
         [SerializeField] private Mirror.NetworkTransformBase _netTransform; // 구조 시 스냅샷 버퍼 리셋용
-
-        private CharacterSaveService _saveService;
-        private NetworkCharacterAppearance _networkAppearance;
         private AddressableLabelLoader _assetLoader;
         private GameNetworkManager _networkManager;
 
@@ -31,14 +27,10 @@ namespace MySecondWorld.Network.Player
 
 
         [Inject]
-        public void Construct(CharacterSaveService saveService,
-                              NetworkCharacterAppearance networkAppearance,
-                              AddressableLabelLoader assetLoader,
+        public void Construct(AddressableLabelLoader assetLoader,
                               GameNetworkManager networkManager
             )
         {
-            _saveService = saveService;
-            _networkAppearance = networkAppearance;
             _assetLoader = assetLoader;
             _networkManager = networkManager;
         }
@@ -67,7 +59,8 @@ namespace MySecondWorld.Network.Player
             _characterController.enabled = false;
         }
 
-        private async UniTaskVoid PreloadPartsAsync() => await _assetLoader.LoadLabelAsync("character_parts", this.GetCancellationTokenOnDestroy());
+        private async UniTaskVoid PreloadPartsAsync() 
+            => await _assetLoader.LoadLabelAsync("character_parts", this.GetCancellationTokenOnDestroy());
        
         // FieldScene(defaultSubScene)이 실제로 로드 완료될 때까지 이동/중력 활성화를 지연 —
         // 씬 로드보다 먼저 중력이 켜져서 지형 없는 허공으로 떨어지는 것을 방지
