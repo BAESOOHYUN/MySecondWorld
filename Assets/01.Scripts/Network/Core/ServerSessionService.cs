@@ -198,11 +198,11 @@ namespace MySecondWorld.Network
             if (player == null)
                 return;
             
-            if (!session.isNewPlayer && player.TryGetComponent(out NetworkCharacterAppearance app))
+            if (!session.isNewPlayer && player.TryGetComponent(out NetworkCharacterAppearance appearance))
             {
                 var saved = _saveManager.Load(session.playerId);
                 if (saved?.hasAppearance == true)
-                    app.ServerRestoreAppearance(saved.Value.appearance);
+                    appearance.ServerRestoreAppearance(saved.Value.appearance);
             }
 
             NetworkServer.AddPlayerForConnection(conn, player);
@@ -212,7 +212,10 @@ namespace MySecondWorld.Network
             if (session.isNewPlayer)
                 GrantStartingGold(conn);
             else
+            {
                 RestoreInventory(conn, session);
+                RestoreEquippedPartSlots(conn, session); // 인벤토리가 채워진 뒤여야 칸 번호 번역이 맞는다
+            }
 
             session.currentScene = session.pendingSpawnScene;
             var targetScene = _manager.GetServerScene(session.currentScene);
@@ -332,6 +335,7 @@ namespace MySecondWorld.Network
                         appearance = hasCurrent ? currentApp : (prev?.appearance ?? default),
                         mainHandDbKey = BuildMainHandSave(conn) ?? prev?.mainHandDbKey ?? -1,
                         mainHandInventorySlotIndex = BuildMainHandSlotSave(conn) ?? prev?.mainHandInventorySlotIndex ?? -1,
+                        equippedPartSlots = BuildEquippedPartSlotsSave(conn) ?? prev?.equippedPartSlots,
                     });
                 }
             }
@@ -469,6 +473,14 @@ namespace MySecondWorld.Network
             return equip == null ? null : equip.ServerGetMainHandInventorySlotIndex();
         }
 
+        // 서버가 기억하는 파츠별 장착 칸 번호를 읽음. 컴포넌트가 없거나 받은 적이 없으면 null
+        private int[] BuildEquippedPartSlotsSave(NetworkConnectionToClient conn)
+        {
+            var appearance = conn.identity != null
+                    ? conn.identity.GetComponent<NetworkCharacterAppearance>() : null;
+            return appearance == null ? null : appearance.ServerGetEquippedPartSlots();
+        }
+
         // 세이브를 읽어 인벤토리를 채움
         private void RestoreInventory(NetworkConnectionToClient conn, PlayerSession session)
         {
@@ -500,7 +512,30 @@ namespace MySecondWorld.Network
             }
         }
 
-        // 저장할 때의 칸 번호를 복원 후의 칸 번호로 바꾼다.
+        // 세이브를 읽어 파츠별 장착 칸 번호를 서버에 되살리고, 그 클라이언트에게도 알려 준다
+        private void RestoreEquippedPartSlots(NetworkConnectionToClient conn, PlayerSession session)
+        {
+            var appearance = conn.identity != null
+                            ? conn.identity.GetComponent<NetworkCharacterAppearance>() : null;
+            if (appearance == null) return;
+
+            // 옛 세이브(칸 번호 필드가 없음)이거나 인벤토리를 저장한 적이 없으면 아무것도 안 한다
+            var loaded = _saveManager.Load(session.playerId);
+            if (loaded == null
+                || loaded.Value.equippedPartSlots == null
+                || loaded.Value.inventorySlots == null) return;
+
+            // 저장 때의 칸 번호를 복원 후의 칸 번호로 번역한다. (왜 필요한지는 ToRestoredSlotIndex 주석 참고)
+            var saved = loaded.Value.equippedPartSlots; // 세이브 파일에서 읽은 값, 저장할 때의 가방 배치
+            var restored = new int[saved.Length];       // saved를 번역한 값	  , 지금 다시 채운 가방 배치
+            for (int i = 0; i < saved.Length; i++)
+                restored[i] = ToRestoredSlotIndex(loaded.Value.inventorySlots, saved[i]);
+
+            appearance.ServerRestoreEquippedPartSlots(restored); // 서버가 기억해 둔다 (다음 저장 때 쓴다)
+            appearance.ServerSendEquippedPartSlots();            // 이 클라이언트에게도 알려 준다 (인벤토리 표시용)
+        }
+
+        // 저장할 때의 칸 번호를 복원 후의 칸 번호로 바꾼다.(-1은 그대로 -1)
         // 복원은 빈 칸을 건너뛰고 앞에서부터 채우므로, 새 번호 = 저장 칸 앞에 있던 "실제로 채워진 칸"의 개수.
         //
         // 예) 도끼B(저장 4번 칸)를 장착한 채 저장했다면

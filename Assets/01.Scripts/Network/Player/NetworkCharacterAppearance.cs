@@ -69,6 +69,7 @@ namespace MySecondWorld.Network
         private AvatarPartKeyTableSO _avatarPartKeyTable;
         private LocalPlayerInventoryProvider _localInventoryProvider;
         private CharacterSaveService _saveService;
+        private CharacterAppearanceService _appearanceService;
         private IPublisher<RequestInitialCustomizeEvent> _initialCustomizePublisher;
 
         [Inject]
@@ -77,6 +78,7 @@ namespace MySecondWorld.Network
             AvatarPartKeyTableSO avatarPartKeyTable,
             LocalPlayerInventoryProvider localInventoryProvider,
             CharacterSaveService saveService,
+            CharacterAppearanceService appearanceService,
             IObjectResolver resolver
             )
         {
@@ -84,6 +86,7 @@ namespace MySecondWorld.Network
             _avatarPartKeyTable = avatarPartKeyTable;
             _localInventoryProvider = localInventoryProvider;
             _saveService = saveService;
+            _appearanceService = appearanceService;
 
             // Root.Resolve를 쓰는 이유 :
             // PlayerScope의 MessagePipe 로컬 등록이 이 이벤트 타입을 가로채서,
@@ -101,10 +104,19 @@ namespace MySecondWorld.Network
             saveRequestSub.Subscribe(evt =>
             {
                 if (!isLocalPlayer) return; // 내 캐릭터일 때만 반응
+
                 // 외형 조립 후 HUD 얼굴 캡처 신호 발송
                 ApplyAndNotify(evt.Data).Forget();
+
+                // 보내는 순서가 중요! 외형 -> 칸 순서
+
+                // 외형을 서버에 보낸다. 서버가 검증해서 확정하면 SyncVar로 다른 유저들에게도 퍼진다.
                 CmdSetAppearance(evt.Data);
-                // 서버 및 다른 유저들에게 동기화 전송
+
+                // 칸 번호는 외형 다음에 보낸다. 서버 검증이 방금 확정된 외형을 쓰기 때문이다.
+                // 칸 번호 없이 오는 이벤트(커스터마이징 창 저장 등)는 null이라 보내지 않는다.
+                if (evt.EquippedPartSlots != null)
+                    CmdSetEquippedPartSlots(evt.EquippedPartSlots);
             }).AddTo(destroyCancellationToken);
         }
 
@@ -186,7 +198,24 @@ namespace MySecondWorld.Network
 
         // 복원용 — 저장돼 있던 장착 칸 번호를 서버 기억으로 되살린다
         [Server]
-        public void ServerRestoreEquippedPartSlots(int[] slots) => _equippedPartSlots = slots;
+        public void ServerRestoreEquippedPartSlots(int[] slots) => _equippedPartSlots = ValidateEquippedPartSlots(slots);
+
+        // 서버 → 이 캐릭터의 클라이언트: 서버가 기억하는 장착 칸 번호를 알려 준다. (접속 때 5단계가 부른다)
+        // 기억한 값이 없으면 보낼 것이 없다.
+        [Server]
+        public void ServerSendEquippedPartSlots()
+        {
+            if (_equippedPartSlots == null) return;
+            TargetSetEquippedPartSlots(connectionToClient, _equippedPartSlots);
+        }
+
+        // 클라이언트에서 실행된다. 받은 칸 번호를 서비스에 후보로 넘긴다.
+        // 서비스는 인벤토리를 열 때 그 칸에 정말 그 옷이 있는지 확인한 뒤 쓴다.
+        [TargetRpc] //서버가 특정 한 명의 클라이언트에게만 보내는 호출
+        private void TargetSetEquippedPartSlots(NetworkConnectionToClient target, int[] slots)
+        {
+            _appearanceService.SetServerEquippedPartSlots(slots);
+        }
 
         #endregion
 
@@ -236,6 +265,11 @@ namespace MySecondWorld.Network
                 // 2. 어떤 예외가 있더라도 서버의 SyncVar에 확실하게 대입!
                 _appearance = data;
                 Debug.Log($"[NetAppearance] [Server] _appearance 동기화 성공! Gender={data.Gender}, Head={data.Head}, Torso={data.Torso}");
+
+                // 외형이 바뀌었으니, 이미 기억하던 칸 번호가 아직 맞는지 다시 확인한다.
+                // (칸 번호 없이 외형만 오는 경우에, 바뀐 옷을 가리키는 낡은 칸 번호가 남지 않게 하려는 것)
+                if (_equippedPartSlots != null)
+                    _equippedPartSlots = ValidateEquippedPartSlots(_equippedPartSlots);
             }
             catch (System.Exception ex)
             {
@@ -244,6 +278,14 @@ namespace MySecondWorld.Network
                 // 여기서 대입하며 [SyncVar] 훅 발동 → OnAppearanceChanged 실행
                 _appearance = data;
             }
+        }
+
+        // 클라가 장착 칸 번호 배열을 서버로 보낸다. 서버가 검증기로 거른 뒤 '맞는 것만 기억'한다.
+        // 외형을 확정하는 CmdSetAppearance가 먼저 처리되어야 검증이 새 외형 기준으로 돌아간다.
+        [Command]
+        public void CmdSetEquippedPartSlots(int[] clientSlots)
+        {
+            _equippedPartSlots = ValidateEquippedPartSlots(clientSlots);
         }
 
         // 클라가 보낸 장착 칸 번호 배열(clientSlots)을 서버가 검사한다. 클라의 말을 믿지 않는다.
