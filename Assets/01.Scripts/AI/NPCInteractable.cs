@@ -334,8 +334,9 @@ namespace MySecondWorld.AI
         private void OnExitMenu() => _menuUI.Close();
 
         // Talking에 진입하는 경로는 두 개다.
-        // Interact         → 처음 대화창 열기
-        // ResponseReceived → LLM 응답 받고 돌아오기
+        // Interact         → 처음 대화창 열기 (여기서 입력을 연다)
+        // ResponseReceived → LLM 응답 받고 돌아오기. 입력은 여기서 열지 않고 NPCDialogueUI가 연다:
+        //                    빈 응답은 responseSub, TTS 재생이 끝나면 speakFinishedSub, TTS 장애면 2초 안전망.
         private void OnEnterTalking(StateMachine<NpcState, NpcTrigger>.Transition t)
         {
             if (t.Trigger == NpcTrigger.SelectTalk)
@@ -344,7 +345,8 @@ namespace MySecondWorld.AI
                 _cts?.Dispose();
                 _cts = new CancellationTokenSource();
 
-                _dialogueUI.Open(SessionKey, _brain != null ? _brain.Memory : null, _brain != null ? _brain.SystemPrompt : null);
+                _dialogueUI.Open(SessionKey, _brain != null ? _brain.Memory : null,
+                                 _brain != null ? _brain.SystemPrompt : null);
                 DialogueCameraController.Instance?.FocusOnNPC(transform, PlayerHealthState.LocalTransform);
 
                 // R3 구독 — _cts 해제 시 자동으로 함께 해제된다
@@ -358,18 +360,15 @@ namespace MySecondWorld.AI
 
                 _dialogueUI.SetInputEnabled(true);
             }
-            else if (t.Trigger == NpcTrigger.ResponseReceived)
-            {
-                // Generating에서 돌아옴 — 입력만 다시 활성화
-                _dialogueUI.SetInputEnabled(true);
-            }
         }
 
         // Generating은 진입 경로가 Submit 하나다. 진입 경로가 하나뿐이므로 파라미터 없는 버전을 쓴다.
         // 나가는 경로는 세 개다. 그러나 특별한 정리작업이 없으므로 OnExit은 따로 작성하지 않는다.
         private void OnEnterGenerating()
         {
-            Debug.Log($"[NPCInteractable] {name}: OnEnterGenerating 진입! _pendingInput='{_pendingInput}', _messagePub={(_messagePub == null ? "NULL" : "OK")}, _dialogueUI={(_dialogueUI == null ? "NULL" : "OK")}, _cts={(_cts == null ? "NULL" : "OK")}");
+            Debug.Log($"[NPCInteractable] {name}: OnEnterGenerating 진입! _pendingInput='" +
+                $"{_pendingInput}', _messagePub={(_messagePub == null ? "NULL" : "OK")}, " +
+                $"_dialogueUI={(_dialogueUI == null ? "NULL" : "OK")}, _cts={(_cts == null ? "NULL" : "OK")}");
             try
             {
                 // _pendingInput Submit 시 저장해둔 값을 사용한다. (캐싱)
@@ -385,7 +384,8 @@ namespace MySecondWorld.AI
                 string sessionKey = SessionKey;
                 string localPlayer = MySecondWorld.Network.PlayerSession.LocalPlayerName;
                 bool isCtsCanceled = _cts != null && _cts.Token.IsCancellationRequested;
-                Debug.Log($"[NPCInteractable] {name}: OnEnterGenerating 발행 시도 -> SessionKey='{sessionKey}', Text='{_pendingInput}', Player='{localPlayer}', CtsCanceled={isCtsCanceled}");
+                Debug.Log($"[NPCInteractable] {name}: OnEnterGenerating 발행 시도 -> " +
+                    $"SessionKey='{sessionKey}', Text='{_pendingInput}', Player='{localPlayer}', CtsCanceled={isCtsCanceled}");
 
                 _messagePub.Publish(sessionKey, new PlayerMessageSentEvent(_pendingInput, localPlayer, _cts.Token));
                 _pendingInput = null;
@@ -398,7 +398,8 @@ namespace MySecondWorld.AI
         }
 
         // Shopping은 진입 경로가 SelectShop 하나뿐이라 항상 cts를 새로 만든다.
-        // 나가면(Close/PlayerLeft → InRange) OnEnterIdle이 InRange의 OnEntry로도 걸려있어 cts 정리 + _shopUI.Close()까지 같이 처리된다.
+        // 나가면(Close/PlayerLeft → InRange)
+        //   OnEnterIdle이 InRange의 OnEntry로도 걸려있어 cts 정리 + _shopUI.Close()까지 같이 처리된다.
         private void OnEnterShopping()
         {
             _cts?.Cancel();
@@ -412,7 +413,8 @@ namespace MySecondWorld.AI
         }
 
         // companion이 대화 중에 딴 데로 걸어가버리는 걸 막기 위한 훅
-        // "대화창이 열려있냐/닫혀있냐" 라는 UI 레벨 상태로, 이걸 CompanionAI한테 알려줘서 이동을 잠깐 멈추게 하는 용도
+        // "대화창이 열려있냐/닫혀있냐" 라는 UI 레벨 상태로,
+        // 이걸 CompanionAI한테 알려줘서 이동을 잠깐 멈추게 하는 용도
         protected virtual void OnConversationStateChanged(bool paused) { }
 
         // 다른 NPC가 공유 UI를 새로 차지할 때(_activeInteraction 경유), 또는 자기 자신이 비활성화될 때(OnDisable) 호출되는 강제 정리

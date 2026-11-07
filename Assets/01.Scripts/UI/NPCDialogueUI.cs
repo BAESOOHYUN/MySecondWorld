@@ -67,7 +67,13 @@ namespace MySecondWorld.UI
         private ChatBubble _thinkingBubble;
         private CancellationTokenSource _thinkingAnimCts;
         private CancellationTokenSource _sttCts;
-        private bool _hasReceivedSentence = false;
+        // 이번 응답에서 TTS 음성 문장이 한 번이라도 시작됐는가. ShowThinking()에서 false, sentenceStartedSub에서 true.
+        // 응답 도착 후 2초가 지나도 false이면 TTS 장애로 보고 텍스트를 즉시 출력한다(FallbackEnsureDialogueAsync).
+        private bool _ttsSentenceStarted = false;
+
+        // 이번 질문에 대한 LLM 응답 전체가 도착했는가. 제출 시 false, responseSub에서 true.
+        // 응답이 오는 도중 발행된 TTS "말 끝남"으로 입력이 열리는 것을 막는 데 쓴다.
+        private bool _llmResponseCompleted;
         private string _lastPlayerText; // Stores last player input for memory logging
         #endregion
 
@@ -99,33 +105,32 @@ namespace MySecondWorld.UI
             sentenceStartedSub
                 .Subscribe(evt =>
                 {
-                    if (evt.NpcGuid != _currentNpcGuid)
-                        return;
-                    _hasReceivedSentence = true; // 문장 수신 확인!
+                    if (evt.NpcGuid != _currentNpcGuid) return;
+                    _ttsSentenceStarted = true; // 문장 수신 확인!
                     AppendSentence(evt.Text);    // 음성 타이밍에 맞춰 문장 추가
                 })
                 .AddTo(destroyCancellationToken);
 
-            // TTS 마지막 문장 재생 완료 → speakFinishedSub 발행 → SetInputEnabled(true) ← 적절한 타이밍
-            // TTS 재생 완료 → 입력창 활성화
+            // NPCSpeakFinishedEvent = NPCVoicePlayer의 TTS 재생 큐가 비고 마지막 클립 재생이 끝났을 때(또는 정지 버튼으로 취소됐을 때) 발행된다.
+            // LLM이 문장을 아직 보내는 중에 큐가 잠깐 비어도 발행되므로, 이 신호만으로는 "대답이 끝났다"고 볼 수 없다.
+            // 응답 전체가 도착한 뒤(_llmResponseCompleted)에 온 신호일 때만 입력창을 다시 연다.
             speakFinishedSub
                 .Subscribe(evt =>
                 {
-                    if (evt.NpcGuid != _currentNpcGuid)
-                        return;
+                    if (evt.NpcGuid != _currentNpcGuid) return;
+                    if (!_llmResponseCompleted) return;   // 응답이 아직 오는 중의 "TTS 재생 큐 비었음"은 무시
                     SetInputEnabled(true);
                 })
                 .AddTo(destroyCancellationToken);
 
-            // TTS 서버 꺼진 경우 안전망: 5초 후 강제 활성화
-            // responseSub: LLM 응답 도착 시 즉시 화면에 대화 표시
+            // responseSub: LLM 응답이 끝까지 도착했을 때 발행된다. 도착 즉시 _llmResponseCompleted를 true로 하고 화면에 대화를 표시한다.
+            // TTS 장애 안전망: 도착 후 2초가 지나도 TTS 문장이 시작되지 않으면 텍스트를 즉시 출력하고 입력을 연다(FallbackEnsureDialogueAsync)
             responseSub
                 .Subscribe(evt =>
                 {
-                    if (evt.NpcGuid != _currentNpcGuid)
-                        return;
-                    if (_npcNameText != null)
-                        _npcNameText.text = evt.NpcName;
+                    if (evt.NpcGuid != _currentNpcGuid) return;
+                    _llmResponseCompleted = true;
+                    if (_npcNameText != null) _npcNameText.text = evt.NpcName;
 
                     if (string.IsNullOrWhiteSpace(evt.Text))
                     {
@@ -148,8 +153,7 @@ namespace MySecondWorld.UI
             thinkingSub
                 .Subscribe(evt =>
                 {
-                    if (evt.NpcGuid != _currentNpcGuid)
-                        return;
+                    if (evt.NpcGuid != _currentNpcGuid) return;
                     ShowThinking();
                     SetInputEnabled(false);
                 })
@@ -158,7 +162,12 @@ namespace MySecondWorld.UI
             _submitButton.OnClickAsObservable()
                 .Select(_ => _playerInputField.text.Trim())
                 .Where(t => t.Length > 0)
-                .Subscribe(t => ShowPlayerBubble(t))
+                .Subscribe(t =>
+                            {
+                                ShowPlayerBubble(t);
+                                _llmResponseCompleted = false;  // 새 질문이므로 응답 대기 상태로
+                                SetInputEnabled(false);         // 이벤트를 기다리지 않고 누르자마자 바로 잠근다
+                            })
                 .AddTo(destroyCancellationToken);
 
             _stopTTSPub = stopTTSPub;
@@ -484,7 +493,7 @@ namespace MySecondWorld.UI
 
         public void ShowThinking()
         {
-            _hasReceivedSentence = false; // 플래그 초기화
+            _ttsSentenceStarted = false; // 플래그 초기화
             if (_thinkingBubblePrefab == null || _chatContent == null) return;
 
             // 이전 생각중 버블 정리 (방어코드)
@@ -549,13 +558,13 @@ namespace MySecondWorld.UI
                 _scrollRect.verticalNormalizedPosition = 0f;
         }
 
-        // 안전망: TTS가 정상 작동하면 _hasReceivedSentence가 true가 되어 아무것도 안 하고,
+        // 안전망: TTS가 정상 작동하면 _ttsSentenceStarted가 true가 되어 아무것도 안 하고,
         // TTS가 죽어서 문장이 안 오면 2초 뒤 전체 답변을 띄워줌!
         private async UniTaskVoid FallbackEnsureDialogueAsync(string fullText, CancellationToken ct)
         {
             await UniTask.Delay(2000, cancellationToken: ct);
             // 2초 동안 TTS 음성 문장이 단 한 번도 도착하지 않은 경우 (TTS 장애/무음)
-            if (!_hasReceivedSentence)
+            if (!_ttsSentenceStarted)
             {
                 AppendSentence(fullText); // 전체 텍스트 즉시 출력 & '...' 버블 닫기
                 SetInputEnabled(true);
@@ -567,12 +576,13 @@ namespace MySecondWorld.UI
         #region STT 헬퍼 메서드
         private void StartSTT()
         {
+            if (!_submitButton.interactable) return; // 응답 생성·재생 중에는 녹음 시작 안 함. 버튼을 회색으로 만들어 막음
             if (_stt.IsListening) return;   // 이미 녹음 중이면 두 번째 호출은 무시 (PointerDown이 중복 전달돼도 안전)
             _sttCts?.Cancel(); // 작업 멈춤
             _sttCts?.Dispose(); // 리소스 해제
             // CreateLinkedTokenSource : 두 개의 CancellationToken을 하나로 묶는 것
-            // _sttCts.Cancel() 사용자가 대화창 닫음
-            // destroyCancellationToken GameObject가 파괴됨 (씬 전환 등)
+            //  - _sttCts.Cancel() 사용자가 대화창 닫음
+            //  - destroyCancellationToken GameObject가 파괴됨 (씬 전환 등)
             // 둘 중 하나라도 취소되면 _sttCts.Token(ListenAsync의 ct)이 취소
             _sttCts = CancellationTokenSource.CreateLinkedTokenSource(destroyCancellationToken);
             RecordAndFill(_sttCts.Token).Forget();
@@ -583,6 +593,8 @@ namespace MySecondWorld.UI
             var text = await _stt.ListenAsync(ct);
             if (!string.IsNullOrEmpty(text) && !ct.IsCancellationRequested)
             {
+                // 제출 직전에 한 번 더 버튼 확인 (녹음 중에 응답이 시작된 경우 대비)
+                if (!_submitButton.interactable) return;
                 _playerInputField.text = text;
                 _submitButton.onClick.Invoke();
             }
