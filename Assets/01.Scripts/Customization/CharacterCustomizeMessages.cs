@@ -24,12 +24,12 @@ namespace MySecondWorld.Customization
     {
         public readonly CharacterAppearanceData Data;
         // 파츠별로 입은 인벤토리 칸 번호 (PartType 순서, 미장착·모름은 -1). null이면 칸 번호는 보내지 않는다
-        public readonly int[] EquippedSlots;
+        public readonly int[] EquippedPartSlots;
 
-        public CharacterAppearanceSyncRequestedEvent(CharacterAppearanceData data, int[] equippedSlots = null)
+        public CharacterAppearanceSyncRequestedEvent(CharacterAppearanceData data, int[] equippedPartSlots = null)
         {
             Data = data;
-            EquippedSlots = equippedSlots;
+            EquippedPartSlots = equippedPartSlots;
         }
     }
 

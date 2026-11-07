@@ -25,7 +25,7 @@ namespace MySecondWorld.Customization
         // null이면 서버가 알려 준 값이 없다는 뜻 (옛 세이브 등) → 복원은 첫 칸 폴백으로 간다
         // 인벤토리가 아직 다 도착하지 않았을 수 있어서,
         // 인벤토리를 열 때 그 칸에 실제로 그 아이템이 있는지 확인한 뒤에 위 딕셔너리로 옮긴다.
-        private int[] _serverEquippedSlots;
+        private int[] _serverEquippedPartSlots;
 
         #endregion
 
@@ -70,9 +70,9 @@ namespace MySecondWorld.Customization
 
         // 서버가 접속 때 알려 준 칸 번호를 받아 둔다. 예전 기록은 모두 지우고 서버 값으로 다시 시작한다.
         // (로그아웃했다가 다른 계정으로 들어와도 앞 계정의 칸 번호가 남지 않게 하려는 것)
-        public void SetServerEquippedSlots(int[] slots)
+        public void SetServerEquippedPartSlots(int[] slots)
         {
-            _serverEquippedSlots = slots;
+            _serverEquippedPartSlots = slots;
             _equippedInventorySlotIndexByPart.Clear();
         }
 
@@ -90,7 +90,7 @@ namespace MySecondWorld.Customization
                 var item = GetRequiredItemForCurrentLook(part); // 지금 이 파츠에 입은 옷의 아이템 (맨몸·무료 파츠면 null)
                 if (item == null) continue; // 찾을 게 없으니 다음 파츠로
 
-                int serverSlot = GetServerEquippedSlot(part); // 서버가 알려 준 칸 (없으면 -1)
+                int serverSlot = GetServerEquippedPartSlot(part); // 서버가 알려 준 칸 (없으면 -1)
 
                 // 서버가 알려 준 칸 하나만 열어서, 그 옷이 정말 있는지 확인한다
                 if (serverSlot >= 0 && serverSlot < inventory.MaxSlots 
@@ -154,8 +154,8 @@ namespace MySecondWorld.Customization
             }
 
             // 1. 해당 파츠 장착
-            data[part] = index;
-            _equippedInventorySlotIndexByPart[part] = inventorySlotIndex;
+            data[part] = index;                                             // 이 옷이 어떤 옷인가
+            _equippedInventorySlotIndexByPart[part] = inventorySlotIndex;   // 그 옷이 가방 어디에 있는가
 
             // 2. 좌우 대칭 파츠(팔, 다리, 장갑,
             // 어깨 등)면 반대쪽도 세트로 함께 착용
@@ -167,7 +167,7 @@ namespace MySecondWorld.Customization
 
             // 3. 로컬 세이브 저장 & 네트워크 동기화 브로드캐스트
             _saveService.Save(data);
-            _syncRequestPub.Publish(new CharacterAppearanceSyncRequestedEvent(data, BuildEquippedSlotsArray()));
+            _syncRequestPub.Publish(new CharacterAppearanceSyncRequestedEvent(data, BuildEquippedPartSlots()));
             OnAppearanceChanged?.Invoke();
 
             Debug.Log($"[CharacterAppearanceService] 파츠 장착 완료: {item.Title} (Part={part}, Index={index})");
@@ -190,7 +190,7 @@ namespace MySecondWorld.Customization
                 _equippedInventorySlotIndexByPart.Remove(mirrorPart);
             }
             _saveService.Save(data);
-            _syncRequestPub.Publish(new CharacterAppearanceSyncRequestedEvent(data, BuildEquippedSlotsArray()));
+            _syncRequestPub.Publish(new CharacterAppearanceSyncRequestedEvent(data, BuildEquippedPartSlots()));
             OnAppearanceChanged?.Invoke();
             Debug.Log($"[CharacterAppearanceService] 파츠 해제 완료: Part={part}");
             return true;
@@ -213,7 +213,7 @@ namespace MySecondWorld.Customization
         public void SaveAndSyncAppearance(CharacterAppearanceData data)
         {
             _saveService.Save(data);
-            _syncRequestPub.Publish(new CharacterAppearanceSyncRequestedEvent(data, BuildEquippedSlotsArray()));
+            _syncRequestPub.Publish(new CharacterAppearanceSyncRequestedEvent(data, BuildEquippedPartSlots()));
             OnAppearanceChanged?.Invoke();
             Debug.Log($"[CharacterAppearanceService] 전체 외형 저장 및 동기화 요청 완료 (Gender={data.Gender}, Head={data.Head}, Torso={data.Torso})");
         }
@@ -249,28 +249,28 @@ namespace MySecondWorld.Customization
             }
         }
 
-        // 인벤토리 소유권을 검증하여 미보유 파츠는 이전 외형으로 롤백한다.
-        // (커스터마이징 창에서 저장할 때 호출)
+        // 인벤토리 소유권을 검증하여 미보유 파츠는 이전 외형(fallbackAppearance)으로 롤백한다.
+        // 2026-11-08 기준 호출하는 곳이 없다. (CharacterCustomizeUI가 같은 일을 하는 자기 메서드를 따로 가지고 있다)
         public CharacterAppearanceData ValidateOwnership(
-            CharacterAppearanceData requested,
-            CharacterAppearanceData fallback,
+            CharacterAppearanceData requestedAppearance,
+            CharacterAppearanceData fallbackAppearance,
             Inventory inventory)
         {
-            if (_avatarPartKeyTable == null || inventory == null) return requested;
+            if (_avatarPartKeyTable == null || inventory == null) return requestedAppearance;
 
             foreach (PartType part in System.Enum.GetValues(typeof(PartType)))
             {
-                int index = requested[part];
+                int index = requestedAppearance[part];
                 if (index <= 0) continue; // 기본 파츠(0)나 미착용(-1)은 항상 허용
 
-                var requiredItem = _avatarPartKeyTable.GetRequiredItem(part, requested.Gender, index);
+                var requiredItem = _avatarPartKeyTable.GetRequiredItem(part, requestedAppearance.Gender, index);
                 if (requiredItem != null && !inventory.Contains(requiredItem, 1))
                 {
-                    requested[part] = fallback[part]; // 미소유 → 롤백
+                    requestedAppearance[part] = fallbackAppearance[part]; // 미소유 → 롤백
                 }
             }
 
-            return requested;
+            return requestedAppearance;
         }
 
         #endregion
@@ -278,13 +278,13 @@ namespace MySecondWorld.Customization
         #region 헬퍼 메서드 (조회)
 
         // 서버가 알려준 이 파츠의 칸 번호. 없거나 모르면 -1
-        private int GetServerEquippedSlot(PartType part)
-            => _serverEquippedSlots != null && (int)part < _serverEquippedSlots.Length
-            ? _serverEquippedSlots[(int)part] : -1;
+        private int GetServerEquippedPartSlot(PartType part)
+            => _serverEquippedPartSlots != null && (int)part < _serverEquippedPartSlots.Length
+            ? _serverEquippedPartSlots[(int)part] : -1;
 
         // 클라: 옷을 입고 벗을 때 칸 번호를 서버로 보낸다  
         // 입은 파츠 기록을 서버로 보낼 배열로 바꾼다. 배열 순서는 PartType 순서이고, 기록이 없는 파츠는 -1
-        private int[] BuildEquippedSlotsArray()
+        private int[] BuildEquippedPartSlots()
         {
             var slots = new int[System.Enum.GetValues(typeof(PartType)).Length];
             for (int i = 0; i < slots.Length; i++)

@@ -32,7 +32,7 @@ namespace MySecondWorld.Save
         // 장착한 파츠별 인벤토리 칸 번호 (배열 순서는 PartType 순서, 미장착·모름은 -1)
         // 무기는 위의 mainHandInventorySlotIndex가 따로 맡는다
         // null이면 이 필드가 생기기 전의 옛 세이브
-        public int[] equippedPartInventorySlotIndexes;
+        public int[] equippedPartSlots;
     }
 
     [System.Serializable]
