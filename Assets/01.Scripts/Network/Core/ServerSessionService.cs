@@ -279,21 +279,21 @@ namespace MySecondWorld.Network
         // [S-End] 세이브 + 세션 정리 (OnServerDisconnect에서 호출)
         public void RemovePlayer(NetworkConnectionToClient conn)
         {
+            // 1. playerNames 정리 — 세션이 만들어지기 전(인증만 통과하고 끊김)에도 이름이 남지 않게 if 바깥으로
+            if (conn.authenticationData is string username)
+                PlayerAuthenticator.playerNames.Remove(username);
+
             if (Sessions.TryGetValue(conn.connectionId, out var session))
             {
-                // 1. 세이브
+                // 2. 세이브
                 SavePlayer(conn, session);
 
                 if (session.companionIdentity != null)
                     NetworkServer.Destroy(session.companionIdentity.gameObject);
 
-                // 2. 던전 룸 퇴장 — 방 슬롯 반환해야 다른 플레이어가 입장 가능
+                // 3. 던전 룸 퇴장 — 방 슬롯 반환해야 다른 플레이어가 입장 가능
                 if (session.roomId != Guid.Empty)
                     _roomRegistry.LeaveRoom(session.currentScene, conn.connectionId);
-
-                // 3. playerNames 정리 — 재접속 시 이름 중복 거부 방지
-                if (conn.authenticationData is string username)
-                    PlayerAuthenticator.playerNames.Remove(username);
 
                 // 4. 세션 제거
                 session.sentBundleLabels.Clear();
