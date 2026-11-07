@@ -296,8 +296,10 @@ namespace MySecondWorld.AI
         private void OnEnterIdle()
         {
             if (_activeInteraction == this)
+            {
                 _activeInteraction = null;
-
+                OnUIChecker.SetConversationActive(false);
+            }
             _brain?.OnConversationEnded();  // _cts.Cancel() 전 — destroyCancellationToken 살아있어야 함
             _cts?.Cancel();
             _cts?.Dispose();
@@ -315,6 +317,7 @@ namespace MySecondWorld.AI
             if (_activeInteraction != null && _activeInteraction != this)
                 _activeInteraction.ForceReset();
             _activeInteraction = this;
+            OnUIChecker.SetConversationActive(true);
 
             _cts?.Cancel();
             _cts?.Dispose();
@@ -416,8 +419,10 @@ namespace MySecondWorld.AI
         public void ForceReset()
         {
             if (_activeInteraction == this)
-                _activeInteraction = null;
-
+            {
+                _activeInteraction = null; // NPC가 여러 명일 때 대화 중인 NPC만 끈다.
+                OnUIChecker.SetConversationActive(false);
+            }
             _playerColliders.Clear();
 
             _brain?.OnConversationEnded();

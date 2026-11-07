@@ -106,7 +106,7 @@ namespace MySecondWorld.Move
         {
             if (_controller == null || !_controller.enabled || !gameObject.activeInHierarchy) return;
 
-            if (MovementLocked)
+            if (MovementLocked || OnUIChecker.IsMovementBlockedByUI)
             {
                 // 이동 락 상태: 입력 및 이동 방향을 즉시 0으로 초기화하고 애니메이터에 Speed = 0 발행 (어색한 모션 튐 방지)
                 _moveDirection = Vector3.zero;
@@ -140,7 +140,6 @@ namespace MySecondWorld.Move
 
         private void JoyStickMove()
         {
-            if (OnUIChecker.IsInputFieldFocused()) return;
             if (GetCameraYAngle == null)
             {
                 // 카메라 없어도 Speed 0 발행해서 모션 고착 방지

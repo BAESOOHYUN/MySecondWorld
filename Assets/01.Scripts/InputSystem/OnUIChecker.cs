@@ -6,12 +6,16 @@ public class OnUIChecker
 {
     private static List<RaycastResult> _raycastResults = new List<RaycastResult>();
     private static PointerEventData _pointerEventData;
+    public static bool IsConversationActive { get; private set; }   // NPC와 대화·메뉴·상점이 열려 있는가
+    public static bool IsMovementBlockedByUI 
+        => IsConversationActive || IsInputFieldFocused(); //  NPC와 대화 중이거나 입력창에 글을 쓰는 중이면 캐릭터를 움직이지 않는다
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void InitStatics()
     {
         _raycastResults = new List<RaycastResult>();
         _pointerEventData = null;
+        IsConversationActive = false;
     }
 
     public static List<RaycastResult> GetLastResults()
@@ -41,10 +45,12 @@ public class OnUIChecker
 
     public static bool IsInputFieldFocused()
     {
-        var currObj = EventSystem.current.currentSelectedGameObject;
-        return EventSystem.current != null 
-            && currObj != null 
-            && currObj.TryGetComponent(out TMPro.TMP_InputField _); //밑줄(_)은 "결과값을 쓰지 않겠다"는 의미, true/false만 판단
+        if (EventSystem.current == null) return false;
+            var currObj = EventSystem.current.currentSelectedGameObject;
+        
+        return currObj != null 
+            && currObj.TryGetComponent(out TMPro.TMP_InputField _); // 밑줄(_)은 "결과값을 쓰지 않겠다"는 의미, true/false만 판단
     }
 
+    public static void SetConversationActive(bool active) => IsConversationActive = active;
 }
