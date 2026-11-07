@@ -575,8 +575,8 @@ namespace MySecondWorld.UI
         #region STT 헬퍼 메서드
         private void StartSTT()
         {
-            if (!_submitButton.interactable) return; // 응답 생성·재생 중에는 녹음 시작 안 함. 버튼을 회색으로 만들어 막음
             if (_stt.IsListening) return;   // 이미 녹음 중이면 두 번째 호출은 무시 (PointerDown이 중복 전달돼도 안전)
+            if (!_submitButton.interactable) return; // 응답 생성·재생 중에는 녹음 시작 안 함. 버튼을 회색으로 만들어 막음
             _sttCts?.Cancel(); // 작업 멈춤
             _sttCts?.Dispose(); // 리소스 해제
             // CreateLinkedTokenSource : 두 개의 CancellationToken을 하나로 묶는 것
@@ -592,9 +592,9 @@ namespace MySecondWorld.UI
             var text = await _stt.ListenAsync(ct);
             if (!string.IsNullOrEmpty(text) && !ct.IsCancellationRequested)
             {
+                _playerInputField.text = text;
                 // 제출 직전에 한 번 더 버튼 확인 (녹음 중에 응답이 시작된 경우 대비)
                 if (!_submitButton.interactable) return;
-                _playerInputField.text = text;
                 _submitButton.onClick.Invoke();
             }
             _sttCts?.Dispose();
