@@ -507,10 +507,10 @@ namespace MySecondWorld.Network
                 PlayerChangedScene(conn, targetZone.sceneName); // 소속 전환(MoveGameObjectToScene)
 
                 // 1. 플레이어 재스냅
-                // ServerRescueTo는 이름은 "낙하 구조"지만 실제로는 NetworkTransform 보간 버퍼 리셋 +
-                // CharacterController 껐다 켜기라, 포탈 전환 직후 재스냅에도 그대로 재사용한다
+                // ServerForceMoveTo는 낙하 구조·사망 부활·탈출·NPC 순간이동이 모두 쓰는 "강제 이동" 경로다.
+                // NetworkTransform 보간 버퍼 리셋 + CharacterController 껐다 켜기라, 포탈 전환 직후 재스냅에도 그대로 쓴다
                 if (conn.identity.TryGetComponent(out MySecondWorld.Network.Player.NetworkPlayerController playerController))
-                    playerController.ServerRescueTo(rescuePos);
+                    playerController.ServerForceMoveTo(rescuePos);
                 // 2. 컴패니언도 플레이어 바로 옆으로 동반 텔레포트
                 if (session.companionIdentity != null && session.companionPresent)
                 {
@@ -660,7 +660,7 @@ namespace MySecondWorld.Network
             // transform.position 직접 대입은 다음 클라 스냅샷에 덮어써진다 (권한이 클라에 있음).
             // 반드시 소유 클라까지 내려가는 경로로 보낼 것.
             if (conn.identity.TryGetComponent(out MySecondWorld.Network.Player.NetworkPlayerController npc))
-                npc.ServerRescueTo(targetPos);
+                npc.ServerForceMoveTo(targetPos);
 
             // 컴패니언도 옆으로 동반 텔레포트
             if (session.Value.companionIdentity != null && session.Value.companionPresent)

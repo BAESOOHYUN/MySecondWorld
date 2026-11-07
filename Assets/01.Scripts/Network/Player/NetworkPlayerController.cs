@@ -128,32 +128,33 @@ namespace MySecondWorld.Network.Player
             return _networkManager.defaultSubScene; // 못 찾으면 기본값 폴백
         }
 
-        // 서버가 낙하 구조를 지시하는 진입점 (ServerZoneService.RecoverFromFall에서 호출)
+        // 서버가 정한 위치로 강제 이동시키는 진입점. 낙하 구조·사망 부활·탈출·NPC 순간이동·포탈 재스냅이 모두 여기를 지난다
+        // (ServerZoneService.MovePlayerToAsync 등에서 호출)
         [Server]
-        public void ServerRescueTo(Vector3 position)
+        public void ServerForceMoveTo(Vector3 position)
         {
-            ApplyRescue(position);
+            ApplyForcedMove(position);
 
             // 보간 버퍼를 비워야 다른 클라가 "먼 거리를 미끄러져 이동"하는 것으로 보지 않는다
             if (_netTransform != null)
                 _netTransform.ServerTeleport(position, transform.rotation);
             // 구조가 필요한 건 CharacterController를 켜고 있는 소유 클라 하나뿐.
             // ClientRpc로 보내면 같은 방의 다른 클라까지 받아서 버리게 된다.
-            TargetRescueTo(position);
+            TargetForceMoveTo(position);
         }
 
         [TargetRpc]
-        private void TargetRescueTo(Vector3 position)
+        private void TargetForceMoveTo(Vector3 position)
         {
             if (!isOwned) return; // CharacterController가 켜져 있는 건 소유 클라뿐
-            ApplyRescue(position);
+            ApplyForcedMove(position);
         }
 
         // 위치를 강제로 옮긴다 (낙하 구조·탈출·NPC 순간이동 공통 경로).
         // CharacterController는 내부에 자기 위치를 캐싱해서, 켜진 채 transform.position을 바꾸면 위치를 되돌린다 → 끄고, 옮기고, 복원한다.
-        // 다시 켤 때는 "원래 상태 그대로" 돌려놓는다(wasEnabled). 같은 코드가 서버 사본(꺼져 있어야 함)과  내 캐릭터·Host(켜져 있어야 함) 양쪽에서 돌기 때문이다.
-        // Host 모드에선 서버 사본이 곧 소유 클라라 켜져 있을 수 있으므로 상태를 가정하지 않고 보존한다.
-        private void ApplyRescue(Vector3 position)
+        // enabled = true로 고정하면 남의 사본(꺼져 있어야 함)이 켜져 버리기 때문에, 다시 켤 때는 "원래 상태 그대로" 돌려놓는다(wasEnabled).
+        // 같은 코드가 서버 사본(꺼져 있어야 함)과 내 캐릭터·Host(켜져 있어야 함) 양쪽에서 돌기 때문이다.
+        private void ApplyForcedMove(Vector3 position)
         {
             bool wasEnabled = _characterController.enabled;
             _characterController.enabled = false;
@@ -165,7 +166,7 @@ namespace MySecondWorld.Network.Player
             if (_movementController != null)
                 _movementController.ResetVerticalVelocity();
 
-            // ApplyRescue는 소유 클라 한 곳에서만 실행되지 않는다.
+            // ApplyForcedMove는 소유 클라 한 곳에서만 실행되지 않는다.
             // isOwned는 "이 객체의 소유자가 나(이 프로세스)인가"를 묻는다.
             // 서버 사본이나 남의 객체에서는 false라서 거기서는 신호가 안 나간다.
             // 이 이벤트는 내 화면의 존 UI를 닫으려는 것이므로 isOwned ==true일때만 발생시킨다.
