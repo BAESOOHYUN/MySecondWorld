@@ -158,9 +158,8 @@ namespace MySecondWorld.AI.Voice
                 if (_fetchQueue.Count > 0)
                 {
                     _playCts?.Dispose();
-
                     _playCts = CancellationTokenSource.CreateLinkedTokenSource(destroyCancellationToken);
-                    PlayQueue(destroyCancellationToken).Forget(); // ← 오브젝트 파괴 때만 취소되는 토큰
+                    PlayQueue(_playCts.Token).Forget(); // 정지 이벤트가 취소하는 토큰
                 }
                 else
                 {

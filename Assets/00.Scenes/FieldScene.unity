@@ -794923,6 +794923,31 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 11400000, guid: 1a9fb9cfbf88a8a40898cf618765ef79,
         type: 2}
+    - target: {fileID: 3212037919502458791, guid: 301df057ffda16644a17fdacb19192bc,
+        type: 3}
+      propertyPath: _midMax
+      value: 0.014
+      objectReference: {fileID: 0}
+    - target: {fileID: 3212037919502458791, guid: 301df057ffda16644a17fdacb19192bc,
+        type: 3}
+      propertyPath: _holdTime
+      value: 0.02
+      objectReference: {fileID: 0}
+    - target: {fileID: 3212037919502458791, guid: 301df057ffda16644a17fdacb19192bc,
+        type: 3}
+      propertyPath: _smallMax
+      value: 0.009
+      objectReference: {fileID: 0}
+    - target: {fileID: 3212037919502458791, guid: 301df057ffda16644a17fdacb19192bc,
+        type: 3}
+      propertyPath: _neutralMax
+      value: 0.004
+      objectReference: {fileID: 0}
+    - target: {fileID: 3212037919502458791, guid: 301df057ffda16644a17fdacb19192bc,
+        type: 3}
+      propertyPath: _smoothSpeed
+      value: 25
+      objectReference: {fileID: 0}
     - target: {fileID: 3246674798632750291, guid: 301df057ffda16644a17fdacb19192bc,
         type: 3}
       propertyPath: sceneId
@@ -941440,6 +941465,31 @@ PrefabInstance:
         type: 3}
       propertyPath: m_IsActive
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3212037919502458791, guid: 301df057ffda16644a17fdacb19192bc,
+        type: 3}
+      propertyPath: _midMax
+      value: 0.014
+      objectReference: {fileID: 0}
+    - target: {fileID: 3212037919502458791, guid: 301df057ffda16644a17fdacb19192bc,
+        type: 3}
+      propertyPath: _holdTime
+      value: 0.02
+      objectReference: {fileID: 0}
+    - target: {fileID: 3212037919502458791, guid: 301df057ffda16644a17fdacb19192bc,
+        type: 3}
+      propertyPath: _smallMax
+      value: 0.009
+      objectReference: {fileID: 0}
+    - target: {fileID: 3212037919502458791, guid: 301df057ffda16644a17fdacb19192bc,
+        type: 3}
+      propertyPath: _neutralMax
+      value: 0.004
+      objectReference: {fileID: 0}
+    - target: {fileID: 3212037919502458791, guid: 301df057ffda16644a17fdacb19192bc,
+        type: 3}
+      propertyPath: _smoothSpeed
+      value: 25
       objectReference: {fileID: 0}
     - target: {fileID: 3246674798632750291, guid: 301df057ffda16644a17fdacb19192bc,
         type: 3}
