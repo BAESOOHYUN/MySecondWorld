@@ -106,9 +106,10 @@ namespace MySecondWorld.Move
         {
             if (_controller == null || !_controller.enabled || !gameObject.activeInHierarchy) return;
 
-            if (MovementLocked || OnUIChecker.IsMovementBlockedByUI)
+            if (MovementLocked || OnUIChecker.IsGameplayBlockedByUI)
             {
-                // 이동 락 상태: 입력 및 이동 방향을 즉시 0으로 초기화하고 애니메이터에 Speed = 0 발행 (어색한 모션 튐 방지)
+                // 이동 락 상태(스턴·사망 등 MovementLocked, 또는 대화·입력창 중 IsGameplayBlockedByUI):
+                // 입력 및 이동 방향을 즉시 0으로 초기화하고 애니메이터에 Speed = 0 발행 (어색한 모션 튐 방지)
                 _moveDirection = Vector3.zero;
                 _inputDirection = Vector3.zero;
                 InputMagnitude = 0f;

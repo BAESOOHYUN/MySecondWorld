@@ -7,8 +7,11 @@ public class OnUIChecker
     private static List<RaycastResult> _raycastResults = new List<RaycastResult>();
     private static PointerEventData _pointerEventData;
     public static bool IsConversationActive { get; private set; }   // NPC와 대화·메뉴·상점이 열려 있는가
-    public static bool IsMovementBlockedByUI 
-        => IsConversationActive || IsInputFieldFocused(); //  NPC와 대화 중이거나 입력창에 글을 쓰는 중이면 캐릭터를 움직이지 않는다
+    // NPC와 대화·메뉴·상점이 열려 있거나 입력창에 글을 쓰는 중이면 캐릭터 조작(이동·점프·공격)을 막는다.
+    // 쓰는 곳: MovementController.Update(이동·점프), PlayerAttackController.OnAttackHoldStarted(공격)
+    // (2026-11-07 IsMovementBlockedByUI → IsGameplayBlockedByUI 이름 변경: 이동뿐 아니라 공격 입력도 막기 때문)
+    public static bool IsGameplayBlockedByUI
+        => IsConversationActive || IsInputFieldFocused();
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void InitStatics()

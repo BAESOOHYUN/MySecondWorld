@@ -13,7 +13,8 @@
         "MySecondWorld.Foundation",
         "MySecondWorld.Inventory",
         "MySecondWorld.Interaction",
-        "R3.Unity"
+        "R3.Unity",
+        "MySecondWorld.Input"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

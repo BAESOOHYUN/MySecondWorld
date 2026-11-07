@@ -190,6 +190,7 @@ namespace MySecondWorld.Combat.Player
         private void OnAttackHoldStarted(InputAction.CallbackContext ctx)
         {
             if (!_weaponEquip.isLocalPlayer) return;
+            if (OnUIChecker.IsGameplayBlockedByUI) return;   // 대화 중·입력창에 글 쓰는 중에는 공격 안 함
             if (TryGetComponent(out PlayerHealthState health) && (health.IsDead || health.IsStunned)) return;
 
             if (!IsBowEquipped)
