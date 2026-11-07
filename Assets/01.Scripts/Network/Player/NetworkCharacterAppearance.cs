@@ -9,20 +9,25 @@ using MySecondWorld.Save;
 
 namespace MySecondWorld.Network
 {
-    [RequireComponent(typeof(Cleverous.VaultInventory.Inventory))]
+    using Inventory = Cleverous.VaultInventory.Inventory;
+
+    [RequireComponent(typeof(Inventory))]
     public class NetworkCharacterAppearance : NetworkBehaviour, IUseInventory
     {
         [SyncVar(hook = nameof(OnAppearanceChanged))]
         private CharacterAppearanceData _appearance;
         [SyncVar] private bool _hasServerAppearance;
+
+        // 서버가 기억하는 파츠별 입은 인벤토리 칸 번호 (PartType 순서, 미장착·모름은 -1)
+        private int[] _equippedSlots;
         private ObservableCharacterCustomizer _customizer;
         private AvatarPartKeyTableSO _avatarPartKeyTable;
         private LocalPlayerInventoryProvider _localInventoryProvider;
         private CharacterSaveService _saveService;
-        private Cleverous.VaultInventory.Inventory _inventory;
+        private Inventory _inventory;
 
         // IUseInventory 구현 — Inventory 컴포넌트가 "누가 이 인벤토리의 주인인지" 알아야 해서 필요
-        Cleverous.VaultInventory.Inventory IUseInventory.Inventory
+        Inventory IUseInventory.Inventory
         {
             get => _inventory;
             set => _inventory = value;
@@ -77,7 +82,7 @@ namespace MySecondWorld.Network
 
         private void Awake()
         {
-            _inventory = GetComponent<Cleverous.VaultInventory.Inventory>();
+            _inventory = GetComponent<Inventory>();
         }
 
         public override void OnStartServer()
@@ -109,11 +114,58 @@ namespace MySecondWorld.Network
             data = _appearance;
             return _hasServerAppearance;
         }
+
         [Server]
         public void ServerRestoreAppearance(CharacterAppearanceData data)
         {
             _appearance = data;
             _hasServerAppearance = true;
+        }
+
+        // 세이브용 — 지금 서버가 기억하는 칸 번호. 받은 적이 없으면 null
+        [Server]
+        public int[] ServerGetEquippedSlots() => _equippedSlots;
+
+        // 세이브 복원용 — 저장돼 있던 칸 번호를 서버 기억으로 되살린다
+        [Server]
+        public void ServerRestoreEquippedSlots(int[] slots) => _equippedSlots = slots;
+
+        // 클라가 보낸 칸 번호 배열(requested)을 서버가 검사한다. 클라의 말을 믿지 않는다.
+        // requested의 위치 = 파츠 종류(PartType 번호), 값 = 클라가 주장한 가방 칸 번호 (안 입은 파츠는 -1)
+        // 파츠마다 "그 칸에 그 옷이 정말 있나"를 확인해서, 맞는 칸만 남기고 틀린 칸은 -1로 바꿔 돌려준다.
+        [Server]
+        private int[] ValidateEquippedSlots(int[] requested)
+        {
+            // 결과 배열: 파츠 수만큼 만들고 전부 -1(없음)로 시작한다. 맞는 칸만 아래에서 채운다.
+            int partCount = System.Enum.GetValues(typeof(PartType)).Length;
+            var result = new int[partCount];
+            for (int i = 0; i < partCount; i++) result[i] = -1;
+
+            // 배열이 없거나 길이가 파츠 수와 다르면 이상한 요청이니 전부 -1로 돌려준다
+            if (requested == null || requested.Length != partCount || _avatarPartKeyTable == null)
+                return result;
+            
+            foreach (PartType part in System.Enum.GetValues(typeof(PartType)))
+            {
+                // slot = 클라가 이 파츠에 대해 주장한 칸 번호. (예: 왼쪽 어깨 → requested[17] → 7)
+                // 번호를 꺼낸 것뿐이고, 아직 인벤토리는 열지 않았다.
+                int slot = requested[(int)part];
+                // -1(안 입음)이거나 인벤토리 칸 개수를 넘는 번호는 건너뛴다
+                if (slot < 0 || slot >= _inventory.MaxSlots) continue;
+
+                // index = 서버가 확정한 이 파츠의 모양 번호. (slot과는 다른 값)
+                // 0 이하면 맨몸이거나 안 입은 것이라 가방 칸이 없으니 건너뛴다
+                int index = _appearance[part];
+                if (index <= 0) continue;
+
+                // required = 그 모양을 입으려면 가방에 있어야 하는 아이템. 서버가 자기 외형으로 계산한 정답이다.
+                var required = _avatarPartKeyTable.GetRequiredItem(part, _appearance.Gender, index);
+                // 클라가 말한 slot 칸 하나만 열어서(Get), 그 안의 아이템이 정답과 같으면 인정한다.
+                // 같은 아이템이 여러 칸에 있어도, 클라가 말한 칸이 맞으면 그 칸 번호가 그대로 남는다.
+                if (required != null && _inventory.Get(slot)?.Source == required)
+                    result[(int)part] = slot;
+            }
+            return result;
         }
 
         // 서버가 클라이언트가 보낸 외형 데이터를 받았을 때, 각 파츠 인덱스마다 "이거 살 자격 있어?"를 재검증.
