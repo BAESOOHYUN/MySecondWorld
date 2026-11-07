@@ -64,7 +64,6 @@ public class ProjectLifetimeScope : LifetimeScope
 #endif
 
         builder.RegisterMessageBroker<AuthStateChangedEvent>(options);
-        builder.RegisterMessageBroker<CharacterAppearanceSavedEvent>(options);
         builder.RegisterMessageBroker<CharacterAppearanceSyncRequestedEvent>(options);
         builder.RegisterMessageBroker<RequestInitialCustomizeEvent>(options);
 
