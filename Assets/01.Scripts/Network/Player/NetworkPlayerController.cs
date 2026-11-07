@@ -149,8 +149,9 @@ namespace MySecondWorld.Network.Player
             ApplyRescue(position);
         }
 
-        // CharacterController는 내부에 자기 위치를 캐싱해서,
-        // 켜진 채로 transform.position을 대입하면 되돌려버린다. 껐다 켜야 한다.
+        // 위치를 강제로 옮긴다 (낙하 구조·탈출·NPC 순간이동 공통 경로).
+        // CharacterController는 내부에 자기 위치를 캐싱해서, 켜진 채 transform.position을 바꾸면 위치를 되돌린다 → 끄고, 옮기고, 복원한다.
+        // 다시 켤 때는 "원래 상태 그대로" 돌려놓는다(wasEnabled). 같은 코드가 서버 사본(꺼져 있어야 함)과  내 캐릭터·Host(켜져 있어야 함) 양쪽에서 돌기 때문이다.
         // Host 모드에선 서버 사본이 곧 소유 클라라 켜져 있을 수 있으므로 상태를 가정하지 않고 보존한다.
         private void ApplyRescue(Vector3 position)
         {
