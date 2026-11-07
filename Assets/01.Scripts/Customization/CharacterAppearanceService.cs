@@ -21,6 +21,11 @@ namespace MySecondWorld.Customization
         // 무기(NetworkWeaponEquip)의 _mainHandInventorySlotIndex에 해당.
         // 서버가 아니라 클라 메모리에만 있어서 앱을 다시 시작하면 비는 점이 다르다.
         private readonly Dictionary<PartType, int> _equippedInventorySlotIndexByPart = new();
+        // 서버가 접속 때 알려 준 칸 번호 "후보" (배열 순서는 PartType 순서, 없음·모름은 -1)
+        // null이면 서버가 알려 준 값이 없다는 뜻 (옛 세이브 등) → 복원은 첫 칸 폴백으로 간다
+        // 인벤토리가 아직 다 도착하지 않았을 수 있어서,
+        // 인벤토리를 열 때 그 칸에 실제로 그 아이템이 있는지 확인한 뒤에 위 딕셔너리로 옮긴다.
+        private int[] _serverEquippedSlots;
 
         #endregion
 
@@ -63,34 +68,46 @@ namespace MySecondWorld.Customization
 
         #region ① 입은 칸 기록 복원 (인벤토리를 열 때)
 
-        // 재접속 등으로 기록이 비었을 때,
-        // 입은 파츠에 해당하는 아이템이 든 '첫 칸'을 칸 번호로 채운다.
+        // 서버가 접속 때 알려 준 칸 번호를 받아 둔다. 예전 기록은 모두 지우고 서버 값으로 다시 시작한다.
+        // (로그아웃했다가 다른 계정으로 들어와도 앞 계정의 칸 번호가 남지 않게 하려는 것)
+        public void SetServerEquippedSlots(int[] slots)
+        {
+            _serverEquippedSlots = slots;
+            _equippedInventorySlotIndexByPart.Clear();
+        }
+
+        // 입고 있는 옷이 가방 몇 번 칸 것인지 딕셔너리에 적는다. 인벤토리를 열 때 부른다.
+        // 서버가 알려 준 칸이 맞으면 그 칸을, 아니면 가방을 0번부터 훑어 처음 만난 같은 옷의 칸을 적는다.
         // 무기(NetworkWeaponEquip)의 FindInventorySlotOf(칸을 모를 때 첫 칸을 찾는 부분)에 해당
-        // TODO : 서버에 파츠 칸 번호를 저장하는 방식으로 바꾸고,
-        // 복원도 칸 위치 보존 방식으로 바꾼다.
         public void RestoreEquippedInventorySlots(Inventory inventory)
         {
             if (inventory == null) return;
 
-            foreach (PartType part in System.Enum.GetValues(typeof(PartType)))
+            foreach (PartType part in System.Enum.GetValues(typeof(PartType))) // 파츠 25개를 하나씩
             {
-                if (_equippedInventorySlotIndexByPart.ContainsKey(part)) continue; // 이미 기억 중이면 건드리지 않는다.
+                if (_equippedInventorySlotIndexByPart.ContainsKey(part)) continue; // 이미 적혀 있으면 다음 파츠로
 
-                var item = GetEquippedItem(part); // 입은 값 → 그 값에 필요한 아이템. 미착용(0)이면 null
-                if (item == null) continue;
+                var item = GetRequiredItemForCurrentLook(part); // 지금 이 파츠에 입은 옷의 아이템 (맨몸·무료 파츠면 null)
+                if (item == null) continue; // 찾을 게 없으니 다음 파츠로
 
+                int serverSlot = GetServerEquippedSlot(part); // 서버가 알려 준 칸 (없으면 -1)
+
+                // 서버가 알려 준 칸 하나만 열어서, 그 옷이 정말 있는지 확인한다
+                if (serverSlot >= 0 && serverSlot < inventory.MaxSlots 
+                    && inventory.Get(serverSlot)?.Source == item)
+                {
+                    _equippedInventorySlotIndexByPart[part] = serverSlot; // 딕셔너리에 적는다
+                    continue; // 이 파츠는 끝, 다음 파츠로
+                }
+
+                // 서버 칸이 없거나 틀렸으면, 가방을 0번부터 한 칸씩 열어 같은 옷을 찾는다
                 for (int i = 0; i < inventory.MaxSlots; i++)
                 {
-                    // i번 칸의 아이템이 우리가 찾는 item이 아니면 이 칸은 건너뛰고 다음 칸으로
-                    // 빈 칸이면 Get(i)가 null이라 ?. 때문에 결과도 null
+                    // 빈 칸이거나 다른 옷이면 다음 칸으로 (빈 칸은 Get(i)가 null이라 ?.가 에러 없이 처리)
                     if (inventory.Get(i)?.Source != item) continue;
 
-                    // 같으면(찾았다) 이 파츠는 i번 칸의 것이라고 딕셔너리에 기록
                     _equippedInventorySlotIndexByPart[part] = i;
-
-                    // 찾았으니 반복을 끝낸다.
-                    // 뒤쪽 칸은 보지 않는다.
-                    // 같은 아이템이 여러 칸이면 첫 칸만 본다.
+                    // 찾았으니 칸 훑기는 끝 (같은 옷이 여러 칸이면 첫 칸만)
                     break;
                 }
             }
@@ -260,20 +277,25 @@ namespace MySecondWorld.Customization
 
         #region 헬퍼 메서드 (조회)
 
+        // 서버가 알려준 이 파츠의 칸 번호. 없거나 모르면 -1
+        private int GetServerEquippedSlot(PartType part)
+            => _serverEquippedSlots != null && (int)part < _serverEquippedSlots.Length
+            ? _serverEquippedSlots[(int)part] : -1;
+
         // 현재 세이브된 외형 데이터를 반환한다.
         public CharacterAppearanceData GetCurrentAppearance()
         {
             return _saveService.Load();
         }
 
-        // 특정 파츠 슬롯에 현재 착용 중인 장비 아이템을 반환한다.
+        // "이 파츠 자리에 지금 입은 외형이 있으면, 그 외형에 대응하는 아이템이 무엇인가?"를 돌려줌
         // 미착용(0)이면 null.
-        public EquipmentItem GetEquippedItem(PartType part)
+        public EquipmentItem GetRequiredItemForCurrentLook(PartType part)
         {
             if (_avatarPartKeyTable == null) return null;
-            var data = _saveService.Load();
+            var data = _saveService.Load(); // 클라가 기억하는 지금 이 캐릭터가 입고 있는 외형을 뜻함. (옛날에 저장해 둔 파일을 뜻하는게 아님)
             int index = data[part];
-            if (index <= 0) return null;
+            if (index <= 0) return null; // 0은 맨몸(기본 파츠), -1은 안 입음
             return _avatarPartKeyTable.GetRequiredItem(part, data.Gender, index);
         }
 

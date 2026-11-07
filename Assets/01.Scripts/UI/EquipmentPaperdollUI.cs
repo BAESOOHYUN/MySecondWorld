@@ -276,54 +276,54 @@ namespace MySecondWorld.UI
             {
                 // 1. 방어구 파츠 8종
                 case EquipmentSlotType.HeadCoverings:
-                    return appearanceService?.GetEquippedItem(PartType.HeadCoverings);
+                    return appearanceService?.GetRequiredItemForCurrentLook(PartType.HeadCoverings);
 
                 case EquipmentSlotType.Torso:
-                    return appearanceService?.GetEquippedItem(PartType.Torso);
+                    return appearanceService?.GetRequiredItemForCurrentLook(PartType.Torso);
 
                 case EquipmentSlotType.ArmUpper:
-                    return appearanceService?.GetEquippedItem(PartType.ArmUpperLeft) 
-                        ?? appearanceService?.GetEquippedItem(PartType.ArmUpperRight);
+                    return appearanceService?.GetRequiredItemForCurrentLook(PartType.ArmUpperLeft) 
+                        ?? appearanceService?.GetRequiredItemForCurrentLook(PartType.ArmUpperRight);
 
                 case EquipmentSlotType.ArmLower:
-                    return appearanceService?.GetEquippedItem(PartType.ArmLowerLeft) 
-                        ?? appearanceService?.GetEquippedItem(PartType.ArmLowerRight);
+                    return appearanceService?.GetRequiredItemForCurrentLook(PartType.ArmLowerLeft) 
+                        ?? appearanceService?.GetRequiredItemForCurrentLook(PartType.ArmLowerRight);
 
                 case EquipmentSlotType.Hands:
-                    return appearanceService?.GetEquippedItem(PartType.HandLeft) 
-                        ?? appearanceService?.GetEquippedItem(PartType.HandRight);
+                    return appearanceService?.GetRequiredItemForCurrentLook(PartType.HandLeft) 
+                        ?? appearanceService?.GetRequiredItemForCurrentLook(PartType.HandRight);
 
                 case EquipmentSlotType.Hips:
-                    return appearanceService?.GetEquippedItem(PartType.Hips);
+                    return appearanceService?.GetRequiredItemForCurrentLook(PartType.Hips);
 
                 case EquipmentSlotType.Knees:
-                    return appearanceService?.GetEquippedItem(PartType.KneeAttachLeft)
-                        ?? appearanceService?.GetEquippedItem(PartType.KneeAttachRight);
+                    return appearanceService?.GetRequiredItemForCurrentLook(PartType.KneeAttachLeft)
+                        ?? appearanceService?.GetRequiredItemForCurrentLook(PartType.KneeAttachRight);
 
                 case EquipmentSlotType.Legs:
-                    return appearanceService?.GetEquippedItem(PartType.LegLeft)
-                        ?? appearanceService?.GetEquippedItem(PartType.LegRight);
+                    return appearanceService?.GetRequiredItemForCurrentLook(PartType.LegLeft)
+                        ?? appearanceService?.GetRequiredItemForCurrentLook(PartType.LegRight);
 
                 // 2. 악세사리 파츠 8종
                 case EquipmentSlotType.HelmetAttachment:
-                    return appearanceService?.GetEquippedItem(PartType.HelmetAttachment);
+                    return appearanceService?.GetRequiredItemForCurrentLook(PartType.HelmetAttachment);
 
                 case EquipmentSlotType.ShoulderAttach:
-                    return appearanceService?.GetEquippedItem(PartType.ShoulderAttachLeft) 
-                        ?? appearanceService?.GetEquippedItem(PartType.ShoulderAttachRight);
+                    return appearanceService?.GetRequiredItemForCurrentLook(PartType.ShoulderAttachLeft) 
+                        ?? appearanceService?.GetRequiredItemForCurrentLook(PartType.ShoulderAttachRight);
 
                 case EquipmentSlotType.ElbowAttach:
-                    return appearanceService?.GetEquippedItem(PartType.ElbowAttachLeft) 
-                        ?? appearanceService?.GetEquippedItem(PartType.ElbowAttachRight);
+                    return appearanceService?.GetRequiredItemForCurrentLook(PartType.ElbowAttachLeft) 
+                        ?? appearanceService?.GetRequiredItemForCurrentLook(PartType.ElbowAttachRight);
 
                 case EquipmentSlotType.BackAttachment:
-                    return appearanceService?.GetEquippedItem(PartType.BackAttachment);
+                    return appearanceService?.GetRequiredItemForCurrentLook(PartType.BackAttachment);
 
                 case EquipmentSlotType.HipsAttachment:
-                    return appearanceService?.GetEquippedItem(PartType.HipsAttachment);
+                    return appearanceService?.GetRequiredItemForCurrentLook(PartType.HipsAttachment);
 
                 case EquipmentSlotType.Ear:
-                    return appearanceService?.GetEquippedItem(PartType.Ear);
+                    return appearanceService?.GetRequiredItemForCurrentLook(PartType.Ear);
 
                 case EquipmentSlotType.Ring:
                     return null;

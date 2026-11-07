@@ -28,6 +28,11 @@ namespace MySecondWorld.Save
         // 이 필드가 없는 파일은 0으로 읽히므로,
         // 복원(RestoreInventory)은 그 칸에 그 무기가 없으면 같은 무기가 든 첫 칸으로 폴백한다.
         public int mainHandInventorySlotIndex;
+
+        // 장착한 파츠별 인벤토리 칸 번호 (배열 순서는 PartType 순서, 미장착·모름은 -1)
+        // 무기는 위의 mainHandInventorySlotIndex가 따로 맡는다
+        // null이면 이 필드가 생기기 전의 옛 세이브
+        public int[] equippedPartInventorySlotIndexes;
     }
 
     [System.Serializable]
