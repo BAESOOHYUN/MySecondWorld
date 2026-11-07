@@ -3,7 +3,7 @@
     "rootNamespace": "",
     "references": [
         "VContainer",
-        "MySecondWorld.Customization"
+        "MySecondWorld.Foundation"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

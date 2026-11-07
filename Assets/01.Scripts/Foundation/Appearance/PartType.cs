@@ -1,3 +1,4 @@
+// 어셈블리는 Foundation(Save가 아래 칸에서 참조하도록 내림), 네임스페이스는 외형 도메인이라 Customization 유지
 namespace MySecondWorld.Customization
 {
     public enum PartType // 파츠 배열 인덱싱 키

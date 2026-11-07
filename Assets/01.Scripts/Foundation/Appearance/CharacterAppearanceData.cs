@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 
+// 어셈블리는 Foundation(Save가 아래 칸에서 참조하도록 내림), 네임스페이스는 외형 도메인이라 Customization 유지
 namespace MySecondWorld.Customization
 {
     // IEquatable = 객체가 동일한 타입의 다른 객체와 같은지(객체의 동등성(Value Equality)) 여부를
