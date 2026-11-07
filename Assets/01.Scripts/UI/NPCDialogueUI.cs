@@ -309,7 +309,6 @@ namespace MySecondWorld.UI
                 _currentMemory.OnMemoryChanged -= OnMemoryStateChanged;
 
             _closeSubject.OnNext(Unit.Default);
-            _stopTTSPub?.Publish(new NPCStopTTSEvent(_currentNpcGuid));
             DialogueCameraController.Instance?.ReleaseFocus();
             if (_canvas != null)
                 _canvas.SetActive(false);

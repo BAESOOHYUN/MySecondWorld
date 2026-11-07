@@ -94,7 +94,9 @@ namespace MySecondWorld.AI.Voice
                 while (_fetchQueue.Count > 0)
                 {
                     var (text, fetchTask) =  _fetchQueue.Dequeue();
-                    AudioClip clip = await fetchTask;
+                    AudioClip clip = await fetchTask;   // ← TTS 응답을 기다리는 중에 정지가 와도 이 await는 끊기지 않는다
+
+                    ct.ThrowIfCancellationRequested();  // 대기 중에 정지가 왔으면 재생하지 않고 정상 취소로 빠진다
 
                     if (clip == null)
                     {
@@ -154,9 +156,14 @@ namespace MySecondWorld.AI.Voice
                 _isPlaying = false;
                 // remaining 대기 중 도착한 문장이 있으면 이어서 재생
                 if (_fetchQueue.Count > 0)
-                    PlayQueue(destroyCancellationToken).Forget();
+                {
+                    _playCts?.Dispose();
+
+                    _playCts = CancellationTokenSource.CreateLinkedTokenSource(destroyCancellationToken);
+                    PlayQueue(destroyCancellationToken).Forget(); // ← 오브젝트 파괴 때만 취소되는 토큰
+                }
                 else
-                { 
+                {
                     OnSpeakFinished?.Invoke();
                     _speakFinishedPub.Publish(new NPCSpeakFinishedEvent(_interactable?.SessionKey));
                 }

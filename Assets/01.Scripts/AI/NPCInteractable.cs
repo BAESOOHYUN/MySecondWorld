@@ -85,6 +85,7 @@ namespace MySecondWorld.AI
         private INPCDialogueUI _dialogueUI;
         private IShopUI _shopUI;
         private IPublisher<string, PlayerMessageSentEvent> _messagePub;
+        private IPublisher<NPCStopTTSEvent> _stopTTSPub;
         #endregion
 
         #region 필드 — 상태
@@ -140,6 +141,7 @@ namespace MySecondWorld.AI
             IShopUI shopUI,
             INPCMenuUI menuUI,
             IPublisher<string, PlayerMessageSentEvent> messagePub,
+            IPublisher<NPCStopTTSEvent> stopTTSPub,
             ISubscriber<NPCResponseReceivedEvent> responseSub
             )
         {
@@ -147,6 +149,7 @@ namespace MySecondWorld.AI
             _shopUI = shopUI;
             _menuUI = menuUI;
             _messagePub = messagePub;
+            _stopTTSPub = stopTTSPub;
             responseSub
                 .Subscribe(evt =>
                 {
@@ -229,6 +232,7 @@ namespace MySecondWorld.AI
             _playerInProximity = false;
             _highlightUI?.SetActive(false);
             SafeFire(NpcTrigger.PlayerLeft);
+            _stopTTSPub.Publish(new NPCStopTTSEvent(SessionKey));   // 범위를 벗어나면 말을 멈춘다
         }
         #endregion
 
@@ -341,6 +345,8 @@ namespace MySecondWorld.AI
         {
             if (t.Trigger == NpcTrigger.SelectTalk)
             {
+                _stopTTSPub.Publish(new NPCStopTTSEvent(SessionKey));   // 이전 대화의 남은 음성을 끊고 새 대화를 시작한다
+
                 _cts?.Cancel();
                 _cts?.Dispose();
                 _cts = new CancellationTokenSource();
@@ -417,9 +423,15 @@ namespace MySecondWorld.AI
         // 이걸 CompanionAI한테 알려줘서 이동을 잠깐 멈추게 하는 용도
         protected virtual void OnConversationStateChanged(bool paused) { }
 
-        // 다른 NPC가 공유 UI를 새로 차지할 때(_activeInteraction 경유), 또는 자기 자신이 비활성화될 때(OnDisable) 호출되는 강제 정리
+        // 다른 NPC가 공유 UI를 새로 차지할 때(_activeInteraction 경유),
+        // 또는 자기 자신이 비활성화될 때(OnDisable) 호출되는 강제 정리
         public void ForceReset()
         {
+            // 다른 NPC가 공유 UI를 가져갔거나 내가 꺼질 때 말도 멈춘다
+            // ?.를 붙인 이유는 OnDisable에서도 이 메서드가 불리는데,
+            // 그때 Construct가 아직 안 돌았으면 _stopTTSPub가 null이기 때문이다.
+            _stopTTSPub?.Publish(new NPCStopTTSEvent(SessionKey));   
+
             if (_activeInteraction == this)
             {
                 _activeInteraction = null; // NPC가 여러 명일 때 대화 중인 NPC만 끈다.
