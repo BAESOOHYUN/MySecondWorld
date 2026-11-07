@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -11,15 +10,21 @@ using MySecondWorld.Customization;
 
 namespace MySecondWorld.Network
 {
-    // 메인핸드 무기 장착. 서버가 "무슨 무기를 인벤토리 몇 번 칸에서 장착했는지"를 권한으로 가지고,
+    using Inventory = Cleverous.VaultInventory.Inventory;
+
+    // 메인핸드 무기 장착.
+    // 서버가 "무슨 무기를 인벤토리 몇 번 칸에서 장착했는지"를 권한으로 가지고,
     // 클라이언트는 로컬 예측으로 먼저 보여 준 뒤 SyncVar 동기화로 맞춘다.
-    [RequireComponent(typeof(Cleverous.VaultInventory.Inventory))]
+    // 구역 구성은 장비(CharacterAppearanceService)와 짝을 맞췄다.
+    // 장비(CharacterAppearanceService)의 "입은 칸 검증 · 복원"에 해당하는 구역이 여기의 "서버: 장착 처리 · 검증"이다.
+    [RequireComponent(typeof(Inventory))]
     public class NetworkWeaponEquip : NetworkBehaviour, IWeaponEquipActionsProvider
     {
         #region 상수 · 정적 데이터
 
         // 미장착 표시. 장착한 무기의 dbKey와 인벤토리 칸 번호 양쪽에 쓴다.
-        // 0은 실제 dbKey일 수도, 0번 칸일 수도 있어서 쓰지 않는다 (Vault도 빈 슬롯을 -1로 쓴다).
+        // 0은 실제 dbKey일 수도,
+        // 0번 칸일 수도 있어서 쓰지 않는다 (Vault도 빈 슬롯을 -1로 쓴다).
         private const int Unequipped = -1;
         #endregion
 
@@ -34,7 +39,8 @@ namespace MySecondWorld.Network
         [SerializeField] private Transform _backSocket;     // 화살통 — 등/어깨 본
 
         [Header("궁수 전용")]
-        [SerializeField] private GameObject _quiverPrefab; // 화살통 — 특정 소유 아이템과 무관한 고정 시각 프롭(화살과 동일 패턴)
+        // 화살통 — 특정 소유 아이템과 무관한 고정 시각 프롭(화살과 동일 패턴)
+        [SerializeField] private GameObject _quiverPrefab;
 
         [Header("애니메이션")]
         [SerializeField] private Animator _animator;
@@ -49,6 +55,7 @@ namespace MySecondWorld.Network
         [SyncVar(hook = nameof(OnMainHandChanged))]
         private int _mainHandDbKey = Unequipped;                    // 장착한 무기의 종류(dbKey)
 
+        // 장비(CharacterAppearanceService)의 _equippedInventorySlotIndexByPart에 해당
         [SyncVar(hook = nameof(OnMainHandInventorySlotChanged))]
         private int _mainHandInventorySlotIndex = Unequipped;       // 그 무기가 들어 있는 인벤토리 칸 번호
 
@@ -57,13 +64,15 @@ namespace MySecondWorld.Network
         private int _predictedMainHandInventorySlot = Unequipped;
 
         // ── 손에 든 모델 ──
-        private int _equipToken; // 빠른 연속 교체 시, 먼저 시작된 느린 로드가 나중에 끝나 최신 장착을 덮어쓰는 걸 막기 위한 토큰
+        // 빠른 연속 교체 시,
+        // 먼저 시작된 느린 로드가 나중에 끝나 최신 장착을 덮어쓰는 걸 막기 위한 토큰
+        private int _equipToken;
         private bool _currentVisualIsAddressable;
         private GameObject _currentVisual;
         private GameObject _currentQuiverVisual;
 
         // ── 참조 ──
-        private Cleverous.VaultInventory.Inventory _inventory;
+        private Inventory _inventory;
         private RuntimeAnimatorController _defaultController;      // 맨손일 때의 컨트롤러
         private LocalPlayerInventoryProvider _localInventoryProvider;
 
@@ -72,15 +81,18 @@ namespace MySecondWorld.Network
         #region 공개 프로퍼티 · 이벤트
 
         public int CurrentMainHandDbKey => _predictedMainHandDbKey;
+        // 장비(CharacterAppearanceService)의 GetEquippedInventorySlotIndex에 해당
         public int CurrentMainHandInventorySlotIndex => _predictedMainHandInventorySlot;
 
-        // 메인핸드 시각 오브젝트가 적용된 뒤 발행. 인자는 방금 장착된 카테고리(해제 시 None).
+        // 메인핸드 시각 오브젝트가 적용된 뒤 발행.
+        // 인자는 방금 장착된 카테고리(해제 시 None).
         // Combat 어셈블리의 타입을 쓰지 않는 게 중요하다 — 여기서 ArrowNockPoint를 직접 참조하면
         // Network → Combat 참조가 생겨 기존 Combat → Network 참조와 순환이 된다.
         // 이벤트로 뒤집으면 Combat 쪽이 일방적으로 구독하므로 방향이 하나로 유지된다.
         public event System.Action<WeaponCategory> OnMainHandVisualApplied;
 
-        // InventoryUI가 목록을 다시 그리는 신호로 구독함. 장착 정보(무기 종류·인벤토리 칸 번호)가 바뀌었을 때 발행.
+        // InventoryUI가 목록을 다시 그리는 신호로 구독함.
+        // 장착 정보(무기 종류·인벤토리 칸 번호)가 바뀌었을 때 발행.
         public event System.Action OnMainHandEquipChanged;
 
         #endregion
@@ -95,7 +107,7 @@ namespace MySecondWorld.Network
 
         private void Awake()
         {
-            _inventory = GetComponent<Cleverous.VaultInventory.Inventory>();
+            _inventory = GetComponent<Inventory>();
             if (_animator != null)
                 _defaultController = _animator.runtimeAnimatorController;
         }
@@ -112,6 +124,7 @@ namespace MySecondWorld.Network
         #region 클라이언트 요청 (IWeaponEquipActionsProvider)
 
         // InventoryUI는 이 메서드만 알면 되고, Command는 몰라도 된다
+        // 장비(CharacterAppearanceService)의 EquipWearableItem에 해당
         public void EquipMainHand(int weaponDbKey, int inventorySlotIndex)
         {
             Debug.Log($"[Equip] EquipMainHand(client) 호출 dbKey={weaponDbKey} 칸={inventorySlotIndex}");
@@ -134,6 +147,7 @@ namespace MySecondWorld.Network
             CmdEquipMainHand(weaponDbKey, inventorySlotIndex);
         }
 
+        // 장비(CharacterAppearanceService)의 UnequipWearablePart에 해당
         public void UnequipMainHand() => EquipMainHand(Unequipped, Unequipped);
 
         #endregion
@@ -141,16 +155,22 @@ namespace MySecondWorld.Network
         #region 서버: 장착 처리 · 검증
 
         // 장착 방어는 3겹이다.
-        // 1) 서버 검증: ServerTryEquipMainHand(요청 시), ServerValidateMainHand(인벤토리 변경 후). 진짜 상태는 항상 서버 기준.
-        // 2) 클라 사전 차단: InventoryUI의 isEquippable. 이상한 요청이 애초에 안 나가게 한다. (허용 기준은 MainHandRules를 서버와 같이 씀)
+        // 1) 서버 검증: ServerTryEquipMainHand(요청 시),
+        //    ServerValidateMainHand(인벤토리 변경 후). 진짜 상태는 항상 서버 기준.
+        // 2) 클라 사전 차단: InventoryUI의 isEquippable.
+        //    이상한 요청이 애초에 안 나가게 한다.
+        //    (허용 기준은 MainHandRules를 서버와 같이 씀)
         // 3) 거부 후 클라 보정: CmdEquipMainHand가 거부되면 TargetResyncMainHand로 서버 값을 돌려보낸다.
 
-        // 클라가 보낸 장착 요청. 서버가 거부하면 요청한 클라의 예측 화면을 서버 값으로 되돌린다.
+        // 클라가 보낸 장착 요청.
+        // 서버가 거부하면 요청한 클라의 예측 화면을 서버 값으로 되돌린다.
         [Command]
         public void CmdEquipMainHand(int weaponDbKey, int inventorySlotIndex)
         {
-            if (ServerTryEquipMainHand(weaponDbKey, inventorySlotIndex)) return; // ① 장착을 시도하고, 성공(true)이면 여기서 끝
-            TargetResyncMainHand(connectionToClient, _mainHandDbKey, _mainHandInventorySlotIndex); // ② 여기까지 내려왔다 = 거부(false) → 클라 보정
+            // ① 장착을 시도하고, 성공(true)이면 여기서 끝
+            if (ServerTryEquipMainHand(weaponDbKey, inventorySlotIndex)) return;
+            // ② 여기까지 내려왔다 = 거부(false) → 클라 보정
+            TargetResyncMainHand(connectionToClient, _mainHandDbKey, _mainHandInventorySlotIndex);
         }
 
         // 서버가 장착을 거부했을 때 (장착을)요청한 클라(1인)에게만 서버의 현재 장착 정보를 돌려준다.
@@ -163,7 +183,8 @@ namespace MySecondWorld.Network
             ApplyMainHandVisual(serverDbKey, _equipToken).Forget();
         }
 
-        // 검증 후 장착. 성공 true / 거부 false. (클라 요청과 세이브 복원이 같이 사용)
+        // 검증 후 장착. 성공 true / 거부 false.
+        // (클라 요청과 세이브 복원이 같이 사용)
         [Server]
         public bool ServerTryEquipMainHand(int weaponDbKey, int inventorySlotIndex)
         {
@@ -196,20 +217,25 @@ namespace MySecondWorld.Network
             if (_inventory == null
                 || inventorySlotIndex < 0
                 || inventorySlotIndex >= _inventory.MaxSlots
-                || _inventory.Get(inventorySlotIndex)?.Source != item) // 그 칸이 비어 있거나, 장착하려는 아이템이 아닌 다른 아이템이 들어 있음
+                // 그 칸이 비어 있거나,
+                // 장착하려는 아이템이 아닌 다른 아이템이 들어 있음
+                || _inventory.Get(inventorySlotIndex)?.Source != item)
             {
                 Debug.LogWarning($"[Equip][Server] 거부 — {inventorySlotIndex}번 칸에 {item.Title}이 없음");
                 return false;
             }
 
-            _mainHandInventorySlotIndex = inventorySlotIndex;   // [SyncVar] 훅 발동 → OnMainHandInventorySlotChanged 실행
+            // [SyncVar] 훅 발동 → OnMainHandInventorySlotChanged 실행
+            _mainHandInventorySlotIndex = inventorySlotIndex;
             _mainHandDbKey = weaponDbKey;                       // [SyncVar] 훅 발동 → OnMainHandChanged 실행
             return true;
         }
 
-        // 인벤토리가 바뀐 뒤 호출. 장착한 칸이 비거나 다른 아이템으로 바뀌었으면 해제한다.
+        // 인벤토리가 바뀐 뒤 호출.
+        // 장착한 칸이 비거나 다른 아이템으로 바뀌었으면 해제한다.
         // 같은 무기가 다른 칸에 있어도 대신 장착하지 않는다.
         // 예) 2번 칸 도끼 장착 중 → 2번을 버리면 해제, 5번을 버리면 모션 유지
+        // 장비(CharacterAppearanceService)의 ReleasePartsWithEmptiedSlot에 해당
         [Server]
         public void ServerValidateMainHand()
         {
@@ -220,7 +246,8 @@ namespace MySecondWorld.Network
                         && _mainHandInventorySlotIndex >= 0 && _mainHandInventorySlotIndex < _inventory.MaxSlots
                         ? _inventory.Get(_mainHandInventorySlotIndex) : null;
 
-            // 서버가 기억하는 장착 무기(_mainHandDbKey)와, 장착한 칸에 지금 들어 있는 아이템의 종류가 같은가
+            // 서버가 기억하는 장착 무기(_mainHandDbKey)와,
+            // 장착한 칸에 지금 들어 있는 아이템의 종류가 같은가
             bool stillThere = stack?.Source != null && stack.Source.GetDbKey() == _mainHandDbKey;
             if (stillThere) return; // 칸에 아직 그 무기가 있음 → 그대로 둔다
 
@@ -238,6 +265,7 @@ namespace MySecondWorld.Network
         public int ServerGetMainHandInventorySlotIndex() => _mainHandInventorySlotIndex;
 
         // 인벤토리를 0번 칸부터 훑어 item이 든 첫 칸의 번호를 돌려준다. 없으면 -1.
+        // 장비(CharacterAppearanceService)의 RestoreEquippedInventorySlots(기록이 비었을 때 첫 칸을 찾는 부분)에 해당
         private int FindInventorySlotOf(EquipmentItem item)
         {
             for (int i = 0; i < _inventory.MaxSlots; i++)
@@ -252,7 +280,8 @@ namespace MySecondWorld.Network
 
         #region 장착 정보 조회 (전투가 읽음)
 
-        // 장착된 메인핸드 무기의 Attack(Flat) 스탯 합. 미장착이거나 무기가 아니면 0.
+        // 장착된 메인핸드 무기의 Attack(Flat) 스탯 합.
+        // 미장착이거나 무기가 아니면 0.
         // Percent 모디파이어는 베이스 공격력 집계기가 없는 이번 슬라이스에서는 제외한다.
         public float GetMainHandAttack()
         {
@@ -268,7 +297,8 @@ namespace MySecondWorld.Network
             return attack;
         }
 
-        // 장착된 메인핸드 무기의 카테고리. 미장착이거나 무기가 아니면 WeaponCategory.None.
+        // 장착된 메인핸드 무기의 카테고리.
+        // 미장착이거나 무기가 아니면 WeaponCategory.None.
         // PlayerAttackController가 근접/원거리 분기 판단에 사용한다.
         public WeaponCategory GetMainHandCategory()
         {
@@ -288,7 +318,8 @@ namespace MySecondWorld.Network
             Debug.Log($"[Equip] OnMainHandChanged(SyncVar hook) {oldKey} → {newKey}");
             _equipToken++;
 #if !UNITY_SERVER
-            ApplyMainHandVisual(newKey, _equipToken).Forget(); // 무기 모델 Instantiate — 렌더링용 (서버 빌드는 모델을 만들지 않는다)
+            // 무기 모델 Instantiate — 렌더링용 (서버 빌드는 모델을 만들지 않는다)
+            ApplyMainHandVisual(newKey, _equipToken).Forget();
 #endif
         }
 
@@ -344,7 +375,8 @@ namespace MySecondWorld.Network
                 if (generation != _equipToken)
                 {
                     // 오브젝트 풀 대신 Destroy 사용 — GameObjectPool은 Addressable 인스턴스 혼용 시
-                    // 메모리 누수 위험이 있고(GameObjectPool.cs 주석 참고), 무기 장착은 몬스터/투사체처럼
+                    // 메모리 누수 위험이 있고(GameObjectPool.cs 주석 참고),
+                    // 무기 장착은 몬스터/투사체처럼
                     // 고빈도가 아니라 플레이어가 어쩌다 누르는 액션이라 지금은 감수.
                     // TODO : 나중에 AddressableObjectPool이 생기면 그때 전환
                     Destroy(instance);// 그 사이 더 최신 장착이 들어옴
@@ -430,7 +462,8 @@ namespace MySecondWorld.Network
 
         // Instantiate(prefab, socket)는 부모(소켓 본)의 스케일을 그대로 물려받는데,
         // 캐릭터 본은 FBX 임포트 스케일 때문에 1이 아닌 경우가 많아 무기가 안 보일 만큼 작아진다.
-        // 위치/회전은 소켓 원점에 맞추고, 스케일은 부모 스케일을 역산해서 상쇄 — 항상 실제 크기(world scale 1)로 붙게 만든다.
+        // 위치/회전은 소켓 원점에 맞추고,
+        // 스케일은 부모 스케일을 역산해서 상쇄 — 항상 실제 크기(world scale 1)로 붙게 만든다.
         private static void ResetSocketTransform(Transform instance, Transform socket)
         {
             instance.localPosition = Vector3.zero;
