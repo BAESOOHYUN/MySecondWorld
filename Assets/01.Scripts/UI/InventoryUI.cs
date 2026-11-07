@@ -235,7 +235,7 @@ namespace MySecondWorld.UI
             // 성별 필터 변화 구독
             _genderFilterSubscription?.Dispose();
             _genderFilterSubscription = _genderFilterService.OnGenderFilterChanged.Subscribe(OnGenderFilterChanged);
-
+            _appearanceService?.RestoreEquippedInventorySlots(_subscribedInventory);
             Refresh();
         }
 
@@ -420,7 +420,11 @@ namespace MySecondWorld.UI
         }
 
 
-        private void OnInventoryChanged(int index) => Refresh();
+        private void OnInventoryChanged(int index)
+        {
+            _appearanceService?.ReleasePartsWithEmptiedSlot(_subscribedInventory);
+            Refresh();
+        }
         private void OnMainHandEquipChanged() => Refresh();
         private void OnAppearanceChanged() => Refresh();
 
@@ -471,7 +475,7 @@ namespace MySecondWorld.UI
                                     && partCheck.Category == WeaponCategory.None
                                     && partCheck.Restriction != null
                                     && _appearanceService != null
-                                    && _appearanceService.IsPartEquipped(partCheck);
+                                    && _appearanceService.IsPartEquipped(partCheck, capturedIndex);
 
                 bool isEquipped = isEquippedWeapon || isEquippedPart;
                 bool isShopMode = _activeShop != null && _activeShop.IsOpen;
@@ -501,7 +505,7 @@ namespace MySecondWorld.UI
                        if (_appearanceService != null 
                            && stack.Source is EquipmentItem discardedPart
                            && discardedPart.Category == WeaponCategory.None
-                           && _appearanceService.IsPartEquipped(discardedPart))
+                           && _appearanceService.IsPartEquipped(discardedPart, capturedIndex))
                        {
                            _appearanceService.UnequipWearableItem(discardedPart);
                        }
@@ -518,7 +522,7 @@ namespace MySecondWorld.UI
         // 클릭한 아이템 종류에 따라 실제로 무슨 액션을 실행할지 결정.
         // 순서: 커스터마이징 파츠(장비/악세사리) → 무기 → (그 외) 소모품 사용
         // 화살통(Quiver)은 어느 분기에도 안 걸린다 — 장착 버튼 자체가 없음(isEquippable에서 제외)
-        private System.Action ResolveEquipAction(RootItem source, int slotIndex)
+        private System.Action ResolveEquipAction(RootItem source, int inventorySlotIndex)
         {
             // 1. 커스터마이징 파츠(장비/방어구, 악세사리)면 파츠 장착 / 해제
             if (source is EquipmentItem partItem
@@ -526,7 +530,7 @@ namespace MySecondWorld.UI
                 && partItem.Restriction != null)
                 return () =>
                 {
-                    bool alreadyEquipped = _appearanceService != null && _appearanceService.IsPartEquipped(partItem);
+                    bool alreadyEquipped = _appearanceService != null && _appearanceService.IsPartEquipped(partItem, inventorySlotIndex);
                     Debug.Log($"[Equip] 파츠 {(alreadyEquipped ? "해제" : "장착")} 클릭: {partItem.Title}");
                  
                     if (alreadyEquipped)
@@ -536,7 +540,7 @@ namespace MySecondWorld.UI
                     }
                     else
                     {
-                        _appearanceService?.EquipWearableItem(partItem);
+                        _appearanceService?.EquipWearableItem(partItem, inventorySlotIndex);
                         if (_appearanceService != null
                             && _appearanceService.TryGetPartType(partItem, out var part)
                             && PartToSlot.TryGetValue(part, out var slotType)) // TryGetValue로 조회하는 이유 : 머리카락, 얼굴, 눈썹 같은 파츠는 페이퍼돌 슬롯이 없어서 표에 없는 것이 정상이기 때문
@@ -552,7 +556,7 @@ namespace MySecondWorld.UI
                 return () =>
                 {
                     int dbKey = weaponItem.GetDbKey();
-                    bool alreadyEquipped = _inventoryProvider.WeaponActions?.CurrentMainHandInventorySlotIndex == slotIndex;
+                    bool alreadyEquipped = _inventoryProvider.WeaponActions?.CurrentMainHandInventorySlotIndex == inventorySlotIndex;
                     Debug.Log($"[Equip] 무기 {(alreadyEquipped ? "해제" : "장착")} 클릭: {weaponItem.Title} dbKey={dbKey}");
 
                     if (alreadyEquipped)
@@ -562,13 +566,13 @@ namespace MySecondWorld.UI
                     }
                     else
                     {
-                        _inventoryProvider.WeaponActions?.EquipMainHand(dbKey, slotIndex);
+                        _inventoryProvider.WeaponActions?.EquipMainHand(dbKey, inventorySlotIndex);
                         _paperdollUI?.HighlightSlot(EquipmentSlotType.Weapon); // 장착/해제 모두 "방금 건드린 슬롯"을 표시
                     }
                 };
 
             // 3. 소모품이면 "사용"
-            return () =>  _inventoryProvider.Actions?.UseItem(slotIndex);
+            return () =>  _inventoryProvider.Actions?.UseItem(inventorySlotIndex);
         }
 
         private void HandlePaperdollUnequip(EquipmentSlotType slotType, EquipmentItem item)
