@@ -167,7 +167,7 @@ namespace MySecondWorld.Customization
 
             // 3. 로컬 세이브 저장 & 네트워크 동기화 브로드캐스트
             _saveService.Save(data);
-            _syncRequestPub.Publish(new CharacterAppearanceSyncRequestedEvent(data));
+            _syncRequestPub.Publish(new CharacterAppearanceSyncRequestedEvent(data, BuildEquippedSlotsArray()));
             OnAppearanceChanged?.Invoke();
 
             Debug.Log($"[CharacterAppearanceService] 파츠 장착 완료: {item.Title} (Part={part}, Index={index})");
@@ -190,7 +190,7 @@ namespace MySecondWorld.Customization
                 _equippedInventorySlotIndexByPart.Remove(mirrorPart);
             }
             _saveService.Save(data);
-            _syncRequestPub.Publish(new CharacterAppearanceSyncRequestedEvent(data));
+            _syncRequestPub.Publish(new CharacterAppearanceSyncRequestedEvent(data, BuildEquippedSlotsArray()));
             OnAppearanceChanged?.Invoke();
             Debug.Log($"[CharacterAppearanceService] 파츠 해제 완료: Part={part}");
             return true;
@@ -213,7 +213,7 @@ namespace MySecondWorld.Customization
         public void SaveAndSyncAppearance(CharacterAppearanceData data)
         {
             _saveService.Save(data);
-            _syncRequestPub.Publish(new CharacterAppearanceSyncRequestedEvent(data));
+            _syncRequestPub.Publish(new CharacterAppearanceSyncRequestedEvent(data, BuildEquippedSlotsArray()));
             OnAppearanceChanged?.Invoke();
             Debug.Log($"[CharacterAppearanceService] 전체 외형 저장 및 동기화 요청 완료 (Gender={data.Gender}, Head={data.Head}, Torso={data.Torso})");
         }
@@ -281,6 +281,19 @@ namespace MySecondWorld.Customization
         private int GetServerEquippedSlot(PartType part)
             => _serverEquippedSlots != null && (int)part < _serverEquippedSlots.Length
             ? _serverEquippedSlots[(int)part] : -1;
+
+        // 클라: 옷을 입고 벗을 때 칸 번호를 서버로 보낸다  
+        // 입은 파츠 기록을 서버로 보낼 배열로 바꾼다. 배열 순서는 PartType 순서이고, 기록이 없는 파츠는 -1
+        private int[] BuildEquippedSlotsArray()
+        {
+            var slots = new int[System.Enum.GetValues(typeof(PartType)).Length];
+            for (int i = 0; i < slots.Length; i++)
+                slots[i] = -1;
+            foreach (var kv in _equippedInventorySlotIndexByPart)
+                slots[(int)kv.Key] = kv.Value;
+
+            return slots;
+        }
 
         // 현재 세이브된 외형 데이터를 반환한다.
         public CharacterAppearanceData GetCurrentAppearance()
