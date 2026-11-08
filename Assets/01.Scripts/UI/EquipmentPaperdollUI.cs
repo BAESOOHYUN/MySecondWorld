@@ -20,30 +20,21 @@ namespace MySecondWorld.UI
         Knees,            // 무릎 각반 (KneeAttach)
         Legs,             // 다리 / 신발 (LegLeft/Right)
 
-        // 2. 악세사리 / 부속 장비 (8종)
+        // 2. 악세사리 (5종)
         HelmetAttachment, // 투구 장식
         ShoulderAttach,   // 어깨 장식
         ElbowAttach,      // 팔꿈치 보호구
         BackAttachment,   // 등 장식 (날개/망토)
         HipsAttachment,   // 허리 장식
-        Ear,              // 귀 / 귀걸이
-        Ring,             // 반지
-        Necklace,         // 목걸이
 
         // 3. 하단 상시 고정 무기 (2종)
         Weapon,           // 주무기
         Shield            // 보조무기 / 방패 / 화살통
     }
 
-    public enum PaperdollTab
-    {
-        Armor,
-        Accessory
-    }
-
     /// <summary>
     /// 캐릭터 주변에 떠 있는 세부 장비 페이퍼돌 뷰.
-    /// [방어구] 탭 8슬롯 / [악세사리] 탭 8슬롯 동적 전환 및 하단 [주무기/보조무기] 상시 고정 노출을 지원합니다.
+    /// 방어구 8 + 악세사리 5 + 무기 2, 총 15칸을 한 화면에 항상 표시
     /// </summary>
     public class EquipmentPaperdollUI : MonoBehaviour
     {
@@ -57,9 +48,9 @@ namespace MySecondWorld.UI
             public TMP_Text LabelText;
             public GameObject SelectedBorder;
             public Sprite DefaultPlaceholderIcon;
+            [NonSerialized] public EquipmentItem CurrentItem; // 이 칸에 지금 끼워진 아이템
 
-            [NonSerialized] public EquipmentItem CurrentItem;
-
+            // 아이콘을 채우고 클릭 연결
             public void Bind(EquipmentItem item, Action<EquipmentSlotType> onClick)
             {
                 CurrentItem = item;
@@ -85,6 +76,7 @@ namespace MySecondWorld.UI
                 }
             }
 
+            // 선택 테두리 켜고 끄기
             public void SetSelected(bool selected)
             {
                 if (SelectedBorder != null)
@@ -92,92 +84,12 @@ namespace MySecondWorld.UI
             }
         }
 
-        [Header("슬롯 컨테이너")]
-        [SerializeField] private GameObject _armorSlotsContainer;
-        [SerializeField] private GameObject _accessorySlotsContainer;
-        [SerializeField] private GameObject _weaponSlotsContainer;
-
-        [Header("탭 헤더 인디케이터")]
-        [SerializeField] private Button _tabArmorButton;
-        [SerializeField] private Button _tabAccessoryButton;
-
         [Header("전체 페이퍼돌 장비 슬롯 리스트")]
         [SerializeField] private List<PaperdollSlotView> _slots = new();
-
         public event Action<EquipmentSlotType> OnSlotSelected;
         public event Action<EquipmentSlotType, EquipmentItem> OnUnequipRequested;
-        public event Action<PaperdollTab> OnTabChanged;
         private EquipmentSlotType? _currentSelectedSlotType;
-        private PaperdollTab _currentTab = PaperdollTab.Armor;
-
         public EquipmentSlotType? CurrentSelectedSlotType => _currentSelectedSlotType;
-        public PaperdollTab CurrentTab => _currentTab;
-
-        private void Awake()
-        {
-            if (_tabArmorButton != null)
-                _tabArmorButton.onClick.AddListener(() => SetTab(PaperdollTab.Armor));
-            if (_tabAccessoryButton != null)
-                _tabAccessoryButton.onClick.AddListener(() => SetTab(PaperdollTab.Accessory));
-
-            UpdateTabVisuals();
-        }
-
-        public void SetTab(PaperdollTab tab)
-        {
-            if (_currentTab == tab && _armorSlotsContainer != null && _armorSlotsContainer.activeSelf == (tab == PaperdollTab.Armor))
-                return;
-
-            // 이전에 선택한 슬롯의 하이라이트 제거
-            if (_currentSelectedSlotType.HasValue)
-            {
-                foreach (var slot in _slots)
-                {
-                    if (slot.SlotType == _currentSelectedSlotType)
-                    {
-                        slot.SetSelected(false);
-                        break;
-                    }
-                }
-                _currentSelectedSlotType = null;  // 선택 초기화
-            }
-
-            _currentTab = tab;
-            UpdateTabVisuals();
-            OnTabChanged?.Invoke(_currentTab);
-        }
-
-        private void UpdateTabVisuals()
-        {
-            if (_armorSlotsContainer != null)
-                _armorSlotsContainer.SetActive(_currentTab == PaperdollTab.Armor);
-            if (_accessorySlotsContainer != null)
-                _accessorySlotsContainer.SetActive(_currentTab == PaperdollTab.Accessory);
-
-            if (_weaponSlotsContainer != null)
-                _weaponSlotsContainer.SetActive(true); // 무기는 항상 노출!
-
-            SetTabBtnStyle(_tabArmorButton, _currentTab == PaperdollTab.Armor);
-            SetTabBtnStyle(_tabAccessoryButton, _currentTab == PaperdollTab.Accessory);
-        }
-
-        private void SetTabBtnStyle(Button btn, bool isActive)
-        {
-            if (btn == null) return;
-            var img = btn.GetComponent<Image>();
-            if (img != null)
-            {
-                img.color = isActive 
-                    ? new Color(0.2f, 0.7f, 1f, 0.95f) 
-                    : new Color(0.12f, 0.18f, 0.28f, 0.8f);
-            }
-            var txt = btn.GetComponentInChildren<TMP_Text>();
-            if (txt != null)
-            {
-                txt.color = isActive ? Color.white : new Color(0.7f, 0.8f, 0.9f, 0.8f);
-                txt.fontStyle = isActive ? FontStyles.Bold : FontStyles.Normal;
-            }
-        }
 
         /// <summary>
         /// 외형 서비스 및 무기 액션 프로바이더, 인벤토리로부터 현재 착용 중인 장비들을 조회하여 슬롯을 갱신합니다.
@@ -321,15 +233,6 @@ namespace MySecondWorld.UI
 
                 case EquipmentSlotType.HipsAttachment:
                     return appearanceService?.GetRequiredItemForCurrentLook(PartType.HipsAttachment);
-
-                case EquipmentSlotType.Ear:
-                    return appearanceService?.GetRequiredItemForCurrentLook(PartType.Ear);
-
-                case EquipmentSlotType.Ring:
-                    return null;
-
-                case EquipmentSlotType.Necklace:
-                    return null;
 
                 // 3. 하단 상시 고정 무기 2종
                 case EquipmentSlotType.Weapon:

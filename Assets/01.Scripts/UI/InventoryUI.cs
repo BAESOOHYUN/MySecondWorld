@@ -44,9 +44,6 @@ namespace MySecondWorld.UI
             { EquipmentSlotType.ElbowAttach,      InventoryCategoryTab.Accessory },
             { EquipmentSlotType.BackAttachment,   InventoryCategoryTab.Accessory },
             { EquipmentSlotType.HipsAttachment,   InventoryCategoryTab.Accessory },
-            { EquipmentSlotType.Ear,              InventoryCategoryTab.Accessory },
-            { EquipmentSlotType.Ring,             InventoryCategoryTab.Accessory },
-            { EquipmentSlotType.Necklace,         InventoryCategoryTab.Accessory },
             { EquipmentSlotType.Weapon,           InventoryCategoryTab.Weapon },
             { EquipmentSlotType.Shield,           InventoryCategoryTab.Weapon },
         };
@@ -74,7 +71,6 @@ namespace MySecondWorld.UI
             { PartType.ElbowAttachRight,  EquipmentSlotType.ElbowAttach },
             { PartType.BackAttachment,    EquipmentSlotType.BackAttachment },
             { PartType.HipsAttachment,    EquipmentSlotType.HipsAttachment },
-            { PartType.Ear,               EquipmentSlotType.Ear },
         };
 
         #endregion
@@ -112,7 +108,6 @@ namespace MySecondWorld.UI
         private readonly List<InventorySlotButton> _spawnedSlots = new();
         private InventoryCategoryTab _currentTab = InventoryCategoryTab.All;
         private ShopUI _activeShop;
-        private bool _isChangingTab;
         private bool _openRequested; // 이 UI가 열린적이 있는지 체크
         private bool _changePending; // 이번 프레임의 변경 처리가 이미 예약되어 있는가
         private GameObjectPool _slotPool; // 슬롯 버튼 풀
@@ -193,7 +188,6 @@ namespace MySecondWorld.UI
             {
                 _paperdollUI.OnUnequipRequested += HandlePaperdollUnequip;
                 _paperdollUI.OnSlotSelected += HandlePaperdollSlotSelected;
-                _paperdollUI.OnTabChanged += HandlePaperdollTabChanged;
             }
 
             // 아직 아무도 안 열었을 때만 닫아 둔다.
@@ -232,7 +226,6 @@ namespace MySecondWorld.UI
             {
                 _paperdollUI.OnUnequipRequested -= HandlePaperdollUnequip;
                 _paperdollUI.OnSlotSelected -= HandlePaperdollSlotSelected;
-                _paperdollUI.OnTabChanged -= HandlePaperdollTabChanged;
             }
         }
 
@@ -571,58 +564,26 @@ namespace MySecondWorld.UI
 
         #region ⑤ 탭 전환 · 페이퍼돌 연동
 
-        // 카테고리 탭을 바꾼다: 탭 색을 갱신하고,
-        // 페이퍼돌의 하이라이트·탭을 같이 맞춘 뒤 목록을 다시 그린다.
-        // 페이퍼돌과 서로 탭을 바꾸라고 주고받다가 무한 반복되지 않게 _isChangingTab으로 막는다.
+        // 카테고리 탭을 바꾼다: 탭 색을 갱신하고, 페이퍼돌의 하이라이트를 맞춘 뒤 목록을 다시 그린다.
         public void SetTab(InventoryCategoryTab tab)
         {
-            if (_isChangingTab) return;
-            _isChangingTab = true;
+            _currentTab = tab;
+            UpdateTabVisuals();
 
-            try
+            if (_paperdollUI != null)
             {
-                _currentTab = tab;
-                UpdateTabVisuals();
-
-                if (_paperdollUI != null)
-                {
-                    // 선택된 슬롯이 원래 속한 탭(SlotToTab[selected],
-                    // 가운데 착용슬롯의 종류)이 이동할 탭(tab,
-                    // 카테고리 버튼)과 다르면
-                    if (_paperdollUI.CurrentSelectedSlotType is EquipmentSlotType selected && SlotToTab[selected] != tab)
-                        _paperdollUI.ClearSelection(); //하이라이트 해제
-
-                    if (tab == InventoryCategoryTab.Equipment && _paperdollUI.CurrentTab != PaperdollTab.Armor)
-                        _paperdollUI.SetTab(PaperdollTab.Armor);
-                    else if (tab == InventoryCategoryTab.Accessory && _paperdollUI.CurrentTab != PaperdollTab.Accessory)
-                        _paperdollUI.SetTab(PaperdollTab.Accessory);
-                }
-
-                Refresh();
+                // 선택된 슬롯(페이퍼돌)이 이동할 탭(인벤토리 카테고리)에 속하지 않으면 하이라이트(페이퍼돌)를 끈다
+                if (_paperdollUI.CurrentSelectedSlotType is EquipmentSlotType selected && SlotToTab[selected] != tab)
+                    _paperdollUI.ClearSelection(); //하이라이트 해제
             }
-            finally
-            {
-                _isChangingTab = false;
-            }
+
+            Refresh();
         }
 
         // "(페이퍼돌)슬롯이 선택됐다"는 알림을 받았을 때 인벤토리 탭을 그 슬롯의 탭으로 옮기는 함수
         private void HandlePaperdollSlotSelected(EquipmentSlotType slotType)
         {
             SetTab(SlotToTab[slotType]);
-        }
-
-        // 페이퍼돌의 탭(방어구/악세사리)이 바뀌면 인벤토리 카테고리 탭도 같은 쪽으로 맞춘다
-        private void HandlePaperdollTabChanged(PaperdollTab tab)
-        {
-            if (tab == PaperdollTab.Armor && _currentTab != InventoryCategoryTab.Equipment)
-            {
-                SetTab(InventoryCategoryTab.Equipment);
-            }
-            else if (tab == PaperdollTab.Accessory && _currentTab != InventoryCategoryTab.Accessory)
-            {
-                SetTab(InventoryCategoryTab.Accessory);
-            }
         }
 
         #endregion
@@ -681,8 +642,8 @@ namespace MySecondWorld.UI
             if (item is EquipmentItem eq)
             {
                 // 2.커스터마이징 파츠(방어구 / 악세사리): 어느 탭인지는 GetPartTab이 결정
-                // (장비)	  상의, 상완, 하완, 손, 하의, 다리, 무릎(Knees), 머리 덮개
-                // (악세사리) 투구 장식, 어깨, 팔꿈치, 등, 허리 장식, 귀
+                // (장비)	  헬멧, 상의, 상완, 하완, 손, 하의, 무릎, 다리, 
+                // (악세사리) 모자/복면/오픈투구, 어깨, 팔꿈치, 등 장식, 허리 장식
                 if (eq.Category == WeaponCategory.None && eq.Restriction != null)
                     return tab == GetPartTab(eq);
 
