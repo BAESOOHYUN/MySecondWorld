@@ -117,30 +117,28 @@ namespace MySecondWorld.EditorTools
 
                 var slotDefs = new (EquipmentSlotType slotType, string name, Vector2 pos, string label, string iconPath, bool isWeapon)[]
                 {
-                    // Top (y = 275): 투구 장식
-                   (EquipmentSlotType.HelmetAttachment, "Slot_HelmetAttachment", new Vector2(-42f, 275f),  "HELMET ATTACH", "Assets/07.Textures/UI/PaperdollIcons/Silhouette_HelmetAttach.png", false),
+                    // Row 1 (y = 185): 머리, 투구장식, 주무기
+                    (EquipmentSlotType.HeadCoverings,    "Slot_HeadCoverings",    new Vector2(-42f, 185f),  "HEAD",          "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Knight_Helmet.Png", false),
+                    (EquipmentSlotType.HelmetAttachment, "Slot_HelmetAttachment", new Vector2(42f, 185f),   "HELMET ATTACH", "Assets/07.Textures/UI/PaperdollIcons/Silhouette_HelmetAttach.png", false),
+                    (EquipmentSlotType.Weapon,           "Slot_Weapon",           new Vector2(126f, 185f),  "WEAPON",        "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Dagger.Png", true),
 
-                    // Row 1 (y = 185): 하완, 머리, 어깨, 주무기
-                    (EquipmentSlotType.ArmLower,         "Slot_ArmLower",         new Vector2(-126f, 185f), "LOWER ARMS",   "Assets/07.Textures/UI/PaperdollIcons/Silhouette_ArmLower.png", false),
-                    (EquipmentSlotType.HeadCoverings,    "Slot_HeadCoverings",    new Vector2(-42f, 185f),  "HEAD",         "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Knight_Helmet.Png", false),
-                    (EquipmentSlotType.ShoulderAttach,   "Slot_ShoulderAttach",   new Vector2(42f, 185f),   "SHOULDER PADS","Assets/07.Textures/UI/PaperdollIcons/Silhouette_Shoulder.png", false),
-                    (EquipmentSlotType.Weapon,           "Slot_Weapon",           new Vector2(126f, 185f),  "WEAPON",       "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Dagger.Png", true),
+                    // Row 2 (y = 95): 상완, 상체, 어깨, 보조무기
+                    (EquipmentSlotType.ArmUpper,         "Slot_ArmUpper",         new Vector2(-126f, 95f),  "UPPER ARMS",    "Assets/07.Textures/UI/PaperdollIcons/Silhouette_ArmUpper.png", false),
+                    (EquipmentSlotType.Torso,            "Slot_Torso",            new Vector2(-42f, 95f),   "TORSO",         "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Armor.Png", false),
+                    (EquipmentSlotType.ShoulderAttach,   "Slot_ShoulderAttach",   new Vector2(42f, 95f),    "SHOULDER PADS", "Assets/07.Textures/UI/PaperdollIcons/Silhouette_Shoulder.png", false),
+                    (EquipmentSlotType.Shield,           "Slot_Shield",           new Vector2(126f, 95f),   "SHIELD",        "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Shield.Png", true),
 
-                    // Row 2 (y = 95): 팔꿈치, 상체, 상완, 보조무기
-                    (EquipmentSlotType.ElbowAttach,      "Slot_ElbowAttach",      new Vector2(-126f, 95f),  "ELBOW PADS",   "Assets/07.Textures/UI/PaperdollIcons/Silhouette_Elbow.png", false),
-                    (EquipmentSlotType.Torso,            "Slot_Torso",            new Vector2(-42f, 95f),   "TORSO",        "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Armor.Png", false),
-                    (EquipmentSlotType.ArmUpper,         "Slot_ArmUpper",         new Vector2(42f, 95f),    "UPPER ARMS",   "Assets/07.Textures/UI/PaperdollIcons/Silhouette_ArmUpper.png", false),
-                    (EquipmentSlotType.Shield,           "Slot_Shield",           new Vector2(126f, 95f),   "SHIELD",       "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Shield.Png", true),
+                    // Row 3 (y = 5): 하완, 하의, 팔꿈치, 등 장식
+                    (EquipmentSlotType.ArmLower,         "Slot_ArmLower",         new Vector2(-126f, 5f),   "LOWER ARMS",    "Assets/07.Textures/UI/PaperdollIcons/Silhouette_ArmLower.png", false),
+                    (EquipmentSlotType.Hips,             "Slot_Hips",             new Vector2(-42f, 5f),    "HIPS",          "Assets/07.Textures/UI/PaperdollIcons/Silhouette_Pants.png", false),
+                    (EquipmentSlotType.ElbowAttach,      "Slot_ElbowAttach",      new Vector2(42f, 5f),     "ELBOW PADS",    "Assets/07.Textures/UI/PaperdollIcons/Silhouette_Elbow.png", false),
+                    (EquipmentSlotType.BackAttachment,   "Slot_BackAttachment",   new Vector2(126f, 5f),    "BACK ATTACH",   "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Wing.Png", false),
 
-                    // Row 3 (y = 5): 허리 부속, 무릎, 손/장갑
-                    (EquipmentSlotType.HipsAttachment,   "Slot_HipsAttachment",   new Vector2(-126f, 5f),   "HIP ATTACH",   "Assets/07.Textures/UI/PaperdollIcons/Silhouette_Belt.png", false),
-                    (EquipmentSlotType.Knees,            "Slot_Knees",            new Vector2(-42f, 5f),    "KNEE PADS",    "Assets/07.Textures/UI/PaperdollIcons/Silhouette_Greaves.png", false),
-                    (EquipmentSlotType.Hands,            "Slot_Hands",            new Vector2(42f, 5f),     "HANDS",        "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Hand.Png", false),
-            
-                    // Row 4 (y = -85): 등 장식, 다리/신발, 골반/하의
-                    (EquipmentSlotType.BackAttachment,   "Slot_BackAttachment",   new Vector2(-126f, -85f), "BACK ATTACH",  "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Wing.Png", false),
-                    (EquipmentSlotType.Legs,             "Slot_Legs",             new Vector2(-42f, -85f),  "LEGS",         "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Shoes.Png", false),
-                    (EquipmentSlotType.Hips,             "Slot_Hips",             new Vector2(42f, -85f),   "HIPS",         "Assets/07.Textures/UI/PaperdollIcons/Silhouette_Pants.png", false),
+                    // Row 4 (y = -85): 손, 다리/신발, 무릎 각반, 허리 장식
+                    (EquipmentSlotType.Hands,            "Slot_Hands",            new Vector2(-126f, -85f), "HANDS",         "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Hand.Png", false),
+                    (EquipmentSlotType.Legs,             "Slot_Legs",             new Vector2(-42f, -85f),  "LEGS",          "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Shoes.Png", false),
+                    (EquipmentSlotType.Knees,            "Slot_Knees",            new Vector2(42f, -85f),   "KNEE PADS",     "Assets/07.Textures/UI/PaperdollIcons/Silhouette_Greaves.png", false),
+                    (EquipmentSlotType.HipsAttachment,   "Slot_HipsAttachment",   new Vector2(126f, -85f),  "HIP ATTACH",    "Assets/07.Textures/UI/PaperdollIcons/Silhouette_Belt.png", false)
                 };
 
                 foreach (var def in slotDefs)
@@ -193,38 +191,34 @@ namespace MySecondWorld.EditorTools
             slotRT.anchoredPosition = def.pos;
             slotRT.sizeDelta = def.isWeapon ? new Vector2(64f, 64f) : new Vector2(60f, 60f);
 
-            // 1. 슬롯 배경 (어두운 반투명 사각)
+            // 1. 슬롯 배경 (은은하고 세련된 반투명 다크 틴트 - 참고 사진 스타일)
             Image bgImg = slotGO.GetComponent<Image>();
-            bgImg.sprite = squareFrameSprite;
-            bgImg.type = Image.Type.Sliced;
-            bgImg.color = new Color(0.06f, 0.08f, 0.12f, 0.8f);
+            bgImg.color = new Color(0.04f, 0.07f, 0.12f, 0.38f);
 
             Button btn = slotGO.GetComponent<Button>();
             btn.targetGraphic = bgImg;
             var colors = btn.colors;
             colors.normalColor = Color.white;
-            colors.highlightedColor = new Color(1f, 0.95f, 0.7f, 1f);
-            colors.pressedColor = new Color(0.7f, 0.7f, 0.7f, 1f);
+            colors.highlightedColor = new Color(1f, 1f, 1f, 1f);
+            colors.pressedColor = new Color(0.8f, 0.8f, 0.8f, 1f);
             btn.colors = colors;
 
-            // 2. 얇은 사각 외곽선 (FrameLine)
-            GameObject frameLineGO = new GameObject("FrameLine", typeof(RectTransform), typeof(Image));
-            frameLineGO.transform.SetParent(slotGO.transform, false);
-            RectTransform flRT = frameLineGO.GetComponent<RectTransform>();
-            flRT.anchorMin = Vector2.zero;
-            flRT.anchorMax = Vector2.one;
-            flRT.sizeDelta = Vector2.zero;
-            Image flImg = frameLineGO.GetComponent<Image>();
-            flImg.sprite = squareFrameSprite;
-            flImg.type = Image.Type.Sliced;
-            flImg.color = def.isWeapon 
-                ? new Color(1f, 0.85f, 0.35f, 0.7f) 
+            // 2. 평상시 얇은 와이어프레임 사각 테두리 (속이 100% 뚫린 순수 외곽선 4개 라인)
+            Color normalLineColor = def.isWeapon 
+                ? new Color(1f, 0.85f, 0.35f, 0.65f) 
                 : new Color(0.85f, 0.92f, 1f, 0.45f);
-            flImg.raycastTarget = false;
+            GameObject normalBorderGO = CreateWireframeLines("NormalBorder", slotGO.transform, normalLineColor, 1.5f, 0f);
+
+            // 3. 선택 시 하이라이트 보더 (속이 100% 뚫린 밝은 네온 외곽선 4개 라인 - 장비를 절대 가리지 않음!)
+            Color selectLineColor = def.isWeapon 
+                ? new Color(1f, 0.88f, 0.2f, 1f) 
+                : new Color(0.2f, 0.88f, 1f, 1f);
+            GameObject borderGO = CreateWireframeLines("SelectedBorder", slotGO.transform, selectLineColor, 2.5f, 1.5f);
+            borderGO.SetActive(false);
 
             Sprite placeholderSprite = AssetDatabase.LoadAssetAtPath<Sprite>(def.iconPath);
 
-            // 3. 미장착 실루엣 아이콘 (Placeholder)
+            // 4. 미장착 실루엣 아이콘 (Placeholder)
             GameObject placeholderGO = new GameObject("PlaceholderIcon", typeof(RectTransform), typeof(Image));
             placeholderGO.transform.SetParent(slotGO.transform, false);
             RectTransform phRT = placeholderGO.GetComponent<RectTransform>();
@@ -235,22 +229,22 @@ namespace MySecondWorld.EditorTools
             phImg.preserveAspect = true;
             phImg.color = def.isWeapon 
                 ? new Color(1f, 0.88f, 0.45f, 0.55f) 
-                : new Color(1f, 1f, 1f, 0.4f);
+                : new Color(1f, 1f, 1f, 0.38f);
             phImg.raycastTarget = false;
 
-            // 4. 장착 아이템 아이콘 (IconImage)
+            // 5. 장착 아이템 아이콘 (IconImage - 테두리보다 위에서 최상단 렌더링되어 절대 가려지지 않음)
             GameObject iconGO = new GameObject("IconImage", typeof(RectTransform), typeof(Image));
             iconGO.transform.SetParent(slotGO.transform, false);
             RectTransform iconRT = iconGO.GetComponent<RectTransform>();
             iconRT.anchoredPosition = Vector2.zero;
-            iconRT.sizeDelta = new Vector2(44f, 44f);
+            iconRT.sizeDelta = new Vector2(46f, 46f);
             Image iconImg = iconGO.GetComponent<Image>();
             iconImg.sprite = placeholderSprite;
             iconImg.preserveAspect = true;
             iconImg.color = new Color(1f, 1f, 1f, 0f);
             iconImg.raycastTarget = false;
 
-            // 5. 상단 중앙 영문 볼드 라벨 (LabelText)
+            // 6. 상단 중앙 영문 볼드 라벨 (LabelText)
             GameObject labelGO = new GameObject("LabelText", typeof(RectTransform), typeof(TextMeshProUGUI));
             labelGO.transform.SetParent(slotGO.transform, false);
             RectTransform labelRT = labelGO.GetComponent<RectTransform>();
@@ -270,23 +264,6 @@ namespace MySecondWorld.EditorTools
                 : new Color(0.88f, 0.94f, 1f, 0.9f);
             labelTMP.raycastTarget = false;
 
-            // 6. 선택 하이라이트 보더 (SelectedBorder)
-            GameObject borderGO = new GameObject("SelectedBorder", typeof(RectTransform), typeof(Image));
-            borderGO.transform.SetParent(slotGO.transform, false);
-            RectTransform borderRT = borderGO.GetComponent<RectTransform>();
-            borderRT.anchorMin = Vector2.zero;
-            borderRT.anchorMax = Vector2.one;
-            borderRT.offsetMin = new Vector2(-2f, -2f);
-            borderRT.offsetMax = new Vector2(2f, 2f);
-            Image borderImg = borderGO.GetComponent<Image>();
-            borderImg.sprite = squareFrameSprite;
-            borderImg.type = Image.Type.Sliced;
-            borderImg.color = def.isWeapon 
-                ? new Color(1f, 0.85f, 0.2f, 0.95f) 
-                : new Color(0.2f, 0.85f, 1f, 0.95f);
-            borderImg.raycastTarget = false;
-            borderGO.SetActive(false);
-
             return new EquipmentPaperdollUI.PaperdollSlotView
             {
                 SlotType = def.slotType,
@@ -297,6 +274,43 @@ namespace MySecondWorld.EditorTools
                 SelectedBorder = borderGO,
                 DefaultPlaceholderIcon = placeholderSprite
             };
+        }
+
+        private static GameObject CreateWireframeLines(string name, Transform parent, Color lineColor, float thickness, float offset)
+        {
+            GameObject container = new GameObject(name, typeof(RectTransform));
+            container.transform.SetParent(parent, false);
+            RectTransform rt = container.GetComponent<RectTransform>();
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = new Vector2(-offset, -offset);
+            rt.offsetMax = new Vector2(offset, offset);
+
+            // Top Line
+            CreateSingleLine("Line_T", container.transform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, 0f), new Vector2(0f, thickness), lineColor);
+            // Bottom Line
+            CreateSingleLine("Line_B", container.transform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 0f), new Vector2(0f, thickness), lineColor);
+            // Left Line
+            CreateSingleLine("Line_L", container.transform, new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(0f, 0f), new Vector2(thickness, 0f), lineColor);
+            // Right Line
+            CreateSingleLine("Line_R", container.transform, new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(1f, 0.5f), new Vector2(0f, 0f), new Vector2(thickness, 0f), lineColor);
+
+            return container;
+        }
+
+        private static void CreateSingleLine(string name, Transform parent, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 pos, Vector2 size, Color color)
+        {
+            GameObject lineGO = new GameObject(name, typeof(RectTransform), typeof(Image));
+            lineGO.transform.SetParent(parent, false);
+            RectTransform rt = lineGO.GetComponent<RectTransform>();
+            rt.anchorMin = anchorMin;
+            rt.anchorMax = anchorMax;
+            rt.pivot = pivot;
+            rt.anchoredPosition = pos;
+            rt.sizeDelta = size;
+            Image img = lineGO.GetComponent<Image>();
+            img.color = color;
+            img.raycastTarget = false;
         }
 
         private static void SetupShopCanvas()
