@@ -36,12 +36,11 @@ namespace MySecondWorld.CameraSystem
         public float CameraYAngle => _cinemachineCamera.transform.eulerAngles.y;
 
         [Inject]
-        private void Construct(TouchEventListener touchEventListener = null)
+        private void Construct(IObjectResolver resolver)
         {
-            // 헤드리스 데디케이티드 서버엔 TouchEventListener가 등록되지 않는다(ProjectLifetimeScope.cs의
-            // #if !UNITY_SERVER || UNITY_EDITOR 가드) — 기본값 null로 옵션 주입해야 서버 스폰 시
-            // VContainerException(연쇄 NRE)이 안 난다.
-            _touchEventListener = touchEventListener;
+            // 헤드리스 서버엔 TouchEventListener가 등록되지 않는다 (ProjectLifetimeScope의 #if 가드).
+            // VContainer는 기본값(= null)을 지원하지 않으므로, 있을 때만 TryResolve로 받는다.
+            resolver.TryResolve(out _touchEventListener);
         }
 
         private void Start()
