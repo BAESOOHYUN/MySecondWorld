@@ -1,14 +1,15 @@
 using System;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
-using Cleverous.VaultInventory;
 using VContainer;
 using R3;
+using Cleverous.VaultInventory;
 using MySecondWorld.Customization;
 using MySecondWorld.Inventory.Items;
 using MySecondWorld.Inventory;
-using Cysharp.Threading.Tasks;
+using MySecondWorld.Pool;
 
 namespace MySecondWorld.UI
 {
@@ -114,6 +115,7 @@ namespace MySecondWorld.UI
         private bool _isChangingTab;
         private bool _openRequested; // 이 UI가 열린적이 있는지 체크
         private bool _changePending; // 이번 프레임의 변경 처리가 이미 예약되어 있는가
+        private GameObjectPool _slotPool; // 슬롯 버튼 풀
 
         // ── 구독 기억 ──
         // Open() 시점에 구독한 인스턴스를 기억 — Close() 때 다른 인스턴스로 바뀌어도 정확히 해당 구독만 해제
@@ -210,6 +212,8 @@ namespace MySecondWorld.UI
         // 오브젝트가 파괴될 때: 걸어 둔 모든 구독(인벤토리·무기·외형·성별 필터·페이퍼돌)을 해제해 누수를 막는다
         private void OnDestroy()
         {
+            _slotPool?.Dispose();
+
             if (_inventoryProvider != null)
                 _inventoryProvider.OnProvided -= HandleProvided;   // 닫혀 있는 동안은 신호를 받지 않는다
 
@@ -386,7 +390,9 @@ namespace MySecondWorld.UI
         // 버리기·장착 동작을 정해 연결한다.
         private void Refresh()
         {
-            ClearSlots();
+            ReleaseAllSlots();
+            _slotPool ??= new GameObjectPool(
+                () => Instantiate(_slotButtonPrefab, _slotContent).gameObject, defaultCapacity: 30, maxSize: 100);
 
             if (_paperdollUI != null)
             {
@@ -413,7 +419,9 @@ namespace MySecondWorld.UI
                     continue;
 
                 int capturedIndex = i;
-                var slot = Instantiate(_slotButtonPrefab, _slotContent);
+                var slotObject = _slotPool.Rent();      // 풀이 SetActive(true)까지 해 준다
+                slotObject.transform.SetAsLastSibling(); // 풀은 나중에 반납한 것을 먼저 내주므로, 꺼낸 순서대로 화면 순서를 맞춘다
+                var slot = slotObject.GetComponent<InventorySlotButton>();
 
                 bool isConsumable = stack.Source is ConsumableItem; // 소모품(포션 등)인지 판별
 
@@ -619,14 +627,14 @@ namespace MySecondWorld.UI
         #endregion
 
         #region 헬퍼 메서드
-
-        // 지금 그려진 슬롯 버튼을 모두 파괴하고 목록을 비운다 (Refresh가 시작할 때 부른다)
-        private void ClearSlots()
+        
+        // 지금 그려진 슬롯 버튼을 모두 풀에 반납하고 목록을 비운다 (Refresh가 시작할 때 부른다)
+        private void ReleaseAllSlots()
         {
             foreach (var slot in _spawnedSlots)
             {
                 if (slot != null)
-                    Destroy(slot.gameObject);
+                    _slotPool.Return(slot.gameObject); // 풀이 SetActive(false)까지 해 준다
             }
             _spawnedSlots.Clear();
         }

@@ -29,7 +29,8 @@
         "MySecondWorld.Interaction",
         "MySecondWorld.Combat",
         "MySecondWorld.ScriptableObject",
-        "MySecondWorld.Camera"
+        "MySecondWorld.Camera",
+        "MySecondWorld.Pool"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
