@@ -67,7 +67,7 @@ namespace MySecondWorld.Network
         private ObservableCharacterCustomizer _customizer;
         private AvatarPartKeyTableSO _avatarPartKeyTable;
         private LocalPlayerInventoryProvider _localInventoryProvider;
-        private CharacterSaveService _saveService;
+        private LocalAppearanceCache _appearanceCache;
         private CharacterAppearanceService _appearanceService;
         private IPublisher<RequestInitialCustomizeEvent> _initialCustomizePublisher;
 
@@ -76,7 +76,7 @@ namespace MySecondWorld.Network
             ObservableCharacterCustomizer customizer,
             AvatarPartKeyTableSO avatarPartKeyTable,
             LocalPlayerInventoryProvider localInventoryProvider,
-            CharacterSaveService saveService,
+            LocalAppearanceCache appearanceCache,
             CharacterAppearanceService appearanceService,
             IObjectResolver resolver
             )
@@ -84,7 +84,7 @@ namespace MySecondWorld.Network
             _customizer = customizer;
             _avatarPartKeyTable = avatarPartKeyTable;
             _localInventoryProvider = localInventoryProvider;
-            _saveService = saveService;
+            _appearanceCache = appearanceCache;
             _appearanceService = appearanceService;
 
             // Root.Resolve를 쓰는 이유 :
@@ -160,11 +160,11 @@ namespace MySecondWorld.Network
                 gnm.RevealScreen();
 
             if (_hasServerAppearance)
-                _saveService.Save(_appearance);                // 서버 값을 이 클라의 기억에 넣는다
+                _appearanceCache.Set(_appearance);                // 서버 값을 이 클라의 기억에 넣는다
             else                                               // 최초 접속(미커스터마이징) 유저
             {
-                _saveService.Clear();                          // 이전 계정의 기억이 남아 있으면 지운다
-                ApplyAndNotify(_saveService.Load()).Forget();  // 기본 외형 (로컬에만 표시, 서버엔 저장 안 함)
+                _appearanceCache.Clear();                          // 이전 계정의 기억이 남아 있으면 지운다
+                ApplyAndNotify(_appearanceCache.Get()).Forget();  // 기본 외형 (로컬에만 표시, 서버엔 저장 안 함)
                 _initialCustomizePublisher.Publish(new RequestInitialCustomizeEvent());
             }
         }
@@ -376,7 +376,7 @@ namespace MySecondWorld.Network
         private void OnAppearanceChanged(CharacterAppearanceData old, CharacterAppearanceData next)
         {
 #if !UNITY_SERVER
-            if (isLocalPlayer) _saveService.Save(next); // 서버가 확정한 값으로 이 클라의 기억을 맞춘다
+            if (isLocalPlayer) _appearanceCache.Set(next); // 서버가 확정한 값으로 이 클라의 기억을 맞춘다
             ApplyAndNotify(next).Forget();
 #endif
         }

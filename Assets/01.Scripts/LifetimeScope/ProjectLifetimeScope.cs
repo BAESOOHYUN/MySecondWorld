@@ -69,7 +69,7 @@ public class ProjectLifetimeScope : LifetimeScope
 
         builder.Register<SaveManager>(Lifetime.Singleton);
         builder.Register<PasswordCredentialStore>(Lifetime.Singleton);
-        builder.Register<CharacterSaveService>(Lifetime.Singleton);
+        builder.Register<LocalAppearanceCache>(Lifetime.Singleton);
         builder.Register<CharacterAppearanceService>(Lifetime.Singleton);
         builder.Register<LocalPlayerInventoryProvider>(Lifetime.Singleton);
         builder.Register<CharacterGenderFilterService>(Lifetime.Singleton);

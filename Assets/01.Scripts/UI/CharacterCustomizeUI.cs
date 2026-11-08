@@ -72,7 +72,7 @@ namespace MySecondWorld.UI
         // ── DI ──
         private AvatarPartKeyTableSO _keyTable;
         private CharacterAppearanceSO _defaultAppearanceSO;
-        private CharacterSaveService _saveService;
+        private LocalAppearanceCache _appearanceCache;
         private LocalPlayerInventoryProvider _inventoryProvider;
         private IPublisher<CharacterAppearanceSyncRequestedEvent> _saveRequestPub;
 
@@ -114,14 +114,14 @@ namespace MySecondWorld.UI
         #region 생명주기·초기화
         [Inject]
         public void Construct(AvatarPartKeyTableSO keyTable,
-                            CharacterSaveService saveService,
+                            LocalAppearanceCache appearanceCache,
                             CharacterAppearanceSO defaultAppearanceSO,
                             LocalPlayerInventoryProvider inventoryProvider,
                             IPublisher<CharacterAppearanceSyncRequestedEvent> saveRequestPub,
                             ISubscriber<RequestInitialCustomizeEvent> initialCustomizeSub)
         {
             _keyTable = keyTable;
-            _saveService = saveService;
+            _appearanceCache = appearanceCache;
             _defaultAppearanceSO = defaultAppearanceSO;
             _inventoryProvider = inventoryProvider;
             _saveRequestPub = saveRequestPub;
@@ -765,10 +765,10 @@ namespace MySecondWorld.UI
         #region 저장·불러오기
         private void OnSaveClicked()
         {
-            var previouslySaved = _saveService.Load(); // 검증 실패 파츠는 이 값(직전 저장 상태)으로 되돌림
+            var previouslySaved = _appearanceCache.Get(); // 검증 실패 파츠는 이 값(직전 저장 상태)으로 되돌림
             var data = ValidateOwnership(BuildData(), previouslySaved);
 
-            _saveService.Save(data);
+            _appearanceCache.Set(data);
             _saveRequestPub.Publish(new CharacterAppearanceSyncRequestedEvent(data)); // 네트워크 동기화 요청
 
             // 검증 후 되돌려진 인덱스가 있으면 UI/미리보기도 즉시 그 모습으로 맞춘다
@@ -784,7 +784,7 @@ namespace MySecondWorld.UI
         {
             await EnsureAtlasLoadedAsync();
 
-            var saved = _saveService.Load(); // 열릴 때는 현재 착용 중인 로컬 세이브 외형을 그대로 프리뷰에 로드
+            var saved = _appearanceCache.Get(); // 열릴 때는 현재 착용 중인 로컬 세이브 외형을 그대로 프리뷰에 로드
             _currentGender = saved.Gender;
             InitIndices(saved); // 저장된 외형으로 인덱스 캐시 채움
 

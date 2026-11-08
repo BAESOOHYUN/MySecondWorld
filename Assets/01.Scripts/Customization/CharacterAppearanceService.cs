@@ -44,17 +44,17 @@ namespace MySecondWorld.Customization
         #region DI
 
         // 주입받는 참조 — 생성자에서만 채워진다
-        private readonly CharacterSaveService _saveService;
+        private readonly LocalAppearanceCache _appearanceCache;
         private readonly AvatarPartKeyTableSO _avatarPartKeyTable;
         private readonly IPublisher<CharacterAppearanceSyncRequestedEvent> _syncRequestPub;
 
         [Inject]
         public CharacterAppearanceService(
-            CharacterSaveService saveService,
+            LocalAppearanceCache appearanceCache,
             AvatarPartKeyTableSO avatarPartKeyTable,
             IPublisher<CharacterAppearanceSyncRequestedEvent> syncRequestPub)
         {
-            _saveService = saveService;
+            _appearanceCache = appearanceCache;
             _avatarPartKeyTable = avatarPartKeyTable;
             _syncRequestPub = syncRequestPub;
         }
@@ -132,7 +132,7 @@ namespace MySecondWorld.Customization
         public bool IsPartEquipped(EquipmentItem item, int inventorySlotIndex)
         {
             if (item == null || _avatarPartKeyTable == null) return false;
-            var data = _saveService.Load();
+            var data = _appearanceCache.Get();
 
             // "아이템 → 파츠 종류" 조회
             if (_avatarPartKeyTable.TryFindPartIndex(item, data.Gender, out var part, out var index))
@@ -155,7 +155,7 @@ namespace MySecondWorld.Customization
         {
             if (item == null) return false;
 
-            var data = _saveService.Load();
+            var data = _appearanceCache.Get();
             if (_avatarPartKeyTable == null || !_avatarPartKeyTable.TryFindPartIndex(item, data.Gender, out var part, out var index))
             {
                 Debug.LogWarning($"[CharacterAppearanceService] {item.name}에 대응하는 파츠 인덱스를 찾지 못했습니다. (현재 캐릭터 성별: {data.Gender})");
@@ -175,7 +175,7 @@ namespace MySecondWorld.Customization
             }
 
             // 3. 로컬 세이브 저장 & 네트워크 동기화 브로드캐스트
-            _saveService.Save(data);
+            _appearanceCache.Set(data);
             _syncRequestPub.Publish(new CharacterAppearanceSyncRequestedEvent(data, BuildEquippedPartSlots()));
             OnAppearanceChanged?.Invoke();
 
@@ -188,7 +188,7 @@ namespace MySecondWorld.Customization
         // (무기(NetworkWeaponEquip)의 UnequipMainHand에 해당)
         public bool UnequipWearablePart(PartType part)
         {
-            var data = _saveService.Load();
+            var data = _appearanceCache.Get();
             data[part] = 0;
             _equippedInventorySlotIndexByPart.Remove(part);
 
@@ -198,7 +198,7 @@ namespace MySecondWorld.Customization
                 data[mirrorPart] = 0;
                 _equippedInventorySlotIndexByPart.Remove(mirrorPart);
             }
-            _saveService.Save(data);
+            _appearanceCache.Set(data);
             _syncRequestPub.Publish(new CharacterAppearanceSyncRequestedEvent(data, BuildEquippedPartSlots()));
             OnAppearanceChanged?.Invoke();
             Debug.Log($"[CharacterAppearanceService] 파츠 해제 완료: Part={part}");
@@ -210,7 +210,7 @@ namespace MySecondWorld.Customization
         public bool UnequipWearableItem(EquipmentItem item)
         {
             if (item == null || _avatarPartKeyTable == null) return false;
-            var data = _saveService.Load();
+            var data = _appearanceCache.Get();
             if (_avatarPartKeyTable.TryFindPartIndex(item, data.Gender, out var part, out _))
             {
                 return UnequipWearablePart(part);
@@ -221,7 +221,7 @@ namespace MySecondWorld.Customization
         // 커스터마이징 UI 등에서 변경된 전체 외형 데이터를 저장 및 네트워크 동기화한다.
         public void SaveAndSyncAppearance(CharacterAppearanceData data)
         {
-            _saveService.Save(data);
+            _appearanceCache.Set(data);
             _syncRequestPub.Publish(new CharacterAppearanceSyncRequestedEvent(data, BuildEquippedPartSlots()));
             OnAppearanceChanged?.Invoke();
             Debug.Log($"[CharacterAppearanceService] 전체 외형 저장 및 동기화 요청 완료 (Gender={data.Gender}, Head={data.Head}, Torso={data.Torso})");
@@ -252,7 +252,7 @@ namespace MySecondWorld.Customization
         // 현재 세이브된 외형 데이터를 반환한다.
         public CharacterAppearanceData GetCurrentAppearance()
         {
-            return _saveService.Load();
+            return _appearanceCache.Get();
         }
 
         // "이 파츠 자리에 지금 입은 외형이 있으면, 그 외형에 대응하는 아이템이 무엇인가?"를 돌려줌
@@ -260,7 +260,7 @@ namespace MySecondWorld.Customization
         public EquipmentItem GetRequiredItemForCurrentLook(PartType part)
         {
             if (_avatarPartKeyTable == null) return null;
-            var data = _saveService.Load(); // 클라가 기억하는 지금 이 캐릭터가 입고 있는 외형을 뜻함. (옛날에 저장해 둔 파일을 뜻하는게 아님)
+            var data = _appearanceCache.Get(); // 클라가 기억하는 지금 이 캐릭터가 입고 있는 외형을 뜻함. (옛날에 저장해 둔 파일을 뜻하는게 아님)
             int index = data[part];
             if (index <= 0) return null; // 0은 맨몸(기본 파츠), -1은 안 입음
             return _avatarPartKeyTable.GetRequiredItem(part, data.Gender, index);
@@ -271,7 +271,7 @@ namespace MySecondWorld.Customization
         {
             part = default;
             if (item == null || _avatarPartKeyTable == null) return false;
-            var data = _saveService.Load();
+            var data = _appearanceCache.Get();
 
             // "아이템 → 파츠 종류" 조회
             return _avatarPartKeyTable.TryFindPartIndex(item, data.Gender, out part, out _);
@@ -281,7 +281,7 @@ namespace MySecondWorld.Customization
         public bool IsItemMatchingGender(EquipmentItem item)
         {
             if (item == null || _avatarPartKeyTable == null) return true;
-            var data = _saveService.Load();
+            var data = _appearanceCache.Get();
             return _avatarPartKeyTable.IsItemMatchingGender(item, data.Gender);
         }
 
