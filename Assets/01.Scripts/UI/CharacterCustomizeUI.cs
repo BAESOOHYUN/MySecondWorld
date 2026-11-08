@@ -721,6 +721,7 @@ namespace MySecondWorld.UI
         #endregion
 
         #region 소유 검증
+
         // 미소유 파츠를 fallback 값으로 되돌린 사본을 반환.
         // fallback 지정 시: 그 값(보통 "직전 저장값")으로 되돌림 — 서버 CmdSetAppearance와 동일하게
         //   "거부하고 이전 상태 유지" 의미. fallback의 그 값마저 미소유면(예: 그사이 아이템 상실) 맨몸(0)까지 떨어뜨림.
@@ -732,7 +733,10 @@ namespace MySecondWorld.UI
                 if (data[part] <= 0) continue;  // 0번(맨몸) 및 -1(없음)만 무료 통과
                 if (IsPartOwned(part, data.Gender, data[part])) continue; // 이미 정당하게 소유한 아이템이면 검증 불필요.
 
-                int fallbackIndex = fallback.HasValue ? fallback.Value[part] : 0; // fallback 값이 있으면 fallback으로 되돌림. 없으면 0
+                // 성별이 바뀌었으면 직전 값의 번호는 다른 성별의 옷이라 되돌아갈 곳이 못 된다 → 맨몸(0)
+                bool genderChanged = fallback.HasValue && fallback.Value.Gender != data.Gender;
+                // fallback 값이 있으면 fallback으로 되돌림. 없으면 0
+                int fallbackIndex = (fallback.HasValue && !genderChanged) ? fallback.Value[part] : 0;
                 if (fallbackIndex > 0 && !IsPartOwned(part, fallback.Value.Gender, fallbackIndex)) //fallback 값이 있는데 허용된 아이템이 아닌 경우. ex) lock된 아이템
                     fallbackIndex = 0; // fallback 값조차 지금은 미소유면 더 물러날 곳이 없어 맨몸으로 되돌림
 

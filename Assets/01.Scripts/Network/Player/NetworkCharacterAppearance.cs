@@ -18,7 +18,7 @@ namespace MySecondWorld.Network
     //    │  CmdSetAppearance(data)
     //    ▼  [Command]
     // [Server] CmdSetAppearance: 성별 검증 + 25개 파츠 클램프 + 미보유 파츠 롤백
-    //    │  _appearance = data   (SyncVar 대입)
+    //    │  _serverAppearance = data   (SyncVar 대입)
     //    ▼
     // [Mirror] SyncVar 변경 감지 → 모든 클라이언트에 자동 전송
     //    ▼
@@ -30,7 +30,7 @@ namespace MySecondWorld.Network
 
         // 선언 순서를 바꾸지 말 것 — Mirror가 SyncVar를 선언 순서로 직렬화한다.
         [SyncVar(hook = nameof(OnAppearanceChanged))]
-        private CharacterAppearanceData _appearance;
+        private CharacterAppearanceData _serverAppearance;
         [SyncVar] private bool _hasServerAppearance;
 
         // '서버가 기억하는' 파츠별 장착 칸 번호 (배열 위치 = PartType 번호, 값 = 인벤토리 칸 번호, 미장착·모름은 -1)
@@ -160,7 +160,7 @@ namespace MySecondWorld.Network
                 gnm.RevealScreen();
 
             if (_hasServerAppearance)
-                _appearanceCache.Set(_appearance);                // 서버 값을 이 클라의 기억에 넣는다
+                _appearanceCache.Set(_serverAppearance);                // 서버 값을 이 클라의 기억에 넣는다
             else                                               // 최초 접속(미커스터마이징) 유저
             {
                 _appearanceCache.Clear();                          // 이전 계정의 기억이 남아 있으면 지운다
@@ -177,7 +177,7 @@ namespace MySecondWorld.Network
         [Server]
         public bool ServerTryGetAppearance(out CharacterAppearanceData data)
         {
-            data = _appearance;
+            data = _serverAppearance;
             return _hasServerAppearance;
         }
 
@@ -185,7 +185,7 @@ namespace MySecondWorld.Network
         [Server]
         public void ServerRestoreAppearance(CharacterAppearanceData data)
         {
-            _appearance = data;
+            _serverAppearance = data;
             _hasServerAppearance = true;
         }
 
@@ -205,7 +205,7 @@ namespace MySecondWorld.Network
         {
             if (_equippedPartSlots == null) return;        // 서버가 기억한 입은 칸이 없으면 검사할 것도 없다
 
-            var next = _appearance;                        // 외형의 복사본. [SyncVar]는 통째로 대입해야 변경이 전파된다
+            var next = _serverAppearance;                        // 외형의 복사본. [SyncVar]는 통째로 대입해야 변경이 전파된다
             bool changed = false;                          // 하나라도 벗겼는가
 
             for (int i = 0; i < _equippedPartSlots.Length; i++) // 파츠 25개를 하나씩 본다 (i = PartType 번호)
@@ -221,7 +221,7 @@ namespace MySecondWorld.Network
             }
 
             if (!changed) return;                          // 벗긴 게 없으면 알릴 것도 없다
-            _appearance = next;                            // [SyncVar] 훅 → 모든 클라가 모델을 다시 입힌다
+            _serverAppearance = next;                            // [SyncVar] 훅 → 모든 클라가 모델을 다시 입힌다
             ServerSendEquippedPartSlots();                 // 바뀐 칸 기록을 이 캐릭터의 주인(본인) 클라에게만 보낸다
         }
 
@@ -274,7 +274,7 @@ namespace MySecondWorld.Network
                 // 1. 성별 enum 유효성 검증
                 // IsDefined = 이 값이 enum에 실제로 정의된 값인지 검증 (해킹 등으로 이상한 값이 들어올 가능성 방어)
                 if (!System.Enum.IsDefined(typeof(Gender), data.Gender))
-                    data.Gender = _appearance.Gender;
+                    data.Gender = _serverAppearance.Gender;
 
                 var t = _avatarPartKeyTable;
 
@@ -293,9 +293,12 @@ namespace MySecondWorld.Network
                             // 그룹 A 파츠는 RequiredItems가 비어 있어 requiredItem이 항상 null → 아래 체크가 자동으로 스킵된다.
                             var requiredItem = t.GetRequiredItem(part, data.Gender, data[part]);
                             if (requiredItem != null &&
-                                 !(_inventory?.Contains(requiredItem, 1) ?? false))
+                                 !(_inventory?.Contains(requiredItem, 1) ?? false)) // if 안은 아이템 미소유일 때만 실행된다.
                             {
-                                data[part] = _appearance[part]; // 미소유 → 이전 값으로 롤백
+                                // 미소유로 판정된 뒤 이전 값으로 롤백
+                                // 성별이 같으면 이전 확정값으로 되돌림 → _serverAppearance[part] (서버값)
+                                // 성별이 바뀐 요청이면 이전 값의 번호가 다른 성별 옷이라 쓸 수 없다 → 맨몸(0)
+                                data[part] = (data.Gender == _serverAppearance.Gender) ? _serverAppearance[part] : 0; 
                             }
                         }
                     }
@@ -305,8 +308,8 @@ namespace MySecondWorld.Network
                     Debug.LogWarning("[NetAppearance] [Server] _avatarPartKeyTable이 null이므로 파츠 유효성 검증을 건너뜁니다.");
                 }
                 // 2. 어떤 예외가 있더라도 서버의 SyncVar에 확실하게 대입!
-                _appearance = data;
-                Debug.Log($"[NetAppearance] [Server] _appearance 동기화 성공! Gender={data.Gender}, Head={data.Head}, Torso={data.Torso}");
+                _serverAppearance = data;
+                Debug.Log($"[NetAppearance] [Server] _serverAppearance 동기화 성공! Gender={data.Gender}, Head={data.Head}, Torso={data.Torso}");
 
                 // 외형이 바뀌었으니, 이미 기억하던 칸 번호가 아직 맞는지 다시 확인한다.
                 // (칸 번호 없이 외형만 오는 경우에, 바뀐 옷을 가리키는 낡은 칸 번호가 남지 않게 하려는 것)
@@ -318,7 +321,7 @@ namespace MySecondWorld.Network
                 Debug.LogError($"[NetAppearance] [Server] CmdSetAppearance 처리 중 예외 발생: {ex}");
                 // 예외가 발생하더라도 최소한 데이터는 대입하여 SyncVar 전송 보장
                 // 여기서 대입하며 [SyncVar] 훅 발동 → OnAppearanceChanged 실행
-                _appearance = data;
+                _serverAppearance = data;
             }
         }
 
@@ -328,6 +331,19 @@ namespace MySecondWorld.Network
         public void CmdSetEquippedPartSlots(int[] clientSlots)
         {
             _equippedPartSlots = ValidateEquippedPartSlots(clientSlots);
+
+            // [진단] 클라가 보낸 칸 번호와 서버가 인정한 칸 번호 (파츠번호:칸, 안 입은 파츠는 생략)
+            Debug.Log($"[NetAppearance][Diag] CmdSetEquippedPartSlots 받음={DescribeSlots(clientSlots)} 인정={DescribeSlots(_equippedPartSlots)} keyTable={(_avatarPartKeyTable != null)}");
+        }
+
+        // [진단] 칸 배열을 "파츠번호:칸" 목록 문자열로 만든다
+        private static string DescribeSlots(int[] slots)
+        {
+            if (slots == null) return "null";
+            var sb = new System.Text.StringBuilder();
+            for (int i = 0; i < slots.Length; i++)
+                if (slots[i] >= 0) sb.Append(i).Append(':').Append(slots[i]).Append(' ');
+            return sb.Length == 0 ? "(없음)" : sb.ToString();
         }
 
         // 클라가 보낸 장착 칸 번호 배열(clientSlots)을 서버가 검사한다. 클라의 말을 믿지 않는다.
@@ -355,11 +371,11 @@ namespace MySecondWorld.Network
 
                 // index = 서버가 확정한 이 파츠의 모양 번호. (clientSlot과는 다른 값)
                 // 0 이하면 맨몸이거나 안 입은 것이라 가방 칸이 없으니 건너뛴다
-                int index = _appearance[part];
+                int index = _serverAppearance[part];
                 if (index <= 0) continue;
 
                 // requiredItem = 그 모양을 입으려면 가방에 있어야 하는 아이템. 서버가 자기 외형으로 계산한 정답이다.
-                var requiredItem = _avatarPartKeyTable.GetRequiredItem(part, _appearance.Gender, index);
+                var requiredItem = _avatarPartKeyTable.GetRequiredItem(part, _serverAppearance.Gender, index);
                 // 클라가 말한 clientSlot 칸 하나만 열어서(Get), 그 안의 아이템이 정답과 같으면 인정한다.
                 // 같은 아이템이 여러 칸에 있어도, 클라가 말한 칸이 맞으면 그 칸 번호가 그대로 남는다.
                 if (requiredItem != null && _inventory.Get(clientSlot)?.Source == requiredItem)
