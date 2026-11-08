@@ -941613,7 +941613,7 @@ PrefabInstance:
     - target: {fileID: 8519010010059765144, guid: 301df057ffda16644a17fdacb19192bc,
         type: 3}
       propertyPath: _shopCatalog.Array.size
-      value: 26
+      value: 28
       objectReference: {fileID: 0}
     - target: {fileID: 8519010010059765144, guid: 301df057ffda16644a17fdacb19192bc,
         type: 3}
@@ -941770,6 +941770,18 @@ PrefabInstance:
       propertyPath: '_shopCatalog.Array.data[25]'
       value: 
       objectReference: {fileID: 11400000, guid: 625d4f40af7170d4b8b8d1a469be7eee,
+        type: 2}
+    - target: {fileID: 8519010010059765144, guid: 301df057ffda16644a17fdacb19192bc,
+        type: 3}
+      propertyPath: '_shopCatalog.Array.data[26]'
+      value: 
+      objectReference: {fileID: 11400000, guid: e4b9c888849093e468eb32f1e0ed9954,
+        type: 2}
+    - target: {fileID: 8519010010059765144, guid: 301df057ffda16644a17fdacb19192bc,
+        type: 3}
+      propertyPath: '_shopCatalog.Array.data[27]'
+      value: 
+      objectReference: {fileID: 11400000, guid: f0f8be625f7e2654797b96b3780a6957,
         type: 2}
     m_RemovedComponents:
     - {fileID: 2319087167991076834, guid: 301df057ffda16644a17fdacb19192bc, type: 3}
