@@ -426,8 +426,9 @@ namespace MySecondWorld.UI
                                     // ① 이 아이템은 무기가 아닌가? (= 상의 같은 파츠인가?)
                                     && (eq.Category == WeaponCategory.None
                                         // ② 예: 파츠다 → "어느 부위 파츠인지 정보가 있나"를 본다.
-                                        // 부위 정보(Restriction)가 있으면 버튼 보임
+                                        // 부위 정보(Restriction)가 있으면 버튼 보임 (다른 성별 옷은 장착 버튼을 숨김)
                                         ? eq.Restriction != null
+                                        && (_appearanceService == null || _appearanceService.IsItemMatchingGender(eq))
                                         // ③ 아니오: 무기다 → "서버가 허용하는 무기 종류인가"를 본다.
                                         // 서버가 허용하는 종류(IsAllowed)면 버튼 보임
                                         : MainHandRules.IsAllowed(eq.Category));
