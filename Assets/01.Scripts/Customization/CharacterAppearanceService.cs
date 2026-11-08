@@ -229,61 +229,6 @@ namespace MySecondWorld.Customization
 
         #endregion
 
-        #region ④ 입은 칸 검증 (인벤토리가 바뀌었을 때)
-
-        // 입은 파츠의 인벤토리 칸이 버리기·판매 등으로 비게 되면,
-        // 그 파츠를 벗겨 기본 파츠(값 0, 맨몸)로 되돌린다.
-        // 무기(NetworkWeaponEquip)의 ServerValidateMainHand에 해당
-        public void ReleasePartsWithEmptiedSlot(Inventory inventory)
-        {
-            if (inventory == null) return;
-
-            List<PartType> emptied = null;
-            // 입은 파츠 기록을 훑어본다.
-            foreach (var kv in _equippedInventorySlotIndexByPart)
-            {
-                bool hasItem = kv.Value >= 0 && kv.Value < inventory.MaxSlots
-                    && inventory.Get(kv.Value)?.Source != null; // 기록해 둔 칸 하나만 열어 본다
-                if (hasItem) continue;                          // 칸에 아이템이 있으면 정상이니 다음 파츠로
-                (emptied ??= new List<PartType>()).Add(kv.Key); // 비었으면 파츠 종류를 목록에 모은다
-            }
-            if (emptied == null) return;                        // 빈 칸이 하나도 없으면 여기서 끝
-
-            // 순회가 끝난 뒤에 벗긴다.
-            // 순회 중에 UnequipWearablePart가 딕셔너리에서 Remove하면 예외가 나기 때문.
-            foreach (var part in emptied)
-            {
-                if (_equippedInventorySlotIndexByPart.ContainsKey(part)) // 좌우 쌍은 앞에서 같이 벗겨졌을 수 있다
-                    UnequipWearablePart(part);                           // 쌍 여부는 이 메서드 안에서 판단한다
-            }
-        }
-
-        // 인벤토리 소유권을 검증하여 미보유 파츠는 이전 외형(fallbackAppearance)으로 롤백한다.
-        // 2026-11-08 기준 호출하는 곳이 없다. (CharacterCustomizeUI가 같은 일을 하는 자기 메서드를 따로 가지고 있다)
-        public CharacterAppearanceData ValidateOwnership(
-            CharacterAppearanceData requestedAppearance,
-            CharacterAppearanceData fallbackAppearance,
-            Inventory inventory)
-        {
-            if (_avatarPartKeyTable == null || inventory == null) return requestedAppearance;
-
-            foreach (PartType part in System.Enum.GetValues(typeof(PartType)))
-            {
-                int index = requestedAppearance[part];
-                if (index <= 0) continue; // 기본 파츠(0)나 미착용(-1)은 항상 허용
-
-                var requiredItem = _avatarPartKeyTable.GetRequiredItem(part, requestedAppearance.Gender, index);
-                if (requiredItem != null && !inventory.Contains(requiredItem, 1))
-                {
-                    requestedAppearance[part] = fallbackAppearance[part]; // 미소유 → 롤백
-                }
-            }
-
-            return requestedAppearance;
-        }
-
-        #endregion
-
         #region 헬퍼 메서드 (조회)
 
         // 서버가 알려준 이 파츠의 칸 번호. 없거나 모르면 -1

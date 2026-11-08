@@ -360,8 +360,6 @@ namespace MySecondWorld.UI
             await UniTask.NextFrame(destroyCancellationToken);
             _changePending = false;
             if (_subscribedInventory == null || !gameObject.activeSelf) return; // 그사이 창이 닫혔다면 할 일 없음
-
-            _appearanceService?.ReleasePartsWithEmptiedSlot(_subscribedInventory);
             Refresh();
         }
 
@@ -467,15 +465,6 @@ namespace MySecondWorld.UI
                            && _inventoryProvider.WeaponActions.CurrentMainHandInventorySlotIndex == capturedIndex)
                        {
                            _inventoryProvider.WeaponActions.UnequipMainHand();
-                       }
-
-                       // 버리려는 아이템이 현재 착용 중인 파츠(장비/악세)면 즉시 장착 해제
-                       if (_appearanceService != null
-                           && stack.Source is EquipmentItem discardedPart
-                           && discardedPart.Category == WeaponCategory.None
-                           && _appearanceService.IsPartEquipped(discardedPart, capturedIndex))
-                       {
-                           _appearanceService.UnequipWearableItem(discardedPart);
                        }
 
                        // UI에서 "버리기" 버튼 클릭 시 그 슬롯의 아이템을 '전량 제거'.

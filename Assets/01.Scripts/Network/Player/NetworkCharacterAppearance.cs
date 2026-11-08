@@ -376,6 +376,7 @@ namespace MySecondWorld.Network
         private void OnAppearanceChanged(CharacterAppearanceData old, CharacterAppearanceData next)
         {
 #if !UNITY_SERVER
+            if (isLocalPlayer) _saveService.Save(next); // 서버가 확정한 값으로 이 클라의 기억을 맞춘다
             ApplyAndNotify(next).Forget();
 #endif
         }

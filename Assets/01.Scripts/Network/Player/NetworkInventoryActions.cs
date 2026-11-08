@@ -93,6 +93,8 @@ namespace MySecondWorld.Network
             // 장착한 칸만 보므로, 같은 무기가 다른 칸에 있어도 그쪽으로 옮겨 가지 않고 해제된다.
             if (TryGetComponent(out NetworkWeaponEquip weaponEquip))
                 weaponEquip.ServerValidateMainHand();
+            if (TryGetComponent(out NetworkCharacterAppearance appearance))
+                appearance.ServerReleaseEmptiedParts();   // 버린 칸이 입은 칸이면 파츠를 벗긴다
 
             CompactInventory(); // 버려서 생긴 빈 칸을 메운다
 
