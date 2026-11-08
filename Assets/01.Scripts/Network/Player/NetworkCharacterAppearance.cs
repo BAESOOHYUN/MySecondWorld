@@ -272,6 +272,7 @@ namespace MySecondWorld.Network
 
         #region 서버: 클라 요청 처리 · 검증
 
+        // 클라 → 서버
         // 클라가 보낸 외형을 받았을 때, 각 파츠 인덱스마다 "이거 살 자격 있어?"를 서버가 재검증한다.
         // 자격이 없으면 그 필드만 이전 값으로 되돌린다. 이게 진짜 권위 있는 검증이다 (클라 UI는 속여도 여기는 못 속인다).
         [Command]
@@ -290,37 +291,21 @@ namespace MySecondWorld.Network
                 // [핵심 방어] _avatarPartKeyTable이 유효할 때만 인덱스 범위 및 아이템 소유 검증 수행
                 if (t != null)
                 {
+                    // 1) 범위 검사만 서버가 직접 한다 (번호가 후보 개수를 넘지 않게)
                     foreach (PartType part in System.Enum.GetValues(typeof(PartType)))
-                    {
-                        int count = t.GetCount(part, data.Gender);
-                        data[part] = Clamp(data[part], count);
+                        data[part] = Clamp(data[part], t.GetCount(part, data.Gender));
 
-                        // 기본 파츠(0)나 미착용(-1)이 아닌 경우 인벤토리 소유권 검증
-                        // 그룹 A/B/C를 구분하지 않고 그냥 "맨몸(0)이 아닌 인덱스를 요청했나"
-                        if (data[part] != 0)
-                        {
-                            // 그룹 A 파츠는 RequiredItems가 비어 있어 requiredItem이 항상 null → 아래 체크가 자동으로 스킵된다.
-                            var requiredItem = t.GetRequiredItem(part, data.Gender, data[part]);
-                            if (requiredItem != null &&
-                                 !(_inventory?.Contains(requiredItem, 1) ?? false)) // if 안은 아이템 미소유일 때만 실행된다.
-                            {
-                                // 미소유로 판정된 뒤 이전 값으로 롤백
-                                // 성별이 같으면 이전 확정값으로 되돌림 → _serverAppearance[part] (서버값)
-                                // 성별이 바뀐 요청이면 이전 값의 번호가 다른 성별 옷이라 쓸 수 없다 → 맨몸(0)
-                                data[part] = (data.Gender == _serverAppearance.Gender) ? _serverAppearance[part] : 0; 
-                            }
-                        }
-                    }
+                    // 2) 소유 검증 + 투구 장식 규칙은 클라와 같은 함수로.
+                    //    미소유 파츠는 직전 서버값으로, 성별이 바뀌었으면 맨몸으로 되돌린다.
+                    //    item => ... 한 줄이 서버 쪽 "갖고 있나?"이다.
+                    //    클라는 Provider.IsOwned를 넘기고, 서버는 _inventory.Contains를 넘긴다.
+                    data = PartOwnership.ValidateOwnership(
+                        t, data, item => _inventory?.Contains(item, 1) ?? false, _serverAppearance);
                 }
                 else
                 {
                     Debug.LogWarning("[NetAppearance] [Server] _avatarPartKeyTable이 null이므로 파츠 유효성 검증을 건너뜁니다.");
                 }
-
-                // 투구 장식은 Head가 No_Elements일 때만 허용 — 아니면 서버가 투구를 벗긴다
-                if (t != null && data.HelmetAttachment > 0
-                    && t.GetSubType(PartType.Head, data.Gender, data.Head) != "No_Elements")
-                    data.HelmetAttachment = 0;
 
                 // 2. 어떤 예외가 있더라도 서버의 SyncVar에 확실하게 대입!
                 _serverAppearance = data;
@@ -348,6 +333,9 @@ namespace MySecondWorld.Network
             _equippedPartSlots = ValidateEquippedPartSlots(clientSlots);
         }
 
+        // 묻는 것 : 클라가 말한 칸 번호가 맞나(그 칸에 그 아이템이 있나)
+        // 하는 일 : 맞는 칸 번호만 기억, 틀린 건 -1
+        // 입력    : 파츠별 칸 번호 배열
         // 클라가 보낸 장착 칸 번호 배열(clientSlots)을 서버가 검사한다. 클라의 말을 믿지 않는다.
         // clientSlots의 위치 = 파츠 종류(PartType 번호), 값 = 클라가 주장한 인벤토리 칸 번호 (안 입은 파츠는 -1)
         // 파츠마다 "그 칸에 그 옷이 정말 있나"를 확인해서, 맞는 칸만 남기고 틀린 칸은 -1로 바꿔 돌려준다.

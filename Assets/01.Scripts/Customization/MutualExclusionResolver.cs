@@ -183,5 +183,13 @@ namespace MySecondWorld.Customization
 
             return visible;
         }
+
+        public static bool IsFaceHidden(CharacterAppearanceData desired, Gender gender, AvatarPartKeyTableSO keyTable)
+            => desired.HelmetAttachment > 0
+                || keyTable.GetSubType(PartType.Head, gender, desired.Head) == "No_Elements";
+
+        // 투구 장식은 Head가 헬멧(No_Elements)일 때만 허용
+        public static bool IsHelmetAttachmentAllowed(CharacterAppearanceData data, Gender gender, AvatarPartKeyTableSO keyTable)
+            => keyTable.GetSubType(PartType.Head, gender, data.Head) == "No_Elements";
     }
 }

@@ -47,32 +47,6 @@ namespace MySecondWorld.UI
             { EquipmentSlotType.Weapon,           InventoryCategoryTab.Weapon },
             { EquipmentSlotType.Shield,           InventoryCategoryTab.Weapon },
         };
-
-        // 파츠 → 슬롯 : 이 파츠는 어느 슬롯에 들어가나 (새로 만듦)
-        private static readonly Dictionary<PartType, EquipmentSlotType> PartToSlot = new()
-        {
-            { PartType.HeadCoverings,     EquipmentSlotType.HeadCoverings },
-            { PartType.Torso,             EquipmentSlotType.Torso },
-            { PartType.ArmUpperLeft,      EquipmentSlotType.ArmUpper },
-            { PartType.ArmUpperRight,     EquipmentSlotType.ArmUpper },
-            { PartType.ArmLowerLeft,      EquipmentSlotType.ArmLower },
-            { PartType.ArmLowerRight,     EquipmentSlotType.ArmLower },
-            { PartType.HandLeft,          EquipmentSlotType.Hands },
-            { PartType.HandRight,         EquipmentSlotType.Hands },
-            { PartType.Hips,              EquipmentSlotType.Hips },
-            { PartType.KneeAttachLeft,    EquipmentSlotType.Knees },
-            { PartType.KneeAttachRight,   EquipmentSlotType.Knees },
-            { PartType.LegLeft,           EquipmentSlotType.Legs },
-            { PartType.LegRight,          EquipmentSlotType.Legs },
-            { PartType.HelmetAttachment,  EquipmentSlotType.HelmetAttachment },
-            { PartType.ShoulderAttachLeft,  EquipmentSlotType.ShoulderAttach },
-            { PartType.ShoulderAttachRight, EquipmentSlotType.ShoulderAttach },
-            { PartType.ElbowAttachLeft,   EquipmentSlotType.ElbowAttach },
-            { PartType.ElbowAttachRight,  EquipmentSlotType.ElbowAttach },
-            { PartType.BackAttachment,    EquipmentSlotType.BackAttachment },
-            { PartType.HipsAttachment,    EquipmentSlotType.HipsAttachment },
-        };
-
         #endregion
 
         #region 인스펙터 설정
@@ -510,7 +484,7 @@ namespace MySecondWorld.UI
                             && _appearanceService.TryGetPartType(partItem, out var part)
                             // TryGetValue로 조회하는 이유 : 머리카락, 얼굴, 눈썹 같은 파츠는
                             // 페이퍼돌 슬롯이 없어서 표에 없는 것이 정상이기 때문
-                            && PartToSlot.TryGetValue(part, out var slotType))
+                            && EquipmentSlotMap.TryGetSlot(part, out var slotType))
                             _paperdollUI?.HighlightSlot(slotType);   // 장착한 슬롯만 표시
                     }
                 };
@@ -663,11 +637,11 @@ namespace MySecondWorld.UI
         {
             // 아이템 = 택배 상자,
             // 상자에 붙은 이름표(Restriction.Title)가 “ShoulderAttachLeft”
-            // 표 ①(PartToSlot) = "이 이름표는 어느 사물함(착용 슬롯)에 들어가나?" → 어깨 사물함
+            // 표 ①(EquipmentSlotMap) = "이 이름표는 어느 사물함(착용 슬롯)에 들어가나?" → 어깨 사물함
             // 표 ②(SlotToTab) = "그 사물함은 어느 층(탭)에 있나?" → 악세사리 층
 
             if (Enum.TryParse(item.Restriction.Title, out PartType part)
-                        && PartToSlot.TryGetValue(part, out var slot))
+                        && EquipmentSlotMap.TryGetSlot(part, out var slot))
                 return SlotToTab[slot];
 
             Debug.LogWarning($"[Inventory] 탭을 알 수 없는 파츠: {item.Title} ({item.Restriction.Title}) → 우선 장비 탭으로 표시");

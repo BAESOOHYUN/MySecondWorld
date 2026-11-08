@@ -146,7 +146,8 @@ namespace MySecondWorld.Customization
             if (_avatarPartKeyTable.TryFindPartIndex(item, data.Gender, out var part, out var index))
             {
                 return data[part] == index
-                       && GetEquippedInventorySlotIndex(part) == inventorySlotIndex;
+                    && !IsHiddenByHelmet(part, data) // 헬멧에 가려진 모자는 입은 것으로 치지 않는다 (인벤슬롯 장착 해제)
+                    && GetEquippedInventorySlotIndex(part) == inventorySlotIndex;
             }
             return false;
         }
@@ -170,7 +171,8 @@ namespace MySecondWorld.Customization
             }
 
             // 투구 장식은 Head가 No_Elements(투구 타입)일 때만 장착할 수 있다
-            if (part == PartType.HelmetAttachment && !IsHeadNoElements(data))
+            if (part == PartType.HelmetAttachment 
+                && !MutualExclusionResolver.IsHelmetAttachmentAllowed(data, data.Gender, _avatarPartKeyTable))
             {
                 Debug.LogWarning("[CharacterAppearanceService] 투구 장식은 Head No_Elements 장착 시에만 입을 수 있습니다.");
                 return false;
@@ -330,9 +332,10 @@ namespace MySecondWorld.Customization
             }
         }
 
-        // Head 중 헬멧을 착용한 파츠. (NoElements는 눈코입,머리,수염 등이 없음을 의미)
-        private bool IsHeadNoElements(CharacterAppearanceData data)
-            => _avatarPartKeyTable.GetSubType(PartType.Head, data.Gender, data.Head) == "No_Elements";
+        // 투구(헬멧) 때문에 화면에서 가려진 파츠인가. 가려져도 데이터에는 번호가 그대로 남아 있다.
+        private bool IsHiddenByHelmet(PartType part, CharacterAppearanceData data)
+            => part == PartType.HeadCoverings && data.HeadCoverings > 0
+                && MutualExclusionResolver.IsFaceHidden(data, data.Gender, _avatarPartKeyTable);
 
         // 이 아이템이 어느 파츠(PartType)에 속하는지 알려 준다 (장착 여부와 무관)
         public bool TryGetPartType(EquipmentItem item, out PartType part)

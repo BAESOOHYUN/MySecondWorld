@@ -105,11 +105,13 @@ namespace MySecondWorld.UI
         private readonly List<PartThumbnailButton> _spawnedButtons = new();
         private readonly Dictionary<ColorTarget, ColorChannelRow> _colorRows = new();
         private readonly HashSet<PartType> _pendingParts = new();
-        private bool _isOpeningPicker;
+        // ComputeVisibleAppearance가 요구하는 "마지막 선택 기록". 이 판정에서는 쓰이지 않으니 빈 것을 넘긴다.
+        private static readonly Dictionary<(PartType part, string subtype), int> NoLastSelected = new();
         private bool _openCalled;
+        private bool _isOpeningPicker;
         private bool _isInitialSetup; // 첫 설정 중(외형 미저장 계정) 닫을 수 없다
-
         private bool _isInitialized;
+
         #endregion
 
         #region 생명주기·초기화
@@ -369,7 +371,9 @@ namespace MySecondWorld.UI
             ClearThumbnailContent();
             var names = _keyTable.GetThumbnailNames(part, _currentGender);
             int selectedIndex = _currentIndices[part];
-
+            // BuildData 때문에 버튼마다 부르지 않고 for 밖에서 한 번만 계산
+            // ㄴ프리뷰 캐릭터에서 외형을 읽어 25개 파츠 번호를 채우는 함수 = 무거움
+            bool partVisible = IsPartVisible(part);   
             // 도감 수집률 계산
             int totalCount = names.Count;
             int ownedCount = 0;
@@ -400,7 +404,7 @@ namespace MySecondWorld.UI
                 var btn = Instantiate(_thumbnailButtonPrefab, _thumbnailContent);
                 int capturedIndex = i;
                 btn.Setup(part, capturedIndex, sprite, OnThumbnailClicked);
-                btn.SetSelected(capturedIndex == selectedIndex);
+                btn.SetSelected(partVisible && capturedIndex == selectedIndex);
                 // 잠금 체크
                 btn.SetLocked(!IsPartOwned(part, _currentGender, capturedIndex));
 
@@ -426,6 +430,11 @@ namespace MySecondWorld.UI
         // 썸네일 클릭시 해당 파트, 해당 인덱스로 변경
         private void OnThumbnailClicked(PartType part, int index)
         {
+            // 투구 장식 차단
+            if (part == PartType.HelmetAttachment && index > 0
+                && !MutualExclusionResolver.IsHelmetAttachmentAllowed(BuildData(), _currentGender, _keyTable))
+                return;   // 헬멧을 고르기 전에는 투구 장식을 입어 볼 수 없다
+
             // 같은 파츠 처리중이면 무시
             if (_pendingParts.Contains(part)) return;
 
@@ -438,9 +447,10 @@ namespace MySecondWorld.UI
         {
             // 예: 지금 Hair 탭이고, Hair 인덱스가 3이면 selected = 3
             int selected = _currentIndices[_currentTab];
+            bool partVisible = IsPartVisible(_currentTab);   // 한 번만 계산
 
             foreach (var btn in _spawnedButtons)
-                btn.SetSelected(btn.Index == selected);
+                btn.SetSelected(partVisible && btn.Index == selected);
 
             UpdateDetailCard(_currentTab, selected);
         }
@@ -520,6 +530,19 @@ namespace MySecondWorld.UI
             // 탭 전환 시 스크롤 맨 위로
             if (_thumbnailScrollRect != null)
                 _thumbnailScrollRect.normalizedPosition = Vector2.up;
+        }
+
+        // 이 파츠가 지금 화면에 보이는가 (헬멧에 가려지면 선택 표시를 끈다)
+        private bool IsPartVisible(PartType part)
+        {
+            // 가려질 수 있는 파츠만 판정한다 (나머지는 항상 보이는 것으로)
+            if (part != PartType.HeadCoverings && part != PartType.Hair
+                && part != PartType.Eyebrows && part != PartType.FacialHair)
+                return true;
+
+            var desired = BuildData();   // UI가 고른 값
+            var visible = MutualExclusionResolver.ComputeVisibleAppearance(desired, _currentGender, _keyTable, NoLastSelected);
+            return visible[part] == desired[part];   // 보이는 값이 입은 값과 다르면 가려진 것
         }
         #endregion
 
@@ -727,49 +750,10 @@ namespace MySecondWorld.UI
         #endregion
 
         #region 소유 검증
-
-        // 미소유 파츠를 fallback 값으로 되돌린 사본을 반환.
-        // fallback 지정 시: 그 값(보통 "직전 저장값")으로 되돌림 — 서버 CmdSetAppearance와 동일하게
-        //   "거부하고 이전 상태 유지" 의미. fallback의 그 값마저 미소유면(예: 그사이 아이템 상실) 맨몸(0)까지 떨어뜨림.
-        // fallback 생략 시: 곧바로 맨몸(0)으로 되돌림 — 되돌아갈 "직전"이 없는 자기 자신 검증(로드 시 자가 정화)용.
         private CharacterAppearanceData ValidateOwnership(CharacterAppearanceData data, CharacterAppearanceData? fallback = null)
-        {
-            foreach (PartType part in System.Enum.GetValues(typeof(PartType)))
-            {
-                if (data[part] <= 0) continue;  // 0번(맨몸) 및 -1(없음)만 무료 통과
-                if (IsPartOwned(part, data.Gender, data[part])) continue; // 이미 정당하게 소유한 아이템이면 검증 불필요.
-
-                // 성별이 바뀌었으면 직전 값의 번호는 다른 성별의 옷이라 되돌아갈 곳이 못 된다 → 맨몸(0)
-                bool genderChanged = fallback.HasValue && fallback.Value.Gender != data.Gender;
-                // fallback 값이 있으면 fallback으로 되돌림. 없으면 0
-                int fallbackIndex = (fallback.HasValue && !genderChanged) ? fallback.Value[part] : 0;
-                if (fallbackIndex > 0 && !IsPartOwned(part, fallback.Value.Gender, fallbackIndex)) //fallback 값이 있는데 허용된 아이템이 아닌 경우. ex) lock된 아이템
-                    fallbackIndex = 0; // fallback 값조차 지금은 미소유면 더 물러날 곳이 없어 맨몸으로 되돌림
-
-                data[part] = fallbackIndex;
-            }
-
-            return data;
-        }
-
+             => PartOwnership.ValidateOwnership(_keyTable, data, _inventoryProvider.IsOwned, fallback);
         private bool IsPartOwned(PartType part, Gender gender, int index)
-        {
-            if (IsPartOwnedSelf(part, gender, index))
-                return true;
-            // 미러 쌍은 OR — 반대쪽만 소유해도 해금
-            return MirroredPartPairs.TryGetMirror(part, out var mirror)
-                && IsPartOwnedSelf(mirror, gender, index);
-        }
-
-
-        // 커스터마이징 UI에서 썸네일을 그릴 때, 그 파츠 후보가 요구하는 아이템을 플레이어가 갖고 있는지 확인해서
-        // 없으면 자물쇠 아이콘(SetLocked)을 씌움. 클라이언트 쪽 "미리 보여주되 잠금 표시"용.
-        private bool IsPartOwnedSelf(PartType part, Gender gender, int index)
-        {
-            if (index <= 0) return true; // 0번(맨몸) 및 -1(없음)만 기본 해금
-            var requiredItem = _keyTable.GetRequiredItem(part, gender, index);
-            return requiredItem == null || _inventoryProvider.IsOwned(requiredItem);
-        }
+            => PartOwnership.IsPartOwned(_keyTable, part, gender, index, _inventoryProvider.IsOwned);
         #endregion
 
         #region 저장·불러오기

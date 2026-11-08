@@ -2,6 +2,7 @@ using MySecondWorld.Inventory.Items;
 
 namespace MySecondWorld.Customization
 {
+    using Inventory = Cleverous.VaultInventory.Inventory;
     // 로컬 플레이어의 Inventory 참조를 들고 있는 루트 스코프 싱글톤.
     // CharacterCustomizeUI(ProjectLifetimeScope)는 PlayerScope의 Inventory를 직접 주입받을 수 없어서(부모→자식 참조 불가),
     // 이 클래스를 부모 쪽에 "빈 상자"로 미리 등록해두고, 캐릭터가 스폰되면
@@ -13,13 +14,13 @@ namespace MySecondWorld.Customization
     // CharacterCustomizeUI는 그 상자(LocalPlayerInventoryProvider)를 들고 있다가, 상자를 열어볼 때(IsOwned 호출 시점) 안에 든 게 있으면 쓴다
     public class LocalPlayerInventoryProvider
     {
-        private Cleverous.VaultInventory.Inventory _inventory;
+        private Inventory _inventory;
 
         // InventoryUI/ShopUI가 슬롯 목록을 직접 순회하기 위해 필요
-        public Cleverous.VaultInventory.Inventory Inventory => _inventory;
+        public Inventory Inventory => _inventory;
         public event System.Action OnProvided; // 로컬 플레이어의 인벤토리/액션이 채워졌을 때
 
-        public void SetLocal(Cleverous.VaultInventory.Inventory inventory)
+        public void SetLocal(Inventory inventory)
         {
             _inventory = inventory;
             OnProvided?.Invoke();

@@ -8,30 +8,7 @@ using MySecondWorld.Customization;
 
 namespace MySecondWorld.UI
 {
-    public enum EquipmentSlotType
-    {
-        // 1. 방어구 / 의상 파츠 (8종)
-        HeadCoverings,    // 투구 / 모자
-        Torso,            // 상체 / 상의
-        ArmUpper,         // 상완 보호구
-        ArmLower,         // 하완 보호구
-        Hands,            // 손 / 장갑
-        Hips,             // 힙 / 하의
-        Knees,            // 무릎 각반 (KneeAttach)
-        Legs,             // 다리 / 신발 (LegLeft/Right)
-
-        // 2. 악세사리 (5종)
-        HelmetAttachment, // 투구 장식
-        ShoulderAttach,   // 어깨 장식
-        ElbowAttach,      // 팔꿈치 보호구
-        BackAttachment,   // 등 장식 (날개/망토)
-        HipsAttachment,   // 허리 장식
-
-        // 3. 하단 상시 고정 무기 (2종)
-        Weapon,           // 주무기
-        Shield            // 보조무기 / 방패 / 화살통
-    }
-
+    using Inventory = Cleverous.VaultInventory.Inventory;
     /// <summary>
     /// 캐릭터 주변에 떠 있는 세부 장비 페이퍼돌 뷰.
     /// 방어구 8 + 악세사리 5 + 무기 2, 총 15칸을 한 화면에 항상 표시
@@ -97,7 +74,7 @@ namespace MySecondWorld.UI
         public void Refresh(
             CharacterAppearanceService appearanceService, 
             IWeaponEquipActionsProvider weaponActions,
-            Cleverous.VaultInventory.Inventory inventory)
+            Inventory inventory)
         {
             foreach (var slot in _slots)
             {
@@ -110,7 +87,7 @@ namespace MySecondWorld.UI
         public List<EquipmentItem> GetAllEquippedItems(
             CharacterAppearanceService appearanceService, 
             IWeaponEquipActionsProvider weaponActions,
-            Cleverous.VaultInventory.Inventory inventory)
+            Inventory inventory)
         {
             var list = new List<EquipmentItem>();
             foreach (var slot in _slots)
@@ -125,7 +102,7 @@ namespace MySecondWorld.UI
             EquipmentSlotType slotType, 
             CharacterAppearanceService appearanceService, 
             IWeaponEquipActionsProvider weaponActions,
-            Cleverous.VaultInventory.Inventory inventory)
+            Inventory inventory)
         {
             return ResolveEquippedItem(slotType, appearanceService, weaponActions, inventory);
         }
@@ -177,64 +154,17 @@ namespace MySecondWorld.UI
             SelectSlot(slotType); // 처음 누르면 장착 여부와 상관없이 선택
         }
 
-        // 슬롯 → 파츠(아이템)	: 이 슬롯에 지금 뭐가 끼워져 있나 (이미 있음)
+        // 이 슬롯에 지금 어떤 아이템이 끼워져 있는지 조회만 함 (표는 EquipmentSlotMap에 있다)
+        // 슬롯 하나는 파츠가 여러 개일 수 있다(왼팔/오른팔, 모자/헬멧).
+        // 앞에서부터 보고 아이템이 나온 첫 파츠의 것을 슬롯의 아이콘으로 쓴다. 없으면 빈 칸.
         private EquipmentItem ResolveEquippedItem(
             EquipmentSlotType slotType, 
             CharacterAppearanceService appearanceService, 
             IWeaponEquipActionsProvider weaponActions,
-            Cleverous.VaultInventory.Inventory inventory)
+            Inventory inventory)
         {
             switch (slotType)
             {
-                // 1. 방어구 파츠 8종
-                case EquipmentSlotType.HeadCoverings:
-                    return appearanceService?.GetRequiredItemForCurrentLook(PartType.HeadCoverings);
-
-                case EquipmentSlotType.Torso:
-                    return appearanceService?.GetRequiredItemForCurrentLook(PartType.Torso);
-
-                case EquipmentSlotType.ArmUpper:
-                    return appearanceService?.GetRequiredItemForCurrentLook(PartType.ArmUpperLeft) 
-                        ?? appearanceService?.GetRequiredItemForCurrentLook(PartType.ArmUpperRight);
-
-                case EquipmentSlotType.ArmLower:
-                    return appearanceService?.GetRequiredItemForCurrentLook(PartType.ArmLowerLeft) 
-                        ?? appearanceService?.GetRequiredItemForCurrentLook(PartType.ArmLowerRight);
-
-                case EquipmentSlotType.Hands:
-                    return appearanceService?.GetRequiredItemForCurrentLook(PartType.HandLeft) 
-                        ?? appearanceService?.GetRequiredItemForCurrentLook(PartType.HandRight);
-
-                case EquipmentSlotType.Hips:
-                    return appearanceService?.GetRequiredItemForCurrentLook(PartType.Hips);
-
-                case EquipmentSlotType.Knees:
-                    return appearanceService?.GetRequiredItemForCurrentLook(PartType.KneeAttachLeft)
-                        ?? appearanceService?.GetRequiredItemForCurrentLook(PartType.KneeAttachRight);
-
-                case EquipmentSlotType.Legs:
-                    return appearanceService?.GetRequiredItemForCurrentLook(PartType.LegLeft)
-                        ?? appearanceService?.GetRequiredItemForCurrentLook(PartType.LegRight);
-
-                // 2. 악세사리 파츠 8종
-                case EquipmentSlotType.HelmetAttachment:
-                    return appearanceService?.GetRequiredItemForCurrentLook(PartType.HelmetAttachment);
-
-                case EquipmentSlotType.ShoulderAttach:
-                    return appearanceService?.GetRequiredItemForCurrentLook(PartType.ShoulderAttachLeft) 
-                        ?? appearanceService?.GetRequiredItemForCurrentLook(PartType.ShoulderAttachRight);
-
-                case EquipmentSlotType.ElbowAttach:
-                    return appearanceService?.GetRequiredItemForCurrentLook(PartType.ElbowAttachLeft) 
-                        ?? appearanceService?.GetRequiredItemForCurrentLook(PartType.ElbowAttachRight);
-
-                case EquipmentSlotType.BackAttachment:
-                    return appearanceService?.GetRequiredItemForCurrentLook(PartType.BackAttachment);
-
-                case EquipmentSlotType.HipsAttachment:
-                    return appearanceService?.GetRequiredItemForCurrentLook(PartType.HipsAttachment);
-
-                // 3. 하단 상시 고정 무기 2종
                 case EquipmentSlotType.Weapon:
                     if (weaponActions != null && inventory != null)
                     {
@@ -250,7 +180,13 @@ namespace MySecondWorld.UI
                     return null;
 
                 default:
-                    return null;
+                    // 방어구·악세사리: 슬롯에 속한 파츠들을 차례로 보고 처음 나온 아이템을 쓴다
+                    foreach (var part in EquipmentSlotMap.GetParts(slotType))               // 이 칸의 파츠들을 차례로 보고
+                    {
+                        var item = appearanceService?.GetRequiredItemForCurrentLook(part);  // 이 파츠에 대응하는 아이템을 찾음
+                        if (item != null) return item;                                      // 찾았으면 바로 돌려주고 끝
+                    }
+                    return null;                                                            // 하나도 없으면 빈 칸
             }
         }
     }

@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using UnityEditor;
 using TMPro;
 using MySecondWorld.UI;
+using MySecondWorld.Customization;
 
 namespace MySecondWorld.EditorTools
 {
@@ -117,28 +118,28 @@ namespace MySecondWorld.EditorTools
 
                 var slotDefs = new (EquipmentSlotType slotType, string name, Vector2 pos, string label, string iconPath, bool isWeapon)[]
                 {
-                    // Row 1 (y = 185): 머리, 투구장식, 주무기
-                    (EquipmentSlotType.HeadCoverings,    "Slot_HeadCoverings",    new Vector2(-42f, 185f),  "HEAD",          "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Knight_Helmet.Png", false),
-                    (EquipmentSlotType.HelmetAttachment, "Slot_HelmetAttachment", new Vector2(42f, 185f),   "HELMET ATTACH", "Assets/07.Textures/UI/PaperdollIcons/Silhouette_HelmetAttach.png", false),
-                    (EquipmentSlotType.Weapon,           "Slot_Weapon",           new Vector2(126f, 185f),  "WEAPON",        "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Dagger.Png", true),
+                    // Row 1 (y = 120): 머리, 투구장식, 주무기
+                    (EquipmentSlotType.HeadCoverings,    "Slot_HeadCoverings",    new Vector2(-42f, 120f),  "HEAD",          "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Knight_Helmet.Png", false),
+                    (EquipmentSlotType.HelmetAttachment, "Slot_HelmetAttachment", new Vector2(42f, 120f),   "HELMET ATTACH", "Assets/07.Textures/UI/PaperdollIcons/Silhouette_HelmetAttach.png", false),
+                    (EquipmentSlotType.Weapon,           "Slot_Weapon",           new Vector2(126f, 120f),  "WEAPON",        "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Dagger.Png", true),
 
-                    // Row 2 (y = 95): 상완, 상체, 어깨, 보조무기
-                    (EquipmentSlotType.ArmUpper,         "Slot_ArmUpper",         new Vector2(-126f, 95f),  "UPPER ARMS",    "Assets/07.Textures/UI/PaperdollIcons/Silhouette_ArmUpper.png", false),
-                    (EquipmentSlotType.Torso,            "Slot_Torso",            new Vector2(-42f, 95f),   "TORSO",         "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Armor.Png", false),
-                    (EquipmentSlotType.ShoulderAttach,   "Slot_ShoulderAttach",   new Vector2(42f, 95f),    "SHOULDER PADS", "Assets/07.Textures/UI/PaperdollIcons/Silhouette_Shoulder.png", false),
-                    (EquipmentSlotType.Shield,           "Slot_Shield",           new Vector2(126f, 95f),   "SHIELD",        "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Shield.Png", true),
+                    // Row 2 (y = 30): 상완, 상체, 어깨, 보조무기
+                    (EquipmentSlotType.ArmUpper,         "Slot_ArmUpper",         new Vector2(-126f, 30f),  "UPPER ARMS",    "Assets/07.Textures/UI/PaperdollIcons/Silhouette_ArmUpper.png", false),
+                    (EquipmentSlotType.Torso,            "Slot_Torso",            new Vector2(-42f, 30f),   "TORSO",         "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Armor.Png", false),
+                    (EquipmentSlotType.ShoulderAttach,   "Slot_ShoulderAttach",   new Vector2(42f, 30f),    "SHOULDER PADS", "Assets/07.Textures/UI/PaperdollIcons/Silhouette_Shoulder.png", false),
+                    (EquipmentSlotType.Shield,           "Slot_Shield",           new Vector2(126f, 30f),   "SHIELD",        "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Shield.Png", true),
 
-                    // Row 3 (y = 5): 하완, 하의, 팔꿈치, 등 장식
-                    (EquipmentSlotType.ArmLower,         "Slot_ArmLower",         new Vector2(-126f, 5f),   "LOWER ARMS",    "Assets/07.Textures/UI/PaperdollIcons/Silhouette_ArmLower.png", false),
-                    (EquipmentSlotType.Hips,             "Slot_Hips",             new Vector2(-42f, 5f),    "HIPS",          "Assets/07.Textures/UI/PaperdollIcons/Silhouette_Pants.png", false),
-                    (EquipmentSlotType.ElbowAttach,      "Slot_ElbowAttach",      new Vector2(42f, 5f),     "ELBOW PADS",    "Assets/07.Textures/UI/PaperdollIcons/Silhouette_Elbow.png", false),
-                    (EquipmentSlotType.BackAttachment,   "Slot_BackAttachment",   new Vector2(126f, 5f),    "BACK ATTACH",   "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Wing.Png", false),
+                    // Row 3 (y = -60): 하완, 하의, 팔꿈치, 등 장식
+                    (EquipmentSlotType.ArmLower,         "Slot_ArmLower",         new Vector2(-126f, -60f), "LOWER ARMS",    "Assets/07.Textures/UI/PaperdollIcons/Silhouette_ArmLower.png", false),
+                    (EquipmentSlotType.Hips,             "Slot_Hips",             new Vector2(-42f, -60f),  "HIPS",          "Assets/07.Textures/UI/PaperdollIcons/Silhouette_Pants.png", false),
+                    (EquipmentSlotType.ElbowAttach,      "Slot_ElbowAttach",      new Vector2(42f, -60f),   "ELBOW PADS",    "Assets/07.Textures/UI/PaperdollIcons/Silhouette_Elbow.png", false),
+                    (EquipmentSlotType.BackAttachment,   "Slot_BackAttachment",   new Vector2(126f, -60f),  "BACK ATTACH",   "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Wing.Png", false),
 
-                    // Row 4 (y = -85): 손, 다리/신발, 무릎 각반, 허리 장식
-                    (EquipmentSlotType.Hands,            "Slot_Hands",            new Vector2(-126f, -85f), "HANDS",         "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Hand.Png", false),
-                    (EquipmentSlotType.Legs,             "Slot_Legs",             new Vector2(-42f, -85f),  "LEGS",          "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Shoes.Png", false),
-                    (EquipmentSlotType.Knees,            "Slot_Knees",            new Vector2(42f, -85f),   "KNEE PADS",     "Assets/07.Textures/UI/PaperdollIcons/Silhouette_Greaves.png", false),
-                    (EquipmentSlotType.HipsAttachment,   "Slot_HipsAttachment",   new Vector2(126f, -85f),  "HIP ATTACH",    "Assets/07.Textures/UI/PaperdollIcons/Silhouette_Belt.png", false)
+                    // Row 4 (y = -150): 손, 다리/신발, 무릎 각반, 허리 장식
+                    (EquipmentSlotType.Hands,            "Slot_Hands",            new Vector2(-126f, -150f),"HANDS",         "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Hand.Png", false),
+                    (EquipmentSlotType.Legs,             "Slot_Legs",             new Vector2(-42f, -150f), "LEGS",          "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Shoes.Png", false),
+                    (EquipmentSlotType.Knees,            "Slot_Knees",            new Vector2(42f, -150f),  "KNEE PADS",     "Assets/07.Textures/UI/PaperdollIcons/Silhouette_Greaves.png", false),
+                    (EquipmentSlotType.HipsAttachment,   "Slot_HipsAttachment",   new Vector2(126f, -150f), "HIP ATTACH",    "Assets/07.Textures/UI/PaperdollIcons/Silhouette_Belt.png", false)
                 };
 
                 foreach (var def in slotDefs)

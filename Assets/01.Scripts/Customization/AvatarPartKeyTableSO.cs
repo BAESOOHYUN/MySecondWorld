@@ -113,7 +113,8 @@ namespace MySecondWorld.Customization
 
         // "이 파츠 후보를 쓰려면 인벤토리에 어떤 아이템을 갖고 있어야 하는가"를 조회하는 함수
         // GetCandidates/GetAssetReference와 동일 순서(전용 + AllGender)로 요구 아이템 반환
-        // null이면 해당 인덱스는 무료 착용(요구 아이템 없음)
+        // GetRequiredItem은 범위를 벗어나도 예외 없이 null을 돌려준다.
+        // 범위를 벗어난 번호는 null → "요구 아이템 없음" → 무료로 통과
         public EquipmentItem GetRequiredItem(PartType part, Gender gender, int index)
         {
             var entry = Entries.Find(e => e.PartType == part);
