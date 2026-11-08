@@ -44,8 +44,6 @@ namespace MySecondWorld.Customization
         {
             if (requiredItem == null) return true; // 요구 아이템 없음 = 무료 착용
             return _inventory != null && _inventory.Contains(requiredItem, 1);
-        }
-
-        
+        }        
     }
 }
