@@ -315,19 +315,15 @@ namespace MySecondWorld.Customization
             }
         }
 
-        private void ReleasePartInstance(PartType part)
+        // 인스턴스 하나를 해제하는 함수
+        private void ReleaseInstance(PartType part, PartInstance old)
         {
-            if (_activePartInstances.TryGetValue(part, out var old))
-            {
-                if (old.Handle.IsValid())
+            if (old.Handle.IsValid())
                     Addressables.ReleaseInstance(old.Handle); // 저장해 둔 핸들로 해제 — 오브젝트 파괴도 Addressables가 함
-                else
-                {
-                    Debug.LogWarning($"[ReleasePartInstance] 핸들 무효 → Destroy: {part} {old.Instance.name}");
-                    Destroy(old.Instance);                      // 핸들이 이미 없을 때만 안전망
-                }
-
-                _activePartInstances.Remove(part); // 착용 파츠를 착용목록 장부에서 삭제
+            else
+            {
+                Debug.LogWarning($"[ReleasePartInstance] 핸들 무효 → Destroy: {part} {old.Instance.name}");
+                Destroy(old.Instance);                        // 핸들이 이미 없을 때만 안전망
             }
         }
 
@@ -346,8 +342,12 @@ namespace MySecondWorld.Customization
         // 그래서 이 함수를 여러 번 연달아 불러도 서로 꼬이거나 겹칠 일이 없다.
         private async UniTask ReplacePartInstance(PartType part, int index, Gender gender)
         {
-            ReleasePartInstance(part);
-            await InstantiatePart(part, index, gender);
+            bool hadOld = _activePartInstances.TryGetValue(part, out var old);
+            if (hadOld) _activePartInstances.Remove(part);   // 장부에서만 빼고, 화면에는 새 파츠가 뜰 때까지 남겨 둔다
+
+            await InstantiatePart(part, index, gender);      // 새 파츠가 장부에 들어감
+
+            if (hadOld) ReleaseInstance(part, old);          // 새 파츠가 뜬 뒤에 옛 파츠를 지움
         }
         #endregion
 
