@@ -76,6 +76,15 @@ namespace MySecondWorld.Customization
             _equippedInventorySlotIndexByPart.Clear();
         }
 
+        // 서버가 칸 번호를 알려 줬을 때(접속 직후, 인벤토리 정리 뒤) 받는 곳.
+        // 후보를 받아 두고, 인벤토리가 열려 있든 아니든 바로 기록을 채운 뒤 화면을 갱신한다.
+        public void ApplyServerEquippedPartSlots(int[] slots, Inventory inventory)
+        {
+            SetServerEquippedPartSlots(slots);
+            RestoreEquippedInventorySlots(inventory);
+            OnAppearanceChanged?.Invoke();
+        }
+
         // 입고 있는 옷이 가방 몇 번 칸 것인지 딕셔너리에 적는다. 인벤토리를 열 때 부른다.
         // 서버가 알려 준 칸이 맞으면 그 칸을, 아니면 가방을 0번부터 훑어 처음 만난 같은 옷의 칸을 적는다.
         // 무기(NetworkWeaponEquip)의 FindInventorySlotOf(칸을 모를 때 첫 칸을 찾는 부분)에 해당

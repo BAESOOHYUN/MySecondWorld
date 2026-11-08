@@ -94,6 +94,8 @@ namespace MySecondWorld.Network
             if (TryGetComponent(out NetworkWeaponEquip weaponEquip))
                 weaponEquip.ServerValidateMainHand();
 
+            CompactInventory(); // 버려서 생긴 빈 칸을 메운다
+
             // 런타임 스폰 오브젝트는 GameNetworkManager의 자동 matchId 세팅을 안 거치므로 직접 복사
             if (TryGetComponent(out NetworkMatch myMatch) && floorItem.TryGetComponent(out NetworkMatch floorMatch))
                 floorMatch.matchId = myMatch.matchId;
@@ -133,6 +135,11 @@ namespace MySecondWorld.Network
             // 4) 장착 정리 — 판 칸이 장착한 칸이었으면 손에서도 내린다
             if (TryGetComponent(out NetworkWeaponEquip weaponEquip))
                 weaponEquip.ServerValidateMainHand();
+            if (TryGetComponent(out NetworkCharacterAppearance appearance))
+                appearance.ServerReleaseEmptiedParts();
+
+            // 5) 판 칸이 비었으면 빈 칸을 메운다 — 반드시 4번 뒤에 부른다 (먼저 하면 다음 복사본이 빈 칸을 가려 해제가 안 된다)
+            CompactInventory(); // 판 칸이 비었으면 빈 칸을 메운다
         }
 
         // 소모품 사용. slotIndex는 사용할 인벤토리 칸 번호.
@@ -145,6 +152,50 @@ namespace MySecondWorld.Network
             if (stack?.Source is not ConsumableItem consumable) return;
 
             consumable.UseBegin(_useInventory);
+        }
+
+        #endregion
+
+        #region 서버 전용 헬퍼
+        
+        // 인벤토리의 빈 칸을 메워 아이템을 앞쪽으로 당긴다. 장착한 무기·파츠의 칸 번호도 같이 옮긴다.
+        // 아이템의 순서는 바뀌지 않고, 빈 칸만 뒤로 밀려난다.
+        [Server]
+        private void CompactInventory()
+        {
+            if (_inventory == null) return;
+
+            // 번역표: oldToNew[옛 칸] = 새 칸. 처음엔 "안 움직임"(자기 번호)으로 채운다
+            int max = _inventory.MaxSlots;
+            var oldToNew = new int[max];
+            for (int i = 0; i < max; i++) oldToNew[i] = i;
+
+            bool moved = false;
+            int write = 0; // 다음에 채울 앞쪽 빈 칸 후보
+
+            // read가 칸을 앞에서부터 훑고, write가 "채울 앞쪽 빈 칸"을 따라간다.
+            // 아이템 순서는 유지되고 빈 칸만 뒤로 가게 된다.
+            for (int read = 0; read < max; read++)
+            {
+                // 빈 칸은 옮길 게 없다
+                if (_inventory.Get(read).Source == null) continue;
+                // 앞쪽 첫 빈 칸 찾기
+                while (write < read && _inventory.Get(write).Source != null) write++;
+                // 앞에 빈 칸이 없다
+                if (write >= read) continue;
+                // 못 옮기면 그대로 둔다
+                if (_inventory.DoMove(_inventory, _inventory, read, write) != 0) continue;
+                // 옮긴 칸만 oldToNew에 새 번호를 기록
+                oldToNew[read] = write;
+                moved = true;
+            }
+
+            if (!moved) return; // 바뀐 게 없으면 무기·파츠에 알릴 것도 없다
+
+            if (TryGetComponent(out NetworkWeaponEquip weaponEquip))
+                weaponEquip.ServerRemapMainHandSlot(oldToNew);
+            if (TryGetComponent(out NetworkCharacterAppearance appearance))
+                appearance.ServerRemapEquippedPartSlots(oldToNew);
         }
 
         #endregion

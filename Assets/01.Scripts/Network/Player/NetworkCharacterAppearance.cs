@@ -198,6 +198,50 @@ namespace MySecondWorld.Network
         [Server]
         public void ServerRestoreEquippedPartSlots(int[] slots) => _equippedPartSlots = ValidateEquippedPartSlots(slots);
 
+        // 입은 파츠의 칸이 비었으면(버리기·판매) 서버가 그 파츠를 벗긴다. (무기의 ServerValidateMainHand에 해당)
+        // 반드시 인벤토리를 정리하기 "전에" 부른다. 정리하면 다음 복사본이 그 칸으로 당겨져 와 빈 칸이 가려지기 때문이다.
+        [Server]
+        public void ServerReleaseEmptiedParts()
+        {
+            if (_equippedPartSlots == null) return;        // 서버가 기억한 입은 칸이 없으면 검사할 것도 없다
+
+            var next = _appearance;                        // 외형의 복사본. [SyncVar]는 통째로 대입해야 변경이 전파된다
+            bool changed = false;                          // 하나라도 벗겼는가
+
+            for (int i = 0; i < _equippedPartSlots.Length; i++) // 파츠 25개를 하나씩 본다 (i = PartType 번호)
+            {
+                int slot = _equippedPartSlots[i];          // 이 파츠가 입고 있는 인벤토리 칸 번호
+                if (slot < 0) continue;                    // -1이면 안 입은 파츠라 건너뜀
+                if (slot < _inventory.MaxSlots && _inventory.Get(slot).Source != null)
+                    continue;                              // 그 칸에 아직 옷이 있으면 정상이니 건너뜀
+
+                next[(PartType)i] = 0;                     // 칸이 비었다 → 외형을 맨몸(0)으로
+                _equippedPartSlots[i] = -1;                // 입은 칸 기록도 "없음"으로
+                changed = true;
+            }
+
+            if (!changed) return;                          // 벗긴 게 없으면 알릴 것도 없다
+            _appearance = next;                            // [SyncVar] 훅 → 모든 클라가 모델을 다시 입힌다
+            ServerSendEquippedPartSlots();                 // 바뀐 칸 기록을 이 캐릭터의 주인(본인) 클라에게만 보낸다
+        }
+
+        // 입은 칸 번호를 새 번호로 고친다
+        // 인벤토리 아이템이 앞으로 당겨졌을 때, 파츠별 입은 칸 번호도 같이 옮기고 클라에 알린다.
+        // oldToNew = 서버(CompactInventory)가 만든 번역표. oldToNew[옛 칸] = 새 칸
+        [Server]
+        public void ServerRemapEquippedPartSlots(int[] oldToNew)
+        {
+            if (_equippedPartSlots == null) return;        // 기억한 값이 없으면 옮길 것도 없다
+
+            for (int i = 0; i < _equippedPartSlots.Length; i++) // 파츠 25개를 하나씩 본다
+            {
+                int slot = _equippedPartSlots[i];          // 이 파츠가 입은 옛 칸 번호
+                if (slot >= 0 && slot < oldToNew.Length)   // 입은 파츠이고, 번역표 범위 안일 때만
+                    _equippedPartSlots[i] = oldToNew[slot];// 번역표에서 새 번호를 읽어 덮어쓴다
+            }
+            ServerSendEquippedPartSlots();                 // 고친 번호를 클라에게 보낸다
+        }
+
         // 서버 → 이 캐릭터의 클라이언트: 서버가 기억하는 장착 칸 번호를 알려 준다. (접속 때 5단계가 부른다)
         // 기억한 값이 없으면 보낼 것이 없다.
         [Server]
@@ -212,7 +256,7 @@ namespace MySecondWorld.Network
         [TargetRpc] //서버가 특정 한 명의 클라이언트에게만 보내는 호출
         private void TargetSetEquippedPartSlots(NetworkConnectionToClient target, int[] slots)
         {
-            _appearanceService.SetServerEquippedPartSlots(slots);
+            _appearanceService.ApplyServerEquippedPartSlots(slots, _inventory);
         }
 
         #endregion

@@ -8,6 +8,7 @@ using R3;
 using MySecondWorld.Customization;
 using MySecondWorld.Inventory.Items;
 using MySecondWorld.Inventory;
+using Cysharp.Threading.Tasks;
 
 namespace MySecondWorld.UI
 {
@@ -112,6 +113,7 @@ namespace MySecondWorld.UI
         private ShopUI _activeShop;
         private bool _isChangingTab;
         private bool _openRequested; // 이 UI가 열린적이 있는지 체크
+        private bool _changePending; // 이번 프레임의 변경 처리가 이미 예약되어 있는가
 
         // ── 구독 기억 ──
         // Open() 시점에 구독한 인스턴스를 기억 — Close() 때 다른 인스턴스로 바뀌어도 정확히 해당 구독만 해제
@@ -338,11 +340,27 @@ namespace MySecondWorld.UI
 
         #region ② 변경 알림 처리 (Open이 구독해 둔 것)
 
-        // 인벤토리의 칸이 바뀔 때마다(판매·바닥 줍기·버리기 등) 호출된다.
-        // 입은 파츠의 칸이 비었으면 먼저 벗긴 뒤 목록을 다시 그린다.
+        // 인벤토리의 칸이 바뀔 때마다(판매·바닥 줍기·버리기·정리 등) 불린다.
+        // 칸 하나마다 바로 처리하지 않고, 같은 프레임에 몇 번 와도 "다음 프레임에 한 번" 처리하도록 예약만 한다.
+        // 서버가 칸을 여러 개 옮기면 변경이 한꺼번에 몰려오는데,
+        // 그때마다 처리하면 옮기는 중간 상태를 보고 입은 옷을 벗기고 목록을 수십 번 다시 그리기 때문이다.
         // (무기의 ServerValidateMainHand에 해당하는 검사)
         private void OnInventoryChanged(int index)
         {
+            if (_changePending) return;
+            _changePending = true;
+            ProcessInventoryChangedNextFrame().Forget();
+        }
+
+        // 다음 프레임에 처리한다. 그때는 서버가 보낸 칸 변경과 새 칸 번호가 모두 도착해 있다.
+        private async UniTaskVoid ProcessInventoryChangedNextFrame()
+        {
+            // 서버가 한꺼번에 보낸 메시지들이 한 프레임 안에 전부 클라이언트에 들어와 있으니,
+            // 다음 프레임에는 그 결과가 다 반영된 상태다.
+            await UniTask.NextFrame(destroyCancellationToken);
+            _changePending = false;
+            if (_subscribedInventory == null || !gameObject.activeSelf) return; // 그사이 창이 닫혔다면 할 일 없음
+
             _appearanceService?.ReleasePartsWithEmptiedSlot(_subscribedInventory);
             Refresh();
         }

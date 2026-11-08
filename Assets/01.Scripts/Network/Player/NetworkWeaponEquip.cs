@@ -256,6 +256,15 @@ namespace MySecondWorld.Network
             _mainHandDbKey = Unequipped;
         }
 
+        // 인벤토리 아이템이 앞으로 당겨졌을 때, 장착한 칸 번호도 같이 옮긴다. (oldToNew[옛 칸] = 새 칸)
+        [Server]
+        public void ServerRemapMainHandSlot(int[] oldToNew)
+        {
+            // 미장착(-1)이면 할 일 없음
+            if (_mainHandInventorySlotIndex < 0 || _mainHandInventorySlotIndex >= oldToNew.Length) return;
+            _mainHandInventorySlotIndex = oldToNew[_mainHandInventorySlotIndex];
+        }
+
         // 세이브용 — 장착 중인 무기 dbKey. 미장착은 -1
         [Server]
         public int ServerGetMainHandDbKey() => _mainHandDbKey;
