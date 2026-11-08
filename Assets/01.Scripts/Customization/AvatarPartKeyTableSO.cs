@@ -14,6 +14,8 @@ namespace MySecondWorld.Customization
                      menuName = "Character/Avatar Part Key Table")]
     public class AvatarPartKeyTableSO : ScriptableObject
     {
+        // PartType은 25개. List<PartEntry>().Count = 25개
+        // 몸 파츠 14개(Hair~LegRight)에 공용 액세서리 11개(Ear~HipsAttachment)를 더한 수
         [Serializable]
         public class PartEntry
         {
@@ -82,6 +84,17 @@ namespace MySecondWorld.Customization
         }
 
         public int GetCount(PartType part, Gender gender) => GetCandidates(part, gender).Count;
+
+        // 이 후보(index)가 성별 전용인지 공용(AllGender)인지 알려 준다.
+        // 목록은 "성별 전용 → 공용" 순서라서, 전용 개수보다 작으면 전용이다.
+        // true = 특정 성별 전용, false = 공용
+        public bool IsGenderSpecific(PartType part, Gender gender, int index)
+        {
+            var entry = Entries.Find(e => e.PartType == part);
+            if (entry == null) return false;
+            int specificCount = (gender == Gender.Male ? entry.MaleParts : entry.FemaleParts).Count;
+            return index >= 0 && index < specificCount;
+        }
 
 
         // ─────── 인덱스 하나로 콕 집어 조회하기 (실제 장착/적용 시점에 씀) ─────── 
@@ -154,23 +167,26 @@ namespace MySecondWorld.Customization
         }
 
         /// <summary>
-        /// 해당 아이템이 특정 성별의 캐릭터에게 적합한지 확인합니다.
-        /// 반대 성별 전용 요구 아이템 목록에 포함되어 있다면 false를 반환합니다.
+        /// 해당 아이템이 특정 성별의 캐릭터에게 적합한지 확인한다.
+        /// 반대 성별 전용 요구 아이템 목록에 포함되어 있다면 false를 반환한다.
         /// </summary>
         public bool IsItemMatchingGender(EquipmentItem item, Gender gender)
         {
-            if (item == null) return true;
+            var g = GetItemGender(item); return g == null || g == gender;
+        }
 
+        // 이 아이템이 어느 성별 전용인지 알려 준다. 공용·무기·못 찾으면 null.
+        public Gender? GetItemGender(EquipmentItem item)
+        {
+            if (item == null) return null;
             foreach (var entry in Entries)
             {
-                if (gender == Gender.Male && entry.FemaleRequiredItems != null && entry.FemaleRequiredItems.Contains(item))
-                    return false;
-                if (gender == Gender.Female && entry.MaleRequiredItems != null && entry.MaleRequiredItems.Contains(item))
-                    return false;
+                if (entry.MaleRequiredItems != null && entry.MaleRequiredItems.Contains(item)) return Gender.Male;
+                if (entry.FemaleRequiredItems != null && entry.FemaleRequiredItems.Contains(item)) return Gender.Female;
             }
-
-            return true;
+            return null;
         }
+
 
 #if UNITY_EDITOR
         [ContextMenu("Auto-Populate Thumbnail Names")]

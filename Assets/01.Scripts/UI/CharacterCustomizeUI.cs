@@ -65,6 +65,7 @@ namespace MySecondWorld.UI
         [SerializeField] private Button _randomButton;
         [SerializeField] private Button _resetButton;
         [SerializeField] private Button _exitButton;
+        [SerializeField] private Toggle _showAllGendersToggle;   // "전체 보기" 토글 (씬에서 직접 만들어 연결)
 
         [Header("프리뷰 캐릭터")]
         [SerializeField] private LocalCharacterCustomizer _previewCustomizer;
@@ -111,6 +112,11 @@ namespace MySecondWorld.UI
         private bool _isOpeningPicker;
         private bool _isInitialSetup; // 첫 설정 중(외형 미저장 계정) 닫을 수 없다
         private bool _isInitialized;
+        private bool _showAllGenders;
+        // 반대 성별 칸은 따로 관리
+        // 이유 : UpdateThumbnailSelection이 _spawnedButtons를 돌며 번호가 같은 칸을 선택 표시하는데,
+        // 반대 성별 칸이 섞이면 번호가 같은 칸이 잘못 켜진다.그래서 목록을 분리한다.
+        private readonly List<PartThumbnailButton> _otherGenderButtons = new();
 
         #endregion
 
@@ -197,10 +203,18 @@ namespace MySecondWorld.UI
 
         private void RegisterButtons()
         {
+            // ♂/♀ 버튼은 "내 캐릭터의 성별을 바꾸는" 기능
             if (_maleButton != null)
                 _maleButton.onClick.AddListener(() => SetGender(Gender.Male));
             if (_femaleButton != null)
                 _femaleButton.onClick.AddListener(() => SetGender(Gender.Female));
+            //  "전체 보기" 토글은 "목록에 반대 성별 파츠도 보여 줄지"를 정하는 기능
+            if (_showAllGendersToggle != null)
+                _showAllGendersToggle.onValueChanged.AddListener(on =>
+                {
+                    _showAllGenders = on;       // 켜졌는지 저장해 두고
+                    SwitchTab(_currentTab);     // 지금 탭의 썸네일을 다시 그린다
+                });
 
             if (_partsTopTab != null)
                 _partsTopTab.onValueChanged.AddListener(isOn => { if (isOn) ShowTopTab(0); });
@@ -365,7 +379,7 @@ namespace MySecondWorld.UI
             return _thumbnailAtlas;
         }
 
-        // 썸네일 스크롤뷰 채우기
+        // (탭을 열 때) 썸네일 스크롤뷰 채우기
         private void PopulateThumbnails(PartType part)
         {
             ClearThumbnailContent();
@@ -392,6 +406,7 @@ namespace MySecondWorld.UI
                 noneBtn.SetSelected(selectedIndex == -1);
                 noneBtn.SetLocked(false); // "착용 안 함"은 항상 무료
                 noneBtn.SetLabel("해제");
+                noneBtn.SetGenderBadge(null); // 해제 버튼에는 성별 배지를 달지 않는다
                 _spawnedButtons.Add(noneBtn);
             }
 
@@ -410,6 +425,9 @@ namespace MySecondWorld.UI
 
                 // 도감 라벨 및 등급 색상
                 var reqItem = _keyTable.GetRequiredItem(part, _currentGender, capturedIndex);
+                // 성별 뱃지 추가
+                btn.SetGenderBadge(_keyTable.IsGenderSpecific(part, _currentGender, capturedIndex) ? _currentGender : (Gender?)null);
+
                 if (reqItem != null)
                 {
                     btn.SetLabel(reqItem.Title);
@@ -424,7 +442,8 @@ namespace MySecondWorld.UI
                 _spawnedButtons.Add(btn);
             }
 
-            UpdateDetailCard(part, selectedIndex);
+            if (_showAllGenders) AppendOtherGenderThumbnails(part);
+            UpdateDetailCard(part, selectedIndex, _currentGender);
         }
 
         // 썸네일 클릭시 해당 파트, 해당 인덱스로 변경
@@ -452,7 +471,7 @@ namespace MySecondWorld.UI
             foreach (var btn in _spawnedButtons)
                 btn.SetSelected(partVisible && btn.Index == selected);
 
-            UpdateDetailCard(_currentTab, selected);
+            UpdateDetailCard(_currentTab, selected, _currentGender);
         }
 
         private void UpdateCollectionProgress(int owned, int total)
@@ -470,7 +489,8 @@ namespace MySecondWorld.UI
             }
         }
 
-        private void UpdateDetailCard(PartType part, int index)
+        // UpdateDetailCard가 바꾸는 건 화면에 하나뿐인 썸네일 상세 정보 패널(이름, 등급, 보유 상태, 설명)
+        private void UpdateDetailCard(PartType part, int index, Gender gender)
         {
             if (_detailCardRoot == null) return;
 
@@ -483,8 +503,8 @@ namespace MySecondWorld.UI
                 return;
             }
 
-            var reqItem = _keyTable.GetRequiredItem(part, _currentGender, index);
-            bool isOwned = IsPartOwned(part, _currentGender, index);
+            var reqItem = _keyTable.GetRequiredItem(part, gender, index);
+            bool isOwned = IsPartOwned(part, gender, index);
 
             if (reqItem != null)
             {
@@ -504,7 +524,7 @@ namespace MySecondWorld.UI
             }
             else
             {
-                string sub = _keyTable.GetSubType(part, _currentGender, index);
+                string sub = _keyTable.GetSubType(part, gender, index);
                 string title = !string.IsNullOrEmpty(sub) && sub != "None" && part != PartType.Head ? sub : $"{part} #{index + 1:D2}";
                 if (_detailCardName != null) _detailCardName.text = title;
                 if (_detailCardRarity != null) _detailCardRarity.text = "<color=#B0C4DE>[기본 외형]</color>";
@@ -527,12 +547,19 @@ namespace MySecondWorld.UI
             }
             _spawnedButtons.Clear();
 
+            foreach (var btn in _otherGenderButtons)
+            {
+                if (btn != null)
+                    Destroy(btn.gameObject);
+            }
+            _otherGenderButtons.Clear();
+
             // 탭 전환 시 스크롤 맨 위로
             if (_thumbnailScrollRect != null)
                 _thumbnailScrollRect.normalizedPosition = Vector2.up;
         }
 
-        // 이 파츠가 지금 화면에 보이는가 (헬멧에 가려지면 선택 표시를 끈다)
+        // 이 파츠가 지금 화면에 보이는가 (헬멧·투구 장식·모자 등에 가려지면 선택 표시를 끈다)
         private bool IsPartVisible(PartType part)
         {
             // 가려질 수 있는 파츠만 판정한다 (나머지는 항상 보이는 것으로)
@@ -544,6 +571,34 @@ namespace MySecondWorld.UI
             var visible = MutualExclusionResolver.ComputeVisibleAppearance(desired, _currentGender, _keyTable, NoLastSelected);
             return visible[part] == desired[part];   // 보이는 값이 입은 값과 다르면 가려진 것
         }
+
+        // "전체 보기" : 반대 성별 전용 파츠를 목록 뒤에 덧붙인다. 눌러도 입어 보지 않고 상세 카드만 보여 준다.
+        private void AppendOtherGenderThumbnails(PartType part)
+        {
+            Gender other = _currentGender == Gender.Male ? Gender.Female : Gender.Male;
+            var names = _keyTable.GetThumbnailNames(part, other);
+
+            // 버튼 N개를 만들고 각자에게 "눌렸을 때 할 일"을 달아 둠
+            for (int i = 0; i < names.Count; i++)
+            {
+                if (!_keyTable.IsGenderSpecific(part, other, i)) continue; // 공용은 이미 위 목록에 있다
+                Sprite sprite = !string.IsNullOrEmpty(names[i]) ? _thumbnailAtlas?.GetSprite(names[i]) : null;
+                var btn = Instantiate(_thumbnailButtonPrefab, _thumbnailContent);
+                // 람다가 반복 변수 i를 쓰지 않고 (p, idx) 인자만 써서, 반복문 변수 캡처 문제가 없다
+                //                          ┌ "버튼이 눌리면 이걸 실행해라"라는 예약(여기서 실행되지 않음)
+                btn.Setup(part, i, sprite, (p, idx) => UpdateDetailCard(p, idx, other));   // 입지 못하고 카드만 볼수 있음
+                btn.SetSelected(false);
+                btn.SetLocked(!IsPartOwned(part, other, i));
+                btn.SetGenderBadge(other);
+
+                var reqItem = _keyTable.GetRequiredItem(part, other, i);
+                btn.SetLabel(reqItem != null ? reqItem.Title : $"#{i + 1:D2}");
+                if (reqItem != null) btn.SetRarity(reqItem.GetRarityColor());
+
+                _otherGenderButtons.Add(btn);
+            }
+        }
+
         #endregion
 
         #region 파츠·성별 적용

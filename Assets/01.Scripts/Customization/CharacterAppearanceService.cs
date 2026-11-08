@@ -356,6 +356,10 @@ namespace MySecondWorld.Customization
             return _avatarPartKeyTable.IsItemMatchingGender(item, data.Gender);
         }
 
+        // 이 아이템이 어느 성별 전용인지 (공용이면 null)
+        public Gender? GetItemGender(EquipmentItem item)
+            => _avatarPartKeyTable?.GetItemGender(item);
+        
         #endregion
     }
 }

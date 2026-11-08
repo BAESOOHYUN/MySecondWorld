@@ -13,6 +13,7 @@ namespace MySecondWorld.UI
         [SerializeField] private Button _button;
         [SerializeField] private Sprite _noneSprite;
         [SerializeField] private GameObject _lockIcon; // 미소유 표시 오버레이
+        [SerializeField] private GenderBadge _genderBadge;
 
         [SerializeField] private TMPro.TextMeshProUGUI _label; // 카드 하단 라벨 (선택적)
         [SerializeField] private Image _rarityBorder; // 등급별 테두리 (선택적)
@@ -85,5 +86,8 @@ namespace MySecondWorld.UI
             if (_label != null)
                 _label.color = locked ? new Color(0.45f, 0.52f, 0.62f, 0.85f) : new Color(0.88f, 0.93f, 1f, 0.98f);
         }
+
+        // 성별 배지: Male/Female이면 해당 스프라이트로 바꿔 보이고, null(공용·없음)이면 숨긴다
+        public void SetGenderBadge(Gender? gender) => _genderBadge?.Set(gender);
     }
 }

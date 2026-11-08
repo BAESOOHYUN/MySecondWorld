@@ -449,6 +449,10 @@ namespace MySecondWorld.UI
                    onAction: ResolveEquipAction(stack.Source, capturedIndex),
                    isShopMode: isShopMode);
 
+                // 슬롯은 풀에서 재사용되니, 장비가 아닌 아이템에서도 null을 넘겨 이전 배지를 꺼 줘야한다.
+                slot.SetGenderBadge(stack.Source is EquipmentItem genderItem
+                                    ? _appearanceService?.GetItemGender(genderItem) : null);
+
                 _spawnedSlots.Add(slot);
             }
         }

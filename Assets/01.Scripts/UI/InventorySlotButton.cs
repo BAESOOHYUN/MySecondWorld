@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using MySecondWorld.Customization;
 
 namespace MySecondWorld.UI
 {
@@ -12,6 +13,9 @@ namespace MySecondWorld.UI
         [SerializeField] private Button _discardButton;
         [SerializeField] private Button _actionButton; // 파츠면 "장착", 소모품이면 "사용"
         [SerializeField] private TMP_Text _actionButtonText;
+        [SerializeField] private GenderBadge _genderBadge;
+
+        public void SetGenderBadge(Gender? gender) => _genderBadge?.Set(gender);
 
         public void Setup(Sprite icon, int stackSize,
                         bool isPart, bool isConsumable, bool isEquipped, 
