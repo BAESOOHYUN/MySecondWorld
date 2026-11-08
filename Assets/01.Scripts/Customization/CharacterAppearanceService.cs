@@ -27,6 +27,9 @@ namespace MySecondWorld.Customization
         // 무기(NetworkWeaponEquip)의 _mainHandInventorySlotIndex에 해당.
         // 서버가 아니라 클라 메모리에만 있어서 앱을 다시 시작하면 비는 점이 다르다.
         private readonly Dictionary<PartType, int> _equippedInventorySlotIndexByPart = new();
+        // 직전 외형 기억
+        private readonly Dictionary<(PartType part, string subtype), int> _lastSelectedIndexByPartAndSubtype = new();
+
         // 서버가 접속 때 알려 준 칸 번호 "후보" (배열 순서는 PartType 순서, 없음·모름은 -1)
         // null이면 서버가 알려 준 값이 없다는 뜻 (옛 세이브 등) → 복원은 첫 칸 폴백으로 간다
         // 인벤토리가 아직 다 도착하지 않았을 수 있어서,
@@ -154,8 +157,7 @@ namespace MySecondWorld.Customization
 
         // 인벤토리에서 착용 가능한 파츠 아이템을 단일 장착한다.
         // (무기(NetworkWeaponEquip)의 EquipMainHand에 해당)
-        // 좌우 대칭 파츠(팔, 다리, 장갑,
-        // 어깨 등)는 MirroredPartPairs를 통해 자동으로 한 쌍이 함께 장착된다.
+        // 좌우 대칭 파츠(팔, 다리, 장갑, 어깨 등)는 MirroredPartPairs를 통해 자동으로 한 쌍이 함께 장착된다.
         public bool EquipWearableItem(EquipmentItem item, int inventorySlotIndex)
         {
             if (item == null) return false;
@@ -167,6 +169,18 @@ namespace MySecondWorld.Customization
                 return false;
             }
 
+            // 투구 장식은 Head가 No_Elements(투구 타입)일 때만 장착할 수 있다
+            if (part == PartType.HelmetAttachment && !IsHeadNoElements(data))
+            {
+                Debug.LogWarning("[CharacterAppearanceService] 투구 장식은 Head No_Elements 장착 시에만 입을 수 있습니다.");
+                return false;
+            }
+            
+            // 폴백을 위한 준비단계
+            var before = data;                                         // 규칙 적용 전 값 (struct 복사)
+            if (data.Head >= 0)
+                RecordLastSelected(PartType.Head, data.Head, data.Gender); // 입기 전 현재 얼굴을 기억
+            
             // 1. 해당 파츠 장착
             data[part] = index;                                             // 이 옷이 어떤 옷인가
             _equippedInventorySlotIndexByPart[part] = inventorySlotIndex;   // 그 옷이 가방 어디에 있는가
@@ -179,7 +193,14 @@ namespace MySecondWorld.Customization
                 _equippedInventorySlotIndexByPart[mirrorPart] = inventorySlotIndex;
             }
 
-            // 3. 로컬 세이브 저장 & 네트워크 동기화 브로드캐스트
+            // 3. 상호배제 규칙 적용 - 커스터마이징과 같은 함수
+            RecordLastSelected(part, index, data.Gender);
+            MutualExclusionResolver.ApplyDirectSelectionRules(
+                ref data, part, index, data.Gender, 
+                _avatarPartKeyTable, _lastSelectedIndexByPartAndSubtype);
+            RemoveChangedSlots(before, data, part);
+
+            // 로컬 세이브 저장 & 네트워크 동기화 브로드캐스트
             _appearanceCache.Set(data);
             _syncRequestPub.Publish(new CharacterAppearanceSyncRequestedEvent(data, BuildEquippedPartSlots()));
             OnAppearanceChanged?.Invoke();
@@ -287,6 +308,31 @@ namespace MySecondWorld.Customization
             if (index <= 0) return null; // 0은 맨몸(기본 파츠), -1은 안 입음
             return _avatarPartKeyTable.GetRequiredItem(part, data.Gender, index);
         }
+
+        // 직전 값 저장용 기록 헬퍼.
+        private void RecordLastSelected(PartType part, int index, Gender gender)
+        {
+            var subtype = _avatarPartKeyTable.GetSubType(part, gender, index);
+            _lastSelectedIndexByPartAndSubtype[(part, subtype)] = index;
+        }
+
+        // 칸 기록 정리 헬퍼
+        // 규칙이 투구나 Head를 바꾸면 그 파츠의 "입은 칸" 기록도 지워야 UI와 서버 검증이 어긋나지 않는다.
+        // 파츠별 if를 쓰지 않고 "전후로 값이 바뀐 파츠"를 일괄 처리하면 앞으로 규칙이 늘어나도 손댈 곳이 없다.
+        private void RemoveChangedSlots(CharacterAppearanceData before, CharacterAppearanceData after, PartType equipped)
+        {
+            bool hasMirror = MirroredPartPairs.TryGetMirror(equipped, out var mirror);
+            foreach (PartType part in System.Enum.GetValues(typeof(PartType)))
+            {
+                if (part == equipped || (hasMirror && part == mirror)) continue; // 지금 입은 파츠(와 짝)는 제외
+                if (before[part] != after[part])
+                    _equippedInventorySlotIndexByPart.Remove(part);
+            }
+        }
+
+        // Head 중 헬멧을 착용한 파츠. (NoElements는 눈코입,머리,수염 등이 없음을 의미)
+        private bool IsHeadNoElements(CharacterAppearanceData data)
+            => _avatarPartKeyTable.GetSubType(PartType.Head, data.Gender, data.Head) == "No_Elements";
 
         // 이 아이템이 어느 파츠(PartType)에 속하는지 알려 준다 (장착 여부와 무관)
         public bool TryGetPartType(EquipmentItem item, out PartType part)

@@ -5,6 +5,7 @@ using VContainer;
 using MessagePipe;
 using Cleverous.VaultInventory;
 using MySecondWorld.Customization;
+using System.Data;
 
 namespace MySecondWorld.Network
 {
@@ -307,6 +308,12 @@ namespace MySecondWorld.Network
                 {
                     Debug.LogWarning("[NetAppearance] [Server] _avatarPartKeyTable이 null이므로 파츠 유효성 검증을 건너뜁니다.");
                 }
+
+                // 투구 장식은 Head가 No_Elements일 때만 허용 — 아니면 서버가 투구를 벗긴다
+                if (t != null && data.HelmetAttachment > 0
+                    && t.GetSubType(PartType.Head, data.Gender, data.Head) != "No_Elements")
+                    data.HelmetAttachment = 0;
+
                 // 2. 어떤 예외가 있더라도 서버의 SyncVar에 확실하게 대입!
                 _serverAppearance = data;
                 Debug.Log($"[NetAppearance] [Server] _serverAppearance 동기화 성공! Gender={data.Gender}, Head={data.Head}, Torso={data.Torso}");

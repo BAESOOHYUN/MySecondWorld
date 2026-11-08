@@ -510,11 +510,12 @@ namespace MySecondWorld.UI
                     }
                     else
                     {
-                        _appearanceService?.EquipWearableItem(partItem, inventorySlotIndex);
-                        if (_appearanceService != null
+                        bool equipped = _appearanceService != null 
+                                        && _appearanceService.EquipWearableItem(partItem, inventorySlotIndex);
+                        if (equipped
                             && _appearanceService.TryGetPartType(partItem, out var part)
-                            // TryGetValue로 조회하는 이유 : 머리카락, 얼굴,
-                            // 눈썹 같은 파츠는 페이퍼돌 슬롯이 없어서 표에 없는 것이 정상이기 때문
+                            // TryGetValue로 조회하는 이유 : 머리카락, 얼굴, 눈썹 같은 파츠는
+                            // 페이퍼돌 슬롯이 없어서 표에 없는 것이 정상이기 때문
                             && PartToSlot.TryGetValue(part, out var slotType))
                             _paperdollUI?.HighlightSlot(slotType);   // 장착한 슬롯만 표시
                     }
