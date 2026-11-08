@@ -331,19 +331,6 @@ namespace MySecondWorld.Network
         public void CmdSetEquippedPartSlots(int[] clientSlots)
         {
             _equippedPartSlots = ValidateEquippedPartSlots(clientSlots);
-
-            // [진단] 클라가 보낸 칸 번호와 서버가 인정한 칸 번호 (파츠번호:칸, 안 입은 파츠는 생략)
-            Debug.Log($"[NetAppearance][Diag] CmdSetEquippedPartSlots 받음={DescribeSlots(clientSlots)} 인정={DescribeSlots(_equippedPartSlots)} keyTable={(_avatarPartKeyTable != null)}");
-        }
-
-        // [진단] 칸 배열을 "파츠번호:칸" 목록 문자열로 만든다
-        private static string DescribeSlots(int[] slots)
-        {
-            if (slots == null) return "null";
-            var sb = new System.Text.StringBuilder();
-            for (int i = 0; i < slots.Length; i++)
-                if (slots[i] >= 0) sb.Append(i).Append(':').Append(slots[i]).Append(' ');
-            return sb.Length == 0 ? "(없음)" : sb.ToString();
         }
 
         // 클라가 보낸 장착 칸 번호 배열(clientSlots)을 서버가 검사한다. 클라의 말을 믿지 않는다.

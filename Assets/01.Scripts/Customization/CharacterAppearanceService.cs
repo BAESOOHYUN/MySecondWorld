@@ -13,6 +13,12 @@ namespace MySecondWorld.Customization
     // InventoryUI와 CharacterCustomizeUI가 이 서비스를 공통으로 호출하여 중복과 불일치 버그를 방지한다.
     // 구역 구성은 무기(NetworkWeaponEquip)와 짝을 맞췄다.
     // 무기(NetworkWeaponEquip)의 "서버: 장착 처리 · 검증"에 해당하는 구역이 여기의 "④ 입은 칸 검증"이다.
+    //
+    // [클라이언트 전용] MonoBehaviour·NetworkBehaviour가 아닌 일반 클래스(ProjectLifetimeScope 싱글톤)이고 서버에서는 호출되지 않는다.
+    // - 서버로는 직접 보내지 않는다. CharacterAppearanceSyncRequestedEvent를 발행하면
+    //   로컬 플레이어의 NetworkCharacterAppearance가 받아 Command(CmdSetAppearance, CmdSetEquippedPartSlots)로 보낸다.
+    // - 여기 들고 있는 값은 클라의 기억이다. 서버가 확정한 진짜 값은 NetworkCharacterAppearance의 _serverAppearance, _equippedPartSlots다.
+    //   _serverEquippedPartSlots는 서버가 TargetRpc로 알려 준 값을 후보로 받아 둔 사본일 뿐이고, 서버가 요청을 다시 검증한다.
     public class CharacterAppearanceService
     {
         #region 상태
@@ -92,31 +98,30 @@ namespace MySecondWorld.Customization
         {
             if (inventory == null) return;
 
-            foreach (PartType part in System.Enum.GetValues(typeof(PartType))) // 파츠 25개를 하나씩
+            foreach (PartType part in System.Enum.GetValues(typeof(PartType)))      // 파츠 25개를 하나씩
             {
-                if (_equippedInventorySlotIndexByPart.ContainsKey(part)) continue; // 이미 적혀 있으면 다음 파츠로
+                if (_equippedInventorySlotIndexByPart.ContainsKey(part)) continue;  // 이미 적혀 있으면 다음 파츠로
 
-                var item = GetRequiredItemForCurrentLook(part); // 지금 이 파츠에 입은 옷의 아이템 (맨몸·무료 파츠면 null)
-                if (item == null) continue; // 찾을 게 없으니 다음 파츠로
+                var item = GetRequiredItemForCurrentLook(part);                     // 지금 이 파츠에 입은 옷의 아이템 (맨몸·무료 파츠면 null)
+                if (item == null) continue;                                         // 찾을 게 없으니 다음 파츠로
 
-                int serverSlot = GetServerEquippedPartSlot(part); // 서버가 알려 준 칸 (없으면 -1)
+                int serverSlot = GetServerEquippedPartSlot(part);                   // 서버가 알려 준 칸 (없으면 -1)
 
-                // 서버가 알려 준 칸 하나만 열어서, 그 옷이 정말 있는지 확인한다
                 if (serverSlot >= 0 && serverSlot < inventory.MaxSlots 
-                    && inventory.Get(serverSlot)?.Source == item)
+                    && inventory.Get(serverSlot)?.Source == item)                   // 서버가 알려 준 칸 하나만 열어서, 그 옷이 정말 있는지 확인한다
                 {
-                    _equippedInventorySlotIndexByPart[part] = serverSlot; // 딕셔너리에 적는다
-                    continue; // 이 파츠는 끝, 다음 파츠로
+                    _equippedInventorySlotIndexByPart[part] = serverSlot;           // 있으면 딕셔너리에 적는다
+                    continue;                                                       // 이 파츠는 끝, 다음 파츠로
                 }
 
-                // 서버 칸이 없거나 틀렸으면, 가방을 0번부터 한 칸씩 열어 같은 옷을 찾는다
+                // 서버 칸이 없거나 틀렸으면, 가방을 0번부터 한 칸씩 열어 '첫번째로 만나는 같은 옷'을 찾는다
                 for (int i = 0; i < inventory.MaxSlots; i++)
                 {
-                    // 빈 칸이거나 다른 옷이면 다음 칸으로 (빈 칸은 Get(i)가 null이라 ?.가 에러 없이 처리)
+                    // 빈 칸이거나 다른 옷이면 다음 칸으로
                     if (inventory.Get(i)?.Source != item) continue;
 
                     _equippedInventorySlotIndexByPart[part] = i;
-                    // 찾았으니 칸 훑기는 끝 (같은 옷이 여러 칸이면 첫 칸만)
+                    // 찾았으니 칸 훑기는 끝 (같은 옷이 여러 칸이면 첫 칸만 선택)
                     break;
                 }
             }
@@ -235,6 +240,23 @@ namespace MySecondWorld.Customization
         private int GetServerEquippedPartSlot(PartType part)
             => _serverEquippedPartSlots != null && (int)part < _serverEquippedPartSlots.Length
             ? _serverEquippedPartSlots[(int)part] : -1;
+
+        // 커스터마이징 저장 뒤 호출: 외형이 바뀌어 더는 안 맞는 입은 칸 기록을 지우고,
+        // 지워진 파츠는 가방에서 새 외형의 옷을 찾아 다시 적은 뒤 서버로 보낼 배열을 만든다
+        // (Reconcile은 "서로 어긋난 두 값을 맞춰서 일치시킨다"는 뜻)
+        public int[] ReconcileEquippedSlots(Inventory inventory)
+        {
+            if (inventory == null) return BuildEquippedPartSlots();
+            foreach (var part in new List<PartType>(_equippedInventorySlotIndexByPart.Keys))
+            {
+                var required = GetRequiredItemForCurrentLook(part); // 새 외형을 요구하는 아이템
+                int slot = _equippedInventorySlotIndexByPart[part];
+                if (required == null || inventory.Get(slot)?.Source != required)
+                    _equippedInventorySlotIndexByPart.Remove(part); // 그 칸의 옷이 더는 이 외형이 아니다
+            }
+            RestoreEquippedInventorySlots(inventory);               // 지워진 파츠만 첫 칸을 찾아 채운다 (이미 적힌 파츠는 건너뜀)
+            return BuildEquippedPartSlots();
+        }
 
         // 클라: 옷을 입고 벗을 때 칸 번호를 서버로 보낸다  
         // 입은 파츠 기록을 서버로 보낼 배열로 바꾼다. 배열 순서는 PartType 순서이고, 기록이 없는 파츠는 -1

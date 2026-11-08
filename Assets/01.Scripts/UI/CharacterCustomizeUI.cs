@@ -72,6 +72,7 @@ namespace MySecondWorld.UI
         // ── DI ──
         private AvatarPartKeyTableSO _keyTable;
         private CharacterAppearanceSO _defaultAppearanceSO;
+        private CharacterAppearanceService _appearanceService;
         private LocalAppearanceCache _appearanceCache;
         private LocalPlayerInventoryProvider _inventoryProvider;
         private IPublisher<CharacterAppearanceSyncRequestedEvent> _saveRequestPub;
@@ -114,15 +115,17 @@ namespace MySecondWorld.UI
         #region 생명주기·초기화
         [Inject]
         public void Construct(AvatarPartKeyTableSO keyTable,
-                            LocalAppearanceCache appearanceCache,
                             CharacterAppearanceSO defaultAppearanceSO,
+                            CharacterAppearanceService appearanceService,
+                            LocalAppearanceCache appearanceCache,
                             LocalPlayerInventoryProvider inventoryProvider,
                             IPublisher<CharacterAppearanceSyncRequestedEvent> saveRequestPub,
                             ISubscriber<RequestInitialCustomizeEvent> initialCustomizeSub)
         {
             _keyTable = keyTable;
-            _appearanceCache = appearanceCache;
             _defaultAppearanceSO = defaultAppearanceSO;
+            _appearanceService = appearanceService;
+            _appearanceCache = appearanceCache;
             _inventoryProvider = inventoryProvider;
             _saveRequestPub = saveRequestPub;
             initialCustomizeSub.Subscribe(_ => Open(isInitialSetup: true)).AddTo(destroyCancellationToken);
@@ -177,7 +180,7 @@ namespace MySecondWorld.UI
             if (_isInitialized) return;
             _isInitialized = true;
 
-            // 세이브 로드(InitIndices)가 끝나기 전에 Toggle 콜백이 먼저 SwitchTab을 부를 수 있어서
+            // 세이브 로드(SetIndicesFromData)가 끝나기 전에 Toggle 콜백이 먼저 SwitchTab을 부를 수 있어서
             // _currentIndices[part] 직접 인덱서 접근이 KeyNotFoundException을 던지지 않도록 기본값(0)으로 선채움
             foreach (PartType part in System.Enum.GetValues(typeof(PartType)))
                 _currentIndices[part] = 0;
@@ -521,7 +524,9 @@ namespace MySecondWorld.UI
         #endregion
 
         #region 파츠·성별 적용
-        private void InitIndices(CharacterAppearanceData data)
+
+        // 외형 데이터(CharacterAppearanceData)의 파츠 번호를 UI 캐시(_currentIndices)로 복사한다 (외형 데이터 → UI 방향)
+        private void SetIndicesFromData(CharacterAppearanceData data)
         {
             // 저장된 외형을 로드해서 인덱스/ 프리뷰에 반영
             foreach (PartType part in System.Enum.GetValues(typeof(PartType)))
@@ -545,7 +550,7 @@ namespace MySecondWorld.UI
                 _pendingParts.Remove(part);
             }
 
-            SyncIndicesFromCustomizer();
+            SyncIndicesFromPreview();
             UpdateThumbnailSelection();
         }
 
@@ -579,13 +584,14 @@ namespace MySecondWorld.UI
         {
             await _previewCustomizer.ApplyAppearance(BuildData());
 
-            SyncIndicesFromCustomizer();
+            SyncIndicesFromPreview();
             UpdateThumbnailSelection();
         }
 
-        // BuildData()의 반대 방향(customizer→UI) 동기화 함수
-        // customizer 내부 상호배제 연쇄로 바뀐 인덱스를 UI 캐시에 반영
-        private void SyncIndicesFromCustomizer()
+        // 프리뷰 캐릭터의 현재 파츠 번호를 UI 캐시(_currentIndices)로 가져온다 (프리뷰 → UI 방향)
+        // CharacterCustomizerUI.ApplyAppearance의 상호배제 연쇄(헬멧을 쓰면 머리카락이 0이 되는 식)로
+        // 프리뷰가 UI가 고른 값과 달라질 수 있어서, 프리뷰에 적용한 뒤에는 항상 이 함수로 UI 캐시를 프리뷰 쪽에 맞춘다
+        private void SyncIndicesFromPreview()
         {
             var current = _previewCustomizer.GetCurrentAppearance();
             foreach (PartType part in System.Enum.GetValues(typeof(PartType)))
@@ -698,7 +704,7 @@ namespace MySecondWorld.UI
             data.BodyArtColor = Random.ColorHSV(0f, 1f, 0f, 1f, 0f, 1f);
             await _previewCustomizer.ApplyAppearance(data);
             // 동기화
-            SyncIndicesFromCustomizer();
+            SyncIndicesFromPreview();
             // 현재 탭 썸네일 하이라이트 갱신
             UpdateThumbnailSelection();
             // 랜덤 색상도 스와치/피커에 반영
@@ -710,9 +716,9 @@ namespace MySecondWorld.UI
         {
             var d = _defaultAppearanceSO.DefaultAppearance;
             d.Gender = _currentGender; // SO의 Gender(항상 Male)로 덮어쓰지 않고, 지금 커스터마이징 중인 성별 유지
-            InitIndices(d);
+            SetIndicesFromData(d);
             await _previewCustomizer.ApplyAppearance(d); // 인덱스+색상 전부 기본값으로
-            SyncIndicesFromCustomizer(); // 상호배제 캐스케이드 결과로 _currentIndices 재동기화
+            SyncIndicesFromPreview(); // 상호배제 캐스케이드 결과로 _currentIndices 재동기화
 
             UpdateFacialHairTabVisibility(); // 성별이 바뀌었을 수 있으니 탭 가시성도 갱신
             UpdateThumbnailSelection(); // 새 성별 기준으로 현재 탭 썸네일 목록 재생성 + 선택 하이라이트
@@ -769,14 +775,15 @@ namespace MySecondWorld.UI
         #region 저장·불러오기
         private void OnSaveClicked()
         {
-            var previouslySaved = _appearanceCache.Get(); // 검증 실패 파츠는 이 값(직전 저장 상태)으로 되돌림
-            var data = ValidateOwnership(BuildData(), previouslySaved);
-
-            _appearanceCache.Set(data);
-            _saveRequestPub.Publish(new CharacterAppearanceSyncRequestedEvent(data)); // 네트워크 동기화 요청
+            var previouslySaved = _appearanceCache.Get();// 되돌릴 기준값 = 직전 저장 상태 (성별이 같을 때만 쓰인다)
+            var data = ValidateOwnership(BuildData(), previouslySaved); // 미소유 파츠는 기준값으로 되돌린다.
+                                                                        // 성별이 바뀌었으면 번호가 다른 옷을 가리키므로 맨몸(0)으로 되돌린다
+            _appearanceCache.Set(data);                                 // 새 외형을 클라 기억에 넣음
+            var slots = _appearanceService.ReconcileEquippedSlots(_inventoryProvider.Inventory); // 서로 어긋난 두 값을 맞춰서 일치시킴
+            _saveRequestPub.Publish(new CharacterAppearanceSyncRequestedEvent(data, slots));     // 서버로 보내 네트워크 동기화 요청
 
             // 검증 후 되돌려진 인덱스가 있으면 UI/미리보기도 즉시 그 모습으로 맞춘다
-            InitIndices(data);
+            SetIndicesFromData(data);
             _previewCustomizer.ApplyAppearance(data).Forget();
             UpdateThumbnailSelection();
 
@@ -790,7 +797,7 @@ namespace MySecondWorld.UI
 
             var saved = _appearanceCache.Get(); // 열릴 때는 현재 착용 중인 로컬 세이브 외형을 그대로 프리뷰에 로드
             _currentGender = saved.Gender;
-            InitIndices(saved); // 저장된 외형으로 인덱스 캐시 채움
+            SetIndicesFromData(saved); // 저장된 외형으로 인덱스 캐시 채움
 
             UpdateFacialHairTabVisibility();
             ShowTopTab(0); // 파츠 탭(0) 먼저
@@ -798,7 +805,7 @@ namespace MySecondWorld.UI
             if (_previewCustomizer != null)
                 await _previewCustomizer.ApplyAppearance(saved); // 프리뷰 캐릭터에 현재 옷 그대로 반영
 
-            SyncIndicesFromCustomizer(); // 상호배제 캐스케이드 결과로 _currentIndices 재동기화
+            SyncIndicesFromPreview(); // 상호배제 캐스케이드 결과로 _currentIndices 재동기화
             UpdateThumbnailSelection();
             RefreshColorRows(); // 색상 스와치/피커도 저장된 색으로 갱신
         }
