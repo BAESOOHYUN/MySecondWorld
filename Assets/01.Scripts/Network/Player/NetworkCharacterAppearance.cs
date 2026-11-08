@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Mirror;
@@ -5,7 +6,6 @@ using VContainer;
 using MessagePipe;
 using Cleverous.VaultInventory;
 using MySecondWorld.Customization;
-using System.Data;
 
 namespace MySecondWorld.Network
 {
@@ -71,6 +71,7 @@ namespace MySecondWorld.Network
         private LocalAppearanceCache _appearanceCache;
         private CharacterAppearanceService _appearanceService;
         private IPublisher<RequestInitialCustomizeEvent> _initialCustomizePublisher;
+        private readonly List<CharacterAppearanceData> _recentSent = new();
 
         [Inject]
         public void Construct(
@@ -107,6 +108,13 @@ namespace MySecondWorld.Network
 
                 // 외형 조립 후 HUD 얼굴 캡처 신호 발송
                 ApplyAndNotify(evt.Data).Forget();
+
+                // 낡은 반사 무시 (버튼 연타시 버벅임 현상)
+                // 서버가 마지막 값을 반사하지 않는 경우(서버 값이 이미 같을 때 등)에는
+                // 기록이 비워지지 않고 남는다. (최대 8개까지만 쌓임)
+                // 새 값이 올 때마다 최신 값 비교가 먼저
+                _recentSent.Add(evt.Data);
+                if (_recentSent.Count > 8) _recentSent.RemoveAt(0);
 
                 // 보내는 순서가 중요! 외형 -> 칸 순서
 
@@ -386,6 +394,7 @@ namespace MySecondWorld.Network
         private void OnAppearanceChanged(CharacterAppearanceData old, CharacterAppearanceData next)
         {
 #if !UNITY_SERVER
+            if (isLocalPlayer && IsStaleEcho(next)) return; // 낡은 반사는 캐시에도 화면에도 반영하지 않는다
             if (isLocalPlayer) _appearanceCache.Set(next); // 서버가 확정한 값으로 이 클라의 기억을 맞춘다
             ApplyAndNotify(next).Forget();
 #endif
@@ -394,6 +403,26 @@ namespace MySecondWorld.Network
         #endregion
 
         #region 헬퍼 메서드
+        // 서버 반사(next)가 "내가 이미 지나온 옛날 상태의 반사"인지 판정한다. stale = 한물간, 낡은
+        //   true  = 낡은 반사 → 무시
+        //   false = 적용
+        // _recentSent: 내가 서버로 보낸 값의 장부. 0번이 가장 오래된 것, 맨 뒤가 가장 최근 것.
+        // next: 지금 막 도착한 서버 반사
+        // 서버는 보낸 순서대로 돌려주므로 앞쪽부터 짝을 찾는다.
+        private bool IsStaleEcho(CharacterAppearanceData next)
+        {
+            for (int i = 0; i < _recentSent.Count; i++)
+            {
+                if (!_recentSent[i].Equals(next)) continue;  // 이 칸은 짝이 아니니 다음 칸을 본다
+
+                // 짝을 찾았다. 그 칸이 맨 뒤면 "내가 마지막으로 보낸 값"의 반사다.
+                bool isLatest = (i == _recentSent.Count - 1);
+
+                _recentSent.RemoveRange(0, i + 1);           // 짝 칸과 그보다 오래된 칸은 답이 왔으니 장부에서 뺀다
+                return !isLatest;                            // 마지막이면 false(적용), 중간이면 true(무시)
+            }
+            return false;  // 어느 칸과도 안 맞음 = 서버가 값을 고침(거절 등) → 적용
+        }
 
         // 외형을 모델에 입히고, 다 입혀지면 얼굴 사진(HUD 썸네일) 촬영 신호를 보낸다
         private async Cysharp.Threading.Tasks.UniTaskVoid ApplyAndNotify(CharacterAppearanceData next)
