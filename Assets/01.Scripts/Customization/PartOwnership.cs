@@ -3,16 +3,15 @@ using MySecondWorld.Inventory.Items;
 
 namespace MySecondWorld.Customization
 {
-    // 소유 판정과 검증을 한 곳으로 모았다.
-    // 같은 규칙이 두 군데에 따로 있습니다
-    // 다른 점은 "소유 여부를 누구에게 물어보나"(클라는 Provider, 서버는 Inventory)뿐이다.
-
-    //           |   클라 CharacterCustomizeUI    |  서버 CmdSetAppearance
-    // --------------------------------------------------------------------
-    // 소유 판정 |  IsPartOwned(미러 쌍 포함) →  |   t.GetRequiredItem + 
-    //           |   _inventoryProvider.IsOwned   |   _inventory.Contains
-    // --------------------------------------------------------------------
-    // 검증 반복 |    ValidateOwnership           |   같은 모양의 foreach (성별이 바뀌면 0)
+    // 소유 판정 · 소유 검증 · 장착 칸 대응을 한 곳으로 모았다. 클라(UI)와 서버가 같은 규칙을 쓰게 하려는 것.
+    // 규칙은 여기 한 벌뿐이고, 다른 점은 "소유 여부를 누구에게 물어보나"(hasItem 대리자: 클라는 Provider, 서버는 Inventory)뿐이다.
+    // (서버 CmdSetAppearance도 2026-11-09부터 이 클래스의 ValidateOwnership을 쓴다)
+    //
+    //  함수               | 묻는 것                                         | 부르는 곳
+    //  -------------------+-------------------------------------------------+---------------------------------------------
+    //  IsPartOwned        | 이 파츠 후보의 아이템을 갖고 있나 (좌우 짝 포함)  | 클라 CharacterCustomizeUI (자물쇠 표시)
+    //  ValidateOwnership  | 이 외형 전체에서 자격 없는 파츠는 어디인가        | 서버 CmdSetAppearance, 클라 로드 시 자가 정화
+    //  IsItemForPart      | 이 가방 칸의 아이템이 이 파츠의 근거인가 (짝 포함) | 서버 ValidateEquippedPartSlots, 클라 ReconcileEquippedSlots
 
     public static class PartOwnership
     {
@@ -25,7 +24,7 @@ namespace MySecondWorld.Customization
 
             // 미러 쌍은 OR — 반대쪽만 소유해도 해금
             return MirroredPartPairs.TryGetMirror(part, out var mirror)
-                && IsOwnedSelf(table, part, gender, index, hasItem);
+                && IsOwnedSelf(table, mirror, gender, index, hasItem);
         }
 
 
@@ -79,6 +78,33 @@ namespace MySecondWorld.Customization
                 data.HelmetAttachment = 0;
 
             return data;
+        }
+
+        #endregion
+
+        #region 장착 칸 대응
+
+        // 묻는 것 : 이 가방 칸의 아이템이, 이 파츠(part, index)를 입고 있는 근거로 인정되는가
+        // 하는 일 : 자기 파츠의 요구 아이템이면 true, 아니면 좌우 짝 파츠의 요구 아이템이어도 true
+        // 입력    : 파츠 표, 파츠 종류, 성별, 모양 번호, 가방 칸의 아이템(빈 칸이면 null)
+        //
+        // 만든 이유 (버그):
+        //   좌우 짝 파츠는 왼쪽·오른쪽이 서로 다른 아이템이다.
+        //   그런데 '왼손 장갑' 하나만 장착해도 오른손 모양까지 같이 입혀지고, 두 파츠가 같은 가방 칸을 기록한다.
+        //   예전엔 오른손을 "오른손 장갑이 그 칸에 있나"로만 검사해서 항상 "틀림"이 되었고,
+        //   왼손 장갑을 땅에 버리면 페이퍼돌 슬롯과 캐릭터는 오른손 장갑만 낀 모습으로 보였다.
+
+        // 서버는 "맞는 것만 남기는" 검증으로 사용 NetworkCharacterAppearance.ValidateEquippedPartSlots
+        // 클라는 "맞지 않는 것을 지우는" 정리로 사용 CharacterAppearanceService.ReconcileEquippedSlots
+        public static bool IsItemForPart(AvatarPartKeyTableSO table, PartType part, Gender gender, int index,
+                                     EquipmentItem item)
+        {
+            if (item == null) return false;
+            // ① 이 파츠 자신의 요구 아이템이 item(그 칸의 아이템)과 같으면 인정
+            if (table.GetRequiredItem(part, gender, index) == item) return true;
+            // ② 아니면 좌우 짝 파츠의 요구 아이템(같은 모양 번호)이 item과 같은지 본다. 같으면 인정
+            return MirroredPartPairs.TryGetMirror(part, out var mirror)
+                && table.GetRequiredItem(mirror, gender, index) == item;
         }
 
         #endregion

@@ -270,12 +270,15 @@ namespace MySecondWorld.Customization
         public int[] ReconcileEquippedSlots(Inventory inventory)
         {
             if (inventory == null) return BuildEquippedPartSlots();
+            var data = _appearanceCache.Get();
             foreach (var part in new List<PartType>(_equippedInventorySlotIndexByPart.Keys))
             {
-                var required = GetRequiredItemForCurrentLook(part); // 새 외형을 요구하는 아이템
-                int slot = _equippedInventorySlotIndexByPart[part];
-                if (required == null || inventory.Get(slot)?.Source != required)
-                    _equippedInventorySlotIndexByPart.Remove(part); // 그 칸의 옷이 더는 이 외형이 아니다
+                var slotItem = inventory.Get(_equippedInventorySlotIndexByPart[part])?.Source as EquipmentItem;
+                // 클라는 "맞지 않는 것을 지우는" 정리
+                // 이 칸에 든 아이템이, 이 파츠 또는 이 파츠의 짝이 요구하는 아이템과 같지 않다면 장착 칸 기록을 지움
+                if (!PartOwnership.IsItemForPart(_avatarPartKeyTable, part, data.Gender, data[part], slotItem))
+                    _equippedInventorySlotIndexByPart.Remove(part);
+
             }
             RestoreEquippedInventorySlots(inventory);               // 지워진 파츠만 첫 칸을 찾아 채운다 (이미 적힌 파츠는 건너뜀)
             return BuildEquippedPartSlots();

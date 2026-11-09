@@ -6,6 +6,7 @@ using VContainer;
 using MessagePipe;
 using Cleverous.VaultInventory;
 using MySecondWorld.Customization;
+using MySecondWorld.Inventory.Items;
 
 namespace MySecondWorld.Network
 {
@@ -401,11 +402,11 @@ namespace MySecondWorld.Network
                 int index = _serverAppearance[part];
                 if (index <= 0) continue;
 
-                // requiredItem = 그 모양을 입으려면 가방에 있어야 하는 아이템. 서버가 자기 외형으로 계산한 정답이다.
-                var requiredItem = _avatarPartKeyTable.GetRequiredItem(part, _serverAppearance.Gender, index);
-                // 클라가 말한 clientSlot 칸 하나만 열어서(Get), 그 안의 아이템이 정답과 같으면 인정한다.
-                // 같은 아이템이 여러 칸에 있어도, 클라가 말한 칸이 맞으면 그 칸 번호가 그대로 남는다.
-                if (requiredItem != null && _inventory.Get(clientSlot)?.Source == requiredItem)
+                // 서버는 "맞는 것만 남기는" 검증
+                // 이 칸에 든 아이템이, 이 파츠 또는 이 파츠의 짝이 요구하는 아이템과 같은가?
+                // "짝 파츠의 요구 아이템"도 칸의 아이템으로 인정
+                var slotItem = _inventory.Get(clientSlot)?.Source as EquipmentItem;
+                if (PartOwnership.IsItemForPart(_avatarPartKeyTable, part, _serverAppearance.Gender, index, slotItem))
                     result[(int)part] = clientSlot;
             }
             return result;
