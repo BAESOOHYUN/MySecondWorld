@@ -204,7 +204,8 @@ namespace MySecondWorld.Network
         public void SpawnPlayer(NetworkConnectionToClient conn)
         {
             Debug.Log($"[Session] SpawnPlayer 호출 conn={conn.connectionId}");
-            var session = Sessions[conn.connectionId];
+            // 그 사이 접속이 끊겨 세션이 사라졌으면 스폰하지 않는다
+            if (!Sessions.TryGetValue(conn.connectionId, out var session)) return;
 
             // Instantiate 시점부터 올바른 위치에 생성해야 Spawn 메시지에 정확한 위치가 포함됨.
             // 위치는 PrepareAndSpawn에서 이미 확정됐으므로 여기서 다시 뽑지 않는다 —

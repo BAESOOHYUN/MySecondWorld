@@ -522,7 +522,6 @@ namespace MySecondWorld.Network
                 if (winnerIndex == 1) // timeoutTask가 먼저 끝남 = ack 못 받음
                     Debug.LogWarning($"[Portal] conn={conn.connectionId} — '{targetZone.sceneName}' 로드 ack 타임아웃 — 강제 진행");
                 ChangePlayerScene(conn, targetZone.sceneName); // 소속 전환(MoveGameObjectToScene)
-
                 // 1. 플레이어 재스냅
                 // ServerForceMoveTo는 낙하 구조·사망 부활·탈출·NPC 순간이동이 모두 쓰는 "강제 이동" 경로다.
                 // NetworkTransform 보간 버퍼 리셋 + CharacterController 껐다 켜기라, 포탈 전환 직후 재스냅에도 그대로 쓴다
@@ -537,9 +536,8 @@ namespace MySecondWorld.Network
                         Debug.Log($"[Portal] 컴패니언 동반 텔레포트(Warp) 완료: {rescuePos}");
                     }
                 }
-                // 3. 낙하 구조(RecoverFromFall) 시에도 동일하게 컴패니언 동반 텔레포트 추가
-                UnloadSceneForPlayer(conn, sourceZone.sceneName); // 이전 씬 언로드
-
+                // 3. 이전 씬 언로드
+                UnloadSceneForPlayer(conn, sourceZone.sceneName);
                 conn.Send(new ScreenFadeMessage { fadeOut = false, duration = _manager.portalFadeDuration });  // 씬 FadeIn (클라 처리: GameNetworkManager.OnStartClient에 등록된 핸들러)
                 await UniTask.Delay(TimeSpan.FromSeconds(_manager.portalFadeDuration));
             }
