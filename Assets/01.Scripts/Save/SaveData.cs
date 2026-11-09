@@ -33,6 +33,10 @@ namespace MySecondWorld.Save
         // 무기는 위의 mainHandInventorySlotIndex가 따로 맡는다
         // null이면 이 필드가 생기기 전의 옛 세이브
         public int[] equippedPartSlots;
+
+        // 도감 해금: 한 번이라도 인벤토리에 들어온 적 있는 아이템 dbKey 목록
+        // null이면 이 필드가 생기기 전의 옛 세이브 (복원 때 지금 인벤토리로 채워진다)
+        public int[] unlockedItemDbKeys;
     }
 
     [System.Serializable]

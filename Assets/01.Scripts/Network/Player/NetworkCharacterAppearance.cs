@@ -39,6 +39,10 @@ namespace MySecondWorld.Network
         // 무기(NetworkWeaponEquip)의 _mainHandInventorySlotIndex에 해당
         private int[] _equippedPartSlots;
 
+        // 서버가 기억하는 "한 번이라도 가져 본 아이템" dbKey 집합. 세이브에 쓰려고 서버 메모리에만 둔다
+        // HashSet을 쓴 이유는 같은 아이템을 몇 번 얻어도 한 번만 기록되고, 중복 검사도 필요 없기 때문
+        private readonly HashSet<int> _unlockedItemKeys = new();
+
         private Inventory _inventory;
 
         #endregion
@@ -144,6 +148,14 @@ namespace MySecondWorld.Network
             // IsInitialized = true가 되고 슬롯(Content)이 실제로 만들어진다.
             base.OnStartServer();
             _inventory.Initialize(this, resetContent: true);
+            _inventory.OnItemAdded += HandleServerItemAdded;
+        }
+
+        public override void OnStopServer()
+        {
+            base.OnStopServer();
+            if (_inventory != null) 
+                _inventory.OnItemAdded -= HandleServerItemAdded;
         }
 
         public override void OnStartClient()
@@ -206,6 +218,31 @@ namespace MySecondWorld.Network
         // 복원용 — 저장돼 있던 장착 칸 번호를 서버 기억으로 되살린다
         [Server]
         public void ServerRestoreEquippedPartSlots(int[] slots) => _equippedPartSlots = ValidateEquippedPartSlots(slots);
+
+
+        // (도감) 획득 기록. -1(빈 칸)은 무시
+        [Server]
+        public void ServerMarkUnlocked(int dbKey)
+        {
+            if (dbKey != -1) _unlockedItemKeys.Add(dbKey);
+        }
+
+        // (도감) 세이브용: 집합을 배열로 꺼냄
+        [Server]
+        public int[] ServerGetUnlockedKeys()
+        {
+            var keys = new int[_unlockedItemKeys.Count];
+            _unlockedItemKeys.CopyTo(keys);
+            return keys;
+        }
+
+        // (도감) 복원용 : 세이브의 목록을 집합에 합침. 덮어쓰지 않고 합쳐서, 이미 쌓인 기록이 날아가지 않게 함
+        [Server]
+        public void ServerRestoreUnlockedKeys(int[] keys)
+        {
+            if (keys == null) return; // 옛 세이브
+            foreach (var key in keys) ServerMarkUnlocked(key);
+        }
 
         // 입은 파츠의 칸이 비었으면(버리기·판매) 서버가 그 파츠를 벗긴다. (무기의 ServerValidateMainHand에 해당)
         // 반드시 인벤토리를 정리하기 "전에" 부른다. 정리하면 다음 복사본이 그 칸으로 당겨져 와 빈 칸이 가려지기 때문이다.
@@ -430,6 +467,13 @@ namespace MySecondWorld.Network
         {
             if (value == -1) return -1; // "없음"은 유효한 상태 — 그대로 유지
             return value >= 0 && value < count ? value : (count > 0 ? 0 : -1);
+        }
+
+        // (도감) 획득 순간 기록 핸들러
+        private void HandleServerItemAdded(RootItemStack stack)
+        {
+            if (stack?.Source == null) return;
+            ServerMarkUnlocked(stack.Source.GetDbKey());
         }
 
         #endregion

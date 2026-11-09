@@ -217,6 +217,7 @@ namespace MySecondWorld.Network
             {
                 RestoreInventory(conn, session);
                 RestoreEquippedPartSlots(conn, session); // 인벤토리가 채워진 뒤여야 칸 번호 번역이 맞는다
+                RestoreUnlockedKeys(conn, session);      // 도감을 복원한다.
             }
 
             session.currentScene = session.pendingSpawnScene;
@@ -337,6 +338,7 @@ namespace MySecondWorld.Network
                         mainHandDbKey = BuildMainHandSave(conn) ?? prev?.mainHandDbKey ?? -1,
                         mainHandInventorySlotIndex = BuildMainHandSlotSave(conn) ?? prev?.mainHandInventorySlotIndex ?? -1,
                         equippedPartSlots = BuildEquippedPartSlotsSave(conn) ?? prev?.equippedPartSlots,
+                        unlockedItemDbKeys = BuildUnlockedSave(conn) ?? prev?.unlockedItemDbKeys,
                     });
                 }
             }
@@ -469,6 +471,10 @@ namespace MySecondWorld.Network
         private int[] BuildEquippedPartSlotsSave(NetworkConnectionToClient conn)
             => conn.GetPlayerComponent<NetworkCharacterAppearance>()?.ServerGetEquippedPartSlots();
 
+        // (도감) 서버가 기억하는 해금 목록을 읽음. 컴포넌트가 없으면 null
+        private int[] BuildUnlockedSave(NetworkConnectionToClient conn)
+            => conn.GetPlayerComponent<NetworkCharacterAppearance>()?.ServerGetUnlockedKeys();
+
         // 세이브를 읽어 인벤토리를 채움
         private void RestoreInventory(NetworkConnectionToClient conn, PlayerSession session)
         {
@@ -519,6 +525,15 @@ namespace MySecondWorld.Network
 
             appearance.ServerRestoreEquippedPartSlots(restored); // 서버가 기억해 둔다 (다음 저장 때 쓴다)
             appearance.ServerSendEquippedPartSlots();            // 이 클라이언트에게도 알려 준다 (인벤토리 표시용)
+        }
+
+        // (도감) 세이브의 해금 목록을 서버 기억에 합친다. 옛 세이브는 RestoreInventory의 DoAdd가 채워 준다
+        private void RestoreUnlockedKeys(NetworkConnectionToClient conn, PlayerSession session)
+        {
+            var loaded = _saveManager.Load(session.playerId);
+            if (loaded == null) return;
+            conn.GetPlayerComponent<NetworkCharacterAppearance>()?.
+                ServerRestoreUnlockedKeys(loaded.Value.unlockedItemDbKeys);// null(옛 세이브)이면 함수가 알아서 건너뜀
         }
 
         // 저장할 때의 칸 번호를 복원 후의 칸 번호로 바꾼다.(-1은 그대로 -1)
