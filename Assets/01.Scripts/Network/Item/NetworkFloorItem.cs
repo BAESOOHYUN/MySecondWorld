@@ -59,8 +59,9 @@ namespace MySecondWorld.Network
             if (NetworkTime.time - _spawnServerTime < _pickupDelay) return; // 방금 스폰됨 → 아직 못 주움
 
             // 호출자의 NetworkIdentity에서 Inventory 컴포넌트 찾기
-            if (!sender.identity.TryGetComponent(out Cleverous.VaultInventory.Inventory inventory)) return;
-            
+            var inventory = sender.GetPlayerComponent<Cleverous.VaultInventory.Inventory>();
+            if (inventory == null) return;
+
             // leftover = 요청한 개수 중 인벤토리에 못 들어간 수량
             int leftover = inventory.DoAdd(new RootItemStack(_item, _stackSize));
             

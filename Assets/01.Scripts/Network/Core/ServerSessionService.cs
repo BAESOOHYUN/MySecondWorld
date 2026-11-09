@@ -14,6 +14,8 @@ using MySecondWorld.Network.Companion;
 
 namespace MySecondWorld.Network
 {
+    using Inventory = Cleverous.VaultInventory.Inventory;
+
     // 플레이어 세션 소유자. 접속/퇴장/스폰 흐름 담당.
     public class ServerSessionService
     {
@@ -238,12 +240,11 @@ namespace MySecondWorld.Network
             if (_roomRegistry.IsDungeonScene(session.currentScene))
             {
                 var roomId = _roomRegistry.AssignRoom(session.currentScene, conn.connectionId, out bool isNewRoom);
-                conn.identity.GetComponent<NetworkMatch>().matchId = roomId;
+                conn.GetPlayerComponent<NetworkMatch>().matchId = roomId;
                 session.roomId = roomId;
 
                 // 시연용 오버레이에 방을 알려준다(컴포넌트가 없으면 조용히 건너뜀)
-                if (conn.identity.TryGetComponent(out RoomIdDisplay roomDisplay))
-                    roomDisplay.SetRoom(roomId);
+                conn.GetPlayerComponent<RoomIdDisplay>()?.SetRoom(roomId);
 
                 // matchId를 세팅한 '뒤에' 스폰을 알린다.
                 // 순서가 반대면 몬스터가 스폰되는 시점에 이 플레이어가 아직 옛 match라
@@ -254,10 +255,9 @@ namespace MySecondWorld.Network
             else
             {
                 // session.roomId는 Guid.Empty 그대로 — 던전 방이 아니니까
-                conn.identity.GetComponent<NetworkMatch>().matchId = SceneMatchId.GetMatchIdFromScene(session.currentScene);
-
-                if (conn.identity.TryGetComponent(out RoomIdDisplay roomDisplay))
-                    roomDisplay.SetRoom(Guid.Empty);
+                conn.GetPlayerComponent<NetworkMatch>().matchId 
+                    = SceneMatchId.GetMatchIdFromScene(session.currentScene);
+                conn.GetPlayerComponent<RoomIdDisplay>()?.SetRoom(Guid.Empty);
             }
 
             // 이미 영입된 companion 자동 재소환
@@ -306,6 +306,7 @@ namespace MySecondWorld.Network
 
 
         #region 헬퍼
+
         private void SavePlayer(NetworkConnectionToClient conn, PlayerSession session)
         {
             if (session.isSpawned && !string.IsNullOrEmpty(session.playerId))
@@ -380,7 +381,7 @@ namespace MySecondWorld.Network
 
             session.companionIdentity = companion.GetComponent<NetworkIdentity>();
             if (companion.TryGetComponent(out NetworkMatch companionMatch))
-                companionMatch.matchId = conn.identity.GetComponent<NetworkMatch>().matchId;
+                companionMatch.matchId = conn.GetPlayerComponent<NetworkMatch>().matchId;
 
             // 실전투 사망/부활 등 생사가 바뀔 때마다 세션에 자동 기록 — 재접속 시 그대로 재현하기 위함
             if (companion.TryGetComponent(out ICompanionServerState serverState))
@@ -418,10 +419,7 @@ namespace MySecondWorld.Network
         // 인벤토리를 읽어 InventorySlotSave[] 를 돌려줌
         private InventorySlotSave[] BuildInventorySave(NetworkConnectionToClient conn)
         {
-            var inventory = conn.identity != null
-                            ? conn.identity.GetComponent<Cleverous.VaultInventory.Inventory>()
-                            : null;
-
+            var inventory = conn.GetPlayerComponent<Inventory>();
             if (inventory == null) return null;     // ← 여기로 이동
             var state = inventory.ToState();
             var slots = new InventorySlotSave[state.ItemDbKeys.Count];
@@ -449,7 +447,9 @@ namespace MySecondWorld.Network
                 Debug.LogWarning($"[Save] 외형 저장 실패: conn={conn.connectionId} identity가 null");
                 return false;
             }
-            if (!conn.identity.TryGetComponent(out NetworkCharacterAppearance appearance))
+
+            var appearance = conn.GetPlayerComponent<NetworkCharacterAppearance>();
+            if (appearance == null)
             {
                 Debug.LogWarning($"[Save] 외형 저장 실패: conn={conn.connectionId} NetworkCharacterAppearance 컴포넌트 없음");
                 return false;
@@ -459,34 +459,22 @@ namespace MySecondWorld.Network
 
         // 장착 중인 무기 dbKey를 읽음
         private int? BuildMainHandSave(NetworkConnectionToClient conn)
-        {
-            var equip = conn.identity != null
-                ? conn.identity.GetComponent<NetworkWeaponEquip>() : null;
-            return equip == null ? null : equip.ServerGetMainHandDbKey();
-        }
+            => conn.GetPlayerComponent<NetworkWeaponEquip>()?.ServerGetMainHandDbKey();
 
         // 장착한 인벤토리 칸 번호를 읽음
         private int? BuildMainHandSlotSave(NetworkConnectionToClient conn)
-        {
-            var equip = conn.identity != null
-                ? conn.identity.GetComponent<NetworkWeaponEquip>() : null;
-            return equip == null ? null : equip.ServerGetMainHandInventorySlotIndex();
-        }
+            => conn.GetPlayerComponent<NetworkWeaponEquip>()?.ServerGetMainHandInventorySlotIndex();
 
         // 서버가 기억하는 파츠별 장착 칸 번호를 읽음. 컴포넌트가 없거나 받은 적이 없으면 null
         private int[] BuildEquippedPartSlotsSave(NetworkConnectionToClient conn)
-        {
-            var appearance = conn.identity != null
-                    ? conn.identity.GetComponent<NetworkCharacterAppearance>() : null;
-            return appearance == null ? null : appearance.ServerGetEquippedPartSlots();
-        }
+            => conn.GetPlayerComponent<NetworkCharacterAppearance>()?.ServerGetEquippedPartSlots();
 
         // 세이브를 읽어 인벤토리를 채움
         private void RestoreInventory(NetworkConnectionToClient conn, PlayerSession session)
         {
             // ① 인벤토리를 얻는다 (저장 때와 같은 방식)
-            var inventory = conn.identity != null
-                            ? conn.identity.GetComponent<Cleverous.VaultInventory.Inventory>() : null;
+
+            var inventory = conn.GetPlayerComponent<Inventory>();
             if (inventory == null) return;
 
             // ② 세이브를 읽는다. 없거나, 인벤토리 필드가 비어 있으면(옛 세이브) 아무것도 안 한다
@@ -501,8 +489,7 @@ namespace MySecondWorld.Network
                 inventory.DoAdd(new RootItemStack(item, slot.count));
             }
 
-            var equip = conn.identity != null
-                ? conn.identity.GetComponent<NetworkWeaponEquip>() : null;
+            var equip = conn.GetPlayerComponent<NetworkWeaponEquip>();
             if (equip != null)
             {
                 // 저장했던 칸에 그 무기가 그대로 있으면 그 칸에, 아니면(옛 세이브 등) 같은 무기가 든 첫 칸에 장착한다.
@@ -515,8 +502,7 @@ namespace MySecondWorld.Network
         // 세이브를 읽어 파츠별 장착 칸 번호를 서버에 되살리고, 그 클라이언트에게도 알려 준다
         private void RestoreEquippedPartSlots(NetworkConnectionToClient conn, PlayerSession session)
         {
-            var appearance = conn.identity != null
-                            ? conn.identity.GetComponent<NetworkCharacterAppearance>() : null;
+            var appearance = conn.GetPlayerComponent<NetworkCharacterAppearance>();
             if (appearance == null) return;
 
             // 옛 세이브(칸 번호 필드가 없음)이거나 인벤토리를 저장한 적이 없으면 아무것도 안 한다
@@ -574,7 +560,7 @@ namespace MySecondWorld.Network
             }
             if (conn.identity == null) return;
 
-            var inventory = conn.identity.GetComponent<Cleverous.VaultInventory.Inventory>();
+            var inventory = conn.GetPlayerComponent<Inventory>();
             if (inventory == null)
             {
                 Debug.LogWarning($"[Session] conn={conn.connectionId}의 플레이어에 Inventory가 없음");
@@ -591,7 +577,7 @@ namespace MySecondWorld.Network
         {
             if (conn.identity == null) return;
 
-            var inventory = conn.identity.GetComponent<Cleverous.VaultInventory.Inventory>();
+            var inventory = conn.GetPlayerComponent<Inventory>();
             if (inventory == null)
             {
                 Debug.LogWarning($"[Session] conn={conn.connectionId}의 플레이어에 Inventory가 없음");
@@ -611,7 +597,7 @@ namespace MySecondWorld.Network
         public void GrantArmorTestKit(NetworkConnectionToClient conn)
         {
             if (conn.identity == null) return;
-            var inventory = conn.identity.GetComponent<Cleverous.VaultInventory.Inventory>();
+            var inventory = conn.GetPlayerComponent<Inventory>();
             if (inventory == null)
             {
                 Debug.LogWarning($"[Session] conn={conn.connectionId} 플레이어에 Inventory가 없음");

@@ -138,7 +138,7 @@ namespace MySecondWorld.Network
         // [S-Loop-1] 지면 존재 여부 판정 — 존 안이어도 지형이 아직 안 떠 있으면 허공일 수 있음
         public bool CheckGrounded(KeyValuePair<int, PlayerSession> session, NetworkConnectionToClient conn)
         {
-            var controller = conn.identity.GetComponent<CharacterController>();
+            var controller = conn.GetPlayerComponent<CharacterController>();
             if (controller == null)
             {
                 Debug.LogWarning($"[S-Loop] conn={conn.connectionId}에 CharacterController 없음 — 낙하 체크 스킵", conn.identity);
@@ -168,7 +168,7 @@ namespace MySecondWorld.Network
             // ─────────────────────────────────────────────────────────────
             // [1단계: 최우선] 실제로 발을 딛고 서 있는 바닥 콜라이더의 씬 확인
             // ─────────────────────────────────────────────────────────────
-            var controller = conn.identity.GetComponent<CharacterController>();
+            var controller = conn.GetPlayerComponent<CharacterController>();
             Vector3 origin = conn.identity.transform.position + (controller != null ? controller.center : Vector3.up);
             float radius = controller != null ? Mathf.Max(0.2f, controller.radius - controller.skinWidth) : 0.3f;
             float distance = (controller != null ? (controller.height / 2f) : 1f) + 2.5f; // 계단 경사로를 감안한 넉넉한 거리
@@ -308,7 +308,7 @@ namespace MySecondWorld.Network
         private void UpdateDungeonMatch(
             NetworkConnectionToClient conn, PlayerSession session, string prevScene, string sceneName)
         {
-            var networkMatch = conn.identity.GetComponent<NetworkMatch>();
+            var networkMatch = conn.GetPlayerComponent<NetworkMatch>();
             if (networkMatch == null) return;
 
             if (_roomRegistry.IsDungeonScene(sceneName))
@@ -323,8 +323,7 @@ namespace MySecondWorld.Network
                 session.roomId = roomId;       // 서버 내부 추적용
 
                 // 시연용 오버레이에 방을 알려준다(컴포넌트가 없으면 조용히 건너뜀)
-                if (conn.identity.TryGetComponent(out RoomIdDisplay roomDisplay))
-                    roomDisplay.SetRoom(roomId);
+                conn.GetPlayerComponent<RoomIdDisplay>()?.SetRoom(roomId);
 
                 // matchId를 세팅한 '뒤에' 스폰을 알린다 — 순서가 반대면
                 // 몬스터 스폰 시점에 플레이어가 아직 옛 match라 옵저버에서 빠진다.
@@ -341,9 +340,7 @@ namespace MySecondWorld.Network
                 }
                 // 필드→필드, 던전→필드 모두 항상 갱신
                 networkMatch.matchId = SceneMatchId.GetMatchIdFromScene(sceneName);
-
-                if (conn.identity.TryGetComponent(out RoomIdDisplay roomDisplay))
-                    roomDisplay.SetRoom(Guid.Empty);
+                conn.GetPlayerComponent<RoomIdDisplay>()?.SetRoom(Guid.Empty);
 
                 // 필드 복귀 시 죽어있던 companion 부활
                 if (session.companionIdentity != null
@@ -509,8 +506,8 @@ namespace MySecondWorld.Network
                 // 1. 플레이어 재스냅
                 // ServerForceMoveTo는 낙하 구조·사망 부활·탈출·NPC 순간이동이 모두 쓰는 "강제 이동" 경로다.
                 // NetworkTransform 보간 버퍼 리셋 + CharacterController 껐다 켜기라, 포탈 전환 직후 재스냅에도 그대로 쓴다
-                if (conn.identity.TryGetComponent(out MySecondWorld.Network.Player.NetworkPlayerController playerController))
-                    playerController.ServerForceMoveTo(rescuePos);
+                conn.GetPlayerComponent<MySecondWorld.Network.Player.NetworkPlayerController>()?.ServerForceMoveTo(rescuePos);
+
                 // 2. 컴패니언도 플레이어 바로 옆으로 동반 텔레포트
                 if (session.companionIdentity != null && session.companionPresent)
                 {
@@ -659,8 +656,7 @@ namespace MySecondWorld.Network
 
             // transform.position 직접 대입은 다음 클라 스냅샷에 덮어써진다 (권한이 클라에 있음).
             // 반드시 소유 클라까지 내려가는 경로로 보낼 것.
-            if (conn.identity.TryGetComponent(out MySecondWorld.Network.Player.NetworkPlayerController npc))
-                npc.ServerForceMoveTo(targetPos);
+            conn.GetPlayerComponent<MySecondWorld.Network.Player.NetworkPlayerController>()?.ServerForceMoveTo(targetPos);
 
             // 컴패니언도 옆으로 동반 텔레포트
             if (session.Value.companionIdentity != null && session.Value.companionPresent)
