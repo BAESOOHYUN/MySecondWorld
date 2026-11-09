@@ -1,4 +1,5 @@
 using MySecondWorld.Inventory.Items;
+using System.Collections.Generic;
 
 namespace MySecondWorld.Customization
 {
@@ -15,6 +16,7 @@ namespace MySecondWorld.Customization
     public class LocalPlayerInventoryProvider
     {
         private Inventory _inventory;
+        private readonly HashSet<int> _unlockedItemKeys = new();
 
         // InventoryUI/ShopUI가 슬롯 목록을 직접 순회하기 위해 필요
         public Inventory Inventory => _inventory;
@@ -41,10 +43,26 @@ namespace MySecondWorld.Customization
             OnProvided?.Invoke();
         }
 
+        // 지금 인벤에 가지고 있음?
         public bool IsOwned(EquipmentItem requiredItem)
         {
             if (requiredItem == null) return true; // 요구 아이템 없음 = 무료 착용
             return _inventory != null && _inventory.Contains(requiredItem, 1);
-        }        
+        }
+
+        // 서버가 보낸 해금 목록으로 통째로 교체
+        public void SetUnlockedKeys(int[] keys)
+        {
+            _unlockedItemKeys.Clear();
+            if (keys == null) return;
+            foreach (var key in keys) _unlockedItemKeys.Add(key);
+        }
+
+        // "한 번이라도 가져 본 적 있나". 지금 갖고 있으면 서버 목록이 아직 안 왔어도 true
+        public bool WasEverOwned(EquipmentItem requiredItem)
+        {
+            if (requiredItem == null) return true;   // 요구 아이템 없음 = 무료
+            return IsOwned(requiredItem) || _unlockedItemKeys.Contains(requiredItem.GetDbKey());
+        }
     }
 }

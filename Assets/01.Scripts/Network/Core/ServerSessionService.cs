@@ -220,6 +220,10 @@ namespace MySecondWorld.Network
                 RestoreUnlockedKeys(conn, session);      // 도감을 복원한다.
             }
 
+            // 신규 플레이어는 시작 골드 지급 후, 기존 플레이어는 세이브 복원 후에 해금 목록 전체를 클라에 처음 보낸다.
+            // (이 호출 이후부터는 새로 해금될 때마다 자동으로 보낸다. 복원 중 DoAdd 때는 보내지 않는다)
+            conn.GetPlayerComponent<NetworkCharacterAppearance>()?.ServerSendUnlockedKeys();
+
             session.currentScene = session.pendingSpawnScene;
             var targetScene = _manager.GetServerScene(session.currentScene);
             if (targetScene.IsValid() && targetScene.isLoaded && conn.identity != null)

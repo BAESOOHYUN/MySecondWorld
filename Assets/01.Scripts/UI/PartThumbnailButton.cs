@@ -12,7 +12,9 @@ namespace MySecondWorld.UI
         [SerializeField] private GameObject _selectedFrame; // 선택 강조 테두리 (껐다 켬)
         [SerializeField] private Button _button;
         [SerializeField] private Sprite _noneSprite;
-        [SerializeField] private GameObject _lockIcon; // 미소유 표시 오버레이
+        [SerializeField] private Image _lockIcon;          // 자물쇠 아이콘(Image)
+        [SerializeField] private Sprite _lockedSprite;     // 못 얻음: 닫힌 자물쇠
+        [SerializeField] private Sprite _unlockedSprite;   // 얻은 적 있음: 열린 자물쇠
         [SerializeField] private GenderBadge _genderBadge;
 
         [SerializeField] private TMPro.TextMeshProUGUI _label; // 카드 하단 라벨 (선택적)
@@ -67,24 +69,39 @@ namespace MySecondWorld.UI
         {
             if (_selectedFrame != null)
                 _selectedFrame.SetActive(selected);
+
+        }
+
+        public void SetStatus(PartStatus status)
+        {
+            bool owned = status == PartStatus.Owned;
+
+            // 자물쇠: 지금 보유면 숨기고, 아니면 보이되 못 얻음은 닫힌 모양, 얻은 적 있음은 열린 모양
+            if (_lockIcon != null)
+            {
+                _lockIcon.gameObject.SetActive(!owned);
+                _lockIcon.sprite = status == PartStatus.Locked ? _lockedSprite : _unlockedSprite;
+            }
+
+            ApplyLook(dim: !owned);   // 보유가 아니면 두 상태(못 얻음, 얻은 적 있음) 모두 같은 어두운 색
         }
 
         public void SetLocked(bool locked)
-        {
-            if (_lockIcon != null)
-                _lockIcon.SetActive(locked);
+            => SetStatus(locked ? PartStatus.Locked : PartStatus.Owned);   // 해제 버튼 등 기존 호출부
 
+        private void ApplyLook(bool dim)
+        {
             // 썸네일: 미소유는 어둡고 차분하게 딤드(0.55 alpha), 소유는 100% 선명하고 밝게
             if (_thumbnail != null)
-                _thumbnail.color = locked ? new Color(0.28f, 0.30f, 0.35f, 0.55f) : Color.white;
+                _thumbnail.color = dim ? new Color(0.28f, 0.30f, 0.35f, 0.55f) : Color.white;
 
             // 카드 배경: 미소유는 짙은 암회색, 소유는 정갈한 네이비 슬레이트
             if (_cardBg != null)
-                _cardBg.color = locked ? new Color(0.06f, 0.08f, 0.11f, 0.98f) : new Color(0.11f, 0.14f, 0.20f, 0.98f);
+                _cardBg.color = dim ? new Color(0.06f, 0.08f, 0.11f, 0.98f) : new Color(0.11f, 0.14f, 0.20f, 0.98f);
 
             // 하단 텍스트 라벨: 미소유는 흐린 회청색, 소유는 또렷한 백청색
             if (_label != null)
-                _label.color = locked ? new Color(0.45f, 0.52f, 0.62f, 0.85f) : new Color(0.88f, 0.93f, 1f, 0.98f);
+                _label.color = dim ? new Color(0.45f, 0.52f, 0.62f, 0.85f) : new Color(0.88f, 0.93f, 1f, 0.98f);
         }
 
         // 성별 배지: Male/Female이면 해당 스프라이트로 바꿔 보이고, null(공용·없음)이면 숨긴다

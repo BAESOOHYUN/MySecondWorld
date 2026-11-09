@@ -43,6 +43,8 @@ namespace MySecondWorld.Network
         // 서버가 기억하는 "한 번이라도 가져 본 아이템" dbKey 집합. 세이브에 쓰려고 서버 메모리에만 둔다
         // HashSet을 쓴 이유는 같은 아이템을 몇 번 얻어도 한 번만 기록되고, 중복 검사도 필요 없기 때문
         private readonly HashSet<int> _unlockedItemKeys = new();
+        // 로그인 때 첫 전체 전송을 한 뒤에만 true. 복원 중 DoAdd마다 전송하는 것을 막는다
+        private bool _unlockSyncEnabled;
 
         private Inventory _inventory;
 
@@ -223,9 +225,11 @@ namespace MySecondWorld.Network
 
         // (도감) 획득 기록. -1(빈 칸)은 무시
         [Server]
-        public void ServerMarkUnlocked(int dbKey)
+        public bool ServerMarkUnlocked(int dbKey)
         {
-            if (dbKey != -1) _unlockedItemKeys.Add(dbKey);
+            if (dbKey == -1) return false;
+            // HashSet.Add는 새로 들어갔을 때만 true
+            return _unlockedItemKeys.Add(dbKey);
         }
 
         // (도감) 세이브용: 집합을 배열로 꺼냄
@@ -289,7 +293,7 @@ namespace MySecondWorld.Network
             ServerSendEquippedPartSlots();                 // 고친 번호를 클라에게 보낸다
         }
 
-        // 서버 → 이 캐릭터의 클라이언트: 서버가 기억하는 장착 칸 번호를 알려 준다. (접속 때 5단계가 부른다)
+        // 서버 → 이 캐릭터의 클라: 서버가 기억하는 장착 칸 번호를 알려 준다. (접속 때 5단계가 부른다)
         // 기억한 값이 없으면 보낼 것이 없다.
         [Server]
         public void ServerSendEquippedPartSlots()
@@ -298,12 +302,30 @@ namespace MySecondWorld.Network
             TargetSetEquippedPartSlots(connectionToClient, _equippedPartSlots);
         }
 
+        // 서버 → 이 캐릭터의 클라: 해금 목록 전체를 알려 준다. 로그인 때 한 번, 이후 새 해금이 생길 때마다
+        [Server]
+        public void ServerSendUnlockedKeys()
+        {
+            _unlockSyncEnabled = true;
+            TargetSetUnlockedKeys(connectionToClient, ServerGetUnlockedKeys());
+        }
+
+        // 서버 → 이 캐릭터의 클라이언트에서 실행된다.
         // 클라이언트에서 실행된다. 받은 칸 번호를 서비스에 후보로 넘긴다.
         // 서비스는 인벤토리를 열 때 그 칸에 정말 그 옷이 있는지 확인한 뒤 쓴다.
-        [TargetRpc] //서버가 특정 한 명의 클라이언트에게만 보내는 호출
+        [TargetRpc]
         private void TargetSetEquippedPartSlots(NetworkConnectionToClient target, int[] slots)
         {
             _appearanceService.ApplyServerEquippedPartSlots(slots, _inventory);
+        }
+
+        // 서버 → 이 캐릭터의 클라이언트에서 실행된다.
+        // keys = 한 번이라도 가져 본 아이템의 dbKey 목록 전체. 클라 보관함의 기존 목록을 통째로 교체한다.
+        // 커스터마이징 도감이 "얻은 적 있음(흐림)" 상태를 그릴 때 쓴다.
+        [TargetRpc]
+        private void TargetSetUnlockedKeys(NetworkConnectionToClient target, int[] keys)
+        {
+            _localInventoryProvider.SetUnlockedKeys(keys);   // 클라 쪽 보관함
         }
 
         #endregion
@@ -474,7 +496,9 @@ namespace MySecondWorld.Network
         private void HandleServerItemAdded(RootItemStack stack)
         {
             if (stack?.Source == null) return;
-            ServerMarkUnlocked(stack.Source.GetDbKey());
+            // 새로 해금됐을 때만 && 로그인 이후에만 보낸다
+            if (ServerMarkUnlocked(stack.Source.GetDbKey()) && _unlockSyncEnabled)
+                ServerSendUnlockedKeys();
         }
 
         #endregion

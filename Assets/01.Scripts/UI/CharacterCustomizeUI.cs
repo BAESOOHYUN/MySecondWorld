@@ -385,16 +385,18 @@ namespace MySecondWorld.UI
             ClearThumbnailContent();
             var names = _keyTable.GetThumbnailNames(part, _currentGender);
             int selectedIndex = _currentIndices[part];
+            
             // BuildData 때문에 버튼마다 부르지 않고 for 밖에서 한 번만 계산
             // ㄴ프리뷰 캐릭터에서 외형을 읽어 25개 파츠 번호를 채우는 함수 = 무거움
             bool partVisible = IsPartVisible(part);   
+            
             // 도감 수집률 계산
             int totalCount = names.Count;
             int ownedCount = 0;
             for (int i = 0; i < names.Count; i++)
             {
-                if (IsPartOwned(part, _currentGender, i))
-                    ownedCount++;
+                // 수집률 계산 : 얻은 적 있는 것까지 센다
+                if (GetPartStatus(part, _currentGender, i) != PartStatus.Locked) ownedCount++;
             }
             UpdateCollectionProgress(ownedCount, totalCount);
 
@@ -410,6 +412,7 @@ namespace MySecondWorld.UI
                 _spawnedButtons.Add(noneBtn);
             }
 
+            // 썸네일 설정
             for (int i = 0; i < names.Count; i++)
             {
                 Sprite sprite =
@@ -420,8 +423,7 @@ namespace MySecondWorld.UI
                 int capturedIndex = i;
                 btn.Setup(part, capturedIndex, sprite, OnThumbnailClicked);
                 btn.SetSelected(partVisible && capturedIndex == selectedIndex);
-                // 잠금 체크
-                btn.SetLocked(!IsPartOwned(part, _currentGender, capturedIndex));
+                btn.SetStatus(GetPartStatus(part, _currentGender, capturedIndex));
 
                 // 도감 라벨 및 등급 색상
                 var reqItem = _keyTable.GetRequiredItem(part, _currentGender, capturedIndex);
@@ -504,7 +506,8 @@ namespace MySecondWorld.UI
             }
 
             var reqItem = _keyTable.GetRequiredItem(part, gender, index);
-            bool isOwned = IsPartOwned(part, gender, index);
+            var status = GetPartStatus(part, gender, index);
+            bool isOwned = status == PartStatus.Owned;   // 아래 기본 외형 분기에서 계속 씀
 
             if (reqItem != null)
             {
@@ -516,9 +519,12 @@ namespace MySecondWorld.UI
                 }
                 if (_detailCardStatus != null)
                 {
-                    _detailCardStatus.text = isOwned
-                        ? "<color=#55E88F>● 도감 수집 완료 (소유 중)</color>"
-                        : "<color=#FF8A8A>○ 미소유 (상점/던전 획득 필요)</color>";
+                    _detailCardStatus.text = status switch
+                    {
+                        PartStatus.Owned => "<color=#55E88F>● 도감 수집 완료 (소유 중)</color>",
+                        PartStatus.Unlocked => "<color=#8FC9FF>◐ 해금됨 (지금은 보유하지 않음)</color>",
+                        _ => "<color=#FF8A8A>○ 미획득 (상점/던전 획득 필요)</color>",
+                    };
                 }
                 if (_detailCardDesc != null) _detailCardDesc.text = reqItem.Description;
             }
@@ -578,6 +584,7 @@ namespace MySecondWorld.UI
             Gender other = _currentGender == Gender.Male ? Gender.Female : Gender.Male;
             var names = _keyTable.GetThumbnailNames(part, other);
 
+            // 반대 성별 썸네일
             // 버튼 N개를 만들고 각자에게 "눌렸을 때 할 일"을 달아 둠
             for (int i = 0; i < names.Count; i++)
             {
@@ -587,8 +594,7 @@ namespace MySecondWorld.UI
                 // 람다가 반복 변수 i를 쓰지 않고 (p, idx) 인자만 써서, 반복문 변수 캡처 문제가 없다
                 //                          ┌ "버튼이 눌리면 이걸 실행해라"라는 예약(여기서 실행되지 않음)
                 btn.Setup(part, i, sprite, (p, idx) => UpdateDetailCard(p, idx, other));   // 입지 못하고 카드만 볼수 있음
-                btn.SetSelected(false);
-                btn.SetLocked(!IsPartOwned(part, other, i));
+                btn.SetStatus(GetPartStatus(part, other, i));
                 btn.SetGenderBadge(other);
 
                 var reqItem = _keyTable.GetRequiredItem(part, other, i);
@@ -809,6 +815,11 @@ namespace MySecondWorld.UI
              => PartOwnership.ValidateOwnership(_keyTable, data, _inventoryProvider.IsOwned, fallback);
         private bool IsPartOwned(PartType part, Gender gender, int index)
             => PartOwnership.IsPartOwned(_keyTable, part, gender, index, _inventoryProvider.IsOwned);
+
+        private PartStatus GetPartStatus(PartType part, Gender gender, int index)
+            => PartOwnership.GetPartStatus(_keyTable, part, gender, index,
+                                   _inventoryProvider.IsOwned, _inventoryProvider.WasEverOwned);
+
         #endregion
 
         #region 저장·불러오기

@@ -12,6 +12,8 @@ namespace MySecondWorld.Customization
     //  IsPartOwned        | 이 파츠 후보의 아이템을 갖고 있나 (좌우 짝 포함)  | 클라 CharacterCustomizeUI (자물쇠 표시)
     //  ValidateOwnership  | 이 외형 전체에서 자격 없는 파츠는 어디인가        | 서버 CmdSetAppearance, 클라 로드 시 자가 정화
     //  IsItemForPart      | 이 가방 칸의 아이템이 이 파츠의 근거인가 (짝 포함) | 서버 ValidateEquippedPartSlots, 클라 ReconcileEquippedSlots
+    
+    public enum PartStatus { Locked, Unlocked, Owned }   // 못 얻음 / 얻은 적 있음(지금은 없음) / 지금 보유
 
     public static class PartOwnership
     {
@@ -38,6 +40,16 @@ namespace MySecondWorld.Customization
 
             var requiredItem = table.GetRequiredItem(part, gender, index);
             return requiredItem == null || hasItem(requiredItem);
+        }
+
+        // 도감 표시용 3단계. 같은 IsPartOwned에 판정자만 바꿔 두 번 묻는다. (미러 쌍 OR도 그대로 적용됨)
+        public static PartStatus GetPartStatus(AvatarPartKeyTableSO table, PartType part, Gender gender, int index,
+                                       System.Func<EquipmentItem, bool> hasItem,
+                                       System.Func<EquipmentItem, bool> wasEverOwned)
+        {
+            if (IsPartOwned(table, part, gender, index, hasItem)) return PartStatus.Owned;
+            if (IsPartOwned(table, part, gender, index, wasEverOwned)) return PartStatus.Unlocked;
+            return PartStatus.Locked;
         }
 
         #endregion
