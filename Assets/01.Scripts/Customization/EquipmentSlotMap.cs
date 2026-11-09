@@ -4,20 +4,20 @@ namespace MySecondWorld.Customization
 {
     public enum EquipmentSlotType
     {
-        // 1. 방어구 / 의상 파츠 (8종)
+        // 1. 방어구 / 의상 파츠 (7종)
         HeadCoverings,    // 투구 / 모자
         Torso,            // 상체 / 상의
         ArmUpper,         // 상완 보호구
         ArmLower,         // 하완 보호구
         Hands,            // 손 / 장갑
         Hips,             // 힙 / 하의
-        Knees,            // 무릎 각반 (KneeAttach)
         Legs,             // 다리 / 신발 (LegLeft/Right)
 
-        // 2. 악세사리 (5종)
+        // 2. 악세사리 (5종 + 위의 Knees = 6종)
         HelmetAttachment, // 투구 장식
         ShoulderAttach,   // 어깨 장식
         ElbowAttach,      // 팔꿈치 보호구
+        Knees,            // 무릎 각반 (KneeAttach)
         BackAttachment,   // 등 장식 (날개/망토)
         HipsAttachment,   // 허리 장식
 
@@ -36,11 +36,11 @@ namespace MySecondWorld.Customization
             { EquipmentSlotType.ArmLower,         new[] { PartType.ArmLowerLeft,   PartType.ArmLowerRight } },
             { EquipmentSlotType.Hands,            new[] { PartType.HandLeft,      PartType.HandRight } },
             { EquipmentSlotType.Hips,             new[] { PartType.Hips } },
-            { EquipmentSlotType.Knees,            new[] { PartType.KneeAttachLeft, PartType.KneeAttachRight } },
             { EquipmentSlotType.Legs,             new[] { PartType.LegLeft,        PartType.LegRight } },
             { EquipmentSlotType.HelmetAttachment, new[] { PartType.HelmetAttachment } },
             { EquipmentSlotType.ShoulderAttach,   new[] { PartType.ShoulderAttachLeft, PartType.ShoulderAttachRight } },
             { EquipmentSlotType.ElbowAttach,      new[] { PartType.ElbowAttachLeft, PartType.ElbowAttachRight } },
+            { EquipmentSlotType.Knees,            new[] { PartType.KneeAttachLeft, PartType.KneeAttachRight } },
             { EquipmentSlotType.BackAttachment,   new[] { PartType.BackAttachment } },
             { EquipmentSlotType.HipsAttachment,   new[] { PartType.HipsAttachment } },
         };

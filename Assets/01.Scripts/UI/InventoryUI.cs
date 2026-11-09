@@ -37,11 +37,11 @@ namespace MySecondWorld.UI
             { EquipmentSlotType.ArmLower,         InventoryCategoryTab.Equipment },
             { EquipmentSlotType.Hands,            InventoryCategoryTab.Equipment },
             { EquipmentSlotType.Hips,             InventoryCategoryTab.Equipment },
-            { EquipmentSlotType.Knees,            InventoryCategoryTab.Equipment },
             { EquipmentSlotType.Legs,             InventoryCategoryTab.Equipment },
             { EquipmentSlotType.HelmetAttachment, InventoryCategoryTab.Accessory },
             { EquipmentSlotType.ShoulderAttach,   InventoryCategoryTab.Accessory },
             { EquipmentSlotType.ElbowAttach,      InventoryCategoryTab.Accessory },
+            { EquipmentSlotType.Knees,            InventoryCategoryTab.Accessory },
             { EquipmentSlotType.BackAttachment,   InventoryCategoryTab.Accessory },
             { EquipmentSlotType.HipsAttachment,   InventoryCategoryTab.Accessory },
             { EquipmentSlotType.Weapon,           InventoryCategoryTab.Weapon },
@@ -621,8 +621,8 @@ namespace MySecondWorld.UI
             if (item is EquipmentItem eq)
             {
                 // 2.커스터마이징 파츠(방어구 / 악세사리): 어느 탭인지는 GetPartTab이 결정
-                // (장비)	  헬멧, 상의, 상완, 하완, 손, 하의, 무릎, 다리, 
-                // (악세사리) 모자/복면/오픈투구, 어깨, 팔꿈치, 등 장식, 허리 장식
+                // (장비)	  헬멧, 상의, 상완, 하완, 손, 하의, 다리  (7종)
+                // (악세사리) 모자/복면/오픈투구, 어깨, 팔꿈치, 무릎, 등 장식, 허리 장식  (6종)
                 if (eq.Category == WeaponCategory.None && eq.Restriction != null)
                     return tab == GetPartTab(eq);
 

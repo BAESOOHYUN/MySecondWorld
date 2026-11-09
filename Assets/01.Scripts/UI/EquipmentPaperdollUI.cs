@@ -11,7 +11,7 @@ namespace MySecondWorld.UI
     using Inventory = Cleverous.VaultInventory.Inventory;
     /// <summary>
     /// 캐릭터 주변에 떠 있는 세부 장비 페이퍼돌 뷰.
-    /// 방어구 8 + 악세사리 5 + 무기 2, 총 15칸을 한 화면에 항상 표시
+    /// 방어구 7 + 악세사리 6 + 무기 2, 총 15칸을 한 화면에 항상 표시
     /// </summary>
     public class EquipmentPaperdollUI : MonoBehaviour
     {
