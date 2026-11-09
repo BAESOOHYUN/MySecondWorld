@@ -13,8 +13,11 @@ using MySecondWorld.Network;
 
 namespace MySecondWorld.UI
 {
+    // 상점 창. 카탈로그 표시 → 구매 확인 팝업 → 서버에 교환(TradeItem) 요청.
+    // 판매는 상점 모드로 열린 인벤토리 UI가 RequestSell을 불러 같은 확인 팝업을 쓴다.
     public class ShopUI : MonoBehaviour, IShopUI
     {
+        [Header("패널")]
         [SerializeField] private Canvas _canvas;
 
         [Header("카탈로그")]
@@ -22,7 +25,7 @@ namespace MySecondWorld.UI
         [SerializeField] private ShopSlotButton _slotButtonPrefab;
 
         [Header("물물교환 대가")]
-        [Tooltip("이번 테스트 슬라이스에서 모든 구매에 공통으로 쓰이는 대가 아이템 1개")]
+        [Tooltip("구매·판매에 공통으로 쓰이는 대가(통화) 아이템. 구매하면 1개를 내고, 판매하면 1개를 받는다")]
         [SerializeField] private RootItem _costItem;
 
         [Header("버튼")]
@@ -34,23 +37,34 @@ namespace MySecondWorld.UI
         [SerializeField] private Toggle _shopTabFemaleToggle;
         [SerializeField] private Toggle _shopTabMaleToggle;
 
+        #region 필드
+        // ── DI ──
         private LocalPlayerInventoryProvider _inventoryProvider;
         private InventoryUI _inventoryUI;
-        private CharacterAppearanceService _appearanceService;   // 필드 영역
+        private CharacterAppearanceService _appearanceService;
         private CharacterGenderFilterService _genderFilterService;
         private IUIManager _uiManager;
         private ConfirmPanelUI _confirmPanel; // 독립 캔버스(높은 소트오더)로 UIManager가 지연 생성
+
+        // ── 카탈로그·슬롯 ──
         private readonly List<ShopSlotButton> _spawnedSlots = new();
+        private IReadOnlyList<EquipmentItem> _lastCatalog; // 상점이 열려있는 동안 토글이 바뀌면 이 원본 카탈로그를 다시 필터링
+
+        // ── 거래 대기 (확인 팝업에서 "확정"을 누를 때까지 기억) ──
         private EquipmentItem _pendingPurchase; // 구매 대기중인 장비 아이템
         private EquipmentItem _pendingSale; // 판매 대기중인 장비 아이템
         private int _pendingSaleSlotIndex = -1;
+
+        // ── 열림 상태·이벤트 ──
+        private int _openedFrame = -1; // Open()과 같은 프레임에 들어온 잔여 클릭(백드롭 등)으로 즉시 닫히는 것 방지
         private readonly Subject<Unit> _onCloseSubject = new();
         private IDisposable _genderFilterSubscription; // 인벤토리 쪽에서 필터가 바뀌어도 상점 토글이 따라 바뀌게
-        private int _openedFrame = -1; // Open()과 같은 프레임에 들어온 잔여 클릭(백드롭 등)으로 즉시 닫히는 것 방지
-        private IReadOnlyList<EquipmentItem> _lastCatalog; // 상점이 열려있는 동안 토글이 바뀌면 이 원본 카탈로그를 다시 필터링
 
         public Observable<Unit> OnClose => _onCloseSubject;
         public bool IsOpen => _canvas != null && _canvas.enabled;
+        #endregion
+
+        #region 생명주기
 
         [Inject]
         public void Construct(
@@ -89,7 +103,7 @@ namespace MySecondWorld.UI
             {
                 UpdateGenderFilterVisuals();
                 if (IsOpen)
-                    Refresh(FilterCatalogByGender(_lastCatalog)); // 열려있는 동안 토글이 바뀌면 즉시 다시 필터링
+                    RefreshCatalog(FilterCatalogByGender(_lastCatalog)); // 열려있는 동안 토글이 바뀌면 즉시 다시 필터링
             });
             UpdateGenderFilterVisuals();
 
@@ -116,13 +130,9 @@ namespace MySecondWorld.UI
             _onCloseSubject.Dispose();
         }
 
-        private void OnInventoryClosedExternally()
-        {
-            if (_canvas != null && _canvas.enabled)
-            {
-                Close();
-            }
-        }
+        #endregion
+
+        #region 열기·닫기
 
         public void Open(IReadOnlyList<EquipmentItem> catalog)
         {
@@ -132,11 +142,11 @@ namespace MySecondWorld.UI
 
             // 성별 필터 적용된 카탈로그로 표시
             var filteredCatalog = FilterCatalogByGender(catalog);
-            Refresh(filteredCatalog);
+            RefreshCatalog(filteredCatalog);
 
             if (_inventoryUI != null)
             {
-                _inventoryUI.Open(); // 이미 열려있어도 항상 강제로 재호출 (Open()이 중복 호출에 안전하도록 아래에서 처리)
+                _inventoryUI.Open(); // 이미 열려 있어도 다시 부른다 (중복 호출 처리는 InventoryUI 쪽)
                 _inventoryUI.SetTab(InventoryCategoryTab.All);
                 _inventoryUI.SetBackdropActive(false);
                 _inventoryUI.SetShopMode(this);
@@ -167,7 +177,19 @@ namespace MySecondWorld.UI
             _onCloseSubject.OnNext(Unit.Default);
         }
 
-        private void Refresh(IReadOnlyList<EquipmentItem> catalog)
+        private void OnInventoryClosedExternally()
+        {
+            if (_canvas != null && _canvas.enabled)
+            {
+                Close();
+            }
+        }
+
+        #endregion
+
+        #region 카탈로그
+
+        private void RefreshCatalog(IReadOnlyList<EquipmentItem> catalog)
         {
             ClearSlots();
 
@@ -184,6 +206,20 @@ namespace MySecondWorld.UI
             }
         }
 
+        private void ClearSlots()
+        {
+            foreach (var slot in _spawnedSlots)
+            {
+                if (slot != null)
+                    Destroy(slot.gameObject);
+            }
+            _spawnedSlots.Clear();
+        }
+
+        #endregion
+
+        #region 구매·판매
+
         // 상점 카탈로그 항목 클릭 → 구매 확인 팝업 표시
         private void RequestPurchase(EquipmentItem item)
         {
@@ -191,11 +227,11 @@ namespace MySecondWorld.UI
             _pendingSale = null;
             _pendingPurchase = item;
 
-            // 아이템 이름은 Title 사용, 가격은 "코인" 같은 간단한 이름으로
+            // 아이템 이름은 Title, 대가 이름은 _costItem.Title (없으면 "코인")
             string costName = _costItem != null ? _costItem.Title : "코인";
             string message = $"<color=#FFE066>{item.Title}</color> 구매\n<size=13><color=#AAAAAA>비용: {costName} 1개 소모</color></size>";
 
-            _confirmPanel?.Show("구매 확인", message, "구매", ConfirmPurchase);
+            _confirmPanel?.Show("구매 확인", message, "구매", ConfirmTrade);
         }
 
         // 인벤토리 가방 아이템 클릭 → 판매 확인 팝업 표시
@@ -209,21 +245,21 @@ namespace MySecondWorld.UI
             string currencyName = _costItem != null ? _costItem.Title : "코인";
             string message = $"<color=#FFE066>{item.Title}</color> 판매\n<size=13><color=#AAAAAA>보상: {currencyName} 1개 획득</color></size>";
             
-            _confirmPanel?.Show("판매 확인", message, "판매", ConfirmPurchase);
+            _confirmPanel?.Show("판매 확인", message, "판매", ConfirmTrade);
         }
 
-        // 구매/판매 확정 실행
-        private void ConfirmPurchase()
+        // 확인 팝업의 확정 버튼 — 대기 중인 구매 또는 판매를 서버에 요청한다
+        private void ConfirmTrade()
         {
             if (_pendingPurchase != null && _costItem != null)
             {
-                // 구매: 대가(골드) 지불 -> 장비 획득
+                // 구매: 대가 아이템을 내고 장비를 받는다
                 _inventoryProvider.Actions?.TradeItem(_costItem.GetDbKey(), _pendingPurchase.GetDbKey(), -1); //-1은 슬롯 칸을 '모른다/상관없다' 의미
                 _pendingPurchase = null;
             }
             else if (_pendingSale != null && _costItem != null)
             {
-                // 판매: 장비 지불 -> 대가(골드) 획득
+                // 판매: 장비를 내고 대가 아이템을 받는다
                 // 판매할 칸 번호를 서버에 보내고, 서버가 그 칸을 검증해서 뺀다. 장착 칸이 비면 ServerValidateMainHand가 해제
                 _inventoryProvider.Actions?.TradeItem(_pendingSale.GetDbKey(), _costItem.GetDbKey(), _pendingSaleSlotIndex);
                 _pendingSale = null;
@@ -231,15 +267,9 @@ namespace MySecondWorld.UI
             }
         }
 
-        private void ClearSlots()
-        {
-            foreach (var slot in _spawnedSlots)
-            {
-                if (slot != null)
-                    Destroy(slot.gameObject);
-            }
-            _spawnedSlots.Clear();
-        }
+        #endregion
+
+        #region 성별 필터
 
         private void UpdateGenderFilterVisuals()
         {
@@ -282,5 +312,7 @@ namespace MySecondWorld.UI
             }
             return false;
         }
+
+        #endregion
     }
 }

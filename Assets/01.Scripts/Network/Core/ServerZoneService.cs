@@ -10,31 +10,42 @@ using MySecondWorld.Combat.Companion; // ICompanionServerState
 
 namespace MySecondWorld.Network
 {
-    // 서버 측 Zone 관리. 존 체크 루프 + 씬 동기화 담당.
+    // 서버 측 존·씬 관리.
+    //  - 정기 루프 : 지면 판정 → 소속 존 판정 → 낙하 구조 → 씬 로드/언로드 동기화 (CheckZones), 포탈 폴링 (CheckPortals)
+    //  - 포탈 전환 : 페이드 → 씬 로드 → 소속 전환 → 이전 씬 언로드
+    //  - 텔레포트  : 낙하 구조·리스폰·NPC 순간이동이 모두 MovePlayerToAsync를 탄다
     public class ServerZoneService
     {
+        #region 필드
+        // ── 상수 ──
+        private const float GroundCheckDistance = 0.1f; // MovementController와 동일 기본값
+
+        // ── 의존 서비스 ──
         private readonly GameNetworkManager _manager;
         private readonly ServerSessionService _sessionService;
         private readonly DungeonRoomRegistry _roomRegistry;
-        private const float GroundCheckDistance = 0.1f; // MovementController와 동일 기본값
+        #endregion
 
+        #region 생성자
         public ServerZoneService(GameNetworkManager manager, ServerSessionService sessionService, DungeonRoomRegistry roomRegistry)
         {
             _manager = manager;
             _sessionService = sessionService;
             _roomRegistry = roomRegistry;
         }
+        #endregion
 
+        #region 정기 루프
 
-        // [S-Loop] zoneCheckInterval마다 위치 체크 (S5에서 isSpawned=true 된 플레이어만)
-        // spawn 이후 Zone 이동 시 추가 번들을 처리하는 역할
+        // [S-Loop] zoneCheckInterval마다, 스폰이 끝난(isSpawned) 플레이어를 순회하며
+        // 지면 판정 → 소속 존 판정 → 낙하 구조 → 씬 로드/언로드 동기화를 한다.
         public async UniTaskVoid CheckZones(CancellationToken ct)
         {
             try                                                     // 서버 종료 시 ct가 취소되는 것 처리 — 루프 자체의 정상 종료
             {
                 while (!ct.IsCancellationRequested)
                 {
-                    // ToList()로 스냅샷: 순회 도중 접속/퇴장으로 _sessions가 변경되면
+                    // ToList()로 스냅샷: 순회 도중 접속/퇴장으로 Sessions가 변경되면
                     // InvalidOperationException이 발생해 코루틴이 죽고 씬 동기화가 멈춘다.
                     foreach (var session in _sessionService.Sessions.ToList())
                     {
@@ -75,8 +86,9 @@ namespace MySecondWorld.Network
 
         // [S-Loop-Portal] 포탈 감지 — 물리 OnTriggerEnter 대신 서버가 bounds로 직접 폴링(짧은 주기).
         // 원격 클라 서버 사본은 CharacterController가 항상 꺼져있어 물리 트리거가 못 걸리기 때문(2026-08-26).
-        // OnPortalTriggerEntered 내부 가드(isTransitioningPortal/쿨다운/월드일치)가 이미 중복호출을 걸러줘서
-        // 트리거 범위 안에 있는 동안 매 틱 호출해도 안전함 — 별도 진입/이탈 추적 불필요.
+        // TryBeginPortal 내부 가드(isTransitioningPortal/쿨다운/월드일치)가 중복 호출을 걸러줘서
+        // 범위 안에 있는 동안 매 틱 불러도 안전하다. 단, 방금 타고 온 포탈은 범위를 한 번 벗어나야
+        // 재탑승을 허용한다 (lastUsedPortal / hasLeftLastPortalBounds).
         public async UniTaskVoid CheckPortals(CancellationToken ct)
         {
             try
@@ -86,10 +98,10 @@ namespace MySecondWorld.Network
                     foreach (var session in _sessionService.Sessions.ToList())
                     {
                         // 방어코드
-                        if (!_sessionService.Sessions.ContainsKey(session.Key)) continue; // 우리 장부(_sessionService)에 해당 세션이 종료되거나 해서 없음, 무시.
-                        if (!session.Value.isSpawned) continue;  // 세션이 월드에 스폰안됨, 무시
-                        if (session.Value.isTransitioningPortal) continue;  // 포탈에서 이동중인 세션, 무시
-                        if (!NetworkServer.connections.TryGetValue(session.Key, out var conn) || conn.identity == null) continue; //Mirror 쪽 딕셔너리에 우리 세션이 없음, 무시
+                        if (!_sessionService.Sessions.ContainsKey(session.Key)) continue; // 순회 중 세션이 종료됨, 무시
+                        if (!session.Value.isSpawned) continue;  // 아직 스폰 전, 무시
+                        if (session.Value.isTransitioningPortal) continue;  // 포탈 전환 중, 무시
+                        if (!NetworkServer.connections.TryGetValue(session.Key, out var conn) || conn.identity == null) continue; // Mirror 연결이나 캐릭터가 없음, 무시
 
                         try
                         {
@@ -110,7 +122,7 @@ namespace MySecondWorld.Network
                                 }
 
                                 if (inside)
-                                    OnPortalTriggerEntered(conn, trigger.Portal, trigger.SourceZone);
+                                    TryBeginPortal(conn, trigger.Portal, trigger.SourceZone);
                             }
                         }
                         catch (Exception e)
@@ -119,7 +131,7 @@ namespace MySecondWorld.Network
                         }
                     }
 
-                    //"0.1초마다 내가 직접 '지금 이 플레이어 위치가 트리거 안에 있나?' 하고 계속 물어봄" — 능동적으로 확인
+                    // portalCheckInterval마다 "플레이어가 트리거 안에 있나?"를 직접 물어본다 (능동 폴링)
                     await UniTask.Delay(TimeSpan.FromSeconds(_manager.portalCheckInterval), cancellationToken: ct);
                 }
             }
@@ -129,6 +141,9 @@ namespace MySecondWorld.Network
             }
         }
 
+        #endregion
+
+        #region 존 판정
 
         // 이 씬이 어느 월드에 속하는지 zones에서 해당 존을 찾아 WorldId(번들 라벨)를 읽어온다.
         // currentScene이 유일한 원본이므로 월드를 세션에 따로 저장하지 않는다(두 값이 어긋날 일 없게).
@@ -158,7 +173,7 @@ namespace MySecondWorld.Network
             return grounded;
         }
 
-        // [S-Loop-2] 소속 씬 판정 (정확한 bounds) + 낙하 타이머 가동
+        // [S-Loop-2] 소속 씬 판정(밟은 바닥의 씬 우선, 없으면 bounds) + 존 이탈 타이머·안전 위치 갱신
         public void ResolveCurrentZone(
             KeyValuePair<int, PlayerSession> session, NetworkConnectionToClient conn, Vector3 playerPos, bool grounded)
         {
@@ -234,7 +249,7 @@ namespace MySecondWorld.Network
                 if (session.Value.currentScene != detectedZone.sceneName)
                 {
                     Debug.Log($"[Zone] 씬 전환 감지: {session.Value.currentScene} ➔ {detectedZone.sceneName} (밟고 있는 바닥 기준)");
-                    PlayerChangedScene(conn, detectedZone.sceneName);
+                    ChangePlayerScene(conn, detectedZone.sceneName);
                 }
             }
             // 존 이탈 타이머 갱신
@@ -251,7 +266,7 @@ namespace MySecondWorld.Network
         }
 
         // [S-Loop-2-a] 소속 씬 변경 — MoveGameObjectToScene으로 플레이어 가시성 갱신
-        public void PlayerChangedScene(NetworkConnectionToClient conn, string sceneName)
+        public void ChangePlayerScene(NetworkConnectionToClient conn, string sceneName)
         {
             // session = _sessionService.Sessions[conn.connectionId]처럼 인덱서로 직접 접근하면
             // 전환 중(최대 15초) 접속이 끊긴 경우 세션이 이미 삭제된 상태라 KeyNotFoundException이 난다.
@@ -380,6 +395,10 @@ namespace MySecondWorld.Network
             session.Value.ungroundedTimer = 0;
         }
 
+        #endregion
+
+        #region 씬 스트리밍
+
         // [S-Loop-4] 씬 로드/언로드 판정 (bounds + preloadMargin 확장 영역)
         public void SyncAdditiveScenes(
             KeyValuePair<int, PlayerSession> session, NetworkConnectionToClient conn, HashSet<string> needScenes, Vector3 playerPos)
@@ -409,7 +428,7 @@ namespace MySecondWorld.Network
             foreach (var scene in needScenes)
             {
                 if (!session.Value.loadedScenes.Contains(scene))
-                    PlayerEnteredZone(conn, scene);
+                    LoadSceneForPlayer(conn, scene);
             }
 
             // 더 이상 필요 없는 씬 언로드
@@ -421,11 +440,11 @@ namespace MySecondWorld.Network
                     scenesToUnload.Add(scene);
             }
             foreach (var scene in scenesToUnload)
-                PlayerLeftZone(conn, scene);
+                UnloadSceneForPlayer(conn, scene);
         }
 
         // [S-Loop-4-a] 씬 로드 지시 — 클라이언트가 지형을 볼 수 있게 함
-        public void PlayerEnteredZone(NetworkConnectionToClient conn, string sceneName)
+        public void LoadSceneForPlayer(NetworkConnectionToClient conn, string sceneName)
         {
             if (!_sessionService.Sessions.TryGetValue(conn.connectionId, out var session)) return;
             if (session.loadedScenes.Contains(sceneName)) return;
@@ -437,30 +456,31 @@ namespace MySecondWorld.Network
             if (!string.IsNullOrEmpty(label) && !session.sentBundleLabels.Contains(label)) // 중복 체크
             {
                 session.sentBundleLabels.Add(label);
-                conn.Send(new BundleRequiredMessage { labels = new[] { label } }); // > GameNetworkManager.OnStartClient
+                conn.Send(new BundleRequiredMessage { labels = new[] { label } }); // 클라 처리: ClientBundleSyncService.OnBundleRequired
             }
-            conn.Send(new AdditiveSceneMessage { sceneName = sceneName, load = true });  // > GameNetworkManager.OnStartClient
-                                                                                         // > _clientSyncService.OnAdditiveSceneMessage
-                                                                                         // > LoadAdditiveScene
-                                                                                         // > conn.Send(PortalSceneLoadedAckMessage)
+            // 클라 처리: ClientSceneSyncService.OnAdditiveSceneMessage → LoadAdditiveScene → 완료 시 PortalSceneLoadedAckMessage 전송
+            conn.Send(new AdditiveSceneMessage { sceneName = sceneName, load = true });
             session.loadedScenes.Add(sceneName);
         }
 
-
         // [S-Loop-4-b] 씬 언로드 지시 — 메모리 절약
-        public void PlayerLeftZone(NetworkConnectionToClient conn, string sceneName)
+        public void UnloadSceneForPlayer(NetworkConnectionToClient conn, string sceneName)
         {
             if (!_sessionService.Sessions.TryGetValue(conn.connectionId, out var session)) return;
             if (!session.loadedScenes.Contains(sceneName))
                 return;
-            conn.Send(new AdditiveSceneMessage { sceneName = sceneName, load = false }); // > GameNetworkManager.OnStartClient
+            conn.Send(new AdditiveSceneMessage { sceneName = sceneName, load = false }); // 클라 처리: ClientSceneSyncService.OnAdditiveSceneMessage → UnloadAdditiveScene
             session.loadedScenes.Remove(sceneName);
         }
 
-        // [Trigger] 포탈 콜라이더 진입 — CheckZones 루프와 무관한 별도 진입점(ZonePortalTrigger.OnTriggerEnter에서 호출).
+        #endregion
+
+        #region 포탈 전환
+
+        // [Portal] 포탈 진입 처리 — CheckPortals가 플레이어가 트리거 bounds 안에 있는 동안 호출한다.
         // sourceZone은 이 트리거가 대표하는 "출발 쪽" 존 — 플레이어가 아직 그 존의 월드에 있을 때만 발동한다
         // (두 씬이 동시에 로드된 경계 순간, 반대쪽 트리거도 같이 발동하는 중복 케이스 방지).
-        public void OnPortalTriggerEntered(NetworkConnectionToClient conn, ZonePortalSO portal, ZoneDefinitionSO sourceZone)
+        public void TryBeginPortal(NetworkConnectionToClient conn, ZonePortalSO portal, ZoneDefinitionSO sourceZone)
         {
             if (!_sessionService.Sessions.TryGetValue(conn.connectionId, out var session)) return;
             if (session.isTransitioningPortal) return; // 이미 전환 진행 중 — 중복 트리거 무시
@@ -478,7 +498,7 @@ namespace MySecondWorld.Network
             BeginPortalTransitionAsync(conn, session, sourceZone, targetZone).Forget();
         }
 
-        // [Trigger-a] 포탈 전환 시퀀스:
+        // [Portal-a] 포탈 전환 시퀀스:
         // FadeOut → 씬스왑 요청 → 로드완료 ack 대기(타임아웃 가드) → 소속 전환 → 재스냅 → 이전 씬 언로드 → FadeIn.
         // (재스냅 : 씬을 옮긴 뒤 캐릭터의 실제 위치/이동 상태를 강제로 깔끔하게 다시 고정시키는 것을 말함)
         // 로드 완료는 기기/네트워크마다 편차가 커서 고정 타이머 대신 PortalSceneLoadedAckMessage로 확인한다
@@ -489,11 +509,11 @@ namespace MySecondWorld.Network
             try
             {
                 Vector3 rescuePos = conn.identity.transform.position; // 필드 / 던전 입구 좌표가 겹치도록 설계돼 있어 재스냅은 같은 좌표
-                conn.Send(new ScreenFadeMessage { fadeOut = true, duration = _manager.portalFadeDuration }); // 씬 FadeOut  > GameNetworkManager.OnStartClient
+                conn.Send(new ScreenFadeMessage { fadeOut = true, duration = _manager.portalFadeDuration }); // 씬 FadeOut (클라 처리: GameNetworkManager.OnStartClient에 등록된 핸들러)
                 await UniTask.Delay(TimeSpan.FromSeconds(_manager.portalFadeDuration));
                 session.confirmedPortalScene = null; // 이전 전환에서 남아있을 수 있는 낡은 ack 기록 리셋
-                PlayerEnteredZone(conn, targetZone.sceneName); // 씬스왑 요청(AdditiveSceneMessage) — 소속(currentScene)은 아직 안 바뀜
-                // 여기까지 되면 Send(PortalSceneLoadedAckMessage) 전송된 상태
+                LoadSceneForPlayer(conn, targetZone.sceneName); // 씬스왑 요청(AdditiveSceneMessage) — 소속(currentScene)은 아직 안 바뀜
+                // 이후 클라가 씬 로드를 마치면 PortalSceneLoadedAckMessage를 보내고, OnPortalSceneLoadedAck가 받는다
 
                 // 로드완료 ack 대기. portalAckTimeoutSeconds 초과 시 강제 진행(소프트락 방지 안전장치).
                 var ackTask = UniTask.WaitUntil(() => session.confirmedPortalScene == targetZone.sceneName); // 대상 씬 로드완료 ack 대기 (소속 전환은 아직)
@@ -501,7 +521,7 @@ namespace MySecondWorld.Network
                 int winnerIndex = await UniTask.WhenAny(ackTask, timeoutTask);
                 if (winnerIndex == 1) // timeoutTask가 먼저 끝남 = ack 못 받음
                     Debug.LogWarning($"[Portal] conn={conn.connectionId} — '{targetZone.sceneName}' 로드 ack 타임아웃 — 강제 진행");
-                PlayerChangedScene(conn, targetZone.sceneName); // 소속 전환(MoveGameObjectToScene)
+                ChangePlayerScene(conn, targetZone.sceneName); // 소속 전환(MoveGameObjectToScene)
 
                 // 1. 플레이어 재스냅
                 // ServerForceMoveTo는 낙하 구조·사망 부활·탈출·NPC 순간이동이 모두 쓰는 "강제 이동" 경로다.
@@ -518,9 +538,9 @@ namespace MySecondWorld.Network
                     }
                 }
                 // 3. 낙하 구조(RecoverFromFall) 시에도 동일하게 컴패니언 동반 텔레포트 추가
-                PlayerLeftZone(conn, sourceZone.sceneName); // 이전 씬 언로드
+                UnloadSceneForPlayer(conn, sourceZone.sceneName); // 이전 씬 언로드
 
-                conn.Send(new ScreenFadeMessage { fadeOut = false, duration = _manager.portalFadeDuration });  // 씬 FadeIn > GameNetworkManager.OnStartClient
+                conn.Send(new ScreenFadeMessage { fadeOut = false, duration = _manager.portalFadeDuration });  // 씬 FadeIn (클라 처리: GameNetworkManager.OnStartClient에 등록된 핸들러)
                 await UniTask.Delay(TimeSpan.FromSeconds(_manager.portalFadeDuration));
             }
             catch (Exception e)
@@ -536,13 +556,17 @@ namespace MySecondWorld.Network
             }
         }
 
-        // [Trigger-b] 클라 씬 로드완료 ack 수신 — session.confirmedPortalScene에 기록해
+        // [Portal-b] 클라 씬 로드완료 ack 수신 — session.confirmedPortalScene에 기록해
         // BeginPortalTransitionAsync의 WaitUntil을 깨운다.
         public void OnPortalSceneLoadedAck(NetworkConnectionToClient conn, PortalSceneLoadedAckMessage msg)
         {
             if (!_sessionService.Sessions.TryGetValue(conn.connectionId, out var session)) return;
             session.confirmedPortalScene = msg.sceneName;
         }
+
+        #endregion
+
+        #region 텔레포트·리스폰
 
         // 사망 리스폰 등, 낙하 타이머 게이트 없이 즉시 안전 위치로 보내야 할 때 사용
         // toTown이 true면 마을 스폰 지점으로
@@ -625,7 +649,7 @@ namespace MySecondWorld.Network
                     {
                         conn.Send(new ScreenFadeMessage { fadeOut = true, duration = _manager.portalFadeDuration });
                         session.Value.confirmedPortalScene = null;
-                        PlayerEnteredZone(conn, targetScene); // 씬 로드 요청
+                        LoadSceneForPlayer(conn, targetScene); // 씬 로드 요청
 
                         var ackTask = UniTask.WaitUntil(() => session.Value.confirmedPortalScene == targetScene);
                         var timeoutTask = UniTask.Delay(TimeSpan.FromSeconds(_manager.portalAckTimeoutSeconds));
@@ -648,10 +672,10 @@ namespace MySecondWorld.Network
                         return;
                 }
 
-                // PlayerChangedScene 재사용
+                // ChangePlayerScene 재사용
                 // 직접 MoveGameObjectToScene만 하면 UpdateDungeonMatch(matchId 갱신)가 안 불려서
                 // 포탈 ack 타임아웃 강제진행 이후 재낙하 시 matchId가 안 풀리는 문제가 있었음
-                PlayerChangedScene(conn, targetScene);
+                ChangePlayerScene(conn, targetScene);
             }
 
             // transform.position 직접 대입은 다음 클라 스냅샷에 덮어써진다 (권한이 클라에 있음).
@@ -704,5 +728,7 @@ namespace MySecondWorld.Network
                new KeyValuePair<int, PlayerSession>(conn.connectionId, playerSession),
                conn, SnapToGround(worldPos), sceneName).Forget();
         }
+
+        #endregion
     }
 }

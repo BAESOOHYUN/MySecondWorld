@@ -52,10 +52,10 @@ namespace MySecondWorld.Network
                 UnloadAdditiveScene(msg.sceneName).Forget();
         }
 
-        // 번들 로드:  PlayerEnteredZone(Zone 최초 진입 시 1회)
-        // 씬 로드:    preloadMargin 안에 들어올 때마다(세밀한 단위)
-        // 씬 언로드:  preloadMargin 벗어날 때마다
-        // 번들 해제:  PlayerLeftZone(Zone 완전 이탈 시 1회)
+        // 번들 로드:  서버 LoadSceneForPlayer가 라벨당 1회 BundleRequiredMessage로 지시 (ClientBundleSyncService)
+        // 씬 로드:    서버 LoadSceneForPlayer가 preloadMargin 안에 들어올 때마다 AdditiveSceneMessage(load=true)로 지시
+        // 씬 언로드:  서버 UnloadSceneForPlayer가 preloadMargin을 벗어날 때마다 AdditiveSceneMessage(load=false)로 지시
+        // 번들 해제:  Network 폴더에는 해제 코드가 없다 — 한 번 받은 번들은 접속 동안 유지된다
 
         // [C2-a] 씬 로드 + 완료 카운터 증가
         private async UniTask LoadAdditiveScene(string sceneName)

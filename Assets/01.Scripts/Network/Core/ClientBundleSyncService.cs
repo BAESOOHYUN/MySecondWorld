@@ -52,7 +52,7 @@ namespace MySecondWorld.Network
             _uiManager = uiManager;
         }
 
-        // ServerZoneService.PlayerEnteredZone 에서 BundleRequiredMessage 받고
+        // ServerZoneService.LoadSceneForPlayer 에서 BundleRequiredMessage 받고
         public async UniTask OnBundleRequired(BundleRequiredMessage msg, CancellationToken ct)
         {
             if (NetworkServer.active) // Host면 스킵

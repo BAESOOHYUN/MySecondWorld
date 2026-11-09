@@ -16,14 +16,25 @@ namespace MySecondWorld.Network
 {
     using Inventory = Cleverous.VaultInventory.Inventory;
 
-    // 플레이어 세션 소유자. 접속/퇴장/스폰 흐름 담당.
+    // 플레이어 세션 소유자 (서버 전용).
+    //  - 접속 흐름 : 세션 생성 → 번들·씬 로드 지시 → 캐릭터 스폰 → 퇴장 시 저장·정리
+    //  - 컴패니언  : 영입, 접속 시 재소환
+    //  - 저장·복원 : 인벤토리·외형·도감·장착 칸·위치·컴패니언 상태를 세이브로 만들고 되살림
+    //  - 테스트/디버그 : 시작 골드·테스트 킷 지급
     public class ServerSessionService
     {
+        #region 필드
+        // ── 서비스·표 ──
         private readonly GameNetworkManager _manager;
         private readonly DungeonRoomRegistry _roomRegistry;
         private readonly SaveManager _saveManager;
+        private readonly AvatarPartKeyTableSO _avatarPartKeyTable;
+
+        // ── 시작 골드 ──
         private readonly RootItem _startingGoldItem;
         private readonly int _startingGoldAmount;
+
+        // ── 테스트 킷 아이템 (인게임 획득 경로가 생기면 삭제) ──
         private readonly RootItem _testSwordItem;
         private readonly RootItem _testRingItem;
         private readonly RootItem _testBowItem;
@@ -32,10 +43,12 @@ namespace MySecondWorld.Network
         private readonly RootItem _testNecklaceItem;
         private readonly RootItem _testAxeItem;
         private readonly RootItem _testPolearmItem;
-        private readonly AvatarPartKeyTableSO _avatarPartKeyTable;
 
+        // ── 세션 장부 ──
         public Dictionary<int, PlayerSession> Sessions { get; } = new();
+        #endregion
 
+        #region 생성자
         public ServerSessionService(
            GameNetworkManager manager,
            DungeonRoomRegistry roomRegistry,
@@ -56,6 +69,7 @@ namespace MySecondWorld.Network
             _manager = manager;
             _roomRegistry = roomRegistry;
             _saveManager = saveManager ?? new SaveManager();
+            _avatarPartKeyTable = avatarPartKeyTable;
             _startingGoldItem = startingGoldItem;
             _startingGoldAmount = startingGoldAmount;
             _testSwordItem = testSwordItem;
@@ -66,15 +80,17 @@ namespace MySecondWorld.Network
             _testNecklaceItem = testNecklaceItem;
             _testAxeItem = testAxeItem;
             _testPolearmItem = testPolearmItem;
-            _avatarPartKeyTable = avatarPartKeyTable;
         }
+        #endregion
+
+        #region 접속 흐름
 
         // [S3] 세션 생성 + PrepareAndSpawn 시작
         // Mirror 기본: base.OnServerAddPlayer(conn)에서 바로 캐릭터를 만들지만,
         // 씬이 먼저 로드된 후에 스폰해야 하므로 base를 부르지 않는다.
         public void AddPlayer(NetworkConnectionToClient conn)
         {
-            Debug.Log($"[Session] AddPlayer conn={conn.connectionId}");  // ← 추가
+            Debug.Log($"[Session] AddPlayer conn={conn.connectionId}");
             // 같은 playerId로 이미 세션 존재 시 → 기존 세션 정리 (재접속 처리)
             string playerId = conn.authenticationData as string;
             if (!string.IsNullOrEmpty(playerId))
@@ -171,7 +187,7 @@ namespace MySecondWorld.Network
             }
             // 번들 완료 확인 후 씬 로드 지시
             conn.Send(new AdditiveSceneMessage { sceneName = spawnScene, load = true });
-            // PlayerEnteredZone을 안 거치는 경로라 loadedScenes에 수동 등록해야 한다.
+            // LoadSceneForPlayer(ServerZoneService)를 안 거치는 경로라 loadedScenes에 수동 등록해야 한다.
             // 빠뜨리면 첫 CheckZones 틱이 스폰 씬까지 "신규"로 판정해 중복 로드 지시를 보낸다.
             session.loadedScenes.Add(spawnScene);
             conn.Send(new SpawnReadyMessage { sceneCount = 1 });
@@ -209,7 +225,6 @@ namespace MySecondWorld.Network
 
             NetworkServer.AddPlayerForConnection(conn, player);
 
-            // After
             // 신규 플레이어에게만 시작 골드 지급 (재접속 시 중복 지급 방지)
             if (session.isNewPlayer)
                 GrantStartingGold(conn);
@@ -265,8 +280,7 @@ namespace MySecondWorld.Network
                 conn.GetPlayerComponent<RoomIdDisplay>()?.SetRoom(Guid.Empty);
             }
 
-            // 이미 영입된 companion 자동 재소환
-            // (MVP("Minimum Viable Product"(최소 기능 제품)): 1마리만, 소환해제 상태면 스킵)
+            // 이미 영입한 컴패니언을 자동 재소환한다. (현재는 1마리만, 소환 해제 상태면 건너뜀)
             if (session.recruitedCompanionIds != null && session.recruitedCompanionIds.Length > 0 && session.companionPresent)
             {
                 var companionId = session.recruitedCompanionIds[0];
@@ -309,8 +323,71 @@ namespace MySecondWorld.Network
             }
         }
 
+        #endregion
 
-        #region 헬퍼
+        #region 컴패니언
+
+        private void SpawnCompanionFor(PlayerSession session, NetworkConnectionToClient conn, GameObject prefab)
+        {
+            // 플레이어 발밑(0,0,0) 대신, 플레이어 우측 1.5m 옆 지점에 최초 생성! (들썩거림 원천 차단)
+            Vector3 playerPos = conn.identity.transform.position;
+            Vector3 spawnPos = playerPos + (Vector3.right * 1.5f);
+            var companion = CompanionFactory.Create(
+                prefab, spawnPos, Quaternion.identity, conn.identity.transform);
+            if (companion == null) return;
+
+            // 최초 스폰 시 씬 위치 동일하게 맞춤
+            if (conn.identity != null)
+            {
+                var targetScene = conn.identity.gameObject.scene;
+                if (targetScene.IsValid() && targetScene.isLoaded)
+                {
+                    if (companion.transform.parent != null)
+                        companion.transform.SetParent(null);
+                    SceneManager.MoveGameObjectToScene(companion, targetScene);
+                }
+            }
+
+            session.companionIdentity = companion.GetComponent<NetworkIdentity>();
+            if (companion.TryGetComponent(out NetworkMatch companionMatch))
+                companionMatch.matchId = conn.GetPlayerComponent<NetworkMatch>().matchId;
+
+            // 실전투 사망/부활 등 생사가 바뀔 때마다 세션에 자동 기록 — 재접속 시 그대로 재현하기 위함
+            if (companion.TryGetComponent(out ICompanionServerState serverState))
+                serverState.AliveChanged += alive => session.companionAlive = alive;
+        }
+
+        // 컴패니언 영입 진입점. 현재 호출자는 CompanionAdminService — "누가 언제 부르는지"는 이 메서드 책임 밖
+        public void RecruitCompanion(NetworkConnectionToClient conn, GameObject speciesPrefab, string companionId)
+        {
+            if (!Sessions.TryGetValue(conn.connectionId, out var session)) return;
+            if (session.companionIdentity != null) return; // 현재는 1마리만 — 이미 있으면 무시
+
+            SpawnCompanionFor(session, conn, speciesPrefab);
+            session.companionAlive = true;
+            session.companionPresent = true;
+
+            if (session.companionIdentity == null) return; // 스폰 실패
+
+            // recruitedCompanionIds는 "이 플레이어가 지금까지 영입한 companion들의 ID 목록"
+            var ids = session.recruitedCompanionIds ?? Array.Empty<string>();
+            if (System.Array.IndexOf(ids, companionId) < 0) // < 0은 "못 찾았다 = 아직 이 companionId가 목록에 없다"는 뜻
+            {
+                // (없을 때만) 배열을 하나 더 큰 걸로 새로 만듦
+                var newIds = new string[ids.Length + 1];
+                // 옛날 배열(ids)에 있던 값들을 새 배열(newIds)의 0번 자리부터 그대로 복사
+                // 예를 들어 ids가 ["Mowe"]였으면, newIds는 지금 ["Mowe", null](맨 뒤 한 칸은 아직 빈 자리) 상태
+                ids.CopyTo(newIds, 0);
+                // 새 값을 맨 끝자리에 넣기
+                newIds[ids.Length] = companionId;
+                //  세션에 반영
+                session.recruitedCompanionIds = newIds;
+            }
+        }
+
+        #endregion
+
+        #region 저장
 
         private void SavePlayer(NetworkConnectionToClient conn, PlayerSession session)
         {
@@ -364,69 +441,11 @@ namespace MySecondWorld.Network
                 Debug.Log($"[Save] 주기 저장 {count}명");
         }
 
-        private void SpawnCompanionFor(PlayerSession session, NetworkConnectionToClient conn, GameObject prefab)
-        {
-            // 플레이어 발밑(0,0,0) 대신, 플레이어 우측 1.5m 옆 지점에 최초 생성! (들썩거림 원천 차단)
-            Vector3 playerPos = conn.identity.transform.position;
-            Vector3 spawnPos = playerPos + (Vector3.right * 1.5f);
-            var companion = CompanionFactory.Create(
-                prefab, spawnPos, Quaternion.identity, conn.identity.transform);
-            if (companion == null) return;
-
-            // 최초 스폰 시 씬 위치 동일하게 맞춤
-            if (conn.identity != null)
-            {
-                var targetScene = conn.identity.gameObject.scene;
-                if (targetScene.IsValid() && targetScene.isLoaded)
-                {
-                    if (companion.transform.parent != null)
-                        companion.transform.SetParent(null);
-                    SceneManager.MoveGameObjectToScene(companion, targetScene);
-                }
-            }
-
-            session.companionIdentity = companion.GetComponent<NetworkIdentity>();
-            if (companion.TryGetComponent(out NetworkMatch companionMatch))
-                companionMatch.matchId = conn.GetPlayerComponent<NetworkMatch>().matchId;
-
-            // 실전투 사망/부활 등 생사가 바뀔 때마다 세션에 자동 기록 — 재접속 시 그대로 재현하기 위함
-            if (companion.TryGetComponent(out ICompanionServerState serverState))
-                serverState.AliveChanged += alive => session.companionAlive = alive;
-        }
-
-        // 퀘스트/이벤트 시스템이 나중에 호출할 진입점 — "누가 언제 부르는지"는 이 메서드 책임 밖
-        public void RecruitCompanion(NetworkConnectionToClient conn, GameObject speciesPrefab, string companionId)
-        {
-            if (!Sessions.TryGetValue(conn.connectionId, out var session)) return;
-            if (session.companionIdentity != null) return; // MVP: 이미 있으면 무시
-
-            SpawnCompanionFor(session, conn, speciesPrefab);
-            session.companionAlive = true;
-            session.companionPresent = true;
-
-            if (session.companionIdentity == null) return; // 스폰 실패
-
-            // recruitedCompanionIds는 "이 플레이어가 지금까지 영입한 companion들의 ID 목록"
-            var ids = session.recruitedCompanionIds ?? Array.Empty<string>();
-            if (System.Array.IndexOf(ids, companionId) < 0) // < 0은 "못 찾았다 = 아직 이 companionId가 목록에 없다"는 뜻
-            {
-                // (없을 때만) 배열을 하나 더 큰 걸로 새로 만듦
-                var newIds = new string[ids.Length + 1];
-                // 옛날 배열(ids)에 있던 값들을 새 배열(newIds)의 0번 자리부터 그대로 복사
-                // 예를 들어 ids가 ["Mowe"]였으면, newIds는 지금 ["Mowe", null](맨 뒤 한 칸은 아직 빈 자리) 상태
-                ids.CopyTo(newIds, 0);
-                // 새 값을 맨 끝자리에 넣기
-                newIds[ids.Length] = companionId;
-                //  세션에 반영
-                session.recruitedCompanionIds = newIds;
-            }
-        }
-
         // 인벤토리를 읽어 InventorySlotSave[] 를 돌려줌
         private InventorySlotSave[] BuildInventorySave(NetworkConnectionToClient conn)
         {
             var inventory = conn.GetPlayerComponent<Inventory>();
-            if (inventory == null) return null;     // ← 여기로 이동
+            if (inventory == null) return null;
             var state = inventory.ToState();
             var slots = new InventorySlotSave[state.ItemDbKeys.Count];
             for (int i = 0; i < slots.Length; i++)
@@ -478,6 +497,10 @@ namespace MySecondWorld.Network
         // (도감) 서버가 기억하는 해금 목록을 읽음. 컴포넌트가 없으면 null
         private int[] BuildUnlockedSave(NetworkConnectionToClient conn)
             => conn.GetPlayerComponent<NetworkCharacterAppearance>()?.ServerGetUnlockedKeys();
+
+        #endregion
+
+        #region 복원
 
         // 세이브를 읽어 인벤토리를 채움
         private void RestoreInventory(NetworkConnectionToClient conn, PlayerSession session)
@@ -549,7 +572,7 @@ namespace MySecondWorld.Network
         //     0~3번을 훑으며 채워진 칸(도끼A, 활)만 세면 2 → 도끼B의 새 번호
         private static int ToRestoredSlotIndex(InventorySlotSave[] savedSlots, int savedIndex)
         {
-            if (savedSlots == null || savedIndex < 0 || savedIndex >= savedSlots.Length) return -1; // // slot=-1이면 "칸 없음/모름"으로 처리
+            if (savedSlots == null || savedIndex < 0 || savedIndex >= savedSlots.Length) return -1; // -1은 "칸 없음/모름"이라 그대로 -1
 
             int restored = 0;
             for (int i = 0; i < savedIndex; i++)
@@ -562,11 +585,9 @@ namespace MySecondWorld.Network
             return restored;
         }
 
-
-
         #endregion
 
-        #region 테스트/디버그 
+        #region 테스트/디버그
 
         // 시작 골드 지급. 스폰 경로와 디버그 버튼이 같은 코드를 쓰도록 분리.
         // "신규 플레이어인가" 판단은 호출부 책임 — 디버그 경로는 그 조건을 일부러 건너뛴다.
@@ -590,8 +611,8 @@ namespace MySecondWorld.Network
             Debug.Log($"[Session] conn={conn.connectionId}에게 골드 {_startingGoldAmount} 지급");
         }
 
-        // 무기 애니메이션 전환 테스트용 — Sword/Ring/Bow 1개씩 지급. 실제 인게임 획득 경로
-        // (상점/드랍)가 생기면 이 메서드는 삭제한다.
+        // 무기 테스트용 — Sword/Ring/Bow/Quiver/Bracelet/Necklace/Axe/Polearm을 1개씩 지급.
+        // 실제 인게임 획득 경로(상점/드랍)가 충분해지면 이 메서드는 삭제한다.
         public void GrantWeaponTestKit(NetworkConnectionToClient conn)
         {
             if (conn.identity == null) return;
@@ -631,7 +652,7 @@ namespace MySecondWorld.Network
             int grantedCount = 0;
             var addedItems = new HashSet<Cleverous.VaultInventory.RootItem>();
 
-            // 1~n번 인덱스의 파츠 요구 아이템만 선별 지급 (0번은 맨몸이라 제외)
+            // 1~3번 인덱스의 파츠 요구 아이템만 지급 (0번은 맨몸이라 제외)
             foreach (PartType part in System.Enum.GetValues(typeof(PartType)))
             {
                 for (int i = 1; i <= 3; i++)
@@ -652,8 +673,9 @@ namespace MySecondWorld.Network
                     }
                 }
             }
-            Debug.Log($"[Session] conn={conn.connectionId}에게 1~7번 방어구/의상 아이템 {grantedCount}개 서버 지급 완료!");
-        #endregion
+            Debug.Log($"[Session] conn={conn.connectionId}에게 1~3번 방어구/의상 아이템 {grantedCount}개 지급");
         }
+
+        #endregion
     }
 }
