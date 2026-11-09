@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.UI;
+using MySecondWorld.Customization;
 
 namespace MySecondWorld.UI
 {
@@ -8,7 +9,8 @@ namespace MySecondWorld.UI
     {
         [SerializeField] private Image _icon;
         [SerializeField] private Button _buyButton;
-        [SerializeField] private Button _slotButton;
+        [SerializeField] private Button _slotButton; 
+        [SerializeField] private GenderBadge _genderBadge;
 
         public void Setup(Sprite icon, Action onBuy)
         {
@@ -27,5 +29,7 @@ namespace MySecondWorld.UI
                 _slotButton.onClick.AddListener(() => onBuy?.Invoke());
             }
         }
+
+        public void SetGenderBadge(Gender? gender) => _genderBadge?.Set(gender);
     }
 }

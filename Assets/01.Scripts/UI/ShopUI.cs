@@ -36,6 +36,7 @@ namespace MySecondWorld.UI
 
         private LocalPlayerInventoryProvider _inventoryProvider;
         private InventoryUI _inventoryUI;
+        private CharacterAppearanceService _appearanceService;   // 필드 영역
         private CharacterGenderFilterService _genderFilterService;
         private IUIManager _uiManager;
         private ConfirmPanelUI _confirmPanel; // 독립 캔버스(높은 소트오더)로 UIManager가 지연 생성
@@ -55,11 +56,13 @@ namespace MySecondWorld.UI
         public void Construct(
             LocalPlayerInventoryProvider inventoryProvider,
             InventoryUI inventoryUI = null,
+            CharacterAppearanceService appearanceService = null,
             CharacterGenderFilterService genderFilterService = null,
             IUIManager uiManager = null)
         {
             _inventoryProvider = inventoryProvider;
             _inventoryUI = inventoryUI;
+            _appearanceService = appearanceService;
             _genderFilterService = genderFilterService;
             _uiManager = uiManager;
         }
@@ -176,6 +179,7 @@ namespace MySecondWorld.UI
                 var capturedItem = item;
                 var slot = Instantiate(_slotButtonPrefab, _slotContent);
                 slot.Setup(item.UiIcon, onBuy: () => RequestPurchase(capturedItem));
+                slot.SetGenderBadge(_appearanceService?.GetItemGender(item));
                 _spawnedSlots.Add(slot);
             }
         }

@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using VContainer;
 using MessagePipe;
+using Cleverous.VaultInventory;
 using MySecondWorld.Inventory.Items;
 
 namespace MySecondWorld.Customization
@@ -359,10 +360,10 @@ namespace MySecondWorld.Customization
             return _avatarPartKeyTable.IsItemMatchingGender(item, data.Gender);
         }
 
-        // 이 아이템이 어느 성별 전용인지 (공용이면 null)
-        public Gender? GetItemGender(EquipmentItem item)
-            => _avatarPartKeyTable?.GetItemGender(item);
-        
+        // 이 아이템이 어느 성별 전용인지 (공용이거나 장비가 아니면 null)
+        public Gender? GetItemGender(RootItem item)
+            => item is EquipmentItem equipment ? _avatarPartKeyTable?.GetItemGender(equipment) : null;
+
         #endregion
     }
 }
