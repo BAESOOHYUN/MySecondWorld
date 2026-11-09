@@ -18,9 +18,9 @@ namespace MySecondWorld.Customization
         Hips,
         LegLeft,
         LegRight,
+        Ear,
 
         // All_Gender_Parts 액세서리
-        Ear,
         HeadCoverings,
         BackAttachment,
         ShoulderAttachLeft,

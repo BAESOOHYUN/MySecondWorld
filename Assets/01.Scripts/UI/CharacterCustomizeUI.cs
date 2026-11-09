@@ -25,18 +25,14 @@ namespace MySecondWorld.UI
 
         #region 필드
         [Header("최상위 탭")]
-        [SerializeField] private Toggle _partsTopTab;
-        [SerializeField] private Toggle _accessoryTopTab;
-        [SerializeField] private Toggle _colorTopTab;
-        [SerializeField] private GameObject _partsTabGroup;     // 파츠 탭 버튼 묶음 부모
-        [SerializeField] private GameObject _accessoryTabGroup; // 액세서리 탭 버튼 묶음 부모
-        [SerializeField] private GameObject _colorPanel;        // 색상 패널
+        [SerializeField] private Toggle _appearanceTopTab;      // 외형변경
+        [SerializeField] private Toggle _codexTopTab;           // 도감
+        [SerializeField] private Toggle _colorTopTab;           // 염색 (이름 유지)
 
-        [Header("파츠 탭 (Hair~LegRight 15개)")]
-        [SerializeField] private PartTabEntry[] _partsTabEntries;
-
-        [Header("액세서리 탭 (HeadCoverings~HipsAttachment 10개)")]
-        [SerializeField] private PartTabEntry[] _accessoryTabEntries;
+        [Header("부위 탭 (외형변경·도감 공용, 화면 순서와 같게)")]
+        [SerializeField] private GameObject _tabGroup;          // 부위 탭 버튼 묶음 부모
+        [SerializeField] private PartTabEntry[] _tabEntries;    // 외형+도감 = 25개
+        [SerializeField] private GameObject _tabDivider;        // 장비/액세서리 사이 실선 (도감 모드에서만 켬)
 
         [Header("썸네일")]
         [SerializeField] private ScrollRect _thumbnailScrollRect;
@@ -53,6 +49,7 @@ namespace MySecondWorld.UI
         [SerializeField] private TextMeshProUGUI _detailCardDesc;
 
         [Header("색상")]
+        [SerializeField] private GameObject _colorPanel;        // 색상 패널
         [SerializeField] private Transform _colorRowParent;        // Content (VerticalLayoutGroup)
         [SerializeField] private ColorChannelRow _colorRowPrefab;  // 행 프리팹
         [SerializeField] private FlexibleColorPicker _colorPicker; // 공유 팝업 피커
@@ -86,8 +83,6 @@ namespace MySecondWorld.UI
         private bool _isSwitchingTab;
         private Gender _currentGender = Gender.Male;
         private PartType _currentTab = PartType.Hair;
-        private PartType _lastPartsTab;
-        private PartType _lastAccessoryTab;
 
         // ── 파츠 인덱스 ──
         private readonly Dictionary<PartType, int> _currentIndices = new();
@@ -103,6 +98,11 @@ namespace MySecondWorld.UI
         };
 
         // ── UI 요소 ──
+
+        // 반대 성별 칸은 따로 관리
+        // 이유 : UpdateThumbnailSelection이 _spawnedButtons를 돌며 번호가 같은 칸을 선택 표시하는데,
+        // 반대 성별 칸이 섞이면 번호가 같은 칸이 잘못 켜진다.그래서 목록을 분리한다.
+        private readonly List<PartThumbnailButton> _otherGenderButtons = new();
         private readonly List<PartThumbnailButton> _spawnedButtons = new();
         private readonly Dictionary<ColorTarget, ColorChannelRow> _colorRows = new();
         private readonly HashSet<PartType> _pendingParts = new();
@@ -114,12 +114,6 @@ namespace MySecondWorld.UI
         private bool _isInitialized;
         private bool _showAllGenders;
         private bool _isCodexTab;     // true=도감(요구 아이템 있는 후보), false=외형변경(없는 후보)
-
-
-        // 반대 성별 칸은 따로 관리
-        // 이유 : UpdateThumbnailSelection이 _spawnedButtons를 돌며 번호가 같은 칸을 선택 표시하는데,
-        // 반대 성별 칸이 섞이면 번호가 같은 칸이 잘못 켜진다.그래서 목록을 분리한다.
-        private readonly List<PartThumbnailButton> _otherGenderButtons = new();
 
         #endregion
 
@@ -196,8 +190,6 @@ namespace MySecondWorld.UI
             foreach (PartType part in System.Enum.GetValues(typeof(PartType)))
                 _currentIndices[part] = 0;
 
-            _lastPartsTab = _partsTabEntries.Length > 0 ? _partsTabEntries[0].Part : default;
-            _lastAccessoryTab = _accessoryTabEntries.Length > 0 ? _accessoryTabEntries[0].Part : default;
             RegisterButtons();
             InitColorRows();
             if (_colorPicker != null)
@@ -219,42 +211,19 @@ namespace MySecondWorld.UI
                     SwitchTab(_currentTab);     // 지금 탭의 썸네일을 다시 그린다
                 });
 
-            if (_partsTopTab != null)
-                _partsTopTab.onValueChanged.AddListener(isOn => { if (isOn) ShowTopTab(0); });
-            if (_accessoryTopTab != null)
-                _accessoryTopTab.onValueChanged.AddListener(isOn => { if (isOn) ShowTopTab(1); });
+            if (_appearanceTopTab != null)
+                _appearanceTopTab.onValueChanged.AddListener(isOn => { if (isOn) ShowTopTab(0); });
+            if (_codexTopTab != null)
+                _codexTopTab.onValueChanged.AddListener(isOn => { if (isOn) ShowTopTab(1); });
             if (_colorTopTab != null)
                 _colorTopTab.onValueChanged.AddListener(isOn => { if (isOn) ShowTopTab(2); });
 
-            if (_partsTabEntries != null)
+            if (_tabEntries != null)
             {
-                foreach (var entry in _partsTabEntries)
+                foreach (var entry in _tabEntries)
                 {
-                    var part = entry.Part;
-                    entry.Toggle?.onValueChanged.AddListener(isOn =>
-                    {
-                        if (isOn)
-                        {
-                            _lastPartsTab = part;
-                            SwitchTab(part);
-                        }
-                    });
-                }
-            }
-
-            if (_accessoryTabEntries != null)
-            {
-                foreach (var entry in _accessoryTabEntries)
-                {
-                    var part = entry.Part;
-                    entry.Toggle?.onValueChanged.AddListener(isOn =>
-                    {
-                        if (isOn)
-                        {
-                            _lastAccessoryTab = part;
-                            SwitchTab(part);
-                        }
-                    });
+                    var part = entry.Part;   // 람다가 반복 변수를 쓰지 않게 복사
+                    entry.Toggle?.onValueChanged.AddListener(isOn => { if (isOn) SwitchTab(part); }); // 각 토글마다 하위탭 변환 기능을 달아줌
                 }
             }
 
@@ -316,25 +285,26 @@ namespace MySecondWorld.UI
 
         #region 탭
 
-        // 최상위 탭 전환 — 0= (외형) 커스터마이징, 1= 도감, 2=색상
+        // ShowTopTab
+        //  └ RefreshTabVisibility        ← 25개 탭을 돌며 켜고 끔
+        //      └ HasCandidatesForMode    ← 탭 하나가 지금 모드에 보여야 하는지 판정
+        //          └ IsCodexEntry        ← 후보 하나가 도감인지(요구 아이템 있음) 판정
+
+        // 최상위 탭 — 0=외형변경, 1=도감, 2=염색
         public void ShowTopTab(int index)
         {
-            _partsTabGroup.SetActive(index == 0);
-            _accessoryTabGroup.SetActive(index == 1);
-            _colorPanel.SetActive(index == 2);
+            bool isDye = index == 2;
+            _colorPanel.SetActive(isDye);
+            _tabGroup.SetActive(!isDye);
+            if (_thumbnailScrollRect != null) _thumbnailScrollRect.gameObject.SetActive(!isDye);
+            if (_detailCardRoot != null) _detailCardRoot.SetActive(!isDye);
 
-            if (_thumbnailScrollRect != null)
-                _thumbnailScrollRect.gameObject.SetActive(index != 2);
-            if (_detailCardRoot != null)
-                _detailCardRoot.SetActive(index != 2);
+            if (isDye) return;   // 염색은 모드·탭을 건드리지 않는다
 
-            if (index == 0)
-                SwitchTab(_lastPartsTab);
-            else if (index == 1)
-                SwitchTab(_lastAccessoryTab);
-
-            if (index != 2)
-                _colorPicker.gameObject.SetActive(false);  // 색상 탭 벗어나면 피커 닫기
+            _colorPicker.gameObject.SetActive(false);  // 염색 탭을 벗어나면 피커 닫기
+            SetCodexMode(index == 1);                  // 도감 → 외형변경이면 여기서 롤백
+            RefreshTabVisibility();
+            SwitchTab(_currentTab);
         }
 
         // 도감 모드 전환
@@ -343,8 +313,12 @@ namespace MySecondWorld.UI
             if (_isCodexTab == on) return;
             bool leavingCodex = _isCodexTab;
             _isCodexTab = on;
-            if (leavingCodex) RollbackPreviewToSaved().Forget(); // 도감을 떠나면 입어 본 것을 버린다
-            SwitchTab(_currentTab);                              // 모드에 맞게 목록 다시 그림
+
+            //수집률 표시 두 줄
+            if (_collectionRateText != null) _collectionRateText.gameObject.SetActive(on);
+            if (_collectionProgressBar != null) _collectionProgressBar.gameObject.SetActive(on);
+            // 도감을 떠나면 입어 본 것을 버린다
+            if (leavingCodex) RollbackPreviewToSaved().Forget();
         }
 
         // 하위 탭 (헤어, 헤드.... / 머리장식, 등부착물)
@@ -363,18 +337,62 @@ namespace MySecondWorld.UI
             }
         }
 
-        // Female 시 FacialHair 탭 버튼 숨김 처리
-        private void UpdateFacialHairTabVisibility()
+        // 지금 모드(외형변경/도감)에 맞는 부위 탭만 보이게 한다.
+        //
+        // 하는 일 (3단계)
+        //  ① 탭 25개를 하나씩 보며, 그 부위에 "지금 모드에 속한 후보"가 있으면 켜고 없으면 끈다
+        //  ② 지금 보고 있던 탭(_currentTab)이 꺼졌으면, 보이는 탭 중 맨 앞 탭으로 옮긴다
+        //  ③ 실선은 도감 모드에서만 켠다
+        //
+        // 예) 외형변경 → 도감으로 바뀌면
+        //     Hair·Eyebrows 탭은 요구 아이템 있는 후보가 없어 꺼지고, Torso·Arm 탭은 켜진다.
+        //     만약 Hair 탭을 보던 중이었다면 Hair가 꺼졌으니 켜진 첫 탭(Head 등)으로 옮긴다.
+        private void RefreshTabVisibility()
         {
-            var entry = System.Array.Find(_partsTabEntries, e => e.Part == PartType.FacialHair);
-            if (entry.Toggle == null)
-                return;
+            bool currentTabStillVisible = false; // 지금 보고 있는 하위 탭 버튼이 켜져 있나
+            PartTabEntry firstVisible = default; // 보이는 탭 중 맨 앞 탭 (옮겨 갈 곳)
+            bool hasFirst = false;               // firstVisible을 이미 채웠는가? (struct라 null 비교가 안 돼서 따로 둔 표시)
 
-            bool hide =
-                _currentGender == Gender.Female &&   //여성인가?
-                _keyTable.GetCount(PartType.FacialHair, Gender.Female) == 0; //여성용 수염 파츠가 0개인가?
+            // ① 탭 25개를 화면 순서대로 훑는다
+            foreach (var entry in _tabEntries)
+            {
+                if (entry.Toggle == null) return; // Inspector에서 연결 안 된 칸은 건너뜀
 
-            entry.Toggle.gameObject.SetActive(!hide); // 둘 다 맞으면 탭 버튼을 숨겨라
+                // 이 부위에 지금 모드의 후보가 하나라도 있나? (HasCandidatesForMode → IsCodexEntry 순으로 판정)
+                bool visible = HasCandidatesForMode(entry.Part);
+
+                // 여성-수염 처럼 아무것도 없으면 탭 숨김
+                entry.Toggle.gameObject.SetActive(visible);
+                if (!visible) continue;
+
+                // 처음 만난 보이는 탭을 기억
+                if (!hasFirst)
+                {
+                    firstVisible = entry;
+                    hasFirst = true;
+                }
+
+                // 보던 하위 탭이 아직 보임
+                if (entry.Part == _currentTab)
+                    currentTabStillVisible = true;
+            }
+
+            // ② 보던 하위 탭이 숨겨졌으면 맨 앞 보이는 탭으로 옮긴다.
+            //    (안 옮기면 숨은 탭의 내용이 화면에 그대로 남는다)
+            // 예) 남 → 여 : 수염 탭 숨겨지고 첫번째 탭으로
+            // 예) 외형(3) → 도감(1) → 외형(1) 
+            if (!currentTabStillVisible && hasFirst)
+            {
+                // 코드가 보는 탭 갱신 (n → 1)
+                _currentTab = firstVisible.Part;
+                // 화면의 선택 표시만 옮김
+                // (WithoutNotify: 리스너가 SwitchTab을 또 부르지 않게 조용히 켜기. 목록은 ShowTopTab이 그린다)
+                firstVisible.Toggle.SetIsOnWithoutNotify(true);
+            }
+
+            // ③ 실선(장비/액세서리 구분)은 두 묶음이 다 보이는 도감 모드에서만 켠다
+            if (_tabDivider != null) 
+                _tabDivider.SetActive(_isCodexTab);
         }
         #endregion
 
@@ -684,7 +702,7 @@ namespace MySecondWorld.UI
                 _currentIndices[part] = current < count ? current : (count > 0 ? 0 : -1);
             }
 
-            UpdateFacialHairTabVisibility();
+            RefreshTabVisibility();
             // FacialHair 탭이 숨겨지면 Hair로 이동
             if (_currentGender == Gender.Female &&
                 _currentTab == PartType.FacialHair &&
@@ -835,7 +853,7 @@ namespace MySecondWorld.UI
             await _previewCustomizer.ApplyAppearance(d); // 인덱스+색상 전부 기본값으로
             SyncIndicesFromPreview(); // 상호배제 캐스케이드 결과로 _currentIndices 재동기화
 
-            UpdateFacialHairTabVisibility(); // 성별이 바뀌었을 수 있으니 탭 가시성도 갱신
+            RefreshTabVisibility(); // 성별이 바뀌었을 수 있으니 탭 가시성도 갱신
             UpdateThumbnailSelection(); // 새 성별 기준으로 현재 탭 썸네일 목록 재생성 + 선택 하이라이트
             RefreshColorRows(); // 색상 탭 스와치/피커도 갱신
         }
@@ -844,8 +862,6 @@ namespace MySecondWorld.UI
         #region 소유 검증
         private CharacterAppearanceData ValidateOwnership(CharacterAppearanceData data, CharacterAppearanceData? fallback = null)
              => PartOwnership.ValidateOwnership(_keyTable, data, _inventoryProvider.IsOwned, fallback);
-        private bool IsPartOwned(PartType part, Gender gender, int index)
-            => PartOwnership.IsPartOwned(_keyTable, part, gender, index, _inventoryProvider.IsOwned);
 
         private PartStatus GetPartStatus(PartType part, Gender gender, int index)
             => PartOwnership.GetPartStatus(_keyTable, part, gender, index,
@@ -854,7 +870,22 @@ namespace MySecondWorld.UI
         // 도감 항목인가? 요구 아이템이 달려 있으면 도감, 없으면(맨몸·기본 파츠) 외형변경 항목
         private bool IsCodexEntry(PartType part, Gender gender, int index)
             => _keyTable.GetRequiredItem(part, gender, index) != null;
-        
+
+        // 이 부위에 지금 모드(_isCodexTab)에 속한 후보가 하나라도 있나? (0번 맨몸은 센 걸로 안 침)
+        private bool HasCandidatesForMode(PartType part)
+        {
+            int count = _keyTable.GetCount(part, _currentGender);
+            for (int i = 1; i < count; i++)
+            {
+                // 도감 항목(요구 아이템 있음)    도감 탭         true == true    true(보여 줌)
+                // 외형 항목(요구 아이템 없음)    외형변경 탭     false == false  true(보여 줌)
+                // 도감 항목	                  외형변경 탭	  true == false	  false (숨김)
+                // 외형 항목                      도감 탭         false == true   false(숨김)
+                if (IsCodexEntry(part, _currentGender, i) == _isCodexTab) return true;
+            }
+            return false;
+        }
+
         #endregion
 
         #region 저장·불러오기
@@ -885,7 +916,7 @@ namespace MySecondWorld.UI
             var saved = _appearanceCache.Get(); // 열릴 때는 현재 착용 중인 로컬 세이브 외형을 그대로 프리뷰에 로드
             _currentGender = saved.Gender;
             SetIndicesFromData(saved); // 저장된 외형으로 인덱스 캐시 채움
-            UpdateFacialHairTabVisibility();
+            RefreshTabVisibility();
             ShowTopTab(0); // 파츠 탭(0) 먼저
 
             if (_previewCustomizer != null)
@@ -902,7 +933,7 @@ namespace MySecondWorld.UI
             var saved = _appearanceCache.Get(); // 열릴 때는 현재 착용 중인 로컬 세이브 외형을 그대로 프리뷰에 로드
             _currentGender = saved.Gender;
             SetIndicesFromData(saved); // 저장된 외형으로 인덱스 캐시 채움
-            UpdateFacialHairTabVisibility();
+            RefreshTabVisibility();
             await _previewCustomizer.ApplyAppearance(saved); // 프리뷰 캐릭터에 현재 옷 그대로 반영
            
             SyncIndicesFromPreview(); // 상호배제 캐스케이드 결과로 _currentIndices 재동기화
