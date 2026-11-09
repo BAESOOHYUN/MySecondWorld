@@ -93,6 +93,7 @@
   <Project Path="Unity.Multiplayer.Center.Common.csproj" />
   <Project Path="Unity.XR.Interaction.Toolkit.Analytics.Editor.csproj" />
   <Project Path="MySecondWorld.AI.csproj" />
+  <Project Path="MySecondWorld.Customization.csproj" />
   <Project Path="Unity.Services.Core.Environments.Internal.csproj" />
   <Project Path="SimpleWebTransport.csproj" />
   <Project Path="Unity.InputSystem.ForUI.csproj" />
@@ -106,10 +107,9 @@
   <Project Path="Unity.XR.Interaction.Toolkit.Analytics.Hooks.Editor.csproj" />
   <Project Path="Unity.Collections.CodeGen.csproj" />
   <Project Path="com.whisper.unity.csproj" />
-  <Project Path="MySecondWorld.Customization.csproj" />
   <Project Path="Unity.DedicatedServer.Editor.csproj" />
-  <Project Path="Paroxe.PDFRenderer.Editor.csproj" />
   <Project Path="Unity.Services.Core.Telemetry.csproj" />
+  <Project Path="Paroxe.PDFRenderer.Editor.csproj" />
   <Project Path="Unity.Addressables.csproj" />
   <Project Path="Unity.Services.Core.Components.csproj" />
   <Project Path="MessagePipe.VContainer.csproj" />
