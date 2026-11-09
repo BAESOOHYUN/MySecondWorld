@@ -113,6 +113,9 @@ namespace MySecondWorld.UI
         private bool _isInitialSetup; // 첫 설정 중(외형 미저장 계정) 닫을 수 없다
         private bool _isInitialized;
         private bool _showAllGenders;
+        private bool _isCodexTab;     // true=도감(요구 아이템 있는 후보), false=외형변경(없는 후보)
+
+
         // 반대 성별 칸은 따로 관리
         // 이유 : UpdateThumbnailSelection이 _spawnedButtons를 돌며 번호가 같은 칸을 선택 표시하는데,
         // 반대 성별 칸이 섞이면 번호가 같은 칸이 잘못 켜진다.그래서 목록을 분리한다.
@@ -305,12 +308,15 @@ namespace MySecondWorld.UI
         {
             if (_isInitialSetup) return;              // 첫 설정 중에는 닫을 수 없다 (저장하기 전까지)
             _colorPicker.gameObject.SetActive(false); // 피커가 켜질 때(FlexibleColorPicker.OnEnable) 시작색(빨강)으로 알림이 나가 색이 덮이는 걸 막으려, 닫을 때 피커를 꺼 둔다
+            // 도감을 닫을 때 롤백
+            RollbackPreviewToSaved().Forget();
             gameObject.SetActive(false);
         }
         #endregion
 
         #region 탭
-        // 최상위 탭 전환 — 0=파츠, 1=액세서리, 2=색상
+
+        // 최상위 탭 전환 — 0= (외형) 커스터마이징, 1= 도감, 2=색상
         public void ShowTopTab(int index)
         {
             _partsTabGroup.SetActive(index == 0);
@@ -329,6 +335,16 @@ namespace MySecondWorld.UI
 
             if (index != 2)
                 _colorPicker.gameObject.SetActive(false);  // 색상 탭 벗어나면 피커 닫기
+        }
+
+        // 도감 모드 전환
+        private void SetCodexMode(bool on)
+        {
+            if (_isCodexTab == on) return;
+            bool leavingCodex = _isCodexTab;
+            _isCodexTab = on;
+            if (leavingCodex) RollbackPreviewToSaved().Forget(); // 도감을 떠나면 입어 본 것을 버린다
+            SwitchTab(_currentTab);                              // 모드에 맞게 목록 다시 그림
         }
 
         // 하위 탭 (헤어, 헤드.... / 머리장식, 등부착물)
@@ -391,14 +407,21 @@ namespace MySecondWorld.UI
             bool partVisible = IsPartVisible(part);   
             
             // 도감 수집률 계산
-            int totalCount = names.Count;
-            int ownedCount = 0;
+            int totalCount = 0;  // 아래 for에서 필터 후 개수를 세므로 0에서 시작
+            int unlockedCount = 0;
             for (int i = 0; i < names.Count; i++)
             {
-                // 수집률 계산 : 얻은 적 있는 것까지 센다
-                if (GetPartStatus(part, _currentGender, i) != PartStatus.Locked) ownedCount++;
+                // 지금 탭에 속한 후보만 센다 (도감 탭=요구 아이템 있는 후보, 외형변경 탭=없는 후보)
+                if (IsCodexEntry(part, _currentGender, i) != _isCodexTab) continue;
+
+                totalCount++;           // 분모 : 이 탭의 후보 수
+
+                // 수집률 계산 : 얻은 적 있는(Unlocked) 것까지 센다               
+                if (GetPartStatus(part, _currentGender, i) != PartStatus.Locked)
+                    unlockedCount++;    // 분자 : 해금된 후보 수 (지금 보유 + 얻은 적 있음)
             }
-            UpdateCollectionProgress(ownedCount, totalCount);
+
+            UpdateCollectionProgress(unlockedCount, totalCount);
 
             // 선택적 파츠: 맨 앞에 "없음(-1)" 슬롯 삽입
             if (_optionalParts.Contains(part))
@@ -415,6 +438,10 @@ namespace MySecondWorld.UI
             // 썸네일 설정
             for (int i = 0; i < names.Count; i++)
             {
+                // _isCodexTab로 지금 탭에 속한 후보만 그린다. 도감 탭=요구 아이템이 있는 후보, 외형변경 탭=없는 후보
+                // (건너뛰어도 버튼 번호는 원래 번호(capturedIndex)를 쓰므로 어긋나지 않는다)
+                if (IsCodexEntry(part, _currentGender, i) != _isCodexTab) continue;
+
                 Sprite sprite =
                     !string.IsNullOrEmpty(names[i]) ?
                     _thumbnailAtlas?.GetSprite(names[i]) : null;
@@ -589,6 +616,10 @@ namespace MySecondWorld.UI
             for (int i = 0; i < names.Count; i++)
             {
                 if (!_keyTable.IsGenderSpecific(part, other, i)) continue; // 공용은 이미 위 목록에 있다
+
+                // 반대 성별 후보도 지금 탭에 속한 것만 보여 준다. 판정은 반대 성별(other) 기준
+                if (IsCodexEntry(part, other, i) != _isCodexTab) continue;
+
                 Sprite sprite = !string.IsNullOrEmpty(names[i]) ? _thumbnailAtlas?.GetSprite(names[i]) : null;
                 var btn = Instantiate(_thumbnailButtonPrefab, _thumbnailContent);
                 // 람다가 반복 변수 i를 쓰지 않고 (p, idx) 인자만 써서, 반복문 변수 캡처 문제가 없다
@@ -820,11 +851,16 @@ namespace MySecondWorld.UI
             => PartOwnership.GetPartStatus(_keyTable, part, gender, index,
                                    _inventoryProvider.IsOwned, _inventoryProvider.WasEverOwned);
 
+        // 도감 항목인가? 요구 아이템이 달려 있으면 도감, 없으면(맨몸·기본 파츠) 외형변경 항목
+        private bool IsCodexEntry(PartType part, Gender gender, int index)
+            => _keyTable.GetRequiredItem(part, gender, index) != null;
+        
         #endregion
 
         #region 저장·불러오기
         private void OnSaveClicked()
         {
+            // 저장할 때 롤백
             var previouslySaved = _appearanceCache.Get();// 되돌릴 기준값 = 직전 저장 상태 (성별이 같을 때만 쓰인다)
             var data = ValidateOwnership(BuildData(), previouslySaved); // 미소유 파츠는 기준값으로 되돌린다.
                                                                         // 성별이 바뀌었으면 번호가 다른 옷을 가리키므로 맨몸(0)으로 되돌린다
@@ -841,6 +877,7 @@ namespace MySecondWorld.UI
             if (_exitButton != null) _exitButton.interactable = true;
         }
 
+        // 창을 새로 열 때의 초기화
         private async UniTask ReloadFromSave()
         {
             await EnsureAtlasLoadedAsync();
@@ -848,13 +885,26 @@ namespace MySecondWorld.UI
             var saved = _appearanceCache.Get(); // 열릴 때는 현재 착용 중인 로컬 세이브 외형을 그대로 프리뷰에 로드
             _currentGender = saved.Gender;
             SetIndicesFromData(saved); // 저장된 외형으로 인덱스 캐시 채움
-
             UpdateFacialHairTabVisibility();
             ShowTopTab(0); // 파츠 탭(0) 먼저
 
             if (_previewCustomizer != null)
                 await _previewCustomizer.ApplyAppearance(saved); // 프리뷰 캐릭터에 현재 옷 그대로 반영
 
+            SyncIndicesFromPreview(); // 상호배제 캐스케이드 결과로 _currentIndices 재동기화
+            UpdateThumbnailSelection();
+            RefreshColorRows(); // 색상 스와치/피커도 저장된 색으로 갱신
+        }
+
+        // 저장 안 한 "입어 보기"를 버리고 프리뷰를 직전 저장 외형으로 되돌린다. (도감 이탈·닫기용)
+        private async UniTask RollbackPreviewToSaved()
+        {
+            var saved = _appearanceCache.Get(); // 열릴 때는 현재 착용 중인 로컬 세이브 외형을 그대로 프리뷰에 로드
+            _currentGender = saved.Gender;
+            SetIndicesFromData(saved); // 저장된 외형으로 인덱스 캐시 채움
+            UpdateFacialHairTabVisibility();
+            await _previewCustomizer.ApplyAppearance(saved); // 프리뷰 캐릭터에 현재 옷 그대로 반영
+           
             SyncIndicesFromPreview(); // 상호배제 캐스케이드 결과로 _currentIndices 재동기화
             UpdateThumbnailSelection();
             RefreshColorRows(); // 색상 스와치/피커도 저장된 색으로 갱신

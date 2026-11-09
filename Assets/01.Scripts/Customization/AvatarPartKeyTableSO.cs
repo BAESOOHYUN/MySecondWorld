@@ -96,6 +96,42 @@ namespace MySecondWorld.Customization
             return index >= 0 && index < specificCount;
         }
 
+        // ── 성별 번호 대응 ──────────────────────────────────────────────
+        // 같은 옷이 남자 목록과 여자 목록에서 다른 번호를 가질 수 있어, 성별을 바꿀 때 번호를 환산한다.
+        //
+        // 목록은 "성별 전용(맨몸 포함) → 공용" 순서다. 예) 남자 전용 4칸, 여자 전용 3칸, 공용 2개
+        //
+        //  번호 | 남자 목록   | 여자 목록
+        //  -----+-------------+-------------
+        //   0   | 맨몸        | 맨몸
+        //   1   | 남 전용 A   | 여 전용 A
+        //   2   | 남 전용 B   | 여 전용 B
+        //   3   | 남 전용 C   | 공용 X
+        //   4   | 공용 X      | 공용 Y
+        //   5   | 공용 Y      | (없음)
+        //
+        // 전용 칸 수(fromCount/toCount)는 맨몸 칸을 포함해서 센다. 위 예: 남 4, 여 3.
+        // from = 지금 번호가 속한 성별, to = 옮겨 갈 성별
+        //
+        // 규칙 (남자 → 여자로 바꾼다면)
+        //  - 번호 >= fromCount (공용): 앞의 전용 칸 수가 달라 밀린다 → index - fromCount + toCount
+        //      남 4(X) → 4 - 4 + 3 = 여 3,  남 5(Y) → 5 - 4 + 3 = 여 4
+        //  - 번호 < fromCount (전용): 여자 전용에도 그 번호가 있으면(번호 < toCount) 같은 번호, 없으면 -1
+        //      남 1(A) → 여 1,  남 2(B) → 여 2,  남 3(C) → -1 (여자엔 짝이 없음)
+        //  - 0(맨몸)·-1(없음), 성별이 같을 때: 그대로
+        public int MapIndexToGender(PartType part, Gender from, Gender to, int index)
+        {
+            if (index <= 0 || from == to) return index;       // 맨몸·없음, 같은 성별은 환산 불필요
+
+            var entry = Entries.Find(e => e.PartType == part); // 이 파츠 종류의 남/여/공용 목록 묶음
+            if (entry == null) return -1;
+
+            int fromCount = (from == Gender.Male ? entry.MaleParts : entry.FemaleParts).Count; // 출발 쪽 전용 칸 수
+            int toCount = (to == Gender.Male ? entry.MaleParts : entry.FemaleParts).Count; // 도착 쪽 전용 칸 수
+
+            if (index >= fromCount) return index - fromCount + toCount; // 공용: 공용 안 순서를 도착 쪽 공용 시작 위치에 얹는다
+            return index < toCount ? index : -1;                        // 전용: 같은 번호, 도착 쪽에 없으면 -1
+        }
 
         // ─────── 인덱스 하나로 콕 집어 조회하기 (실제 장착/적용 시점에 씀) ─────── 
 
