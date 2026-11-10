@@ -620,8 +620,8 @@ namespace MySecondWorld.UI
             if (item is EquipmentItem eq)
             {
                 // 2.커스터마이징 파츠(방어구 / 악세사리): 어느 탭인지는 GetPartTab이 결정
-                // (장비)	  헬멧, 상의, 상완, 하완, 손, 하의, 다리  (7종)
-                // (악세사리) 모자/복면/오픈투구, 어깨, 팔꿈치, 무릎, 등 장식, 허리 장식  (6종)
+                // (장비)	  모자·투구·복면(HeadCoverings), 상의, 상완, 하완, 손, 하의, 다리  (7종)
+                // (악세사리) 투구 장식, 어깨, 팔꿈치, 무릎, 등 장식, 허리 장식  (6종)
                 if (eq.Category == WeaponCategory.None && eq.Restriction != null)
                     return tab == GetPartTab(eq);
 
