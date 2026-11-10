@@ -363,6 +363,14 @@ namespace MySecondWorld.UI
 
                 // 여성-수염 처럼 아무것도 없으면 탭 숨김
                 entry.Toggle.gameObject.SetActive(visible);
+
+                // Head 탭은 같은 탭이라도 모드에 따라 이름이 다르다 (외형변경=얼굴, 도감=헬멧)
+                if (entry.Part == PartType.Head)
+                {
+                    var label = entry.Toggle.GetComponentInChildren<TextMeshProUGUI>(true);
+                    if (label != null) label.text = _isCodexTab ? "헬멧" : "얼굴";
+                }
+
                 if (!visible) continue;
 
                 // 처음 만난 보이는 탭을 기억
@@ -379,7 +387,7 @@ namespace MySecondWorld.UI
 
             // ② 보던 하위 탭이 숨겨졌으면 맨 앞 보이는 탭으로 옮긴다.
             //    (안 옮기면 숨은 탭의 내용이 화면에 그대로 남는다)
-            // 예) 남 → 여 : 수염 탭 숨겨지고 첫번째 탭으로
+            // 예) 남 → 여 : 보던 탭이 수염일 경우, 수염 탭 숨겨지고 첫번째 탭으로
             // 예) 외형(3) → 도감(1) → 외형(1) 
             if (!currentTabStillVisible && hasFirst)
             {
