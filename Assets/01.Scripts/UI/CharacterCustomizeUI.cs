@@ -299,7 +299,14 @@ namespace MySecondWorld.UI
             if (_thumbnailScrollRect != null) _thumbnailScrollRect.gameObject.SetActive(!isDye);
             if (_detailCardRoot != null) _detailCardRoot.SetActive(!isDye);
 
-            if (isDye) return;   // 염색은 모드·탭을 건드리지 않는다
+             // 염색은 모드·탭을 건드리지 않는다
+            if (isDye)
+            {
+                // 염색 탭에 들어오면 지금 선택된 색상 채널의 피커를 열어 둔다.
+                // (OnColorChannelSelected가 _isOpeningPicker로 시작색 덮어쓰기를 막아 주므로 그대로 불러도 안전)
+                OnColorChannelSelected(_activeColorTarget);
+                return;
+            }
 
             _colorPicker.gameObject.SetActive(false);  // 염색 탭을 벗어나면 피커 닫기
             SetCodexMode(index == 1);                  // 도감 → 외형변경이면 여기서 롤백
