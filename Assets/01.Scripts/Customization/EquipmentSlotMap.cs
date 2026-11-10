@@ -29,7 +29,10 @@ namespace MySecondWorld.Customization
     {
         private static readonly Dictionary<EquipmentSlotType, PartType[]> SlotToParts = new()
         {
-            // Head는 서브타입이 No_Elements일 때만(헬멧) 요구 아이템이 있다. 맨얼굴은 null이라 슬롯이 비어 보인다.
+            // HeadCoverings 슬롯은 [Head, HeadCoverings] 두 파츠를 묶는다. 슬롯에 "무엇을 입었나"는 파츠들의 요구 아이템으로 판단하는데,
+            // Head는 맨얼굴(All_Elements)에 요구 아이템이 없다(null)는 데이터 약속에 기댄다. (No_Elements가 헬멧)
+            // 맨얼굴에 요구 아이템이 달리면 항상 입은 것으로 잡혀 슬롯이 안 비워진다.
+            // 그 약속은 AvatarPartKeyTableSO의 "Validate Bare Head Has No Required Item"으로 점검한다.
             { EquipmentSlotType.HeadCoverings,    new[] {  PartType.Head, PartType.HeadCoverings } },
             { EquipmentSlotType.Torso,            new[] { PartType.Torso } },
             { EquipmentSlotType.ArmUpper,         new[] { PartType.ArmUpperLeft,   PartType.ArmUpperRight } },

@@ -87,7 +87,7 @@ namespace MySecondWorld.Customization
                 case PartType.Head:
                     {
                         string subtype = keyTable.GetSubType(PartType.Head, gender, newIndex);
-                        if (subtype == "All_Elements")
+                        if (subtype == PartSubTypes.HeadAllElements)
                             desired.HelmetAttachment = 0;// 헬멧 쓴 채 새 얼굴형 고르면 헬멧 영구 해제
 
                         // subtype == "No_Elements(헬멧)"인 경우 → 아무 것도 안 함(2026-07-18 확정).
@@ -98,8 +98,8 @@ namespace MySecondWorld.Customization
 
                 case PartType.HeadCoverings when newIndex > 0: // 악세사리 (모자, 복면, 후드 등) 선택 시
                     {
-                        if (keyTable.GetSubType(PartType.Head, gender, desired.Head) == "No_Elements") // 헬멧 쓰고 있었으면
-                            desired.Head = FindSubtypeIndex(PartType.Head, gender, "All_Elements", lastSelectedIndex, keyTable); // 맨얼굴로 돌림
+                        if (keyTable.GetSubType(PartType.Head, gender, desired.Head) == PartSubTypes.HeadNoElements) // 헬멧 쓰고 있었으면
+                            desired.Head = FindSubtypeIndex(PartType.Head, gender, PartSubTypes.HeadAllElements, lastSelectedIndex, keyTable); // 맨얼굴로 돌림
 
                         desired.HelmetAttachment = 0; // 헤드커버와 헬멧장신구는 동시 착용 불가 — 새 헤드커버를 고르면 헬멧 취소
                     }
@@ -107,28 +107,28 @@ namespace MySecondWorld.Customization
 
                 case PartType.Hair when newIndex >= 0:
                     {
-                        if (keyTable.GetSubType(PartType.HeadCoverings, gender, desired.HeadCoverings) == "No_Hair") // 악세사리로 후드 쓰고 있었으면
+                        if (keyTable.GetSubType(PartType.HeadCoverings, gender, desired.HeadCoverings) == PartSubTypes.CoveringNoHair) // 악세사리로 후드 쓰고 있었으면
                             desired.HeadCoverings = 0; // 후드 착용 해제
 
-                        if (keyTable.GetSubType(PartType.Head, gender, desired.Head) == "No_Elements")
-                            desired.Head = FindSubtypeIndex(PartType.Head, gender, "All_Elements", lastSelectedIndex, keyTable);
+                        if (keyTable.GetSubType(PartType.Head, gender, desired.Head) == PartSubTypes.HeadNoElements)
+                            desired.Head = FindSubtypeIndex(PartType.Head, gender, PartSubTypes.HeadAllElements, lastSelectedIndex, keyTable);
                     }
                     break;
 
                 case PartType.Eyebrows when newIndex >= 0:
                     {
-                        if (keyTable.GetSubType(PartType.Head, gender, desired.Head) == "No_Elements")
-                            desired.Head = FindSubtypeIndex(PartType.Head, gender, "All_Elements", lastSelectedIndex, keyTable);
+                        if (keyTable.GetSubType(PartType.Head, gender, desired.Head) == PartSubTypes.HeadNoElements)
+                            desired.Head = FindSubtypeIndex(PartType.Head, gender, PartSubTypes.HeadAllElements, lastSelectedIndex, keyTable);
                     }
                     break;
 
                 case PartType.FacialHair when newIndex >= 0:
                     {
-                        if (keyTable.GetSubType(PartType.HeadCoverings, gender, desired.HeadCoverings) == "No_FacialHair") // 악세사리로 복면 쓰고 있었으면
+                        if (keyTable.GetSubType(PartType.HeadCoverings, gender, desired.HeadCoverings) == PartSubTypes.CoveringNoFacialHair) // 악세사리로 복면 쓰고 있었으면
                             desired.HeadCoverings = 0; //복면 착용 해제
 
-                        if (keyTable.GetSubType(PartType.Head, gender, desired.Head) == "No_Elements")
-                            desired.Head = FindSubtypeIndex(PartType.Head, gender, "All_Elements", lastSelectedIndex, keyTable);
+                        if (keyTable.GetSubType(PartType.Head, gender, desired.Head) == PartSubTypes.HeadNoElements)
+                            desired.Head = FindSubtypeIndex(PartType.Head, gender, PartSubTypes.HeadAllElements, lastSelectedIndex, keyTable);
                     }
                     break;
 
@@ -149,11 +149,11 @@ namespace MySecondWorld.Customization
             var visible = desired; // struct 복사
 
             bool helmetWorn = desired.HelmetAttachment > 0;
-            bool headHidesElements = keyTable.GetSubType(PartType.Head, gender, desired.Head) == "No_Elements";
+            bool headHidesElements = keyTable.GetSubType(PartType.Head, gender, desired.Head) == PartSubTypes.HeadNoElements;
             bool hcHidesHair = desired.HeadCoverings > 0
-                && keyTable.GetSubType(PartType.HeadCoverings, gender, desired.HeadCoverings) == "No_Hair";
+                && keyTable.GetSubType(PartType.HeadCoverings, gender, desired.HeadCoverings) == PartSubTypes.CoveringNoHair;
             bool hcHidesFacialHair = desired.HeadCoverings > 0
-                && keyTable.GetSubType(PartType.HeadCoverings, gender, desired.HeadCoverings) == "No_FacialHair";
+                && keyTable.GetSubType(PartType.HeadCoverings, gender, desired.HeadCoverings) == PartSubTypes.CoveringNoFacialHair;
 
             // 헬멧 장식물을 착용한 것이든, 사용자가 직접 고른 No_Elements 헤드든 구분 없이 동일하게 처리
             bool faceHidden = helmetWorn || headHidesElements;
@@ -163,7 +163,7 @@ namespace MySecondWorld.Customization
             // faceHidden=true & !headHidesElements    → helmetWorn 때문에 가려야 하는데 desired.Head는 아직
             //                                            All_Elements로 남아있음 → No_Elements 후보를 새로 찾아 대신 보여줌.
             visible.Head = faceHidden
-                ? (headHidesElements ? desired.Head : FindSubtypeIndex(PartType.Head, gender, "No_Elements", lastSelectedIndex, keyTable))
+                ? (headHidesElements ? desired.Head : FindSubtypeIndex(PartType.Head, gender, PartSubTypes.HeadNoElements, lastSelectedIndex, keyTable))
                 : desired.Head;
 
             // 얼굴이 가려졌거나(faceHidden), 후드(HeadCoverings=No_Hair)가 덮고 있으면 -1(없음), 아니면 desired 그대로
@@ -186,10 +186,10 @@ namespace MySecondWorld.Customization
 
         public static bool IsFaceHidden(CharacterAppearanceData desired, Gender gender, AvatarPartKeyTableSO keyTable)
             => desired.HelmetAttachment > 0
-                || keyTable.GetSubType(PartType.Head, gender, desired.Head) == "No_Elements";
+                || keyTable.GetSubType(PartType.Head, gender, desired.Head) == PartSubTypes.HeadNoElements;
 
         // 투구 장식은 Head가 헬멧(No_Elements)일 때만 허용
         public static bool IsHelmetAttachmentAllowed(CharacterAppearanceData data, Gender gender, AvatarPartKeyTableSO keyTable)
-            => keyTable.GetSubType(PartType.Head, gender, data.Head) == "No_Elements";
+            => keyTable.GetSubType(PartType.Head, gender, data.Head) == PartSubTypes.HeadNoElements;
     }
 }

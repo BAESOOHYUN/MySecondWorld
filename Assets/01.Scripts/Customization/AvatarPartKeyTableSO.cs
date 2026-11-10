@@ -127,7 +127,7 @@ namespace MySecondWorld.Customization
             if (entry == null) return -1;
 
             int fromCount = (from == Gender.Male ? entry.MaleParts : entry.FemaleParts).Count; // 출발 쪽 전용 칸 수
-            int toCount = (to == Gender.Male ? entry.MaleParts : entry.FemaleParts).Count; // 도착 쪽 전용 칸 수
+            int toCount = (to == Gender.Male ? entry.MaleParts : entry.FemaleParts).Count;     // 도착 쪽 전용 칸 수
 
             if (index >= fromCount) return index - fromCount + toCount; // 공용: 공용 안 순서를 도착 쪽 공용 시작 위치에 얹는다
             return index < toCount ? index : -1;                        // 전용: 같은 번호, 도착 쪽에 없으면 -1
@@ -247,6 +247,48 @@ namespace MySecondWorld.Customization
             var path = UnityEditor.AssetDatabase.GUIDToAssetPath(r.AssetGUID);
             return System.IO.Path.GetFileNameWithoutExtension(path);
         }
+
+        // 에디터에서 우클릭 메뉴로 실행. EquipmentSlotMap의 HeadCoverings 슬롯이 기대는 약속을 확인한다.
+        [ContextMenu("Validate Bare Head Has No Required Item")]
+        private void ValidateBareHeadHasNoRequiredItem()
+        {
+            var entry = Entries.Find(e => e.PartType == PartType.Head);
+            if (entry == null) { Debug.LogWarning("[AvatarPartKeyTable] Head 항목이 없음", this); return; }
+
+            int bad = CountBareFacesWithRequiredItem(entry.MalePartSubTypes, entry.MaleRequiredItems, "Male")
+                    + CountBareFacesWithRequiredItem(entry.FemalePartSubTypes, entry.FemaleRequiredItems, "Female")
+                    + CountBareFacesWithRequiredItem(entry.AllGenderPartSubTypes, entry.AllGenderRequiredItems, "AllGender");
+
+            if (bad == 0) Debug.Log("[AvatarPartKeyTable] 맨얼굴 요구 아이템 점검 통과", this);
+
+
+        }
+        // 맨얼굴(서브타입 All_Elements)인데 요구 아이템이 연결된 칸을 세어 경고한다. 0이면 정상.
+        //
+        // 맨얼굴은 누구나 쓰는 무료 얼굴형이라 요구 아이템이 없어야(null) 한다.
+        // 요구 아이템이 있는 건 투구(No_Elements)뿐이다.
+        // EquipmentSlotMap.HeadCoverings 슬롯은 이 약속(맨얼굴 = 아이템 없음)에 기대고 있다.
+        //
+        // subTypes[i]와 required[i]는 같은 번호끼리 한 후보를 이룬다. (AvatarPartKeyTableSO의 남/여/공용 목록 공통 규칙)
+        // label은 어느 목록인지(Male/Female/AllGender) 로그에 보여 주는 이름이다.
+        // 리스트 하나를 검사해 문제 개수를 돌려주는 함수
+        // 서브타입 목록과 요구 아이템 목록을 같은 번호끼리 짝지어, 맨얼굴인데 요구 아이템이 달린 칸을 센다.
+        // label은 어느 목록인지(Male/Female/AllGender) 로그에 보여 주기 위한 이름.
+        private int CountBareFacesWithRequiredItem(IReadOnlyList<string> subTypes,
+                            IReadOnlyList<EquipmentItem> required, string label)
+        {
+            int bad = 0;
+            for (int i = 0; i < subTypes.Count && i < required.Count; i++)
+            {
+                if (subTypes[i] == PartSubTypes.HeadAllElements && required[i] != null)
+                {
+                    Debug.LogWarning($"[AvatarPartKeyTable] 맨얼굴(Head {label}[{i}])에 요구 아이템이 달려 있음: {required[i].name}", this);
+                    bad++;
+                }
+            }
+            return bad;
+        }
+
 #endif
     }
 }

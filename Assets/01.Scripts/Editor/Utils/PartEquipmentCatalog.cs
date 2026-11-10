@@ -34,32 +34,32 @@ namespace MySecondWorld.Editor
         // 예외적으로 잠금 대상 — 그룹 B/C처럼 "PartType 전체가 동일 규칙"이 아니라
         // "PartType 안의 특정 서브타입만"이라 배열로 묶지 않고 단일 상수로 명시.
         public const PartType HeadLockPartType = PartType.Head;
-        public const string HeadLockSubType = "No_Elements";
+        public const string HeadLockSubType = MySecondWorld.Customization.PartSubTypes.HeadNoElements;
 
         private static readonly Dictionary<PartType, string> PartTypeKoreanNames = new()
         {
-            { PartType.Torso, "상의" },
-            { PartType.ArmUpperLeft, "상완 보호구" },
-            { PartType.ArmUpperRight, "상완 보호구" },
-            { PartType.ArmLowerLeft, "하완 보호구" },
-            { PartType.ArmLowerRight, "하완 보호구" },
-            { PartType.HandLeft, "장갑" },
-            { PartType.HandRight, "장갑" },
-            { PartType.Hips, "하의" },
-            { PartType.LegLeft, "다리 보호구" },
-            { PartType.LegRight, "다리 보호구" },
-            { PartType.HeadCoverings, "머리 장식" },
-            { PartType.BackAttachment, "등 장식" },
-            { PartType.ShoulderAttachLeft, "어깨 장식" },
-            { PartType.ShoulderAttachRight, "어깨 장식" },
-            { PartType.ElbowAttachLeft, "팔꿈치 보호구" },
-            { PartType.ElbowAttachRight, "팔꿈치 보호구" },
-            { PartType.KneeAttachLeft, "무릎 보호구" },
-            { PartType.KneeAttachRight, "무릎 보호구" },
-            { PartType.HelmetAttachment, "투구 장식" },
-            { PartType.HipsAttachment, "허리 장식" },
+            { PartType.Torso,                "상의" },
+            { PartType.ArmUpperLeft,         "상완 보호구" },
+            { PartType.ArmUpperRight,        "상완 보호구" },
+            { PartType.ArmLowerLeft,         "하완 보호구" },
+            { PartType.ArmLowerRight,        "하완 보호구" },
+            { PartType.HandLeft,             "장갑" },
+            { PartType.HandRight,            "장갑" },
+            { PartType.Hips,                 "하의" },
+            { PartType.LegLeft,              "다리 보호구" },
+            { PartType.LegRight,             "다리 보호구" },
+            { PartType.HeadCoverings,        "머리 장식" },
+            { PartType.BackAttachment,       "등 장식" },
+            { PartType.ShoulderAttachLeft,   "어깨 장식" },
+            { PartType.ShoulderAttachRight,  "어깨 장식" },
+            { PartType.ElbowAttachLeft,      "팔꿈치 보호구" },
+            { PartType.ElbowAttachRight,     "팔꿈치 보호구" },
+            { PartType.KneeAttachLeft,       "무릎 보호구" },
+            { PartType.KneeAttachRight,      "무릎 보호구" },
+            { PartType.HelmetAttachment,     "투구 장식" },
+            { PartType.HipsAttachment,       "허리 장식" },
             // Head는 그룹 A지만 No_Elements 서브타입만 헬멧 장착용으로 잠금 대상 — 그룹 B/C와 동일 패턴 재사용
-            { PartType.Head, "헬멧" },
+            { PartType.Head,                 "헬멧" },
         };
 
         private static readonly Dictionary<string, string> SubTypeKoreanNames =
