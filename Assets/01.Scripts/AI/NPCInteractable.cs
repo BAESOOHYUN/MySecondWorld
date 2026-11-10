@@ -322,6 +322,7 @@ namespace MySecondWorld.AI
                 _activeInteraction.ForceReset();
             _activeInteraction = this;
             OnUIChecker.SetConversationActive(true);
+            _brain?.PrefetchMemory();
 
             _cts?.Cancel();
             _cts?.Dispose();

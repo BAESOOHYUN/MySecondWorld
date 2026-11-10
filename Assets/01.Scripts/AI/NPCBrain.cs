@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Threading;
 using System.Linq;
@@ -8,7 +9,7 @@ using UnityEngine;
 using MessagePipe;
 using VContainer;
 using MySecondWorld.Network;
-using System.IO;
+using MySecondWorld.Save;
 
 namespace MySecondWorld.AI
 {
@@ -131,6 +132,7 @@ namespace MySecondWorld.AI
                 // 1. 대화 히스토리 즉시 반영 및 영구 저장
                 _sessionBuffer.Add((evt.Text, response));
                 _memory?.AddHistoryEntry(evt.Text, response);
+                NpcMemoryClient.Append(UniqueId, evt.Text, response);
                 _memory?.Save(MemoryKey);
 
                 // 2. 응답 이벤트 발행 (UI 업데이트)
@@ -171,6 +173,7 @@ namespace MySecondWorld.AI
 
         private void Start()
         {
+            NpcMemoryClient.OnLoaded += HandleMemoryLoaded;
             _memory?.Load(MemoryKey);
 
             // 서버 상태 => 로컬 메모리 동기화
@@ -189,6 +192,7 @@ namespace MySecondWorld.AI
 
         private void OnDestroy()
         {
+            NpcMemoryClient.OnLoaded -= HandleMemoryLoaded;
             _memory?.Save(MemoryKey);
         }
 
@@ -294,6 +298,22 @@ namespace MySecondWorld.AI
         #endregion
 
         #region 팩트 추출 및 메모리 관리
+
+        // 대화 메뉴를 열 때 호출 — 서버에서 이 NPC와의 대화 기록을 받아 온다
+        public void PrefetchMemory() => NpcMemoryClient.Request(UniqueId);
+
+        private void HandleMemoryLoaded(string npcKey, NpcDialoguePairSave[] pairs)
+        {
+            if (npcKey != UniqueId || _memory == null) return;
+
+            var entries = new List<DialogueHistoryEntry>(pairs?.Length ?? 0);
+            if (pairs != null)
+            {
+                foreach (var p in pairs)
+                    entries.Add(new DialogueHistoryEntry(p.userText, p.npcText, p.timestamp));
+            }
+            _memory.ReplaceHistory(entries);
+        }
 
         // NPCInteractable.OnEnterIdle()에서 호출 — 대화창 닫힐 때 세션 전체 팩트 추출
         public void OnConversationEnded()

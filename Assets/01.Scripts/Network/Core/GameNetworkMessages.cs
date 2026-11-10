@@ -1,9 +1,12 @@
 using Mirror;
+using MySecondWorld.Save;
 
 namespace MySecondWorld.Network
 {
+    // GameNetworkMessages.cs
     // 서버↔클라이언트가 주고받는 편지 양식
 
+    #region 씬 로드 / 스폰
     /// <summary>
     /// 서버 → 클라이언트: additive 씬 로드/언로드 지시
     /// </summary>
@@ -26,6 +29,21 @@ namespace MySecondWorld.Network
     /// </summary>
     public struct SceneLoadedAckMessage : NetworkMessage { }
 
+    /// <summary>
+    /// 서버 → 클라이언트 : 이 플레이어의 소속 씬이 확정됐다.
+    ///
+    /// 서브씬 사이를 걸어서 이동할 때 클라의 ActiveScene을 따라오게 하는 유일한 경로다.
+    /// 이 통보가 없으면 ActiveScene이 최초로 로드된 씬에 잠긴 채 남고,
+    /// Mirror가 스폰하는 모든 오브젝트가 엉뚱한 씬에 들어간 뒤 그 씬과 함께 파괴된다.
+    /// </summary>
+    public struct PlayerSceneChangedMessage : NetworkMessage
+    {
+        public string sceneName;
+    }
+
+    #endregion
+
+    #region 번들 / 카탈로그
 
     //서버: 플레이어 Zone 진입 감지
     //  └→ BundleRequiredMessage 전송(어떤 번들 받아야 하는지)
@@ -57,6 +75,9 @@ namespace MySecondWorld.Network
         public string serverCatalogHash;
     }
 
+    #endregion
+
+    #region 던전 포탈 전환
 
     // 던전 포탈 전환: 트리거 진입 → FadeOut 지시 → 씬스왑 → 로드완료 ack 대기 → 재스냅 → FadeIn 지시
 
@@ -78,15 +99,35 @@ namespace MySecondWorld.Network
         public string sceneName;
     }
 
-    /// <summary>
-    /// 서버 → 클라이언트 : 이 플레이어의 소속 씬이 확정됐다.
-    ///
-    /// 서브씬 사이를 걸어서 이동할 때 클라의 ActiveScene을 따라오게 하는 유일한 경로다.
-    /// 이 통보가 없으면 ActiveScene이 최초로 로드된 씬에 잠긴 채 남고,
-    /// Mirror가 스폰하는 모든 오브젝트가 엉뚱한 씬에 들어간 뒤 그 씬과 함께 파괴된다.
-    /// </summary>
-    public struct PlayerSceneChangedMessage : NetworkMessage
+    #endregion
+
+    #region NPC 기억
+
+    /// <summary>클라이언트 → 서버: 이 NPC와의 대화 기록 줘</summary>
+    public struct NpcMemoryRequestMessage : NetworkMessage
     {
-        public string sceneName;
+        public string npcKey;
     }
+
+    /// <summary>서버 → 클라이언트: 대화 기록 (오래된 것이 앞)</summary>
+    public struct NpcMemoryResponseMessage : NetworkMessage
+    {
+        public string npcKey;
+        public NpcDialoguePairSave[] pairs;
+    }
+
+    /// <summary>클라이언트 → 서버: 새 대화 한 쌍 추가</summary>
+    public struct NpcMemoryAppendMessage : NetworkMessage
+    {
+        public string npcKey;
+        public NpcDialoguePairSave pair;
+    }
+
+    /// <summary>서버 → 클라이언트: 이 pairId 받았음</summary>
+    public struct NpcMemoryAckMessage : NetworkMessage
+    {
+        public string pairId;
+    }
+
+    #endregion
 }

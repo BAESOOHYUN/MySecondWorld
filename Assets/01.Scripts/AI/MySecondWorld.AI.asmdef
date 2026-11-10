@@ -17,7 +17,9 @@
         "MySecondWorld.Combat",
         "MySecondWorld.Interaction",
         "MySecondWorld.Camera",
-        "MySecondWorld.Customization"
+        "MySecondWorld.Customization",
+        "MySecondWorld.Network",
+        "MySecondWorld.Save"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

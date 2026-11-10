@@ -37,6 +37,9 @@ namespace MySecondWorld.Save
         // 도감 해금: 한 번이라도 인벤토리에 들어온 적 있는 아이템 dbKey 목록
         // null이면 이 필드가 생기기 전의 옛 세이브 (복원 때 지금 인벤토리로 채워진다)
         public int[] unlockedItemDbKeys;
+
+        // NPC 기억: null이면 저장된 NPC 기억이 없음 (한 번도 대화하지 않았거나 이 필드가 생기기 전 세이브)
+        public NpcMemorySave[] npcMemories;
     }
 
     [System.Serializable]
@@ -44,5 +47,23 @@ namespace MySecondWorld.Save
     {
         public int dbKey;   // 아이템 id. 빈 슬롯은 -1
         public int count;   // 이 슬롯의 스택 수
+    }
+
+    // NPC 대화 한 쌍 (나 + NPC)
+    [System.Serializable]
+    public struct NpcDialoguePairSave
+    {
+        public string pairId;     // 재전송 중복 제거용 고유값
+        public string timestamp;
+        public string userText;
+        public string npcText;
+    }
+
+    // NPC 한 명에 대한 기억 (지금은 대화 기록만, 2단계에서 필드 추가)
+    [System.Serializable]
+    public struct NpcMemorySave
+    {
+        public string npcKey;                    // NPC 고유 id (계정은 서버가 conn으로 앎)
+        public NpcDialoguePairSave[] dialogue;   // 최대 10쌍, 오래된 것이 앞
     }
 }

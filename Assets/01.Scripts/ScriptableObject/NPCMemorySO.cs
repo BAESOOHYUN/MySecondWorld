@@ -46,6 +46,7 @@ namespace MySecondWorld.AI
         [SerializeField] private List<DialogueHistoryEntry> dialogueHistory = new();
 
         // 이벤트
+        private const int MaxHistoryPairs = 10;
         public event Action OnMemoryChanged;
 
         // 읽기 전용 프로퍼티
@@ -98,10 +99,20 @@ namespace MySecondWorld.AI
                 return;
 
             dialogueHistory.Add(new DialogueHistoryEntry(user, npc));
-            if (dialogueHistory.Count > 30)
+            if (dialogueHistory.Count > MaxHistoryPairs)
             {
                 dialogueHistory.RemoveAt(0);
             }
+            OnMemoryChanged?.Invoke();
+        }
+
+        // 서버가 준 대화 기록으로 통째로 교체
+        public void ReplaceHistory(List<DialogueHistoryEntry> entries)
+        {
+            dialogueHistory.Clear();
+            dialogueHistory.AddRange(entries);
+            while (dialogueHistory.Count > MaxHistoryPairs)
+                dialogueHistory.RemoveAt(0);
             OnMemoryChanged?.Invoke();
         }
 
@@ -129,7 +140,6 @@ namespace MySecondWorld.AI
             public string firstMetLocation;
             public int conversationCount;
             public List<string> knownFacts;
-            public List<DialogueHistoryEntry> dialogueHistory;
         }
 
         public void Save(string npcKey)
@@ -143,8 +153,7 @@ namespace MySecondWorld.AI
                 firstMetDate = firstMetDate,
                 firstMetLocation = firstMetLocation,
                 conversationCount = conversationCount,
-                knownFacts = knownFacts,
-                dialogueHistory = dialogueHistory
+                knownFacts = knownFacts
             };
             File.WriteAllText(SavePath(npcKey), JsonUtility.ToJson(data));
         }
@@ -170,7 +179,7 @@ namespace MySecondWorld.AI
             firstMetLocation = data.firstMetLocation ?? "";
             conversationCount = data.conversationCount;
             knownFacts = data.knownFacts ?? new List<string>();
-            dialogueHistory = data.dialogueHistory ?? new List<DialogueHistoryEntry>();
+            dialogueHistory.Clear();
         }
 
         public void Clear(string npcKey)
