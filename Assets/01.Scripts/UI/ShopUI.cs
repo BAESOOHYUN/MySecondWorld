@@ -291,26 +291,11 @@ namespace MySecondWorld.UI
             foreach (var item in catalog)
             {
                 if (item == null) continue;
-
-                string itemName = item.name.ToLower();
-
-                // "female"은 부분 문자열로 "male"을 포함하므로 Contains만 쓰면 안 되고, "_" 토큰 단위로 정확히 비교
-                if (_genderFilterService.CurrentFilter == CharacterGenderFilter.Female && HasGenderToken(itemName, "female"))
-                    filtered.Add(item);
-                else if (_genderFilterService.CurrentFilter == CharacterGenderFilter.Male && HasGenderToken(itemName, "male"))
+                if (GenderFilterMatcher.Matches(_genderFilterService.CurrentFilter, _appearanceService.GetItemGender(item)))
                     filtered.Add(item);
             }
 
             return filtered;
-        }
-
-        private static bool HasGenderToken(string lowerName, string token)
-        {
-            foreach (var part in lowerName.Split('_'))
-            {
-                if (part == token) return true;
-            }
-            return false;
         }
 
         #endregion

@@ -666,35 +666,7 @@ namespace MySecondWorld.UI
         // 이 아이템을 지금 성별 필터에서 보여줄까? (Refresh가 호출).
         // 이름의 성별 표기로 판단하고, 표기가 없는 공용 아이템은 항상 보여 준다
         private bool ShouldShowItem(EquipmentItem item)
-        {
-            var filter = _genderFilterService.CurrentFilter;
-            if (filter == CharacterGenderFilter.All)
-                return true;
-
-            // 아이템 이름의 "_" 구분 토큰 중 "Female"/"Male"이 정확히 있는지로 판단
-            // ("female"은 부분 문자열로 "male"을 포함하므로 Contains만 쓰면 안 됨)
-            string itemName = item.name.ToLower();
-            bool isFemaleOnly = HasGenderToken(itemName, "female");
-            bool isMaleOnly = HasGenderToken(itemName, "male");
-
-            // 선택한 성별의 아이템 + 성별 표기가 없는 공용 아이템을 보여 준다
-            if (filter == CharacterGenderFilter.Female)
-                return isFemaleOnly || !isMaleOnly;
-            if (filter == CharacterGenderFilter.Male)
-                return isMaleOnly || !isFemaleOnly;
-
-            return true;
-        }
-
-        // 이름을 "_"로 쪼갠 조각 중에 token("female"/"male")과 정확히 같은 것이 있는가
-        private static bool HasGenderToken(string lowerName, string token)
-        {
-            foreach (var part in lowerName.Split('_'))
-            {
-                if (part == token) return true;
-            }
-            return false;
-        }
+            => GenderFilterMatcher.Matches(_genderFilterService.CurrentFilter, _appearanceService?.GetItemGender(item));
 
         #endregion
     }

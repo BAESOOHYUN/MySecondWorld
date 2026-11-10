@@ -705,7 +705,7 @@ namespace MySecondWorld.UI
         private void SetGender(Gender gender)
         {
             if (gender == _currentGender) return; // 같은 성별 재클릭 무시
-
+            var previousGender = _currentGender; // 번호 환산에 쓸 "바꾸기 전 성별". 아래에서 _currentGender를 덮어쓰기 전에 잡아 둔다
             _currentGender = gender;
 
             // 마지막 편집 상태를 그대로 새 성별 인덱스 공간으로 이행
@@ -714,7 +714,24 @@ namespace MySecondWorld.UI
             {
                 var count = _keyTable.GetCount(part, gender);
                 var current = _currentIndices[part];
-                _currentIndices[part] = current < count ? current : (count > 0 ? 0 : -1);
+
+                // ① 이전 성별 번호 → 새 성별 번호로 환산한다. (남→여)
+                // 공용은 같은 옷을 가리키도록 밀고, 전용은 짝이 있으면 같은 번호, 없으면 -1
+                var mapped = _keyTable.MapIndexToGender(part, previousGender, gender, current);
+
+                // ② 입고 있던 옷이 사라지는 경우
+                // 환산 결과가 -1(짝이 없음)인데 원래(current) 뭔가 입고 있었다면 맨몸(0번)으로 돌린다. 원래 -1이었으면 그대로 -1
+                // 예) 남자 전용 C(3번) → 여자 ①의 결과가 -1이 되므로 맨몸(0)으로 돌림
+                if (mapped < 0 && current > 0)
+                    mapped = 0;
+
+                // ③ 번호가 새 성별 목록 밖으로 나가는 경우를 막는 안전망. 맨몸(없으면 -1)
+                // 예) 목록 자체가 비는 파츠 : FacialHair는 여자 목록이 0개라서 count가 0이면 -1
+                // 예) 데이터가 어긋난 경우 : 남자 공용 3개, 여자 공용 2개. 남 공용 Z(6번)가 환산된 5번은 여자 목록(5칸) 밖. 안전하게 0으로
+                if (mapped >= count)
+                    mapped = count > 0 ? 0 : -1;
+
+                _currentIndices[part] = mapped;
             }
 
             RefreshTabVisibility();
@@ -820,7 +837,7 @@ namespace MySecondWorld.UI
             // (안 그러면 MutualExclusionResolver의 폴백이 "기억된 값 없음" 상태로 항상 첫 번째만 고름)
             if (_currentIndices.TryGetValue(PartType.HelmetAttachment, out var helmetAttachmentIndex)
                 && helmetAttachmentIndex > 0
-                && _keyTable.GetSubType(PartType.Head, _currentGender, _currentIndices[PartType.Head]) != "No_Elements")
+                && _keyTable.GetSubType(PartType.Head, _currentGender, _currentIndices[PartType.Head]) != PartSubTypes.HeadNoElements)
             {
                 // Head 파츠 중에서 '헬멧 쓸 수 있는(No_Elements) 얼굴'들만 골라서 모아놓고, 그중 하나를 랜덤으로 뽑아야 함
                 int headIndex = _keyTable.GetCount(PartType.Head, _currentGender);
@@ -828,7 +845,7 @@ namespace MySecondWorld.UI
                 for (int i = 0; i < headIndex; i++)
                 {
                     // 각 인덱스가 "No_Elements"인지 확인후 후보에 넣는다
-                    if (_keyTable.GetSubType(PartType.Head, _currentGender, i) == "No_Elements")
+                    if (_keyTable.GetSubType(PartType.Head, _currentGender, i) == PartSubTypes.HeadNoElements)
                         noElementsCandidates.Add(i);
                 }
                 // 후보가 있으면 랜덤으로 선택
