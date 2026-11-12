@@ -59,11 +59,20 @@ namespace MySecondWorld.Save
         public string npcText;
     }
 
-    // NPC 한 명에 대한 기억 (지금은 대화 기록만, 2단계에서 필드 추가)
+    /// NPC 한 명에 대한 기억 (플레이어 한 명 기준)
     [System.Serializable]
     public struct NpcMemorySave
     {
         public string npcKey;                    // NPC 고유 id (계정은 서버가 conn으로 앎)
         public NpcDialoguePairSave[] dialogue;   // 최대 10쌍, 오래된 것이 앞
+
+        // 요약 필드
+        public float relationScore;
+        public int questStage;
+        public bool questGiven;
+        public string firstMetDate;
+        public string firstMetLocation;
+        public int conversationCount;
+        public string[] knownFacts;
     }
 }

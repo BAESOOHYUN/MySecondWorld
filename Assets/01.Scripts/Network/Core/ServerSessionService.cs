@@ -30,13 +30,18 @@ namespace MySecondWorld.Network
         private readonly SaveManager _saveManager;
         private readonly AvatarPartKeyTableSO _avatarPartKeyTable;
 
-        // ── NPC 기억 (connectionId → npcKey → 대화 기록) ──
+        // ── NPC 기억 (connectionId → npcKey → 그 NPC의 기억[요약 필드 + 대화 기록]) ──
+        // 대화 기록은 Append로만, 요약 필드는 Summary로만 바뀐다(서로 상대 필드를 건드리지 않음)
         private const int MaxNpcPairs = 10;
-        private const int MaxNpcKeys = 64; // 서로 다른 NPC의 수 상한
-        private const int MaxNpcTextLength = 500;
+        private const int MaxNpcKeys = 64; // 한 플레이어가 가질 수 있는 서로 다른 NPC 수 상한 (조작된 클라가 키를 무한히 만들어 서버 메모리를 채우는 것 방지)
+        private const int MaxNpcFacts = 50; // NPC가 기억하는 유저에 대한 사실들
+        private const int MaxNpcTextLength = 500;       // 대사·요약 문자열 하나의 최대 길이(넘으면 ClampNpcText가 잘라냄)
         private const float MinAppendInterval = 0.1f;   // 플레이어당 업로드 최소 간격(연타 방지)
-        private readonly Dictionary<int, Dictionary<string, List<NpcDialoguePairSave>>> _npcMemories = new();
+        // 접속(connectionId)마다 하나씩 들고 있는 캐시. 저장 때 BuildNpcMemorySave가 이 값을 세이브로 내보내고, 접속이 끊기면 RemovePlayer에서 지운다
+        private readonly Dictionary<int, Dictionary<string, NpcMemorySave>> _npcMemories = new();
+        // 접속별 마지막 Append 수신 시각 — 연타 제한(MinAppendInterval) 비교용
         private readonly Dictionary<int, float> _lastNpcAppendTime = new();
+        private readonly Dictionary<int, float> _lastNpcSummaryTime = new();   // 위 _lastNpcAppendTime의 Append와 따로 센다(같은 프레임에 연달아 오기 때문)
 
         // ── 시작 골드 ──
         private readonly RootItem _startingGoldItem;
@@ -332,6 +337,7 @@ namespace MySecondWorld.Network
 
                 _npcMemories.Remove(conn.connectionId);
                 _lastNpcAppendTime.Remove(conn.connectionId);
+                _lastNpcSummaryTime.Remove(conn.connectionId);
             }
         }
 
@@ -401,20 +407,24 @@ namespace MySecondWorld.Network
 
         #region NPC 기억
 
-        // 이 접속의 NPC 기억 캐시. 처음 쓸 때 서버 세이브에서 한 번 불러온다
-        private Dictionary<string, List<NpcDialoguePairSave>> GetNpcMemories(NetworkConnectionToClient conn, PlayerSession session)
+        // 이 접속의 NPC 기억 캐시를 돌려준다.
+        // 이 접속에서 처음 부르면 서버 세이브(playerId 파일)에서 한 번 읽어 캐시에 채우고, 이후엔 캐시만 쓴다
+        // 옛 세이브라 dialogue가 null이면 빈 배열로 바꿔 뒤쪽 코드가 null 검사를 안 해도 되게 한다
+        private Dictionary<string, NpcMemorySave> GetNpcMemories(NetworkConnectionToClient conn, PlayerSession session)
         {
             if (_npcMemories.TryGetValue(conn.connectionId, out var memories))
                 return memories;
 
-            memories = new Dictionary<string, List<NpcDialoguePairSave>>();
+            memories = new Dictionary<string, NpcMemorySave>();
             var saved = _saveManager.Load(session.playerId)?.npcMemories;
             if (saved != null)
             {
                 foreach (var m in saved)
                 {
                     if (string.IsNullOrEmpty(m.npcKey)) continue;
-                    memories[m.npcKey] = new List<NpcDialoguePairSave>(m.dialogue ?? Array.Empty<NpcDialoguePairSave>());
+                    var copy = m;
+                    copy.dialogue ??= Array.Empty<NpcDialoguePairSave>();
+                    memories[m.npcKey] = copy;
                 }
             }
             _npcMemories[conn.connectionId] = memories;
@@ -422,25 +432,29 @@ namespace MySecondWorld.Network
         }
 
         // [수신: 클라 → 서버] 클라가 보낸 NpcMemoryRequestMessage를 서버가 받는 핸들러
-        // 이 NPC와의 대화 기록을 찾아 요청한 클라에게 돌려준다
+        // 이 NPC의 기억(요약 필드 + 대화 기록)을 찾아 요청한 클라에게 돌려준다
+        // 서버에 기록이 없는 NPC면 빈 기억을 만들어 돌려주기만 하고, 캐시에는 넣지 않는다(Append/Summary가 올 때 만든다)
         public void OnNpcMemoryRequest(NetworkConnectionToClient conn, NpcMemoryRequestMessage msg)
         {
             // 서버 프로세스 내에서 일어나는 일
             if (!Sessions.TryGetValue(conn.connectionId, out var session) || string.IsNullOrEmpty(session.playerId)) return;
             if (string.IsNullOrEmpty(msg.npcKey) || msg.npcKey.Length > 100) return;
 
-            GetNpcMemories(conn, session).TryGetValue(msg.npcKey, out var list);
-
-            // [송신: 서버 → 클라] 요청한 클라(conn)에게만 대화 기록을 답장
-            conn.Send(new NpcMemoryResponseMessage
+            if (!GetNpcMemories(conn, session).TryGetValue(msg.npcKey, out var memory))
             {
-                npcKey = msg.npcKey,
-                pairs = list?.ToArray() ?? Array.Empty<NpcDialoguePairSave>()
-            });
+                memory = new NpcMemorySave
+                {
+                    npcKey = msg.npcKey,
+                    dialogue = Array.Empty<NpcDialoguePairSave>()
+                };
+            }
+            // [송신: 서버 → 클라] 요청한 클라(conn)에게만 대화 기록을 답장
+            conn.Send(new NpcMemoryResponseMessage{ memory = memory });
         }
 
         // [수신: 클라 → 서버] 클라가 보낸 NpcMemoryAppendMessage를 서버가 받는 핸들러
-        // 새 한 쌍을 뒤에 붙이고 10개로 자른다. pairId가 이미 있으면 중복이라 붙이지 않고 Ack만 보낸다
+        // 새 한 쌍을 뒤에 붙이고 MaxNpcPairs개로 자른다. pairId가 이미 있으면 중복이라 붙이지 않고 Ack만 보낸다
+        // 처리 순서: 검증(세션·키·pairId) → 연타 제한 → 캐시 찾기/만들기 → 중복 검사 후 추가 → Ack
         public void OnNpcMemoryAppend(NetworkConnectionToClient conn, NpcMemoryAppendMessage msg)
         {
             // 서버 프로세스 내에서 일어나는 일
@@ -455,14 +469,20 @@ namespace MySecondWorld.Network
             _lastNpcAppendTime[conn.connectionId] = now;
 
             var memories = GetNpcMemories(conn, session);
-            if (!memories.TryGetValue(msg.npcKey, out var list)) // 처음 보는 NPC면
+            if (!memories.TryGetValue(msg.npcKey, out var memory))  // 처음 보는 NPC면
             {
-                if (memories.Count >= MaxNpcKeys) return; // 이미 64명이면 새 NPC는 받지 않음
-                list = new List<NpcDialoguePairSave>();
-                memories[msg.npcKey] = list;              // npcKey → 그 NPC의 기억 딕셔너리
+                if (memories.Count >= MaxNpcKeys) return;           // 이미 64명이면 새 NPC는 받지 않음
+                memory = new NpcMemorySave 
+                {
+                    npcKey = msg.npcKey,                            // 새 NPC의 빈 기억(요약 필드는 기본값 0/빈 값) — 아래에서 대화를 채운 뒤 memories에 넣는다
+                    dialogue = Array.Empty<NpcDialoguePairSave>()
+                };              
             }
 
-            // list는 서버가 들고 있는 "이 플레이어와 이 NPC의 대화 기록"
+            // 배열(dialogue)은 Add/RemoveAt이 안 되므로 List로 복사해 고친 뒤, 끝에서 다시 배열로 바꿔 넣는다
+            // list = 서버가 들고 있는 "이 플레이어와 이 NPC의 대화 기록"
+            var list = new List<NpcDialoguePairSave>(memory.dialogue ?? Array.Empty<NpcDialoguePairSave>());
+            
             // msg.pair는 클라가 방금 보낸 새 대화 한 쌍
             // 이미 저장된 pairId면 건너뛰어 중복 저장을 막는다
             if (!list.Exists(p => p.pairId == msg.pair.pairId))
@@ -474,14 +494,68 @@ namespace MySecondWorld.Network
                     userText = ClampNpcText(msg.pair.userText),
                     npcText = ClampNpcText(msg.pair.npcText)
                 });
-                // 쌍이 10개(MaxNpcPairs)를 넘으면 맨 앞(RemoveAt(0))을 지움. 오래된 것부터 삭제
+
+                // 쌍이 MaxNpcPairs개를 넘으면 맨 앞(RemoveAt(0))을 지움. 오래된 것부터 삭제
+                // 그 뒤 list를 배열로 되돌려 memory에 넣고, memory를 캐시(memories)에 다시 저장한다
+                // (NpcMemorySave는 struct라 복사본을 고친 것 — 캐시에 되써야 반영됨)
                 while (list.Count > MaxNpcPairs) list.RemoveAt(0);
+                memory.dialogue = list.ToArray();
+                memories[msg.npcKey] = memory;
             }
 
             // [송신: 서버 → 클라] "이 pairId 받았음" 확인 — 클라가 이걸 받으면 미확인 큐에서 지운다
             conn.Send(new NpcMemoryAckMessage { pairId = msg.pair.pairId });
         }
 
+
+        // [수신: 클라 → 서버] 클라가 보낸 NpcMemorySummaryMessage를 서버가 받는 핸들러
+        // 요약 필드만 덮어쓴다(대화 기록 dialogue는 읽지도 건드리지도 않음 — Append만 대화를 바꾼다)
+        // 클라가 보낸 값은 믿지 않고, 숫자는 범위로 / 문자열은 길이로 / 목록은 개수로 잘라서 쓴다
+        // 처리 순서: 검증 → 요약 전용 연타 제한 → 캐시 찾기/만들기 → 필드 덮어쓰기 → Ack(seq)
+        public void OnNpcMemorySummary(NetworkConnectionToClient conn, NpcMemorySummaryMessage msg)
+        {
+            if (!Sessions.TryGetValue(conn.connectionId, out var session) || string.IsNullOrEmpty(session.playerId)) return;
+            var m = msg.memory;
+            if (string.IsNullOrEmpty(m.npcKey) || m.npcKey.Length > 100) return;
+
+            float now = Time.unscaledTime;
+            if (_lastNpcSummaryTime.TryGetValue(conn.connectionId, out var last) && now - last < MinAppendInterval) return;
+            _lastNpcSummaryTime[conn.connectionId] = now;
+
+            var memories = GetNpcMemories(conn, session);
+            if (!memories.TryGetValue(m.npcKey, out var cur))
+            {
+                if (memories.Count >= MaxNpcKeys) return;
+                cur = new NpcMemorySave
+                {
+                    npcKey = m.npcKey,
+                    dialogue = Array.Empty<NpcDialoguePairSave>()
+                };
+            }
+
+            cur.relationScore = Mathf.Clamp(m.relationScore, -100f, 100f);
+            cur.questStage = Mathf.Max(0, m.questStage);
+            cur.questGiven = m.questGiven;
+            cur.firstMetDate = ClampNpcText(m.firstMetDate);
+            cur.firstMetLocation = ClampNpcText(m.firstMetLocation);
+            cur.conversationCount = Mathf.Max(0, m.conversationCount);
+            var fact = new List<string>();
+            if (m.knownFacts != null)
+            {
+                foreach (var f in m.knownFacts)
+                {
+                    if (fact.Count >= MaxNpcFacts) break;
+                    if (!string.IsNullOrEmpty(f)) fact.Add(ClampNpcText(f));
+                }
+            }
+            cur.knownFacts = fact.ToArray();
+            memories[m.npcKey] = cur;
+
+            // [송신: 서버 → 클라] "이 NPC의 seq번 요약 받았음" 확인
+            conn.Send(new NpcMemorySummaryAckMessage { npcKey = m.npcKey, seq = msg.seq });
+        }
+
+        // 문자열이 null이면 빈 문자열로, MaxNpcTextLength보다 길면 잘라서 돌려준다
         private static string ClampNpcText(string s) =>
             string.IsNullOrEmpty(s) ? "" : (s.Length > MaxNpcTextLength ? s.Substring(0, MaxNpcTextLength) : s);
 
@@ -489,10 +563,7 @@ namespace MySecondWorld.Network
         private NpcMemorySave[] BuildNpcMemorySave(NetworkConnectionToClient conn)
         {
             if (!_npcMemories.TryGetValue(conn.connectionId, out var memories)) return null;
-            var result = new List<NpcMemorySave>(memories.Count);
-            foreach (var kv in memories)
-                result.Add(new NpcMemorySave { npcKey = kv.Key, dialogue = kv.Value.ToArray() });
-            return result.ToArray();
+            return new List<NpcMemorySave>(memories.Values).ToArray();
         }
 
         #endregion

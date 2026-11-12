@@ -45,18 +45,6 @@ namespace MySecondWorld.AI
             }
         }
         
-        public string MemoryKey
-        {
-            get 
-            {
-                string acc = MySecondWorld.Network.PlayerSession.LocalPlayerName;
-                if (string.IsNullOrEmpty(acc)) acc = "default";
-                foreach (char c in Path.GetInvalidFileNameChars())  // 파일 이름에 쓸 수 없는 글자들의 목록 \ / : * ? " < > | 등
-                    acc = acc.Replace(c, '_');                      // 금지 글자를 _로 교체
-                return $"{UniqueId}_{acc}";
-            }
-        }
-
         // 대화 세션 버퍼 — 창 닫힐 때 한 번에 팩트 추출
         private readonly List<(string user, string npc)> _sessionBuffer = new();
 
@@ -122,39 +110,6 @@ namespace MySecondWorld.AI
 #endif
         }
 
-        // PlayerMessageSentEvent 메세지가 올 때마다 "메시지 왔다!" 하고 알림을 쏨
-        private async UniTaskVoid ProcessMessageAsync(PlayerMessageSentEvent evt, string key)
-        {
-            // 클라 프로세스 내에서 일어나는 일
-            try
-            {
-                _thinkingPub.Publish(new NPCThinkingStartedEvent(key)); // UI에서 ...(생각신호) 말풍선을 띄우는 용도
-                var response = await GenerateResponseAsync(evt.Text, key, evt.CT);
-                Debug.Log($"[NPCBrain] '{name}' LLM 응답 완료: {response}");
-
-                // 1. 대화 히스토리 즉시 반영 및 영구 저장
-                _sessionBuffer.Add((evt.Text, response));
-                _memory?.AddHistoryEntry(evt.Text, response);
-                NpcMemoryClient.Append(UniqueId, evt.Text, response); // NpcMemoryClient.Append 서버에 대화 한 쌍을 올리라고 요청
-                _memory?.Save(MemoryKey);
-
-                // 2. 응답 이벤트 발행 (UI 업데이트)
-                _responsePub.Publish(new NPCResponseReceivedEvent(
-                        key, _systemPrompt?.NpcName ?? name, response)); // NPC 고유키, 이름, 응답 텍스트 (내 화면에 대사 표시, 대화 상태 처리)
-                _dialoguePub.Publish(new NPCDialogueEvent { NpcName = key, Message = response }); // NPC 이름(키), 메시지 (TODO : 다른 플레이어에게 대사 공유 (파티 전투용))
-
-                // 3. 대화창을 닫기 전에도 새 팩트가 실시간으로 쌓이도록 즉시 백그라운드 팩트 추출 구동
-                ExtractAndSaveFactAsync(new List<(string user, string npc)> { (evt.Text, response) }, destroyCancellationToken).Forget();
-            }
-            catch (OperationCanceledException)
-            {
-                Debug.LogWarning($"[NPCBrain] '{name}' 대화 생성이 취소되었습니다.");
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"[NPCBrain] '{name}' 대화 생성 중 예외 발생: {ex}");
-            }
-        }
         #endregion
 
 
@@ -175,18 +130,11 @@ namespace MySecondWorld.AI
         private void Start()
         {
             NpcMemoryClient.OnLoaded += HandleMemoryLoaded;
-            _memory?.Load(MemoryKey);
+            _memory?.ResetAll();
 
             // 서버 상태 => 로컬 메모리 동기화
             if (_serverState != null && _memory != null)
                 _memory.SyncFactionFromServer(_serverState.FactionRelations);
-
-            // 첫만남 기록
-            if( _memory != null && string.IsNullOrEmpty(_memory.FirstMetDate))
-            {
-                string location = SystemPrompt != null ? _systemPrompt.NpcLocation : "알 수 없음";
-                _memory.SetFirstMet(System.DateTime.Now.ToString("yyyy-MM-dd"), location);
-            }
 
             _llmService.SetSystemPrompt(BuildSystemPromptWithFacts(), _systemPrompt?.MaxResponseTokens ?? 40);
         }
@@ -194,12 +142,45 @@ namespace MySecondWorld.AI
         private void OnDestroy()
         {
             NpcMemoryClient.OnLoaded -= HandleMemoryLoaded;
-            _memory?.Save(MemoryKey);
         }
 
         #endregion
 
         #region 프롬프트 빌드 & LLM 응답 생성
+
+        // PlayerMessageSentEvent 메세지가 올 때마다 "메시지 왔다!" 하고 알림을 쏨
+        private async UniTaskVoid ProcessMessageAsync(PlayerMessageSentEvent evt, string key)
+        {
+            // 클라 프로세스 내에서 일어나는 일
+            try
+            {
+                _thinkingPub.Publish(new NPCThinkingStartedEvent(key)); // UI에서 ...(생각신호) 말풍선을 띄우는 용도
+                var response = await GenerateResponseAsync(evt.Text, key, evt.CT);
+                Debug.Log($"[NPCBrain] '{name}' LLM 응답 완료: {response}");
+
+                // 1. 대화 히스토리 즉시 반영 및 영구 저장
+                _sessionBuffer.Add((evt.Text, response));
+                _memory?.AddHistoryEntry(evt.Text, response);
+                NpcMemoryClient.Append(UniqueId, evt.Text, response); // NpcMemoryClient.Append 서버에 대화 한 쌍을 올리라고 요청
+                UploadSummary();   // 이번 응답으로 늘어난 conversationCount 등을 올린다
+
+                // 2. 응답 이벤트 발행 (UI 업데이트)
+                _responsePub.Publish(new NPCResponseReceivedEvent(
+                        key, _systemPrompt?.NpcName ?? name, response)); // NPC 고유키, 이름, 응답 텍스트 (내 화면에 대사 표시, 대화 상태 처리)
+                _dialoguePub.Publish(new NPCDialogueEvent { NpcName = key, Message = response }); // NPC 이름(키), 메시지 (TODO : 다른 플레이어에게 대사 공유 (파티 전투용))
+
+                // 3. 대화창을 닫기 전에도 새 팩트가 실시간으로 쌓이도록 즉시 백그라운드 팩트 추출 구동
+                ExtractAndSaveFactAsync(new List<(string user, string npc)> { (evt.Text, response) }, destroyCancellationToken).Forget();
+            }
+            catch (OperationCanceledException)
+            {
+                Debug.LogWarning($"[NPCBrain] '{name}' 대화 생성이 취소되었습니다.");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[NPCBrain] '{name}' 대화 생성 중 예외 발생: {ex}");
+            }
+        }
 
         // 시스템 프롬프트 빌드
         private string BuildSystemPromptWithFacts()
@@ -292,8 +273,6 @@ namespace MySecondWorld.AI
                 return string.Empty;
 
             _memory?.IncrementConversationCount();
-            _memory?.Save(MemoryKey);
-
             return response;
         }
         #endregion
@@ -303,18 +282,52 @@ namespace MySecondWorld.AI
         // 대화 메뉴를 열 때 호출 — 서버에서 이 NPC와의 대화 기록을 받아 온다
         public void PrefetchMemory() => NpcMemoryClient.Request(UniqueId);
 
-        private void HandleMemoryLoaded(string npcKey, NpcDialoguePairSave[] pairs)
+        private void HandleMemoryLoaded(NpcMemorySave m)
         {
-            if (npcKey != UniqueId || _memory == null) return;
+            if (m.npcKey != UniqueId || _memory == null) return;
 
-            var entries = new List<DialogueHistoryEntry>(pairs?.Length ?? 0);
-            if (pairs != null)
+            // 서버가 아직 못 받은 로컬 변경이 있으면 로컬이 더 새것이다 — 덮어쓰지 않는다
+            if (NpcMemoryClient.HasPending(m.npcKey)) return;
+            _memory.ApplySummary(m.relationScore, m.questStage, m.questGiven,
+                                 m.firstMetDate, m.firstMetLocation, m.conversationCount, m.knownFacts);
+
+            var entries = new List<DialogueHistoryEntry>(m.dialogue?.Length ?? 0);
+            if (m.dialogue != null)
             {
-                foreach (var p in pairs)
+                foreach (var p in m.dialogue)
                     entries.Add(new DialogueHistoryEntry(p.userText, p.npcText, p.timestamp));
             }
             // 서버가 준 대화 기록으로 통째로 교체 
             _memory.ReplaceHistory(entries);
+
+            // 첫 만남 기록 (서버에 기억이 없던 NPC)
+            if (string.IsNullOrEmpty(_memory.FirstMetDate))
+            {
+                string location = SystemPrompt != null ? _systemPrompt.NpcLocation : "알 수 없음";
+                _memory.SetFirstMet(System.DateTime.Now.ToString("yyyy-MM-dd"), location);
+                UploadSummary();
+            }
+
+            // 팩트가 프롬프트에 들어가므로 기억이 도착하면 다시 만든다
+            _llmService?.SetSystemPrompt(BuildSystemPromptWithFacts(), _systemPrompt?.MaxResponseTokens ?? 40);
+        }
+
+        // 요약 필드를 서버로 올린다 (대화 기록은 Append로 따로 올라감)
+        private void UploadSummary()
+        {
+            if (_memory == null) return;
+
+            NpcMemoryClient.SendSummary(new NpcMemorySave
+            {
+                npcKey = UniqueId,
+                relationScore = _memory.RelationScore,
+                questStage = _memory.QuestStage,
+                questGiven = _memory.QuestGiven,
+                firstMetDate = _memory.FirstMetDate,
+                firstMetLocation = _memory.FirstMetLocation,
+                conversationCount = _memory.ConversationCount,
+                knownFacts = _memory.KnownFacts.ToArray()
+            });
         }
 
         // NPCInteractable.OnEnterIdle()에서 호출 — 대화창 닫힐 때 세션 전체 팩트 추출
@@ -381,7 +394,7 @@ namespace MySecondWorld.AI
                 {
                     Debug.Log($"[NPCBrain] 새 팩트: {trimmed}");
                     _memory.AddKnowFact(trimmed);
-                    _memory.Save(MemoryKey);
+                    UploadSummary();
                 }
             }
             catch (OperationCanceledException) { }
@@ -389,7 +402,7 @@ namespace MySecondWorld.AI
 
         private void ResetMemory()
         {
-            _memory?.Clear(MemoryKey);
+            _memory?.ResetAll();
             _llmService?.ClearHistory(); // 대화 히스토리도 같이 초기화
         }
         #endregion

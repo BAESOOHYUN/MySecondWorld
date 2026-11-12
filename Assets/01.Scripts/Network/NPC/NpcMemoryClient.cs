@@ -12,7 +12,7 @@ namespace MySecondWorld.Network
         private const int MaxAttempts = 5;        // 실제로 보낸 횟수 기준
         private const int MaxPending = 50;        // 오래 끊겨 있어도 큐가 무한히 커지지 않게
 
-        // 대기중인 메세지
+        // 대기중인 대화 한 쌍 (로그처럼 모두 보내야 함)
         private class Pending
         {
             public NpcMemoryAppendMessage msg;
@@ -20,29 +20,44 @@ namespace MySecondWorld.Network
             public int attempts;
         }
 
-        private static readonly List<Pending> _pending = new();
+        // 대기 중인 요약 (상태라서 NPC당 최신 한 건만 의미가 있다)
+        private class PendingSummary
+        {
+            public NpcMemorySave memory;
+            public int seq;
+            public float lastSent = -999f;
+            public int attempts;
+        }
 
-        // (npcKey, 서버가 준 대화 기록) — NPCBrain이 구독
-        public static event Action<string, NpcDialoguePairSave[]> OnLoaded;
+        private static readonly List<Pending> _pending = new();
+        private static readonly Dictionary<string, PendingSummary> _pendingSummary = new();
+        private static int _summarySeq;
+
+        // 서버가 준 NPC 기억(요약 + 대화 기록) — NPCBrain이 구독
+        public static event Action<NpcMemorySave> OnLoaded;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Reset()
         {
             _pending.Clear();
+            _pendingSummary.Clear();
+            _summarySeq = 0;
             OnLoaded = null;
         }
 
         private static bool CanSend =>
             NetworkClient.isConnected && NetworkClient.connection != null && NetworkClient.connection.isAuthenticated;
 
-        // [송신: 클라 → 서버] 대화 기록 요청 (NPC 메뉴를 열 때)
+        // 이 NPC에 대해 서버가 아직 못 받은 로컬 변경이 있는가 (있으면 서버 응답으로 덮어쓰면 안 된다)
+        public static bool HasPending(string npcKey) => _pendingSummary.ContainsKey(npcKey) || _pending.Exists(p => p.msg.npcKey == npcKey);
+
+        // [송신: 클라 → 서버] 기록 요청 (NPC 메뉴를 열 때)
         // 답은 서버가 NpcMemoryResponseMessage로 보내오고, OnResponse가 받는다
         public static void Request(string npcKey)
         {
             if (string.IsNullOrEmpty(npcKey) || !CanSend) return;
             NetworkClient.Send(new NpcMemoryRequestMessage { npcKey = npcKey });
         }
-
 
         // 클라 기기                              서버(EC2)
         // NpcMemoryClient.Append
@@ -79,6 +94,27 @@ namespace MySecondWorld.Network
             TrySend(p);
         }
 
+        // [송신: 클라 → 서버] 요약 올리기 — 같은 NPC의 이전 대기분은 최신 값으로 덮어쓴다
+        // 서버가 받으면 NpcMemorySummaryAckMessage(seq)를 보내오고, OnSummaryAck가 받아 지운다
+        // _summarySeq는 클라가 요약을 보낼 때마다 1씩 올리는 카운터
+        // 필요한 이유는 요약이 대화 쌍과 달리 NPC당 최신 한 건만 남기기 때문
+        
+        // 요약 #3 전송 ───▶ (느려서 아직 Ack 안 옴)
+        // 요약 #4 전송 ───▶ 큐의 NPC 항목을 #4로 교체
+        // Ack(#3) 도착
+        //   └ 번호가 달라서(p.seq != msg.seq) 무시  ← NpcMemoryClient.cs:170
+        // Ack(#4) 도착
+        //   └ 번호가 맞으니 큐에서 제거
+        public static void SendSummary(NpcMemorySave memory)
+        {
+            if (string.IsNullOrEmpty(memory.npcKey)) return;
+            memory.dialogue = null;  // 대화 기록은 Append로만 간다
+            var p = new PendingSummary { memory = memory, seq = ++_summarySeq };
+            _pendingSummary[memory.npcKey] = p;
+            TrySendSummary(p);
+        }
+
+
         // [송신: 클라 → 서버] 한 쌍을 실제로 보낸다 (연결·인증이 안 돼 있으면 큐에만 남김)
         private static void TrySend(Pending p)
         {
@@ -88,10 +124,19 @@ namespace MySecondWorld.Network
             p.attempts++;
         }
 
+        // [송신: 클라 → 서버] 요약을 실제로 보낸다
+        private static void TrySendSummary(PendingSummary p)
+        {
+            if (!CanSend) return;
+            NetworkClient.Send(new NpcMemorySummaryMessage { memory = p.memory, seq = p.seq });
+            p.lastSent = Time.unscaledTime;
+            p.attempts++;
+        }
+
         // [송신: 클라 → 서버] 1초마다 호출 — 서버 Ack를 못 받은 것을 재전송
         public static void Tick()
         {
-            if (_pending.Count == 0 || !CanSend) return;
+            if (!CanSend) return;
 
             foreach (var p in new List<Pending>(_pending))   // 순서대로 보내되 순회 중 제거 안전
             {
@@ -103,15 +148,37 @@ namespace MySecondWorld.Network
                     continue;
                 }
                 TrySend(p);
+                break;
+            }
+
+
+            foreach (var p in new List<PendingSummary>(_pendingSummary.Values))
+            {
+                if (Time.unscaledTime - p.lastSent < ResendInterval) continue;
+                if (p.attempts >= MaxAttempts)
+                {
+                    Debug.LogWarning($"[NpcMemory] 요약 전송 포기: {p.memory.npcKey}");
+                    _pendingSummary.Remove(p.memory.npcKey);
+                    continue;
+                }
+                TrySendSummary(p);
+                break;
             }
         }
 
-        // [수신: 서버 → 클라] 핸들러 두 개 (GameNetworkManager.OnStartClient가 등록)
+        // [수신: 서버 → 클라] 핸들러 셋 (GameNetworkManager.OnStartClient가 등록)
 
-        // 서버가 보낸 대화 기록을 받는다 → NPCBrain에 알림
-        public static void OnResponse(NpcMemoryResponseMessage msg) => OnLoaded?.Invoke(msg.npcKey, msg.pairs);
+        // 서버가 보낸 NPC 기억을 받는다 → NPCBrain에 알림
+        public static void OnResponse(NpcMemoryResponseMessage msg) => OnLoaded?.Invoke(msg.memory);
 
-        // 서버가 보낸 "받았음" 확인을 받는다 → 미확인 큐에서 제거
+        // 서버가 보낸 "대화 한 쌍 받았음" 확인 → 미확인 큐에서 제거
         public static void OnAck(NpcMemoryAckMessage msg) => _pending.RemoveAll(p => p.msg.pair.pairId == msg.pairId);
+
+        // 서버가 보낸 "요약 받았음" 확인 → seq가 현재 대기분과 같을 때만 제거(그 사이 더 새 요약을 보냈다면 남겨 둔다)
+        public static void OnSummaryAck(NpcMemorySummaryAckMessage msg)
+        {
+            if (_pendingSummary.TryGetValue(msg.npcKey, out var p) && p.seq == msg.seq)
+                _pendingSummary.Remove(msg.npcKey);
+        }
     }
 }

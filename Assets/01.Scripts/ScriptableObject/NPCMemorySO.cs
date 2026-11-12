@@ -45,6 +45,21 @@ namespace MySecondWorld.AI
         [Tooltip("최근 대화 기록")]
         [SerializeField] private List<DialogueHistoryEntry> dialogueHistory = new();
 
+        // 예전 로컬 저장 파일 정리 — 서버로 옮겼으므로 한 번 배포된 뒤에는 이 메서드를 지워도 된다
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void DeleteLegacyFiles()
+        {
+            try
+            {
+                foreach (var f in Directory.GetFiles(Application.persistentDataPath, "npc_memory_*.json"))
+                    File.Delete(f);
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[NPCMemorySO] 예전 NPC 기억 파일 정리 실패: {e.Message}");
+            }
+        }
+
         // 이벤트
         private const int MaxHistoryPairs = 10;
         public event Action OnMemoryChanged;
@@ -116,73 +131,22 @@ namespace MySecondWorld.AI
             OnMemoryChanged?.Invoke();
         }
 
-        public void SyncFactionFromServer(float serverValue)
+        // 서버가 준 요약으로 통째로 교체
+        public void ApplySummary(float relation, int stage, bool given, string metDate, string metLocation,
+                                 int count, string[] facts)
         {
-            factionRelation = serverValue;
+            relationScore = relation;
+            questStage = stage;
+            questGiven = given;
+            firstMetDate = metDate ?? "";
+            firstMetLocation = metLocation ?? "";
+            conversationCount = count;
+            knownFacts = facts != null ? new List<string>(facts) : new List<string>();
+            OnMemoryChanged?.Invoke();
         }
 
-
-        // 저장 경로
-        private string SavePath(string npcKey)
-        {
-           return Path.Combine(Application.persistentDataPath, $"npc_memory_{npcKey}.json");
-        }
-
-        // 저장/불러오기
-        [Serializable]
-        private class SaveData
-        {
-            public float relationScore;
-            public float factionRelation;
-            public int questStage;
-            public bool questGiven;
-            public string firstMetDate;
-            public string firstMetLocation;
-            public int conversationCount;
-            public List<string> knownFacts;
-        }
-
-        public void Save(string npcKey)
-        {
-            var data = new SaveData
-            {
-                relationScore = relationScore,
-                factionRelation = factionRelation,
-                questStage = questStage,
-                questGiven = questGiven,
-                firstMetDate = firstMetDate,
-                firstMetLocation = firstMetLocation,
-                conversationCount = conversationCount,
-                knownFacts = knownFacts
-            };
-            File.WriteAllText(SavePath(npcKey), JsonUtility.ToJson(data));
-        }
-
-        public void Load(string npcKey)
-        {
-            string path = SavePath(npcKey);
-            if (!File.Exists(path)) // 새 계정이면 이전 계정 기억 비움 (파일 없으니 삭제는 안 일어남)
-            {
-                Clear(npcKey);
-                return;
-            }
-
-            var data = JsonUtility.FromJson<SaveData>(File.ReadAllText(path));
-            if (data == null)
-                return;
-
-            relationScore = data.relationScore;
-            factionRelation = data.factionRelation;
-            questStage = data.questStage;
-            questGiven = data.questGiven;
-            firstMetDate = data.firstMetDate ?? "";
-            firstMetLocation = data.firstMetLocation ?? "";
-            conversationCount = data.conversationCount;
-            knownFacts = data.knownFacts ?? new List<string>();
-            dialogueHistory.Clear();
-        }
-
-        public void Clear(string npcKey)
+        // 모든 기억을 비운다 (에셋에 남은 이전 플레이 값 정리용 / 디버그 초기화)
+        public void ResetAll()
         {
             relationScore = 0f;
             factionRelation = 0f;
@@ -193,10 +157,11 @@ namespace MySecondWorld.AI
             conversationCount = 0;
             knownFacts.Clear();
             dialogueHistory.Clear();
+        }
 
-            string path = SavePath(npcKey);
-            if (File.Exists(path))
-                File.Delete(path);
+        public void SyncFactionFromServer(float serverValue)
+        {
+            factionRelation = serverValue;
         }
     }
 

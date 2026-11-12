@@ -109,11 +109,10 @@ namespace MySecondWorld.Network
         public string npcKey;
     }
 
-    /// <summary>서버 → 클라이언트: 대화 기록 (오래된 것이 앞)</summary>
+    /// <summary>서버 → 클라이언트: 이 NPC의 기억 (요약 + 대화 기록)</summary>
     public struct NpcMemoryResponseMessage : NetworkMessage
     {
-        public string npcKey;
-        public NpcDialoguePairSave[] pairs;
+        public NpcMemorySave memory;
     }
 
     /// <summary>클라이언트 → 서버: 새 대화 한 쌍 추가</summary>
@@ -129,5 +128,24 @@ namespace MySecondWorld.Network
         public string pairId;
     }
 
+    /// <summary>
+    /// 클라이언트 → 서버: 요약 업로드.
+    /// NpcMemorySave는 대화 기록(dialogue)과 요약 필드(relationScore 등)를 함께 들고 있는 구조체라
+    /// 이 메시지에 dialogue 칸도 있지만, 클라는 보내기 전에 memory.dialogue = null로 비워서 보내고 
+    /// 서버(OnNpcMemorySummary)도 dialogue를 읽지 않는다. dialogue 무시하고 요약 필드만 반영한다.
+    /// 대화 기록은 Append로만 쌓는다 — 옛 복사본이 서버의 최신 기록을 덮지 않게
+    /// </summary>
+    public struct NpcMemorySummaryMessage : NetworkMessage
+    {
+        public NpcMemorySave memory;
+        public int seq;   // 클라가 매기는 번호 — Ack와 짝을 맞춘다
+    }
+
+    /// <summary>서버 → 클라이언트: 이 NPC의 seq번 요약을 받았음</summary>
+    public struct NpcMemorySummaryAckMessage : NetworkMessage
+    {
+        public string npcKey;
+        public int seq;
+    }
     #endregion
 }

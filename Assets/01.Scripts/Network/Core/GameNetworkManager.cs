@@ -225,6 +225,7 @@ namespace MySecondWorld.Network
             NetworkServer.RegisterHandler<PortalSceneLoadedAckMessage>(_zoneService.OnPortalSceneLoadedAck);
             NetworkServer.RegisterHandler<NpcMemoryRequestMessage>(_sessionService.OnNpcMemoryRequest);   // 클라 → 서버: 대화 기록 요청
             NetworkServer.RegisterHandler<NpcMemoryAppendMessage>(_sessionService.OnNpcMemoryAppend);     // 클라 → 서버: 새 대화 한 쌍 업로드
+            NetworkServer.RegisterHandler<NpcMemorySummaryMessage>(_sessionService.OnNpcMemorySummary);   // 클라 → 서버: 요약 업로드
             _zoneService.CheckZones(Cts.Token).Forget();
             _zoneService.CheckPortals(Cts.Token).Forget();
             AutoSaveLoop(Cts.Token).Forget();
@@ -446,9 +447,10 @@ namespace MySecondWorld.Network
             NetworkClient.RegisterHandler<PlayerSceneChangedMessage>(_clientSyncService.OnPlayerSceneChangedMessage);
             NetworkClient.RegisterHandler<NpcMemoryResponseMessage>(NpcMemoryClient.OnResponse);   // 서버 → 클라: 대화 기록 응답
             NetworkClient.RegisterHandler<NpcMemoryAckMessage>(NpcMemoryClient.OnAck);             // 서버 → 클라: 업로드 확인(Ack)
+            NetworkClient.RegisterHandler<NpcMemorySummaryAckMessage>(NpcMemoryClient.OnSummaryAck);       // 서버 → 클라: 요약 업로드 확인
 
             // 재접속(OnStartClient 재호출) 때 루프가 겹치지 않게 한 번만
-            // 서버 Ack를 못 받은 NPC 대화 한 쌍을 1초마다 점검해 재전송하는 Loop
+            // 서버 Ack를 못 받은 NPC 대화 한 쌍을 1초마다 점검해 재전송하는 Loop문
             if (!_npcMemoryLoopRunning)
             {
                 _npcMemoryLoopRunning = true;
