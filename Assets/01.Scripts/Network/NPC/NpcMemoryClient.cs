@@ -43,8 +43,17 @@ namespace MySecondWorld.Network
             NetworkClient.Send(new NpcMemoryRequestMessage { npcKey = npcKey });
         }
 
-        // [송신: 클라 → 서버] 새 대화 한 쌍 올리기 — 미확인 큐에 넣고 보낸다
-        // 서버가 받으면 NpcMemoryAckMessage로 확인을 보내오고, OnAck가 받아 큐에서 지운다
+
+        // 클라 기기                              서버(EC2)
+        // NpcMemoryClient.Append
+        //   └ NetworkClient.Send(Append) ───▶  OnNpcMemoryAppend 실행
+        //      (큐에 보관)                       ├ 검증·캐시에 추가
+        //                                        └ conn.Send(Ack) ───┐
+        // NpcMemoryClient.OnAck  ◀────────────────────────────────┘
+        //   └ 큐에서 제거
+           
+        //  [송신: 클라 → 서버] 새 대화 한 쌍 올리기 — 미확인 큐에 넣고 보낸다
+        //  서버가 받으면 NpcMemoryAckMessage로 확인을 보내오고, OnAck가 받아 큐에서 지운다
         public static void Append(string npcKey, string user, string npc)
         {
             if (string.IsNullOrEmpty(npcKey)) return;

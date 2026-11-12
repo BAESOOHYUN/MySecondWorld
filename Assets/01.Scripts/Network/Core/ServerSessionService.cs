@@ -32,7 +32,7 @@ namespace MySecondWorld.Network
 
         // ── NPC 기억 (connectionId → npcKey → 대화 기록) ──
         private const int MaxNpcPairs = 10;
-        private const int MaxNpcKeys = 64;
+        private const int MaxNpcKeys = 64; // 서로 다른 NPC의 수 상한
         private const int MaxNpcTextLength = 500;
         private const float MinAppendInterval = 0.1f;   // 플레이어당 업로드 최소 간격(연타 방지)
         private readonly Dictionary<int, Dictionary<string, List<NpcDialoguePairSave>>> _npcMemories = new();
@@ -425,6 +425,7 @@ namespace MySecondWorld.Network
         // 이 NPC와의 대화 기록을 찾아 요청한 클라에게 돌려준다
         public void OnNpcMemoryRequest(NetworkConnectionToClient conn, NpcMemoryRequestMessage msg)
         {
+            // 서버 프로세스 내에서 일어나는 일
             if (!Sessions.TryGetValue(conn.connectionId, out var session) || string.IsNullOrEmpty(session.playerId)) return;
             if (string.IsNullOrEmpty(msg.npcKey) || msg.npcKey.Length > 100) return;
 
@@ -442,23 +443,28 @@ namespace MySecondWorld.Network
         // 새 한 쌍을 뒤에 붙이고 10개로 자른다. pairId가 이미 있으면 중복이라 붙이지 않고 Ack만 보낸다
         public void OnNpcMemoryAppend(NetworkConnectionToClient conn, NpcMemoryAppendMessage msg)
         {
+            // 서버 프로세스 내에서 일어나는 일
             if (!Sessions.TryGetValue(conn.connectionId, out var session) || string.IsNullOrEmpty(session.playerId)) return;
             if (string.IsNullOrEmpty(msg.npcKey) || msg.npcKey.Length > 100) return;
             if (string.IsNullOrEmpty(msg.pair.pairId) || msg.pair.pairId.Length > 64) return;
 
             // 연타 제한 — Ack를 안 보내면 클라가 나중에 재전송한다
+            // 연타 제한에 걸리면 conn.Send(new NpcMemoryAckMessage 줄에 도달하기 전에 return하므로 Ack가 안감
             float now = Time.unscaledTime;
             if (_lastNpcAppendTime.TryGetValue(conn.connectionId, out var last) && now - last < MinAppendInterval) return;
             _lastNpcAppendTime[conn.connectionId] = now;
 
             var memories = GetNpcMemories(conn, session);
-            if (!memories.TryGetValue(msg.npcKey, out var list))
+            if (!memories.TryGetValue(msg.npcKey, out var list)) // 처음 보는 NPC면
             {
-                if (memories.Count >= MaxNpcKeys) return;
+                if (memories.Count >= MaxNpcKeys) return; // 이미 64명이면 새 NPC는 받지 않음
                 list = new List<NpcDialoguePairSave>();
-                memories[msg.npcKey] = list;
+                memories[msg.npcKey] = list;              // npcKey → 그 NPC의 기억 딕셔너리
             }
 
+            // list는 서버가 들고 있는 "이 플레이어와 이 NPC의 대화 기록"
+            // msg.pair는 클라가 방금 보낸 새 대화 한 쌍
+            // 이미 저장된 pairId면 건너뛰어 중복 저장을 막는다
             if (!list.Exists(p => p.pairId == msg.pair.pairId))
             {
                 list.Add(new NpcDialoguePairSave
@@ -468,6 +474,7 @@ namespace MySecondWorld.Network
                     userText = ClampNpcText(msg.pair.userText),
                     npcText = ClampNpcText(msg.pair.npcText)
                 });
+                // 쌍이 10개(MaxNpcPairs)를 넘으면 맨 앞(RemoveAt(0))을 지움. 오래된 것부터 삭제
                 while (list.Count > MaxNpcPairs) list.RemoveAt(0);
             }
 
@@ -493,6 +500,10 @@ namespace MySecondWorld.Network
 
         #region 저장
 
+        // 저장 시점
+        // 1. 서버 시작 후 autoSaveInterval(기본 60초)마다 — AutoSaveLoop → SaveAllPlayers → SavePlayer (접속 중인 전원)
+        // 2. 플레이어 접속 종료 시 — OnServerDisconnect → RemovePlayer → SavePlayer (끊긴 한 명)
+        // 스폰 전(isSpawned=false)이거나 playerId가 없거나 위치가 zero면 저장하지 않는다
         private void SavePlayer(NetworkConnectionToClient conn, PlayerSession session)
         {
             if (session.isSpawned && !string.IsNullOrEmpty(session.playerId))

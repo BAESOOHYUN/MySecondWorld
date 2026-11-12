@@ -448,6 +448,7 @@ namespace MySecondWorld.Network
             NetworkClient.RegisterHandler<NpcMemoryAckMessage>(NpcMemoryClient.OnAck);             // 서버 → 클라: 업로드 확인(Ack)
 
             // 재접속(OnStartClient 재호출) 때 루프가 겹치지 않게 한 번만
+            // 서버 Ack를 못 받은 NPC 대화 한 쌍을 1초마다 점검해 재전송하는 Loop
             if (!_npcMemoryLoopRunning)
             {
                 _npcMemoryLoopRunning = true;

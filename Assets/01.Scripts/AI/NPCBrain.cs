@@ -109,6 +109,7 @@ namespace MySecondWorld.AI
             // 같은 NpcGuid를 공유하는 다른 인스턴스(예: 컴패니언)와 채널이 겹친다.
             string myKey = _interactable != null ? _interactable.SessionKey : UniqueId;
             Debug.Log($"[NPCBrain] '{name}' 대화 등록 완료! 구독 키: '{myKey}', LLM: {llmService?.GetType().Name ?? "null"}");
+            // PlayerMessageSentEvent가 오면 이 함수를 불러줘 하고 등록
             messageSub
                .Subscribe(myKey, evt =>
                {
@@ -121,26 +122,26 @@ namespace MySecondWorld.AI
 #endif
         }
 
+        // PlayerMessageSentEvent 메세지가 올 때마다 "메시지 왔다!" 하고 알림을 쏨
         private async UniTaskVoid ProcessMessageAsync(PlayerMessageSentEvent evt, string key)
         {
+            // 클라 프로세스 내에서 일어나는 일
             try
             {
-                _thinkingPub.Publish(new NPCThinkingStartedEvent(key));
+                _thinkingPub.Publish(new NPCThinkingStartedEvent(key)); // UI에서 ...(생각신호) 말풍선을 띄우는 용도
                 var response = await GenerateResponseAsync(evt.Text, key, evt.CT);
                 Debug.Log($"[NPCBrain] '{name}' LLM 응답 완료: {response}");
 
                 // 1. 대화 히스토리 즉시 반영 및 영구 저장
                 _sessionBuffer.Add((evt.Text, response));
                 _memory?.AddHistoryEntry(evt.Text, response);
-                NpcMemoryClient.Append(UniqueId, evt.Text, response);
+                NpcMemoryClient.Append(UniqueId, evt.Text, response); // NpcMemoryClient.Append 서버에 대화 한 쌍을 올리라고 요청
                 _memory?.Save(MemoryKey);
 
                 // 2. 응답 이벤트 발행 (UI 업데이트)
                 _responsePub.Publish(new NPCResponseReceivedEvent(
-                        key,
-                        _systemPrompt?.NpcName ?? name,
-                        response));
-                _dialoguePub.Publish(new NPCDialogueEvent { NpcName = key, Message = response });
+                        key, _systemPrompt?.NpcName ?? name, response)); // NPC 고유키, 이름, 응답 텍스트 (내 화면에 대사 표시, 대화 상태 처리)
+                _dialoguePub.Publish(new NPCDialogueEvent { NpcName = key, Message = response }); // NPC 이름(키), 메시지 (TODO : 다른 플레이어에게 대사 공유 (파티 전투용))
 
                 // 3. 대화창을 닫기 전에도 새 팩트가 실시간으로 쌓이도록 즉시 백그라운드 팩트 추출 구동
                 ExtractAndSaveFactAsync(new List<(string user, string npc)> { (evt.Text, response) }, destroyCancellationToken).Forget();
@@ -312,6 +313,7 @@ namespace MySecondWorld.AI
                 foreach (var p in pairs)
                     entries.Add(new DialogueHistoryEntry(p.userText, p.npcText, p.timestamp));
             }
+            // 서버가 준 대화 기록으로 통째로 교체 
             _memory.ReplaceHistory(entries);
         }
 
@@ -361,7 +363,7 @@ namespace MySecondWorld.AI
 
             string prompt =
                 $"{knownBlock}" +
-                $"아래는 {playerName}과 나눈 대화 전체입니다.\n" +
+                $"아래는 {playerName}과 나눈 대화 전체다.\n" +
                 $"{transcriptSb}\n" +
                 $"이 대화에서 {playerName}에 대해 새롭게 알게 된 사실이 있으면 한 문장으로 써줘.\n" +
                 $"예: '{playerName}은 기침 때문에 걱정하고 있다.'\n" +
