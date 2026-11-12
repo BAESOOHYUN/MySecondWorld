@@ -74,5 +74,6 @@ namespace MySecondWorld.Save
         public string firstMetLocation;
         public int conversationCount;
         public string[] knownFacts;
+        public float factionRelation;   // NPC가 이 플레이어를 보는 호감도(-100~100). 서버 코드만 바꾼다 — 요약 업로드로 온 값은 서버가 복사하지 않고 무시
     }
 }

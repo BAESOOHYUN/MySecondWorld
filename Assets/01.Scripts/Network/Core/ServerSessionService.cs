@@ -510,6 +510,8 @@ namespace MySecondWorld.Network
 
         // [수신: 클라 → 서버] 클라가 보낸 NpcMemorySummaryMessage를 서버가 받는 핸들러
         // 요약 필드만 덮어쓴다(대화 기록 dialogue는 읽지도 건드리지도 않음 — Append만 대화를 바꾼다)
+        // factionRelation은 일부러 복사 안 함 — 클라가 보낸 값을 받으면 앱을 조작해 호감도를 올릴 수 있다(혜택과 연결될 수 있음)
+        // 그래서 호감도는 서버 코드(AddNpcFactionRelation)만 바꾸고, 이 핸들러가 캐시의 기존 값을 그대로 둔다
         // 클라가 보낸 값은 믿지 않고, 숫자는 범위로 / 문자열은 길이로 / 목록은 개수로 잘라서 쓴다
         // 처리 순서: 검증 → 요약 전용 연타 제한 → 캐시 찾기/만들기 → 필드 덮어쓰기 → Ack(seq)
         public void OnNpcMemorySummary(NetworkConnectionToClient conn, NpcMemorySummaryMessage msg)
@@ -553,6 +555,23 @@ namespace MySecondWorld.Network
 
             // [송신: 서버 → 클라] "이 NPC의 seq번 요약 받았음" 확인
             conn.Send(new NpcMemorySummaryAckMessage { npcKey = m.npcKey, seq = msg.seq });
+        }
+
+        // [서버 전용] 호감도(factionRelation)를 바꾸는 유일한 길. delta만큼 더하고 -100~100으로 자른다
+        // TODO: 지금은 부르는 곳이 없다. 나중에 계산 로직(긍정 대화·동행 시간·구매·선물)이 서버에서 이 메서드를 부르게 된다
+        // 바뀐 값은 캐시에 들어가고, 다음 Request 응답과 저장(SavePlayer) 때 함께 나간다
+        public void AddNpcFactionRelation(NetworkConnectionToClient conn, string npcKey, float delta)
+        {
+            if (!Sessions.TryGetValue(conn.connectionId, out var session) || string.IsNullOrEmpty(session.playerId)) return;
+            if (string.IsNullOrEmpty(npcKey) || npcKey.Length > 100) return;
+            var memories = GetNpcMemories(conn, session);
+            if (!memories.TryGetValue(npcKey, out var cur))
+            {
+                if (memories.Count >= MaxNpcKeys) return;
+                cur = new NpcMemorySave { npcKey = npcKey, dialogue = Array.Empty<NpcDialoguePairSave>() };
+            }
+            cur.factionRelation = Mathf.Clamp(cur.factionRelation + delta, -100f, 100f);
+            memories[npcKey] = cur;
         }
 
         // 문자열이 null이면 빈 문자열로, MaxNpcTextLength보다 길면 잘라서 돌려준다

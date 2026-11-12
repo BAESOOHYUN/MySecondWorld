@@ -286,7 +286,11 @@ namespace MySecondWorld.AI
         {
             if (m.npcKey != UniqueId || _memory == null) return;
 
-            // 서버가 아직 못 받은 로컬 변경이 있으면 로컬이 더 새것이다 — 덮어쓰지 않는다
+            // 호감도는 서버만 바꾸는 값이라 로컬에 미확인 변경이 있을 수 없다 — 아래 HasPending 검사보다 먼저 항상 반영한다
+            // (값이 프롬프트에 들어가는 건 이 메서드 끝의 프롬프트 재생성 때. 아직 호감도를 바꾸는 서버 로직이 없어 지금은 항상 0)
+            _memory.SyncFactionFromServer(m.factionRelation);
+
+            // 서버가 아직 못 받은 로컬 변경이 있으면 로컬이 더 새것이다 — 요약·대화 기록은 덮어쓰지 않는다
             if (NpcMemoryClient.HasPending(m.npcKey)) return;
             _memory.ApplySummary(m.relationScore, m.questStage, m.questGiven,
                                  m.firstMetDate, m.firstMetLocation, m.conversationCount, m.knownFacts);
