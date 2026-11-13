@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
@@ -82,7 +83,9 @@ namespace MySecondWorld.AI
 
         public void ClearHistory() => _llmAgent?.ClearHistory();
 
-        public async UniTask<string> ChatAsync(string userInput, Action<string> onToken, CancellationToken ct)
+        // history 인자만 맞추고 사용하지X. LLMUnity 에이전트가 자체 히스토리를 보관
+        public async UniTask<string> ChatAsync(string userInput, IReadOnlyList<(string user, string npc)> history,
+                                            Action<string> onToken, CancellationToken ct)
         {
             if (!IsReady) return string.Empty;
             

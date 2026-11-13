@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Collections.Generic;
 using System.Threading;
 using System.Linq;
@@ -47,6 +46,8 @@ namespace MySecondWorld.AI
         
         // 대화 세션 버퍼 — 창 닫힐 때 한 번에 팩트 추출
         private readonly List<(string user, string npc)> _sessionBuffer = new();
+        // LLM에 넘길 이전 대화 쌍 수. 늘리면 이어짐은 좋아지지만 입력 토큰·429 위험이 커진다
+        private const int LlmHistoryPairs = 6;
 
         // 외부 읽기 전용 접근 (NPCInteractable에서 npcName 및 메모리 접근용)
         public NPCSystemPromptSO SystemPrompt => _systemPrompt;
@@ -209,6 +210,23 @@ namespace MySecondWorld.AI
             return sb.ToString().Trim();
         }
 
+        // _memory.DialogueHistory(오래된 것이 앞)의 최근 N쌍을 (user, npc) 튜플로 복사한다
+        // 튜플로 바꾸는 이유: AI 인터페이스가 DialogueHistoryEntry 타입에 의존하지 않게 하려는 것
+        private List<(string user, string npc)> BuildLlmHistory()
+        {
+            var list = new List<(string user, string npc)>();
+            if (_memory == null) return list;
+
+            var h = _memory.DialogueHistory;
+            // 저장된 쌍 중 가장 최근 LlmHistoryPairs개만 쓴다 (시작 인덱스 = Count - N)
+            // '첫 대화 직후'처럼 쌍이 N개보다 적으면 Count - N이 음수가 되어 h[-1]로 예외가 나므로,
+            // Math.Max로 0 아래로 내려가지 않게 한다 (이때는 있는 쌍 전부를 쓴다)
+            for (int i = Math.Max(0, h.Count - LlmHistoryPairs); i < h.Count; i++)
+                list.Add((h[i].userText, h[i].npcText));
+            return list;
+        }
+
+
         // 응답 생성 — 팩트 추출 없이 응답만 반환해 대기 시간 최소화
         // sessionKey: TTS 이벤트 라우팅용(SessionKey). 영구 저장은 이 메서드 내에서도 항상 UniqueId를 쓴다.
         private async UniTask<string> GenerateResponseAsync(
@@ -253,7 +271,7 @@ namespace MySecondWorld.AI
             //     token[20..] = " 무엇을 도와드릴까요?"  → TTS 발행
             //     lastSentEnd = 34
 
-            string response = await _llmService.ChatAsync(userInput, onToken, ct);
+            string response = await _llmService.ChatAsync(userInput, BuildLlmHistory(), onToken, ct);
 
             // 마침표 없이 끝나는 경우 대비
             // ex)"안녕하세요. 저는 의사입니다. 무엇을 도와드릴까요"

@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Threading;
+using Cysharp.Text;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -28,10 +30,11 @@ namespace MySecondWorld.AI
 
         public void ClearHistory() { } // Groq는 매 요청이 독립적 — 히스토리 없음
 
-        public async UniTask<string> ChatAsync(string userInput, Action<string> onToken, CancellationToken ct)
+        public async UniTask<string> ChatAsync(string userInput, IReadOnlyList<(string user, string npc)> history, 
+                                            Action<string> onToken, CancellationToken ct)
         {
             Debug.Log($"[GroqLLM] ChatAsync 호출됨! 입력: '{userInput}', 모델: '{MODEL}'");
-            string json = BuildJson(userInput);
+            string json = BuildJson(userInput, history);
 
             for (int attempt = 0; attempt < 3; attempt++) // 현재 몇 번째 시도인지를 나타냄. 최대 3회 재시도
             {
@@ -89,9 +92,11 @@ namespace MySecondWorld.AI
                     string raw = await PostAsync(json, ct);
                     if (string.IsNullOrEmpty(raw))
                         return string.Empty;
+
+                    // 429 = HTTP "Too Many Requests". Groq는 분당 요청 수·토큰 수 제한이 있고, 넘으면 429로 거절한다.
+                    // 잠깐 기다리면 풀리는 오류라 바로 포기하지 않고 1초 → 2초 → 4초(2^attempt) 간격으로 대기 후 재시도한다.
                     if (raw == "RATE_LIMIT")
                     {
-                        // 429 수신 시 1초, 2초, 4초 대기 후 재시도
                         await UniTask.Delay(TimeSpan.FromSeconds(Mathf.Pow(2, attempt)), cancellationToken: ct);
                         continue;
                     }
@@ -114,7 +119,10 @@ namespace MySecondWorld.AI
             using var req = new UnityWebRequest(API_URL, "POST");
             req.uploadHandler = new UploadHandlerRaw(body);
             req.downloadHandler = new DownloadHandlerBuffer();
-            req.timeout = 10; // ★ 10초 타임아웃 설정 (10초 내 응답 없으면 즉시 오류 반환)
+            // timeout : 요청을 보낸 시점부터 응답을 다 받을 때까지의 전체 제한(연결 + 서버 처리 + 다운로드 합산).
+            // 응답이 오는 도중이어도 '10초를 초과'하면 SendWebRequest가 실패로 끝나 즉시 null 오류가 반환된다.
+            // 이 경우 재시도 없이 빈 답이 나가므로, 느린 모델에서는 이 값이 짧을 수 있다.
+            req.timeout = 10;
             req.SetRequestHeader("Authorization", $"Bearer {API_KEY}");
             req.SetRequestHeader("Content-Type", "application/json"); 
             req.SetRequestHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"); // Cloudflare 403 차단 방지
@@ -139,18 +147,28 @@ namespace MySecondWorld.AI
             return req.downloadHandler.text;
         }
 
-        private string BuildJson(string userInput)
+        // 대화의 연속성을 위한 메서드. 이전 대화의 흐름을 기억하고 현재 대화에 반영한다.
+        private string BuildJson(string userInput, IReadOnlyList<(string user, string npc)> history = null)
         {
-            string sys = EscapeJson(_systemPrompt);
-            string usr = EscapeJson(userInput);
-            return "{" +
-                $"\"model\":\"{MODEL}\"," +
-                "\"stream\":false," +
-                $"\"max_tokens\":{_maxTokens}," +
-                "\"messages\":[" +
-                    $"{{\"role\":\"system\",\"content\":\"{sys}\"}}," +
-                    $"{{\"role\":\"user\",\"content\":\"{usr}\"}}" +
-                "]}";
+            using var sb = ZString.CreateStringBuilder();
+            // NPC 성격, 규칙, 기억 요약
+            sb.Append("{\"model\":\""); sb.Append(MODEL);
+            sb.Append("\",\"stream\":false,\"max_tokens\":"); sb.Append(_maxTokens);
+            sb.Append(",\"messages\":[{\"role\":\"system\",\"content\":\""); sb.Append(EscapeJson(_systemPrompt)); sb.Append("\"}");
+            
+            if (history != null)
+                foreach (var (u, n) in history)
+                {
+                    // 빈 content는 API가 거절할 수 있음
+                    if (string.IsNullOrWhiteSpace(u) || string.IsNullOrWhiteSpace(n)) continue;
+                    // 과거에 플레이어가 한 말(u)
+                    sb.Append(",{\"role\":\"user\",\"content\":\""); sb.Append(EscapeJson(u)); sb.Append("\"}");
+                    // 과거에 NPC가 한 답(n)
+                    sb.Append(",{\"role\":\"assistant\",\"content\":\""); sb.Append(EscapeJson(n)); sb.Append("\"}");
+                }
+            // 지금 방금 플레이어가 한 말(userInput)
+            sb.Append(",{\"role\":\"user\",\"content\":\""); sb.Append(EscapeJson(userInput)); sb.Append("\"}]}");
+            return sb.ToString();
         }
 
         // {"choices":[{"message":{"content":"..."}}]} 에서 content 추출
@@ -176,7 +194,7 @@ namespace MySecondWorld.AI
             if (string.IsNullOrEmpty(text) || onToken == null)
                 return;
 
-            var sb = new StringBuilder();
+            using var sb = ZString.CreateStringBuilder();
             foreach (char c in text)
             {
                 sb.Append(c);
