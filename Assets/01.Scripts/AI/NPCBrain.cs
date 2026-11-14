@@ -231,8 +231,8 @@ namespace MySecondWorld.AI
                 foreach (var s in e.Stats) { sb.Append(" / "); sb.Append(s.Type.ToString()); sb.Append(' '); sb.Append(s.Value); }
                 sb.AppendLine();
             }
-            sb.AppendLine("손님이 추천을 요청하면 목록에서 하나만 골라 이유와 함께 한 문장으로 권하고, " +
-                "응답 맨 끝에 [[추천:번호]]를 붙인다. 추천 요청이 아니면 태그를 붙이지 않는다.");
+            sb.AppendLine("손님이 상품을 추천해 달라고 하면 목록에서 하나만 골라 이유와 함께 한 문장으로 권하고," +
+                " 응답 맨 끝에 반드시 [[추천:번호]]를 붙인다. 예) 방어력이 좋은 철 투구를 추천해요! [[추천:3]]");
             return sb.ToString();
         }
 
@@ -292,6 +292,17 @@ namespace MySecondWorld.AI
         // max_tokens에 잘려 닫히지 않은 태그("[[추천:3" 등)가 본문에 남지 않게 하는 용도
         private static readonly Regex BrokenTag = new(@"\[\[[^\]]*$");
 
+
+        // LLM 원문: "...추천해요! [[추천:3]]"
+        //│
+        //├ ExtractRecommend(원문)
+        //│    ├ 태그 있고 번호 정상 → pick = 2           (끝, FindMentionedItem은 안 부름)
+        //│    └ 태그 없거나 번호 이상 → pick = -1, clean = 태그 뺀 본문
+        //│
+        //└ pick == -1 일 때만 → FindMentionedItem(clean)
+        //      본문에 "사자문장 전사의 상의"가 있으면 그 상품, 없으면 -1 (카드 없음)
+        //
+
         // 응답에서 태그를 빼 본문(clean)을 만들고, 추천 번호를 목록 인덱스(0부터)로 돌려준다
         // 태그가 없거나 번호가 1..count 밖이면 -1 → 카드는 안 띄우고 대화만 정상 진행
         private static int ExtractRecommend(string text, int count, out string clean)
@@ -303,6 +314,26 @@ namespace MySecondWorld.AI
             return n >= 1 && n <= count ? n - 1 : -1;
         }
 
+        // 태그가 없어도 응답에 판매 목록의 상품 이름이 들어 있으면 그 상품을 추천한 것으로 본다.
+        // 여러 개가 나오면 응답에서 가장 먼저 나온 것, 같은 위치면 이름이 더 긴 것(짧은 이름이 긴 이름에 먹히지 않게)
+        private static int FindMentionedItem(string text, List<EquipmentItem> list)
+        {
+            int best = -1, bestIdx = int.MaxValue, bestLen = 0;
+            for (int i = 0; i < list.Count; i++)
+            {
+                string t = list[i].Title;
+                if (string.IsNullOrEmpty(t)) continue;
+                int idx = text.IndexOf(t, StringComparison.Ordinal);
+                if (idx < 0) continue;
+                if (idx < bestIdx || (idx == bestIdx && t.Length > bestLen))
+                {
+                    best = i;
+                    bestIdx = idx;
+                    bestLen = t.Length;
+                }
+            }
+            return best;
+        }
 
         // 응답 생성 — 팩트 추출 없이 응답만 반환해 대기 시간 최소화
         // sessionKey: TTS 이벤트 라우팅용(SessionKey). 영구 저장은 이 메서드 내에서도 항상 UniqueId를 쓴다.
@@ -376,7 +407,12 @@ namespace MySecondWorld.AI
 
             _memory?.IncrementConversationCount();
 
+            // 태그 있고 번호 정상 → pick = 2 
+            // 태그 없거나 번호 이상 → pick = -1, clean = 태그 뺀 본문
             int pick = ExtractRecommend(response ?? "", listAtRequest.Count, out string clean);
+            // pick == -1 일 때(태그가 없으면) → FindMentionedItem로 분기하여, 본문에서 '아이템 이름'으로 추천템을 찾는다.
+            if (pick < 0) 
+                pick = FindMentionedItem(clean, listAtRequest); 
             return (clean, pick >= 0 ? listAtRequest[pick] : null);   // 번호 → 아이템으로 바꿔서 돌려줌
         }
         #endregion
