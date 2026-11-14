@@ -331,14 +331,15 @@ namespace MySecondWorld.Customization
         // 나중에 같은 subtype 안에서 하나를 자동으로 골라야 할 때(예: 헬멧 벗고 얼굴 되돌리기),
         // 아무거나 첫 번째를 고르지 않고 이 선택 기록을 먼저 확인해서 쓴다.
         // 이 기록은 오직 여기서만 바뀐다 — 계산만 하는 순수 함수들(ApplyDirectSelectionRules,
-        // ComputeVisibleAppearance)은 이 기록을 읽기만 하고 절대 고치지 않는다.
+        // ComputeVisibleAppearance은 이 기록을 읽기만 하고 절대 고치지 않는다.
         private void RecordLastSelected(PartType part, int index, Gender gender)
         {
             var subtype = _avatarPartKeyTable.GetSubType(part, gender, index);
             _lastSelectedIndexByPartAndSubtype[(part, subtype)] = index;
         }
 
-        // 딱 하나의 파츠만 지우고 다시 만드는 함수. 다른 파츠는 절대 안 건드린다.
+        // 딱 하나의 파츠만 교체하는 함수. 다른 파츠는 절대 안 건드린다.
+        // 새 파츠가 뜰 때까지 옛 파츠를 화면에 남겨 두었다가, 뜬 뒤에 옛 파츠를 지워 빈 구간이 생기지 않게 한다.
         // 그래서 이 함수를 여러 번 연달아 불러도 서로 꼬이거나 겹칠 일이 없다.
         private async UniTask ReplacePartInstance(PartType part, int index, Gender gender)
         {
