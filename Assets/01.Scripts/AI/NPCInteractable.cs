@@ -313,7 +313,6 @@ namespace MySecondWorld.AI
                 _activeInteraction = null;
                 OnUIChecker.SetConversationActive(false);
             }
-            _brain?.OnConversationEnded();  // _cts.Cancel() 전 — destroyCancellationToken 살아있어야 함
             _cts?.Cancel();
             _cts?.Dispose();
             _cts = null;
@@ -448,8 +447,6 @@ namespace MySecondWorld.AI
                 OnUIChecker.SetConversationActive(false);
             }
             _playerColliders.Clear();
-
-            _brain?.OnConversationEnded();
             _dialogueUI?.Close();
             _shopUI?.Close();
             _menuUI?.Close();

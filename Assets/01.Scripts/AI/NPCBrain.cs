@@ -56,10 +56,6 @@ namespace MySecondWorld.AI
 
 
         #region 상태 필드
-
-        // 대화 세션 버퍼 — 창 닫힐 때 한 번에 팩트 추출 (프롬프트·팩트 추출 두 리전이 같이 씀)
-        private readonly List<(string user, string npc)> _sessionBuffer = new();
-
         // 추천 가능한 상품 목록 (이 NPC 카탈로그 중 플레이어 성별에 맞는 것). 번호 N은 이 목록의 N번째(1부터)
         // 프롬프트를 만들 때 채우고, 응답에서 추천 번호를 해석할 때 읽는다
         private readonly List<EquipmentItem> _recommendable = new();
@@ -182,7 +178,6 @@ namespace MySecondWorld.AI
                 Debug.Log($"[NPCBrain] '{name}' LLM 응답 완료: {response}");
 
                 // 1. 대화 히스토리 즉시 반영 및 영구 저장
-                _sessionBuffer.Add((evt.Text, response));
                 _memory?.AddHistoryEntry(evt.Text, response);
                 NpcMemoryClient.Append(UniqueId, evt.Text, response); // NpcMemoryClient.Append 서버에 대화 한 쌍을 올리라고 요청
                 UploadSummary();   // 이번 응답으로 늘어난 conversationCount 등을 올린다
@@ -472,17 +467,6 @@ namespace MySecondWorld.AI
                 conversationCount = _memory.ConversationCount,
                 knownFacts = _memory.KnownFacts.ToArray()
             });
-        }
-
-        // NPCInteractable.OnEnterIdle()에서 호출 — 대화창 닫힐 때 세션 전체 팩트 추출
-        public void OnConversationEnded()
-        {
-            if (_sessionBuffer.Count == 0) return;
-
-            var snapshot = new List<(string user, string npc)>(_sessionBuffer);
-            _sessionBuffer.Clear();
-
-            ExtractAndSaveFactAsync(snapshot, destroyCancellationToken).Forget();
         }
 
         private async UniTaskVoid ExtractAndSaveFactAsync(
