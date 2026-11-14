@@ -104,7 +104,7 @@ namespace MySecondWorld.AI.Voice
             {
                 float raw = IsAnySourcePlaying() ? SampleAmplitude() : 0f;
                 _smoothedAmplitude = Mathf.Lerp(_smoothedAmplitude, raw, Time.deltaTime * _smoothSpeed);
-                Debug.Log($"smoothed={_smoothedAmplitude:F4}");
+                //Debug.Log($"smoothed={_smoothedAmplitude:F4}");
 
                 _holdTimer -= Time.deltaTime;
                 if (_holdTimer <= 0)
