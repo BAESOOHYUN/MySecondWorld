@@ -1,16 +1,17 @@
 using System;
 using System.Threading;
+using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using R3;        // (구 UniRX)
 using Stateless; // .NET용 상태머신 라이브러리
 using MessagePipe;
 using VContainer;
-using System.Collections.Generic;
 using MySecondWorld.Inventory.Items;
 using MySecondWorld.Interaction;
 using MySecondWorld.Combat.Player;
 using MySecondWorld.CameraSystem;
+using MySecondWorld.Network;
 
 namespace MySecondWorld.AI
 {
@@ -18,7 +19,7 @@ namespace MySecondWorld.AI
     /// 플레이어 근접 감지 → 대화 시작/종료 흐름 제어
     /// Stateless 상태 머신으로 4개 상태를 명시적으로 관리한다.
     /// </summary>
-    public class NPCInteractable : MonoBehaviour, ITapTargetable
+    public class NPCInteractable : MonoBehaviour, ITapTargetable, IShopVendor
     {
         #region 상태 머신 정의
         private enum NpcState
@@ -128,6 +129,14 @@ namespace MySecondWorld.AI
         // GetInstanceID()를 섞어 인스턴스 단위로 항상 고유하게 만든다.
         // 주의: 영구 저장(_memory.Load/Save)에는 이 값을 쓰지 않는다 — 세션 종료 시 새 값이 되므로 저장 키로는 부적합.
         public string SessionKey => $"{NpcGuid}_{GetInstanceID()}";
+
+        //------------------------상점-----------------------------------------
+        // 서버가 거래를 검증할 때 읽는 카탈로그 (IShopVendor)
+        // _shopCatalog가 List<EquipmentItem>이라 IReadOnlyList로 바로 반환된다.
+        public IReadOnlyList<EquipmentItem> ShopCatalog => _shopCatalog;
+        // 클라가 거래 요청에 싣는 이 NPC의 netId. 서버·클라가 같은 값이다 (SessionKey와 달리)
+        public uint ShopNetId => ShopVendor.GetNetId(gameObject);
+
         #endregion
 
         #region 초기화
@@ -413,7 +422,7 @@ namespace MySecondWorld.AI
             _cts?.Dispose();
             _cts = new CancellationTokenSource();
 
-            _shopUI.Open(_shopCatalog);
+            _shopUI.Open(_shopCatalog, ShopNetId);
             _shopUI.OnClose
                 .Subscribe(_ => SafeFire(NpcTrigger.Close))
                 .AddTo(_cts.Token);

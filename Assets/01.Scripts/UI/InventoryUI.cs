@@ -430,12 +430,16 @@ namespace MySecondWorld.UI
                    isEquipped,
                    onDiscard: () =>
                    {
-                       if (isShopMode && stack.Source is EquipmentItem eqItem)
+                       if (isShopMode)                                   // ← 상점 모드
                        {
-                           _activeShop.RequestSell(eqItem, capturedIndex);
+                           if (stack.Source is EquipmentItem eqItem)     // 장비일 때 버리기 버튼 누르면 '판매 팝업'
+                               _activeShop.RequestSell(eqItem, capturedIndex);
+                           else                                          // 코인,소모품 등 재화일 때 버리기 버튼 누르면 '판매불가 팝업'
+                               _activeShop.ShowUnsellable(stack.Source);
                            return;
                        }
 
+                       // ↓ 여기부터는 '상점 모드가 아닐 때'만 실행된다 (기존 코드 그대로)
                        // 로컬 예측: 버리려는 칸이 지금 장착한 칸이면 즉시 로컬 비주얼 해제
                        if (_inventoryProvider.WeaponActions != null
                            && _inventoryProvider.WeaponActions.CurrentMainHandInventorySlotIndex == capturedIndex)

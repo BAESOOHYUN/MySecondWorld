@@ -54,6 +54,8 @@ namespace MySecondWorld.UI
         private EquipmentItem _pendingPurchase; // 구매 대기중인 장비 아이템
         private EquipmentItem _pendingSale; // 판매 대기중인 장비 아이템
         private int _pendingSaleSlotIndex = -1;
+        private uint _shopNetId;   // 지금 열려 있는 상점 NPC의 netId (거래 요청 때 서버에 보낸다)
+
 
         // ── 열림 상태·이벤트 ──
         private int _openedFrame = -1; // Open()과 같은 프레임에 들어온 잔여 클릭(백드롭 등)으로 즉시 닫히는 것 방지
@@ -121,6 +123,7 @@ namespace MySecondWorld.UI
             Close();
         }
 
+
         private void OnDestroy()
         {
             if (_inventoryUI != null)
@@ -134,11 +137,12 @@ namespace MySecondWorld.UI
 
         #region 열기·닫기
 
-        public void Open(IReadOnlyList<EquipmentItem> catalog)
+        public void Open(IReadOnlyList<EquipmentItem> catalog, uint shopNetId)
         {
             _openedFrame = Time.frameCount;
             _canvas.enabled = true;
             _lastCatalog = catalog;
+            _shopNetId = shopNetId;
 
             // 성별 필터 적용된 카탈로그로 표시
             var filteredCatalog = FilterCatalogByGender(catalog);
@@ -161,6 +165,8 @@ namespace MySecondWorld.UI
         {
             if (_canvas != null && !_canvas.enabled) return;
             if (Time.frameCount == _openedFrame) return; // 상점이 열린 바로 그 프레임의 Close 요청은 잔여 클릭이므로 무시
+
+            _shopNetId = 0;   // 실제로 닫을 때만 비운다
 
             _confirmPanel?.Hide();
 
@@ -248,20 +254,24 @@ namespace MySecondWorld.UI
             _confirmPanel?.Show("판매 확인", message, "판매", ConfirmTrade);
         }
 
+        // 판매할 수 없는 아이템(코인·소모품 등)을 상점 모드에서 눌렀을 때: 같은 확인 팝업에 안내만 띄운다
+        public void ShowUnsellable(RootItem item)
+            => _confirmPanel?.Show("판매 불가", $"<color=#FFE066>{item.Title}</color>은(는) 판매할 수 없습니다.", "확인", null);
+
         // 확인 팝업의 확정 버튼 — 대기 중인 구매 또는 판매를 서버에 요청한다
         private void ConfirmTrade()
         {
             if (_pendingPurchase != null && _costItem != null)
             {
                 // 구매: 대가 아이템을 내고 장비를 받는다
-                _inventoryProvider.Actions?.TradeItem(_costItem.GetDbKey(), _pendingPurchase.GetDbKey(), -1); //-1은 슬롯 칸을 '모른다/상관없다' 의미
+                _inventoryProvider.Actions?.TradeItem(_costItem.GetDbKey(), _pendingPurchase.GetDbKey(), -1, _shopNetId); //-1은 슬롯 칸을 '모른다/상관없다' 의미
                 _pendingPurchase = null;
             }
             else if (_pendingSale != null && _costItem != null)
             {
                 // 판매: 장비를 내고 대가 아이템을 받는다
                 // 판매할 칸 번호를 서버에 보내고, 서버가 그 칸을 검증해서 뺀다. 장착 칸이 비면 ServerValidateMainHand가 해제
-                _inventoryProvider.Actions?.TradeItem(_pendingSale.GetDbKey(), _costItem.GetDbKey(), _pendingSaleSlotIndex);
+                _inventoryProvider.Actions?.TradeItem(_pendingSale.GetDbKey(), _costItem.GetDbKey(), _pendingSaleSlotIndex, _shopNetId);
                 _pendingSale = null;
                 _pendingSaleSlotIndex = -1;   // 다 쓴 값은 초기화
             }

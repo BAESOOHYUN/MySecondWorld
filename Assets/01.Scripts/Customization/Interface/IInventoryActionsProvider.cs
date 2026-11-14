@@ -11,7 +11,8 @@ namespace MySecondWorld.Customization
         // 물물교환. payInventorySlotIndex는 대가로 내는 아이템이 든 인벤토리 칸 번호.
         //  - 판매(장비를 내고 코인을 받음): 어느 칸이 팔리는지가 중요하므로 실제 칸 번호를 보낸다.
         //  - 구매(코인을 내고 장비를 받음): 코인은 어느 칸에서 빼도 같으므로 -1("칸을 지정하지 않음")을 보낸다.
-        void TradeItem(int payItemDbKey, int receiveItemDbKey, int payInventorySlotIndex);
+        // shopNetId: 거래하는 상점 NPC의 netId
+        void TradeItem(int payItemDbKey, int receiveItemDbKey, int payInventorySlotIndex, uint shopNetId);
 
         // slotIndex: 사용할 인벤토리 칸 번호
         void UseItem(int slotIndex);

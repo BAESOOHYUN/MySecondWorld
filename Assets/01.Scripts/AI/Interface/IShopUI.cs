@@ -1,4 +1,3 @@
-
 using System.Collections.Generic;
 using R3;
 using MySecondWorld.Inventory.Items;
@@ -12,7 +11,8 @@ namespace MySecondWorld.AI
     public interface IShopUI
     {
         Observable<Unit> OnClose { get; }
-        void Open(IReadOnlyList<EquipmentItem> catalog);
+        // shopNetId: 이 상점 NPC의 netId. 거래 요청에 실려 서버가 "어느 상점인가"를 검증하는 데 쓴다
+        void Open(IReadOnlyList<EquipmentItem> catalog, uint shopNetId);
         void Close();
     }
 }

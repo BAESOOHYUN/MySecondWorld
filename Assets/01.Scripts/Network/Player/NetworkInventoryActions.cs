@@ -9,19 +9,29 @@ using MySecondWorld.Inventory.Items;
 
 namespace MySecondWorld.Network
 {
+    using RootItem = Cleverous.VaultInventory.RootItem;
+    using Inventory = Cleverous.VaultInventory.Inventory;
+
     // 인벤토리 UI/상점/퀘스트 보상이 사용하는 서버 Command 모음.
     // NetworkWeaponEquip/NetworkCharacterAppearance와 마찬가지로
     // Inventory와 같은 GameObject(플레이어 프리팹)에 부착한다.
     // Phase가 늘어날 때마다 이 파일에 Command를 추가한다.
-    [RequireComponent(typeof(Cleverous.VaultInventory.Inventory))]
+    [RequireComponent(typeof(Inventory))]
     public class NetworkInventoryActions : NetworkBehaviour, IInventoryActionsProvider
     {
         #region 필드
 
         [SerializeField] private GameObject _floorItemPrefab; // 버리기 시 바닥에 스폰할 순수 프리팹 (스크립트는 FloorItemFactory가 스폰 시점에 부착)
+       
+        [Header("상점 거래")]
+        [Tooltip("구매·판매의 대가(통화) 아이템. ShopUI의 Cost Item과 같은 에셋을 연결한다")]
+        [SerializeField] private RootItem _currencyItem;
 
+        // 상점 NPC 근접 구역(ProximityZone) 반경 3 + 플레이어 콜라이더 반경·위치 지연 여유.
+        // 구역을 키우면 이 값도 같이 키워야 한다 (프리팹의 ProximityZone 반경과 연동되지 않음)
+        private const float MaxShopDistance = 5.0f;
         private LocalPlayerInventoryProvider _localInventoryProvider;
-        private Cleverous.VaultInventory.Inventory _inventory;
+        private Inventory _inventory;
         private IUseInventory _useInventory;
 
         #endregion
@@ -40,7 +50,7 @@ namespace MySecondWorld.Network
 
         private void Awake()
         {
-            _inventory = GetComponent<Cleverous.VaultInventory.Inventory>();
+            _inventory = GetComponent<Inventory>();
             _useInventory = GetComponent<IUseInventory>(); // NetworkCharacterAppearance가 같은 오브젝트에서 구현 중
         }
 
@@ -56,8 +66,8 @@ namespace MySecondWorld.Network
 
         // UI는 이 메서드들만 부르고, [Command] 호출은 여기서 감싼다.
         public void DiscardItem(int slotIndex) => CmdDiscardItem(slotIndex);
-        public void TradeItem(int payItemDbKey, int receiveItemDbKey, int payInventorySlotIndex)
-            => CmdTradeItem(payItemDbKey, receiveItemDbKey, payInventorySlotIndex);
+        public void TradeItem(int payItemDbKey, int receiveItemDbKey, int payInventorySlotIndex, uint shopNetId)
+            => CmdTradeItem(payItemDbKey, receiveItemDbKey, payInventorySlotIndex, shopNetId);
         public void UseItem(int slotIndex) => CmdUseItem(slotIndex);
 
         #endregion
@@ -109,11 +119,12 @@ namespace MySecondWorld.Network
 
         // 물물교환(구매·판매 공용). payInventorySlotIndex >= 0이면 그 칸에서 대가를 내고(판매), -1이면 종류만 본다(구매).
         [Command]
-        private void CmdTradeItem(int payItemDbKey, int receiveItemDbKey, int payInventorySlotIndex)
+        private void CmdTradeItem(int payItemDbKey, int receiveItemDbKey, int payInventorySlotIndex, uint shopNetId)
         {
             if (_inventory == null) return;
-            if (Vault.Get(payItemDbKey) is not Cleverous.VaultInventory.RootItem payItem) return;
-            if (Vault.Get(receiveItemDbKey) is not Cleverous.VaultInventory.RootItem receiveItem) return;
+            if (Vault.Get(payItemDbKey) is not RootItem payItem) return;
+            if (Vault.Get(receiveItemDbKey) is not RootItem receiveItem) return;
+            if (!IsValidShopTrade(shopNetId, payItem, receiveItem, payInventorySlotIndex)) return;
 
             // 1) 대가 확인 — 판매는 지정한 칸에 그 아이템이 있어야 하고, 구매는 가방 어딘가에 있으면 된다
             bool hasPayItem
@@ -198,6 +209,41 @@ namespace MySecondWorld.Network
                 weaponEquip.ServerRemapMainHandSlot(oldToNew);
             if (TryGetComponent(out NetworkCharacterAppearance appearance))
                 appearance.ServerRemapEquippedPartSlots(oldToNew);
+        }
+
+        // 상점이 파는 물건인가 (서버는 NPCInteractable을 모르므로 IShopVendor로 읽는다)
+        private static bool SellsItem(IShopVendor vendor, RootItem item)
+        {
+            var list = vendor.ShopCatalog;
+            if (list == null) return false;
+            foreach (var e in list)
+                if (e == item)
+                    return true;
+            return false;
+        }
+
+        // 클라가 보낸 거래가 정당한가. 하나라도 어긋나면 거부하고 서버 로그에 사유를 남긴다
+        [Server]
+        private bool IsValidShopTrade(uint shopNetId, RootItem pay, RootItem receive, int payInventorySlotIndex)
+        {
+            if (_currencyItem == null)
+            { Debug.LogError("[Trade] _currencyItem 미연결 — 모든 거래 거부"); return false; }
+            if (!ShopVendor.TryFind(shopNetId, out var vendor, out var shop))
+            { Debug.LogWarning($"[Trade] 거부: 상점이 아님 netId={shopNetId}"); return false; }
+            if ((shop.position - transform.position).sqrMagnitude > MaxShopDistance * MaxShopDistance)
+            { Debug.LogWarning($"[Trade] 거부: 상점과 너무 멂 netId={shopNetId}"); return false; }
+
+            if (payInventorySlotIndex < 0)   // 구매: 통화로 내고, 이 상점이 파는 물건만 받는다
+            {
+                if (pay != _currencyItem) { Debug.LogWarning("[Trade] 거부: 대가가 통화가 아님"); return false; }
+                if (!SellsItem(vendor, receive)) { Debug.LogWarning("[Trade] 거부: 이 상점이 안 파는 물건"); return false; }
+            }
+            else   // 판매: 보상은 통화로만, 파는 것은 장비만
+            {
+                if (receive != _currencyItem) { Debug.LogWarning("[Trade] 거부: 판매 보상이 통화가 아님"); return false; }
+                if (pay is not EquipmentItem) { Debug.LogWarning("[Trade] 거부: 판매 불가 아이템(장비만 판매 가능)"); return false; }
+            }
+            return true;
         }
 
         #endregion
