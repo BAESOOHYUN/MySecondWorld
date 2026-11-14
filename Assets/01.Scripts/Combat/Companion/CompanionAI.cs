@@ -4,7 +4,6 @@ using UnityEngine;
 using UnityEngine.AI;
 using Stateless;
 using Mirror;
-using MySecondWorld.Combat;
 using MySecondWorld.Combat.Player;
 using MySecondWorld.Foundation;
 
@@ -12,6 +11,11 @@ namespace MySecondWorld.Combat.Companion
 {
     // MonsterAI와 대칭 구조(Follow/Chase/Attack/Dead)지만 상속하지 않는다 — 감지 태그/Idle 개념이
     // 정반대라(제 발로 서있는 몹 vs owner를 항상 따라다니는 동료) 상속으로 끼워 맞추면 더 부자연스럽다.
+    //
+    // ⚠ 프리팹에서 이 컴포넌트의 체크박스(enabled)는 "꺼져 있는 것"이 정상이다.
+    //   - 서버: CompanionFactory가 스폰 직후 Initialize(owner)를 불러 켠다. owner를 채우기 전에 돌면 안 되기 때문.
+    //   - 클라이언트 사본: Initialize가 호출되지 않아 꺼진 채로 남는다. 이동은 NetworkTransform이 서버 위치를 받아 처리한다.
+    //   - 켜 두면 클라 사본에서 _owner가 null인 채로 돌아 오류가 난다.
     [RequireComponent(typeof(Animator))]
     [RequireComponent(typeof(NavMeshAgent))]
     [RequireComponent(typeof(CapsuleCollider))]
@@ -42,7 +46,10 @@ namespace MySecondWorld.Combat.Companion
         #endregion
 
         #region Fields & Properties
-
+        // 쓰는 모습
+        [InspectorNote("이 컴포넌트는 프리팹에서 '꺼짐'이 정상입니다.\n" +
+               "서버: CompanionFactory가 Initialize(owner)로 켬\n" +
+               "클라 사본: Initialize가 호출되지 않아 꺼진 채 유지 (이동은 NetworkTransform)")]
         [SerializeField] private CompanionStatsSO _stats;
         [SerializeField] private SphereCollider _detectionTrigger;
         [SerializeField] private Animator _animator;

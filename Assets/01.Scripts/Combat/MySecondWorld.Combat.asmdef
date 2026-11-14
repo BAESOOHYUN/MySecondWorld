@@ -11,6 +11,7 @@
         "MySecondWorld.Character",
         "MySecondWorld.Pool",
         "MySecondWorld.Foundation",
+        "MySecondWorld.Utils",
         "MySecondWorld.Inventory",
         "MySecondWorld.Interaction",
         "R3.Unity",
