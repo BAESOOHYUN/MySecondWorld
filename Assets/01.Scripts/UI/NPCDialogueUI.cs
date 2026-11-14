@@ -71,6 +71,10 @@ namespace MySecondWorld.UI
         // 응답 도착 후 2초가 지나도 false이면 TTS 장애로 보고 텍스트를 즉시 출력한다(FallbackEnsureDialogueAsync).
         private bool _ttsSentenceStarted = false;
 
+        // 2초 안전망(FallbackEnsureDialogueAsync)이 이미 전체 답을 말풍선으로 띄웠는가.
+        // true인 동안은 뒤늦게 도착한 TTS 문장을 다시 말풍선으로 만들지 않는다 (같은 말이 두 번 나오지 않게)
+        private bool _fallbackShown;
+
         // 이번 질문에 대한 LLM 응답 전체가 도착했는가. 제출 시 false, responseSub에서 true.
         // 응답이 오는 도중 발행된 TTS "말 끝남"으로 입력이 열리는 것을 막는 데 쓴다.
         private bool _llmResponseCompleted;
@@ -94,6 +98,8 @@ namespace MySecondWorld.UI
             ? Observable.Merge(_closeButton.OnClickAsObservable().AsUnitObservable(), _backdropButton.OnClickAsObservable().AsUnitObservable(), _closeSubject)
             : Observable.Merge(_closeButton.OnClickAsObservable().AsUnitObservable(), _closeSubject);
 
+        private static int _dbgConstructCount;   // 임시 진단: Construct가 몇 번 불리는지 센다
+
         [Inject]
         private void Construct(
             ISubscriber<NPCResponseReceivedEvent> responseSub,
@@ -105,13 +111,16 @@ namespace MySecondWorld.UI
             IShopUI shopUI
             )
         {
+            Debug.Log($"[NPCDialogueUI] Construct 호출(임시 진단) 누적 {++_dbgConstructCount}회, instance={GetInstanceID()}");
             // 스트리밍 중 문장 단위로 텍스트 누적 — TTS와 동시에 표시
             sentenceStartedSub
                 .Subscribe(evt =>
                 {
                     if (evt.NpcGuid != _currentNpcGuid) return;
                     _ttsSentenceStarted = true; // 문장 수신 확인!
-                    AppendSentence(evt.Text);    // 음성 타이밍에 맞춰 문장 추가
+                    Debug.Log($"[NPCDialogueUI] TTS 문장 시작(임시 진단) t={Time.realtimeSinceStartup:F2}: {evt.Text}");
+                    if (!_fallbackShown)            // 안전망이 이미 띄웠다면 건너뜀 (음성은 그대로 재생된다)
+                        AppendSentence(evt.Text);   // 음성 타이밍에 맞춰 문장 추가
                 })
                 .AddTo(destroyCancellationToken);
 
@@ -432,6 +441,7 @@ namespace MySecondWorld.UI
         public void ShowThinking()
         {
             _ttsSentenceStarted = false; // 플래그 초기화
+            _fallbackShown = false;
             if (_thinkingBubblePrefab == null || _chatContent == null) return;
 
             // 이전 생각중 버블 정리 (방어코드)
@@ -525,9 +535,11 @@ namespace MySecondWorld.UI
         private async UniTaskVoid FallbackEnsureDialogueAsync(string fullText, CancellationToken ct)
         {
             await UniTask.Delay(2000, cancellationToken: ct);
+            Debug.Log($"[NPCDialogueUI] 폴백 검사(임시 진단): _ttsSentenceStarted={_ttsSentenceStarted} t={Time.realtimeSinceStartup:F2}");
             // 2초 동안 TTS 음성 문장이 단 한 번도 도착하지 않은 경우 (TTS 장애/무음)
             if (!_ttsSentenceStarted)
             {
+                _fallbackShown = true;
                 AppendSentence(fullText); // 전체 텍스트 즉시 출력 & '...' 버블 닫기
                 SetInputEnabled(true);
             }

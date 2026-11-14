@@ -71,6 +71,7 @@ namespace MySecondWorld.AI
                     else
                     {
                         Debug.LogWarning($"[GroqLLM] ParseContent 결과가 비어있음. 원본 응답: {raw}");
+                        Debug.LogWarning($"[GroqLLM] 빈 응답 요청 본문(임시 진단): {json}");
                     }
                     return string.Empty;
                 }

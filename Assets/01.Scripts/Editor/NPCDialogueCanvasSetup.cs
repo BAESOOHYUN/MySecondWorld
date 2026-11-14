@@ -39,6 +39,7 @@ namespace MySecondWorld.EditorTools
         // Picto Icons
         private const string IconMicPath = "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Mic.Png";
         private const string IconXPath = "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Symbol_X.Png";
+        private const string IconMutePath = "Assets/External/Layer Lab/GUI Pro-SimpleCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/256/PictoIcon_Sound_Off.Png";
 
         [MenuItem("Tools/MySecondWorld/Setup NPC Dialogue Canvas Layout")]
         public static void SetupDialogueCanvas()
@@ -62,6 +63,7 @@ namespace MySecondWorld.EditorTools
 
             var iconMic = AssetDatabase.LoadAssetAtPath<Sprite>(IconMicPath);
             var iconX = AssetDatabase.LoadAssetAtPath<Sprite>(IconXPath);
+            var iconMute = AssetDatabase.LoadAssetAtPath<Sprite>(IconMutePath);
 
             var root = PrefabUtility.LoadPrefabContents(PrefabPath);
             if (root == null)
@@ -340,51 +342,15 @@ namespace MySecondWorld.EditorTools
                     if (placeholder != null) placeholder.fontSize = 19;
                 }
 
-                // STTBtn (음성 마이크: 60 × 60px)
-                if (sttTrans != null)
-                {
-                    sttTrans.SetParent(chatSectionRect, false);
-                    sttTrans.anchorMin = new Vector2(0f, 0f);
-                    sttTrans.anchorMax = new Vector2(0f, 0f);
-                    sttTrans.pivot = new Vector2(0f, 0f);
-                    sttTrans.anchoredPosition = new Vector2(24f, 16f);
-                    sttTrans.sizeDelta = new Vector2(60f, 60f);
-
-                    var btnImg = sttTrans.GetComponent<Image>();
-                    btnImg.color = Color.white;
-                    if (navyRectBtnSprite != null)
-                    {
-                        btnImg.sprite = navyRectBtnSprite;
-                        btnImg.type = Image.Type.Sliced;
-                    }
-
-                    var oldTmp = sttTrans.GetComponentInChildren<TextMeshProUGUI>();
-                    if (oldTmp != null) oldTmp.gameObject.SetActive(false);
-
-                    var iconGo = GetOrCreateChild(sttTrans, "Icon");
-                    var iconRect = iconGo.GetComponent<RectTransform>();
-                    iconRect.anchorMin = new Vector2(0.5f, 0.5f);
-                    iconRect.anchorMax = new Vector2(0.5f, 0.5f);
-                    iconRect.sizeDelta = new Vector2(30f, 30f);
-                    iconRect.anchoredPosition = Vector2.zero;
-
-                    var iconImg = iconGo.GetComponent<Image>() ?? iconGo.AddComponent<Image>();
-                    if (iconMic != null)
-                    {
-                        iconImg.sprite = iconMic;
-                        iconImg.color = Color.white;
-                    }
-                }
-
-                // TTSStopBtn (읽기 중지: 118 × 60px)
+                // 아랫줄 1번: TTSStopBtn (읽기 중지 -> 스피커 뮤트 아이콘: 60 × 60px 왼쪽 배치)
                 if (ttsStopTrans != null)
                 {
                     ttsStopTrans.SetParent(chatSectionRect, false);
                     ttsStopTrans.anchorMin = new Vector2(0f, 0f);
                     ttsStopTrans.anchorMax = new Vector2(0f, 0f);
                     ttsStopTrans.pivot = new Vector2(0f, 0f);
-                    ttsStopTrans.anchoredPosition = new Vector2(92f, 16f);
-                    ttsStopTrans.sizeDelta = new Vector2(118f, 60f);
+                    ttsStopTrans.anchoredPosition = new Vector2(24f, 16f);
+                    ttsStopTrans.sizeDelta = new Vector2(60f, 60f);
 
                     var btnImg = ttsStopTrans.GetComponent<Image>();
                     btnImg.color = Color.white;
@@ -394,12 +360,69 @@ namespace MySecondWorld.EditorTools
                         btnImg.type = Image.Type.Sliced;
                     }
 
-                    var iconGo = ttsStopTrans.Find("Icon");
-                    if (iconGo != null) iconGo.gameObject.SetActive(false);
+                    var oldTmp = ttsStopTrans.GetComponentInChildren<TextMeshProUGUI>();
+                    if (oldTmp != null) oldTmp.gameObject.SetActive(false);
 
-                    var tmp = GetOrCreateCenterTMP(ttsStopTrans, "Text (TMP)", "읽기 중지", 17, fontBold);
-                    tmp.gameObject.SetActive(true);
-                    tmp.color = new Color(0.95f, 0.85f, 0.85f, 1f);
+                    var iconGo = GetOrCreateChild(ttsStopTrans, "Icon");
+                    iconGo.SetActive(true);
+                    var iconRect = iconGo.GetComponent<RectTransform>();
+                    iconRect.anchorMin = new Vector2(0.5f, 0.5f);
+                    iconRect.anchorMax = new Vector2(0.5f, 0.5f);
+                    iconRect.pivot = new Vector2(0.5f, 0.5f);
+                    iconRect.sizeDelta = new Vector2(30f, 30f);
+                    iconRect.anchoredPosition = Vector2.zero;
+
+                    var iconImg = iconGo.GetComponent<Image>() ?? iconGo.AddComponent<Image>();
+                    if (iconMute != null)
+                    {
+                        iconImg.sprite = iconMute;
+                        iconImg.color = new Color(0.95f, 0.85f, 0.85f, 1f);
+                    }
+                }
+
+                // 아랫줄 2번: STTBtn (음성 마이크 -> 118 × 60px 대형 음성 입력 버튼으로 확대!)
+                if (sttTrans != null)
+                {
+                    sttTrans.SetParent(chatSectionRect, false);
+                    sttTrans.anchorMin = new Vector2(0f, 0f);
+                    sttTrans.anchorMax = new Vector2(0f, 0f);
+                    sttTrans.pivot = new Vector2(0f, 0f);
+                    sttTrans.anchoredPosition = new Vector2(92f, 16f);
+                    sttTrans.sizeDelta = new Vector2(118f, 60f);
+
+                    var btnImg = sttTrans.GetComponent<Image>();
+                    btnImg.color = Color.white;
+                    if (navyRectBtnSprite != null)
+                    {
+                        btnImg.sprite = navyRectBtnSprite;
+                        btnImg.type = Image.Type.Sliced;
+                    }
+
+                    var iconGo = GetOrCreateChild(sttTrans, "Icon");
+                    iconGo.SetActive(true);
+                    var iconRect = iconGo.GetComponent<RectTransform>();
+                    iconRect.anchorMin = new Vector2(0.5f, 0.5f);
+                    iconRect.anchorMax = new Vector2(0.5f, 0.5f);
+                    iconRect.pivot = new Vector2(0.5f, 0.5f);
+                    iconRect.sizeDelta = new Vector2(26f, 26f);
+                    iconRect.anchoredPosition = new Vector2(-24f, 0f);
+
+                    var iconImg = iconGo.GetComponent<Image>() ?? iconGo.AddComponent<Image>();
+                    if (iconMic != null)
+                    {
+                        iconImg.sprite = iconMic;
+                        iconImg.color = Color.white;
+                    }
+
+                    var txt = GetOrCreateCenterTMP(sttTrans, "Text (TMP)", "음성", 17, fontBold);
+                    txt.gameObject.SetActive(true);
+                    txt.color = new Color(0.96f, 0.95f, 0.91f, 1f);
+                    var txtRect = txt.rectTransform;
+                    txtRect.anchorMin = new Vector2(0.5f, 0.5f);
+                    txtRect.anchorMax = new Vector2(0.5f, 0.5f);
+                    txtRect.pivot = new Vector2(0.5f, 0.5f);
+                    txtRect.anchoredPosition = new Vector2(18f, 0f);
+                    txtRect.sizeDelta = new Vector2(56f, 32f);
                 }
 
                 // SubmitBtn (전송 ↗: 196 × 60px 피그마 골드 옐로우 버튼)
