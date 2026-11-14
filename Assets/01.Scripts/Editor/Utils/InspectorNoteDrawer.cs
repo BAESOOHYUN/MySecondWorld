@@ -1,6 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 using MySecondWorld.Foundation;
+using UnityEngine.UIElements;
 
 // DecoratorDrawer: 필드 자체는 그대로 두고, 그 위에 추가 UI만 얹는 드로어
 [CustomPropertyDrawer(typeof(InspectorNoteAttribute))]
@@ -21,5 +22,10 @@ public class InspectorNoteDrawer : DecoratorDrawer
         var note = (InspectorNoteAttribute)attribute;
         position.height -= Margin;
         EditorGUI.HelpBox(position, note.Message, MessageType.Info);
+    }
+    public override VisualElement CreatePropertyGUI()
+    {
+        var note = (InspectorNoteAttribute)attribute;
+        return new HelpBox(note.Message, HelpBoxMessageType.Info);   // 줄바꿈과 높이는 UI Toolkit이 알아서 처리
     }
 }
