@@ -51,6 +51,7 @@
   <Project Path="MySecondWorld.Network.csproj" />
   <Project Path="Unity.UnifiedRayTracing.Runtime.csproj" />
   <Project Path="Unity.AI.Navigation.Editor.ConversionSystem.csproj" />
+  <Project Path="Assembly-CSharp-Editor.csproj" />
   <Project Path="Unity.Cinemachine.csproj" />
   <Project Path="Unity.Services.Core.Editor.csproj" />
   <Project Path="Unity.Burst.CodeGen.csproj" />
@@ -69,7 +70,6 @@
   <Project Path="VContainer.Editor.csproj" />
   <Project Path="Extensions.Unity.PlayerPrefsEx.csproj" />
   <Project Path="Unity.Rider.Editor.csproj" />
-  <Project Path="Assembly-CSharp-Editor.csproj" />
   <Project Path="Unity.AI.Navigation.Updater.csproj" />
   <Project Path="MySecondWorld.Inventory.Items.csproj" />
   <Project Path="MySecondWorld.Foundation.csproj" />
@@ -143,10 +143,10 @@
   <Project Path="endel.nativewebsocket.csproj" />
   <Project Path="Unity.CollabProxy.Editor.csproj" />
   <Project Path="Unity.DedicatedServer.CliArguments.Editor.csproj" />
+  <Project Path="MySecondWorld.Utils.csproj" />
   <Project Path="Unity.RenderPipeline.Universal.ShaderLibrary.csproj" />
   <Project Path="FlexibleColorPicker.csproj" />
   <Project Path="MySecondWorld.Bundle.csproj" />
-  <Project Path="MySecondWorld.Utils.csproj" />
   <Project Path="Cloud.Unum.USearch.csproj" />
   <Project Path="UniTask.Editor.csproj" />
   <Project Path="Unity.Services.Core.Registration.csproj" />

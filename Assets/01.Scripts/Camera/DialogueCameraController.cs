@@ -99,10 +99,13 @@ namespace MySecondWorld.CameraSystem
             lookDir.y = 0f;
             lookDir.Normalize();
 
-            // 3. 카메라 위치: NPC 머리 정면에서 바라봄 (우측 오프셋 제거)
-            Vector3 camPos = headPos - (lookDir * _cameraDistance) + (Vector3.up * _verticalOffset);
-
-            Vector3 lookTarget = headPos - camPos;
+            // 3. 카메라 위치 및 시선:
+            // NPC가 화면 좌측(Left 1/3)에 오도록 우측 패널 대응 오프셋 적용
+            // 카메라 시선(Target)을 NPC 머리 기준 오른쪽(npcTransform.right)으로 약간 이동시키면, 
+            // 뷰포트에서는 상대적으로 NPC 머리가 화면 '좌측'에 배치된다.
+            Vector3 targetFocusPos = headPos + (npcTransform.right * _lateralOffset);
+            Vector3 camPos = headPos - (lookDir * _cameraDistance) + (npcTransform.right * (_lateralOffset * 0.4f)) + (Vector3.up * _verticalOffset);
+            Vector3 lookTarget = targetFocusPos - camPos;
             Quaternion camRot = lookTarget.sqrMagnitude > 0.001f ? Quaternion.LookRotation(lookTarget) : Quaternion.identity;
 
             _dialogueCamera.transform.position = camPos;

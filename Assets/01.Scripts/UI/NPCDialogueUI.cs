@@ -40,24 +40,15 @@ namespace MySecondWorld.UI
         [SerializeField] private Button _sttButton;
         [SerializeField] private Button _ttsStopButton;
 
-        [Header("Left Panel - Memory & History")]
-        [SerializeField] private GameObject _leftPanel;
-        [SerializeField] private Button _tabMemoryBtn;
-        [SerializeField] private Button _tabHistoryBtn;
-        [SerializeField] private GameObject _memoryView;
-        [SerializeField] private GameObject _historyView;
-
-        [Header("Memory Elements")]
-        [SerializeField] private Slider _relationSlider;
+        [Header("Tabs & Sections")]
+        [SerializeField] private Button _tabHistoryBtn;      // 왼쪽 탭: 대화 기록
+        [SerializeField] private Button _tabMemoryBtn;       // 오른쪽 탭: 기억
+        [SerializeField] private GameObject _chatSection;    // 채팅창 + 하단 입력 영역 전체
+        [SerializeField] private GameObject _memorySection;  // 기억 정보 화면
+        [Header("Memory Details")]
         [SerializeField] private TextMeshProUGUI _relationText;
         [SerializeField] private TextMeshProUGUI _firstMetText;
-        [SerializeField] private TextMeshProUGUI _conversationCountText;
-        [SerializeField] private Transform _knownFactsContent;
-        [SerializeField] private GameObject _knownFactItemPrefab;
-
-        [Header("History Elements")]
-        [SerializeField] private Transform _historyContent;
-        [SerializeField] private GameObject _historyItemPrefab;
+        [SerializeField] private TextMeshProUGUI _knownFactsText;
 
         [Header("추천 카드")]
         [SerializeField] private GameObject _recommendCard;      // 카드 루트 (프리팹에서 꺼 둔다)
@@ -159,7 +150,6 @@ namespace MySecondWorld.UI
                     }
 
                     UpdateMemoryView(_currentMemory, _currentSystemPrompt);
-                    UpdateHistoryView(_currentMemory);
                 })
                 .AddTo(destroyCancellationToken);
 
@@ -250,10 +240,10 @@ namespace MySecondWorld.UI
             if (_backdropButton != null)
                 _backdropButton.onClick.AddListener(Close);
 
-            if (_tabMemoryBtn != null)
-                _tabMemoryBtn.onClick.AddListener(() => ShowTab(true));
             if (_tabHistoryBtn != null)
-                _tabHistoryBtn.onClick.AddListener(() => ShowTab(false));
+                _tabHistoryBtn.onClick.AddListener(() => SwitchTab(isMemoryTab: false));
+            if (_tabMemoryBtn != null)
+                _tabMemoryBtn.onClick.AddListener(() => SwitchTab(isMemoryTab: true));
 
             if (_recommendBuyButton != null && _recommendCloseButton != null)
             {
@@ -311,13 +301,16 @@ namespace MySecondWorld.UI
                 _canvas.SetActive(true);
             _playerInputField.text = string.Empty;
 
-            // 같은 npc → 히스토리 유지, 다른 NPC → 초기화
+            // 같은 npc → 히스토리 유지, 다른 NPC → 초기화 후 이전 대화 기록 복원
             if (npcGuid != _lastNpcGuid)
             {
                 ClearChat();
                 if (_npcNameText != null)
                     _npcNameText.text = systemPrompt != null ? systemPrompt.NpcName : string.Empty;
                 _lastNpcGuid = npcGuid;
+
+                // 새 NPC 대화 시작 시 과거 대화 기록을 채팅 버블로 복원
+                RestoreHistoryToChat(memory);
             }
             else if (_npcNameText != null && systemPrompt != null)
             {
@@ -325,9 +318,7 @@ namespace MySecondWorld.UI
             }
 
             UpdateMemoryView(memory, systemPrompt);
-            UpdateHistoryView(memory);
-            ShowTab(true);
-
+            SwitchTab(isMemoryTab: false); // 대화창 열릴 때 기본으로 [대화 기록] 탭 켜기
             _playerInputField.ActivateInputField();
         }
 
@@ -345,44 +336,17 @@ namespace MySecondWorld.UI
             gameObject.SetActive(false);
         }
 
-        private void OnMemoryStateChanged()
-        {
-            UpdateMemoryView(_currentMemory, _currentSystemPrompt);
-            UpdateHistoryView(_currentMemory);
-        }
+        private void OnMemoryStateChanged() => UpdateMemoryView(_currentMemory, _currentSystemPrompt);
+
         #endregion
 
         #region 기억 및 히스토리 패널
-        public void ShowTab(bool showMemory)
-        {
-            if (_memoryView != null) _memoryView.SetActive(showMemory);
-            if (_historyView != null) _historyView.SetActive(!showMemory);
-
-            if (_tabMemoryBtn != null && _tabMemoryBtn.image != null)
-            {
-                _tabMemoryBtn.image.color = showMemory ? Color.white : new Color(0.55f, 0.6f, 0.75f, 0.6f);
-                var memTmp = _tabMemoryBtn.GetComponentInChildren<TextMeshProUGUI>();
-                if (memTmp != null) memTmp.color = showMemory ? Color.white : new Color(0.7f, 0.75f, 0.85f, 0.7f);
-            }
-            if (_tabHistoryBtn != null && _tabHistoryBtn.image != null)
-            {
-                _tabHistoryBtn.image.color = !showMemory ? Color.white : new Color(0.55f, 0.6f, 0.75f, 0.6f);
-                var hisTmp = _tabHistoryBtn.GetComponentInChildren<TextMeshProUGUI>();
-                if (hisTmp != null) hisTmp.color = !showMemory ? Color.white : new Color(0.7f, 0.75f, 0.85f, 0.7f);
-            }
-        }
-
+       
         public void UpdateMemoryView(NPCMemorySO memory, NPCSystemPromptSO systemPrompt)
         {
             if (memory == null) return;
 
-            if (_relationSlider != null)
-            {
-                _relationSlider.minValue = -100f;
-                _relationSlider.maxValue = 100f;
-                _relationSlider.value = memory.RelationScore;
-            }
-
+            // 1. 호감도
             if (_relationText != null)
             {
                 string relDesc = memory.RelationScore switch
@@ -393,108 +357,30 @@ namespace MySecondWorld.UI
                     > -50 => "경계",
                     _ => "적대적"
                 };
-                _relationText.text = $"{relDesc} ({memory.RelationScore:F0})";
+                _relationText.text = $"호감도 : {(memory.RelationScore >= 0 ? "+" : "")}{memory.RelationScore:F0} ({relDesc})";
             }
-
+            // 2. 첫 만남 위치 및 일시
             if (_firstMetText != null)
             {
                 string date = string.IsNullOrEmpty(memory.FirstMetDate) ? "최근" : memory.FirstMetDate;
                 string loc = string.IsNullOrEmpty(memory.FirstMetLocation) ? "마을 광장" : memory.FirstMetLocation;
-                _firstMetText.text = $"{loc} ({date})";
+                _firstMetText.text = $"첫 만남 : {loc} ({date}) · 누적 대화 {memory.ConversationCount}회";
             }
-
-            if (_conversationCountText != null)
+            // 3. 알고 있는 사실 (Known Facts)
+            if (_knownFactsText != null)
             {
-                _conversationCountText.text = $"{memory.ConversationCount}회";
-            }
-
-            if (_knownFactsContent != null)
-            {
-                foreach (Transform child in _knownFactsContent)
-                    Destroy(child.gameObject);
-
                 if (memory.KnownFacts != null && memory.KnownFacts.Count > 0)
                 {
-                    foreach (var fact in memory.KnownFacts)
-                    {
-                        if (_knownFactItemPrefab != null)
-                        {
-                            var item = Instantiate(_knownFactItemPrefab, _knownFactsContent);
-                            var tmp = item.GetComponentInChildren<TextMeshProUGUI>();
-                            if (tmp != null) tmp.text = $"• {fact}";
-                        }
-                        else
-                        {
-                            var go = new GameObject("FactItem", typeof(RectTransform));
-                            go.transform.SetParent(_knownFactsContent, false);
-                            var tmp = go.AddComponent<TextMeshProUGUI>();
-                            tmp.text = $"• {fact}";
-                            tmp.fontSize = 15;
-                            tmp.color = new Color(0.9f, 0.9f, 0.95f, 0.9f);
-                        }
-                    }
+                    // 불릿 기호로 깔끔하게 여러 사실 나열
+                    _knownFactsText.text = "기억하고 있는 사실 :\n• " + string.Join("\n• ", memory.KnownFacts);
                 }
                 else
                 {
-                    var go = new GameObject("EmptyFactItem", typeof(RectTransform));
-                    go.transform.SetParent(_knownFactsContent, false);
-                    var tmp = go.AddComponent<TextMeshProUGUI>();
-                    tmp.text = "아직 기억하고 있는 특별한 사실이 없습니다.";
-                    tmp.fontSize = 14;
-                    tmp.fontStyle = FontStyles.Italic;
-                    tmp.color = new Color(0.6f, 0.6f, 0.7f, 0.7f);
+                    _knownFactsText.text = "기억하고 있는 사실 :\n• 아직 기록된 특별한 사실이 없습니다.";
                 }
             }
         }
-
-        public void UpdateHistoryView(NPCMemorySO memory)
-        {
-            if (_historyContent == null) return;
-
-            foreach (Transform child in _historyContent)
-                Destroy(child.gameObject);
-
-            if (memory != null && memory.DialogueHistory != null && memory.DialogueHistory.Count > 0)
-            {
-                for (int i = memory.DialogueHistory.Count - 1; i >= 0; i--)
-                {
-                    var entry = memory.DialogueHistory[i];
-                    if (_historyItemPrefab != null)
-                    {
-                        var item = Instantiate(_historyItemPrefab, _historyContent);
-                        var texts = item.GetComponentsInChildren<TextMeshProUGUI>();
-                        if (texts.Length > 1)
-                        {
-                            texts[0].text = $"나: {entry.userText}";
-                            texts[1].text = $"NPC: {entry.npcText}";
-                        }
-                        else if (texts.Length == 1)
-                        {
-                            texts[0].text = $"[{entry.timestamp}]\n나: {entry.userText}\nNPC: {entry.npcText}";
-                        }
-                    }
-                    else
-                    {
-                        var go = new GameObject($"HistoryItem_{i}", typeof(RectTransform));
-                        go.transform.SetParent(_historyContent, false);
-                        var tmp = go.AddComponent<TextMeshProUGUI>();
-                        tmp.text = $"<color=#818cf8><b>나:</b></color> {entry.userText}\n<color=#f59e0b><b>NPC:</b></color> {entry.npcText}";
-                        tmp.fontSize = 14;
-                        tmp.color = Color.white;
-                    }
-                }
-            }
-            else
-            {
-                var go = new GameObject("EmptyHistoryItem", typeof(RectTransform));
-                go.transform.SetParent(_historyContent, false);
-                var tmp = go.AddComponent<TextMeshProUGUI>();
-                tmp.text = "이전 대화 기록이 없습니다.";
-                tmp.fontSize = 14;
-                tmp.fontStyle = FontStyles.Italic;
-                tmp.color = new Color(0.6f, 0.6f, 0.7f, 0.7f);
-            }
-        }
+        
         #endregion
 
         #region 입력 제어
@@ -603,6 +489,30 @@ namespace MySecondWorld.UI
                 Destroy(child.gameObject);
         }
 
+        /// <summary>
+        /// NPC 기억(MemorySO)에 남아있는 이전 대화 목록을 메인 채팅 스크롤뷰에 시간순으로 복원합니다.
+        /// </summary>
+        private void RestoreHistoryToChat(NPCMemorySO memory)
+        {
+            if (memory == null || memory.DialogueHistory == null || memory.DialogueHistory.Count == 0) return;
+            if (_chatContent == null) return;
+            foreach (var entry in memory.DialogueHistory)
+            {
+                if (!string.IsNullOrEmpty(entry.userText) && _playerBubblePrefab != null)
+                {
+                    var userGo = Instantiate(_playerBubblePrefab, _chatContent);
+                    userGo.GetComponent<ChatBubble>()?.SetText(entry.userText);
+                }
+                if (!string.IsNullOrEmpty(entry.npcText) && _npcBubblePrefab != null)
+                {
+                    var npcGo = Instantiate(_npcBubblePrefab, _chatContent);
+                    npcGo.GetComponent<ChatBubble>()?.SetText(entry.npcText);
+                }
+            }
+
+            ScrollToBottom();
+        }
+
         private void ScrollToBottom()
         {
             Canvas.ForceUpdateCanvases();
@@ -652,6 +562,35 @@ namespace MySecondWorld.UI
             }
             _sttCts?.Dispose();
             _sttCts = null;
+        }
+
+        /// <summary>
+        /// 왼쪽 [대화 기록] 탭과 오른쪽 [기억] 탭을 전환합니다.
+        /// </summary>
+        public void SwitchTab(bool isMemoryTab)
+        {
+            // 화면 노출 제어
+            if (_chatSection != null) _chatSection.SetActive(!isMemoryTab);
+            if (_memorySection != null) _memorySection.SetActive(isMemoryTab);
+
+            // 탭 버튼 비주얼 (피그마 스타일: 활성 탭 골드/선명한 텍스트, 비활성 탭 다크 톤)
+            if (_tabHistoryBtn != null)
+            {
+                if (_tabHistoryBtn.image != null)
+                    _tabHistoryBtn.image.color = !isMemoryTab ? Color.white : new Color(0.5f, 0.55f, 0.65f, 0.75f);
+                var txt = _tabHistoryBtn.GetComponentInChildren<TextMeshProUGUI>();
+                if (txt != null)
+                    txt.color = !isMemoryTab ? new Color(1f, 0.92f, 0.55f, 1f) : new Color(0.65f, 0.72f, 0.80f, 0.8f);
+            }
+
+            if (_tabMemoryBtn != null)
+            {
+                if (_tabMemoryBtn.image != null)
+                    _tabMemoryBtn.image.color = isMemoryTab ? Color.white : new Color(0.5f, 0.55f, 0.65f, 0.75f);
+                var txt = _tabMemoryBtn.GetComponentInChildren<TextMeshProUGUI>();
+                if (txt != null)
+                    txt.color = isMemoryTab ? new Color(1f, 0.92f, 0.55f, 1f) : new Color(0.65f, 0.72f, 0.80f, 0.8f);
+            }
         }
         #endregion
     }
