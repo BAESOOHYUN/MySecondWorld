@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Cysharp.Threading.Tasks;
 using Cysharp.Text;
 using UnityEngine;
@@ -22,7 +23,6 @@ namespace MySecondWorld.AI
         [SerializeField] private NPCSystemPromptSO _systemPrompt;
         [SerializeField] private NPCMemorySO _memory;
         [SerializeField] private MonoBehaviour _serverStateRaw; // 선택적, 없으면 null 허용
-        private INPCServerState _serverState => _serverStateRaw as INPCServerState;
         #endregion
 
         #region 식별자 및 프로퍼티
@@ -43,15 +43,13 @@ namespace MySecondWorld.AI
                 return _cachedUniqueId;
             }
         }
-        
-        // 대화 세션 버퍼 — 창 닫힐 때 한 번에 팩트 추출
-        private readonly List<(string user, string npc)> _sessionBuffer = new();
-        // LLM에 넘길 이전 대화 쌍 수. 늘리면 이어짐은 좋아지지만 입력 토큰·429 위험이 커진다
-        private const int LlmHistoryPairs = 6;
 
         // 외부 읽기 전용 접근 (NPCInteractable에서 npcName 및 메모리 접근용)
         public NPCSystemPromptSO SystemPrompt => _systemPrompt;
         public NPCMemorySO Memory => _memory;
+
+        // 인스펙터에 연결된 _serverStateRaw를 인터페이스로 해석한 값 (없으면 null)
+        private INPCServerState _serverState => _serverStateRaw as INPCServerState;
         #endregion
 
         #region 에디터 디버그 툴
@@ -210,6 +208,9 @@ namespace MySecondWorld.AI
             return sb.ToString().Trim();
         }
 
+        // LLM에 넘길 이전 대화 쌍 수. 늘리면 이어짐은 좋아지지만 입력 토큰·429 위험이 커진다
+        private const int LlmHistoryPairs = 6;
+
         // _memory.DialogueHistory(오래된 것이 앞)의 최근 N쌍을 (user, npc) 튜플로 복사한다
         // 튜플로 바꾸는 이유: AI 인터페이스가 DialogueHistoryEntry 타입에 의존하지 않게 하려는 것
         private List<(string user, string npc)> BuildLlmHistory()
@@ -224,6 +225,23 @@ namespace MySecondWorld.AI
             for (int i = Math.Max(0, h.Count - LlmHistoryPairs); i < h.Count; i++)
                 list.Add((h[i].userText, h[i].npcText));
             return list;
+        }
+
+
+        // 추천 태그 [[추천:번호]]. 번호는 판매 목록의 1부터 시작하는 번호
+        private static readonly Regex RecommendTag = new(@"\[\[추천:(\d+)\]\]");
+        // max_tokens에 잘려 닫히지 않은 태그("[[추천:3" 등)가 본문에 남지 않게 하는 용도
+        private static readonly Regex BrokenTag = new(@"\[\[[^\]]*$");
+
+        // 응답에서 태그를 빼 본문(clean)을 만들고, 추천 번호를 목록 인덱스(0부터)로 돌려준다
+        // 태그가 없거나 번호가 1..count 밖이면 -1 → 카드는 안 띄우고 대화만 정상 진행
+        private static int ExtractRecommend(string text, int count, out string clean)
+        { 
+            var m = RecommendTag.Match(text);
+            clean = BrokenTag.Replace(RecommendTag.Replace(text, ""), "").Trim();
+            if (!m.Success) return -1;
+            if (!int.TryParse(m.Groups[1].Value, out int n)) return -1; // 너무 큰 수 방어
+            return n >= 1 && n <= count ? n - 1 : -1;
         }
 
 
@@ -296,6 +314,9 @@ namespace MySecondWorld.AI
         #endregion
 
         #region 팩트 추출 및 메모리 관리
+
+        // 대화 세션 버퍼 — 창 닫힐 때 한 번에 팩트 추출
+        private readonly List<(string user, string npc)> _sessionBuffer = new();
 
         // 대화 메뉴를 열 때 호출 — 서버에서 이 NPC와의 대화 기록을 받아 온다
         public void PrefetchMemory() => NpcMemoryClient.Request(UniqueId);
