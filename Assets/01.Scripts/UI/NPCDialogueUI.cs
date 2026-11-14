@@ -10,6 +10,7 @@ using MySecondWorld.AI.Voice;
 using MySecondWorld.CameraSystem;
 using System.Threading;
 using UnityEngine.EventSystems;
+using MySecondWorld.Inventory.Items;
 
 namespace MySecondWorld.UI
 {
@@ -17,7 +18,7 @@ namespace MySecondWorld.UI
     /// NPC 대화창 UI.
     /// TTS 문장 단위 텍스트 동기화, 입력 필드, ESC/닫기 버튼 지원.
     /// </summary>
-    public class NPCDialogueUI : MonoBehaviour, INPCDialogueUI
+    public class NPCDialogueUI : MonoBehaviour, INPCDialogueUI, IItemRecommendUI
     {
         #region 인스펙터
         [Header("UI References")]
@@ -57,6 +58,14 @@ namespace MySecondWorld.UI
         [Header("History Elements")]
         [SerializeField] private Transform _historyContent;
         [SerializeField] private GameObject _historyItemPrefab;
+
+        [Header("추천 카드")]
+        [SerializeField] private GameObject _recommendCard;      // 카드 루트 (프리팹에서 꺼 둔다)
+        [SerializeField] private Image _recommendIcon;
+        [SerializeField] private TextMeshProUGUI _recommendNameText;
+        [SerializeField] private Button _recommendBuyButton;
+        [SerializeField] private Button _recommendCloseButton;
+
         #endregion
 
         #region 필드 — 내부 상태
@@ -74,7 +83,10 @@ namespace MySecondWorld.UI
         // 이번 질문에 대한 LLM 응답 전체가 도착했는가. 제출 시 false, responseSub에서 true.
         // 응답이 오는 도중 발행된 TTS "말 끝남"으로 입력이 열리는 것을 막는 데 쓴다.
         private bool _llmResponseCompleted;
-        private string _lastPlayerText; // Stores last player input for memory logging
+
+        private IShopUI _shopUI;                 // 구매는 ShopUI의 확인 팝업 흐름을 재사용
+        private EquipmentItem _recommendItem;
+        private uint _recommendShopNetId;
         #endregion
 
         #region DI
@@ -98,7 +110,8 @@ namespace MySecondWorld.UI
             ISubscriber<NPCSpeakFinishedEvent> speakFinishedSub,
             ISubscriber<NPCSentenceStartedEvent> sentenceStartedSub,
             IPublisher<NPCStopTTSEvent> stopTTSPub,
-            ISTTService stt
+            ISTTService stt,
+            IShopUI shopUI
             )
         {
             // 스트리밍 중 문장 단위로 텍스트 누적 — TTS와 동시에 표시
@@ -194,7 +207,10 @@ namespace MySecondWorld.UI
                 up.callback.AddListener(_ => stt.StopListening());
                 trigger.triggers.Add(up);
             }
+
+            _shopUI = shopUI;
         }
+
         #endregion
 
         #region 필수 참조 검증
@@ -239,6 +255,16 @@ namespace MySecondWorld.UI
             if (_tabHistoryBtn != null)
                 _tabHistoryBtn.onClick.AddListener(() => ShowTab(false));
 
+            if (_recommendBuyButton != null && _recommendCloseButton != null)
+            {
+                _recommendBuyButton.onClick.AddListener(() =>
+                {
+                    if (_recommendItem != null) 
+                        _shopUI?.RequestPurchase(_recommendItem, _recommendShopNetId);
+                });
+                _recommendCloseButton.onClick.AddListener(HideRecommend);
+            }
+
             if (!valid)
             {
                 enabled = false;
@@ -268,6 +294,8 @@ namespace MySecondWorld.UI
 
         public void Open(string npcGuid, NPCMemorySO memory = null, NPCSystemPromptSO systemPrompt = null)
         {
+            HideRecommend();   // 이전 대화의 카드가 남지 않게
+
             if (_currentMemory != null)
                 _currentMemory.OnMemoryChanged -= OnMemoryStateChanged;
 
@@ -305,6 +333,8 @@ namespace MySecondWorld.UI
 
         public void Close()
         {
+            HideRecommend();   // 이전 대화의 카드가 남지 않게
+
             if (_currentMemory != null)
                 _currentMemory.OnMemoryChanged -= OnMemoryStateChanged;
 
@@ -478,6 +508,29 @@ namespace MySecondWorld.UI
         {
             _playerInputField.text = string.Empty;
         }
+        #endregion
+
+        #region 추천 카드 (IItemRecommendUI)
+
+        // 이 NPC가 추천한 상품을 대화창 위에 카드로 띄운다. [구매]는 ShopUI의 확인 팝업 흐름을 재사용한다
+        public void ShowRecommend(EquipmentItem item, uint shopNetId)
+        {
+            if (item == null || _recommendCard == null) return;
+
+            _recommendItem = item;
+            _recommendShopNetId = shopNetId;
+            _recommendIcon.sprite = item.UiIcon;
+            _recommendNameText.text = item.Title;
+            _recommendCard.SetActive(true);
+        }
+
+        public void HideRecommend()
+        {
+            _recommendItem = null;
+            if (_recommendCard != null)
+                _recommendCard.SetActive(false);
+        }
+
         #endregion
 
         #region 채팅 버블

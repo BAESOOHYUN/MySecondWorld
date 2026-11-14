@@ -52,6 +52,7 @@ namespace MySecondWorld.UI
 
         // ── 거래 대기 (확인 팝업에서 "확정"을 누를 때까지 기억) ──
         private EquipmentItem _pendingPurchase; // 구매 대기중인 장비 아이템
+        private uint _pendingPurchaseShopNetId;   // 구매 확인 팝업을 띄운 시점에 확정한 상점 netId
         private EquipmentItem _pendingSale; // 판매 대기중인 장비 아이템
         private int _pendingSaleSlotIndex = -1;
         private uint _shopNetId;   // 지금 열려 있는 상점 NPC의 netId (거래 요청 때 서버에 보낸다)
@@ -206,7 +207,7 @@ namespace MySecondWorld.UI
                 if (item == null) continue;
                 var capturedItem = item;
                 var slot = Instantiate(_slotButtonPrefab, _slotContent);
-                slot.Setup(item.UiIcon, onBuy: () => RequestPurchase(capturedItem));
+                slot.Setup(item.UiIcon, onBuy: () => RequestPurchase(capturedItem, _shopNetId));
                 slot.SetGenderBadge(_appearanceService?.GetItemGender(item));
                 _spawnedSlots.Add(slot);
             }
@@ -227,11 +228,22 @@ namespace MySecondWorld.UI
         #region 구매·판매
 
         // 상점 카탈로그 항목 클릭 → 구매 확인 팝업 표시
-        private void RequestPurchase(EquipmentItem item)
+        public void RequestPurchase(EquipmentItem item, uint shopNetId)
         {
             if (item == null) return;
+
+            // "구매 불가" 팝업
+            var inv = _inventoryProvider.Inventory;
+            // 인벤토리가 가득 찼을 경우 && 그 아이템을 이미 갖고 있지 않을 때= 합쳐질 스택이 없을때
+            if (inv != null && inv.GetEmptySlotCount() == 0 && !inv.Contains(item, 1))
+            {
+                _confirmPanel?.Show("구매 불가", "가방이 가득 차서 구매할 수 없습니다.\n가방을 비운 뒤 다시 시도하세요.", "확인", null);
+                return;   // 확인 팝업도 요청도 보내지 않는다
+            }
+
             _pendingSale = null;
             _pendingPurchase = item;
+            _pendingPurchaseShopNetId = shopNetId;
 
             // 아이템 이름은 Title, 대가 이름은 _costItem.Title (없으면 "코인")
             string costName = _costItem != null ? _costItem.Title : "코인";
@@ -264,7 +276,7 @@ namespace MySecondWorld.UI
             if (_pendingPurchase != null && _costItem != null)
             {
                 // 구매: 대가 아이템을 내고 장비를 받는다
-                _inventoryProvider.Actions?.TradeItem(_costItem.GetDbKey(), _pendingPurchase.GetDbKey(), -1, _shopNetId); //-1은 슬롯 칸을 '모른다/상관없다' 의미
+                _inventoryProvider.Actions?.TradeItem(_costItem.GetDbKey(), _pendingPurchase.GetDbKey(), -1, _pendingPurchaseShopNetId); //-1은 슬롯 칸을 '모른다/상관없다' 의미
                 _pendingPurchase = null;
             }
             else if (_pendingSale != null && _costItem != null)

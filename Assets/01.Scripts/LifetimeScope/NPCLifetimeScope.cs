@@ -44,7 +44,7 @@ namespace MySecondWorld.AI
 
             var uiManager = Parent.Container.Resolve<UIManager>();
             var uiGO = uiManager.GetOrCreateDynamicCanvas<NPCDialogueUI>();
-            builder.RegisterComponent(uiGO.GetComponent<NPCDialogueUI>()).As<INPCDialogueUI>();
+            builder.RegisterComponent(uiGO.GetComponent<NPCDialogueUI>()).As<INPCDialogueUI>().As<IItemRecommendUI>();
 #endif
         }
     }

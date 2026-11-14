@@ -82,6 +82,7 @@ namespace MySecondWorld.AI
         private ILLMService _llmService;
         private NPCInteractable _interactable;
         private CharacterAppearanceService _appearance;
+        private IItemRecommendUI _recommendUI;
 
         // [Inject]가 붙은 메서드를 VContainer(NPCLifetimeScope)가 찾아서
         // 파라미터 타입에 맞는 인스턴스를 컨테이너에서 꺼내 자동으로 호출한다.
@@ -96,6 +97,7 @@ namespace MySecondWorld.AI
             IPublisher<NPCDialogueEvent> dialoguePub,
             IPublisher<NPCTTSSentenceEvent> ttsPub,
             ILLMService llmService,
+            IItemRecommendUI recommendUI,
             NPCInteractable interactable,
             CharacterAppearanceService appearanceService = null
             )
@@ -106,8 +108,10 @@ namespace MySecondWorld.AI
             _dialoguePub = dialoguePub;
             _ttsPub = ttsPub;
             _llmService = llmService;
+            _recommendUI = recommendUI;
             _interactable = interactable;
             _appearance = appearanceService;
+
 
             // 라우팅 키는 SessionKey(인스턴스 단위) — UniqueId(캐릭터 정체성)를 그대로 쓰면
             // 같은 NpcGuid를 공유하는 다른 인스턴스(예: 컴패니언)와 채널이 겹친다.
@@ -170,6 +174,8 @@ namespace MySecondWorld.AI
             // 클라 프로세스 내에서 일어나는 일
             try
             {
+                // 새 질문을 하면 이전 카드를 치운다
+                _recommendUI?.HideRecommend();
                 _thinkingPub.Publish(new NPCThinkingStartedEvent(key)); // UI에서 ...(생각신호) 말풍선을 띄우는 용도
         
                 var (response, recommended) = await GenerateResponseAsync(evt.Text, key, evt.CT);
@@ -186,8 +192,9 @@ namespace MySecondWorld.AI
                         key, _systemPrompt?.NpcName ?? name, response)); // NPC 고유키, 이름, 응답 텍스트 (내 화면에 대사 표시, 대화 상태 처리)
                 _dialoguePub.Publish(new NPCDialogueEvent { NpcName = key, Message = response }); // NPC 이름(키), 메시지 (TODO : 다른 플레이어에게 대사 공유 (파티 전투용))
 
-                if (recommended != null)
-                    Debug.Log($"[NPCBrain] 추천 아이템: {recommended.Title}");
+                // 추천 아이템이 있는 경우
+                if (recommended != null && _interactable != null)
+                    _recommendUI?.ShowRecommend(recommended, _interactable.ShopNetId);
 
                 // 3. 대화창을 닫기 전에도 새 팩트가 실시간으로 쌓이도록 즉시 백그라운드 팩트 추출 구동
                 ExtractAndSaveFactAsync(new List<(string user, string npc)> { (evt.Text, response) }, destroyCancellationToken).Forget();
