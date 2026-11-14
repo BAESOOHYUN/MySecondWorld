@@ -217,21 +217,27 @@ namespace MySecondWorld.AI
             if (_recommendable.Count == 0) return "";
 
             using var sb = ZString.CreateStringBuilder();
+            var parts = new List<string>();   // 이 상점이 파는 부위 (중복 없이, 목록 순서대로)
             sb.AppendLine("당신이 파는 물건 목록 (이 목록에 있는 것만 추천할 수 있다):");
             for (int i = 0; i < _recommendable.Count; i++)
             {
                 var e = _recommendable[i];
+                string part = e.Restriction != null ? e.Restriction.Title : e.Category.ToString();
+                if (!parts.Contains(part)) parts.Add(part);
                 sb.Append(i + 1); sb.Append(". "); sb.Append(e.Title);
-                sb.Append(" / 부위: "); sb.Append(e.Restriction != null ? e.Restriction.Title : e.Category.ToString());
+                sb.Append(" / 부위: "); sb.Append(part);
                 foreach (var s in e.Stats) { sb.Append(" / "); sb.Append(s.Type.ToString()); sb.Append(' '); sb.Append(s.Value); }
                 sb.AppendLine();
             }
+            sb.Append("이 상점이 파는 부위: "); sb.AppendLine(string.Join(", ", parts));
             sb.AppendLine("손님이 상품을 추천해 달라고 하면 목록에서 하나만 골라 이유와 함께 한 문장으로 권하고," +
                 " 응답 맨 끝에 반드시 [[추천:번호]]를 붙인다. 예) 방어력이 좋은 철 투구를 추천해요! [[추천:3]]");
-            // 손님이 원하는 조건(부위·성별 등)의 상품이 목록에 없을 때 모델이 아무 말도 안 하고(빈 응답) 끝내는 것을 막는다.
-            // 이 문장에서는 태그를 붙이지 않고, 목록에서 비슷한 것을 권할 때만 태그를 붙이게 한다.
-            sb.AppendLine("손님이 찾는 조건의 상품이 목록에 없으면 빈 답으로 두지 말고, 그런 상품은 없다고 짧게 말한 뒤" +
-                " 목록에서 가장 비슷한 상품 하나를 권하고 그때만 [[추천:번호]]를 붙인다. 어떤 경우에도 빈 답은 하지 않는다.");
+            // 손님이 찾는 조건의 상품이 목록에 없을 때: 빈 응답도, 엉뚱한 상품을 억지로 권하는 것도 막는다.
+            // 없으면 "없다"고 말하고 파는 부위를 되묻는다(태그 없음). 같은 부위의 다른 상품이 있을 때만 권하고 태그를 붙인다.
+            sb.AppendLine("손님이 찾는 조건의 상품이 목록에 없으면(예: 없는 부위, 다른 성별 전용) 그런 상품은 없다고 짧게 말하고," +
+                " 위의 '이 상점이 파는 부위' 중 무엇을 보여 드릴지 되묻는다. 이때는 [[추천:번호]]를 붙이지 않는다." +
+                " 찾는 것과 같은 부위의 다른 상품이 목록에 있을 때만 그것을 권하고 [[추천:번호]]를 붙인다." +
+                " 직전에 권한 상품을 계속 다시 권하지 말고 다른 상품을 먼저 권한다. 어떤 경우에도 빈 답은 하지 않는다.");
             return sb.ToString();
         }
 
