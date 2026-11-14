@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
+using System.Text.RegularExpressions;
 using Cysharp.Text;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
@@ -16,11 +17,16 @@ namespace MySecondWorld.AI
 
         // 원하는 모델 지정 (둘 다 Groq에서 정상 동작 확인 완료)
         private const string MODEL = "qwen/qwen3.8-27b"; // ★ 가장 안정적인 한국어 지원 대화 모델
-        // private const string MODEL = "llama-3.3-70b-versatile";
 
         private string _systemPrompt = "";
         private int _maxTokens = 40;
         public bool IsReady => true;
+
+        // 추론 모델이 답 앞에 붙이는 <think>...</think> 블록
+        private static readonly Regex ThinkBlock = new(@"<think>.*?</think>", RegexOptions.Singleline);
+        // max_tokens에 잘려 닫히지 않은 <think>... (뒤는 전부 생각이므로 통째로 버린다)
+        private static readonly Regex UnclosedThink = new(@"<think>.*$", RegexOptions.Singleline);
+
 
         public void SetSystemPrompt(string prompt, int maxTokens)
         {
@@ -154,6 +160,7 @@ namespace MySecondWorld.AI
             // NPC 성격, 규칙, 기억 요약
             sb.Append("{\"model\":\""); sb.Append(MODEL);
             sb.Append("\",\"stream\":false,\"max_tokens\":"); sb.Append(_maxTokens);
+            sb.Append(",\"reasoning_effort\":\"none\"");   // 생각 모드를 끄고 일반 대화 모드로 (토큰·시간 절약)
             sb.Append(",\"messages\":[{\"role\":\"system\",\"content\":\""); sb.Append(EscapeJson(_systemPrompt)); sb.Append("\"}");
             
             if (history != null)
@@ -178,7 +185,8 @@ namespace MySecondWorld.AI
             {
                 var obj = Newtonsoft.Json.Linq.JObject.Parse(json);
                 string text = obj["choices"][0]["message"]["content"]?.ToString() ?? string.Empty;
-                return text.Trim().Trim('\0'); // 널 문자 및 공백 정리
+                string cleaned = UnclosedThink.Replace(ThinkBlock.Replace(text, ""), "");
+                return cleaned.Trim().Trim('\0');   // 널 문자 및 공백 정리
             }
             catch (Exception e)
             {
