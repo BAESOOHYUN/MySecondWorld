@@ -10,6 +10,8 @@ using MessagePipe;
 using VContainer;
 using MySecondWorld.Network;
 using MySecondWorld.Save;
+using MySecondWorld.Inventory.Items;
+using MySecondWorld.Customization;
 
 namespace MySecondWorld.AI
 {
@@ -52,6 +54,18 @@ namespace MySecondWorld.AI
         private INPCServerState _serverState => _serverStateRaw as INPCServerState;
         #endregion
 
+
+        #region 상태 필드
+
+        // 대화 세션 버퍼 — 창 닫힐 때 한 번에 팩트 추출 (프롬프트·팩트 추출 두 리전이 같이 씀)
+        private readonly List<(string user, string npc)> _sessionBuffer = new();
+
+        // 추천 가능한 상품 목록 (이 NPC 카탈로그 중 플레이어 성별에 맞는 것). 번호 N은 이 목록의 N번째(1부터)
+        // 프롬프트를 만들 때 채우고, 응답에서 추천 번호를 해석할 때 읽는다
+        private readonly List<EquipmentItem> _recommendable = new();
+
+        #endregion
+
         #region 에디터 디버그 툴
         [ContextMenu("메모리 초기화")]
         private void DebugClearMemory() => ResetMemory();
@@ -67,6 +81,7 @@ namespace MySecondWorld.AI
         private IPublisher<NPCTTSSentenceEvent> _ttsPub;
         private ILLMService _llmService;
         private NPCInteractable _interactable;
+        private CharacterAppearanceService _appearance;
 
         // [Inject]가 붙은 메서드를 VContainer(NPCLifetimeScope)가 찾아서
         // 파라미터 타입에 맞는 인스턴스를 컨테이너에서 꺼내 자동으로 호출한다.
@@ -81,7 +96,8 @@ namespace MySecondWorld.AI
             IPublisher<NPCDialogueEvent> dialoguePub,
             IPublisher<NPCTTSSentenceEvent> ttsPub,
             ILLMService llmService,
-            NPCInteractable interactable
+            NPCInteractable interactable,
+            CharacterAppearanceService appearanceService = null
             )
         {
 #if !UNITY_SERVER
@@ -91,6 +107,7 @@ namespace MySecondWorld.AI
             _ttsPub = ttsPub;
             _llmService = llmService;
             _interactable = interactable;
+            _appearance = appearanceService;
 
             // 라우팅 키는 SessionKey(인스턴스 단위) — UniqueId(캐릭터 정체성)를 그대로 쓰면
             // 같은 NpcGuid를 공유하는 다른 인스턴스(예: 컴패니언)와 채널이 겹친다.
@@ -154,7 +171,8 @@ namespace MySecondWorld.AI
             try
             {
                 _thinkingPub.Publish(new NPCThinkingStartedEvent(key)); // UI에서 ...(생각신호) 말풍선을 띄우는 용도
-                var response = await GenerateResponseAsync(evt.Text, key, evt.CT);
+        
+                var (response, recommended) = await GenerateResponseAsync(evt.Text, key, evt.CT);
                 Debug.Log($"[NPCBrain] '{name}' LLM 응답 완료: {response}");
 
                 // 1. 대화 히스토리 즉시 반영 및 영구 저장
@@ -167,6 +185,9 @@ namespace MySecondWorld.AI
                 _responsePub.Publish(new NPCResponseReceivedEvent(
                         key, _systemPrompt?.NpcName ?? name, response)); // NPC 고유키, 이름, 응답 텍스트 (내 화면에 대사 표시, 대화 상태 처리)
                 _dialoguePub.Publish(new NPCDialogueEvent { NpcName = key, Message = response }); // NPC 이름(키), 메시지 (TODO : 다른 플레이어에게 대사 공유 (파티 전투용))
+
+                if (recommended != null)
+                    Debug.Log($"[NPCBrain] 추천 아이템: {recommended.Title}");
 
                 // 3. 대화창을 닫기 전에도 새 팩트가 실시간으로 쌓이도록 즉시 백그라운드 팩트 추출 구동
                 ExtractAndSaveFactAsync(new List<(string user, string npc)> { (evt.Text, response) }, destroyCancellationToken).Forget();
@@ -181,7 +202,36 @@ namespace MySecondWorld.AI
             }
         }
 
+        // 판매 목록 섹션. LLM이 없는 상품을 지어내지 못하게 실제 목록을 번호와 함께 준다
+        private string BuildShopSection()
+        {
+            _recommendable.Clear();
+            var catalog = _interactable != null ? _interactable.ShopCatalog : null;
+            if (catalog == null) return "";
+
+            foreach (var item in catalog)
+                if (item != null && (_appearance == null || _appearance.IsItemMatchingGender(item)))
+                    _recommendable.Add(item);
+            if (_recommendable.Count == 0) return "";
+
+            using var sb = ZString.CreateStringBuilder();
+            sb.AppendLine("당신이 파는 물건 목록 (이 목록에 있는 것만 추천할 수 있다):");
+            for (int i = 0; i < _recommendable.Count; i++)
+            {
+                var e = _recommendable[i];
+                sb.Append(i + 1); sb.Append(". "); sb.Append(e.Title);
+                sb.Append(" / 부위: "); sb.Append(e.Restriction != null ? e.Restriction.Title : e.Category.ToString());
+                foreach (var s in e.Stats) { sb.Append(" / "); sb.Append(s.Type.ToString()); sb.Append(' '); sb.Append(s.Value); }
+                sb.AppendLine();
+            }
+            sb.AppendLine("손님이 추천을 요청하면 목록에서 하나만 골라 이유와 함께 한 문장으로 권하고, " +
+                "응답 맨 끝에 [[추천:번호]]를 붙인다. 추천 요청이 아니면 태그를 붙이지 않는다.");
+            return sb.ToString();
+        }
+
         // 시스템 프롬프트 빌드
+        // 프롬프트는 Start()와 HandleMemoryLoaded(메뉴를 열 때)에서 다시 만들어져서,
+        // 성별을 바꿔도 대화를 시작하기 전에 목록이 갱신된다.
         private string BuildSystemPromptWithFacts()
         {
             using var sb = ZString.CreateStringBuilder();
@@ -205,6 +255,8 @@ namespace MySecondWorld.AI
                     sb.AppendLine(fact);
                 }
             }
+            string shop = BuildShopSection();
+            if (shop.Length > 0) { sb.AppendLine(); sb.Append(shop); }
             return sb.ToString().Trim();
         }
 
@@ -247,13 +299,13 @@ namespace MySecondWorld.AI
 
         // 응답 생성 — 팩트 추출 없이 응답만 반환해 대기 시간 최소화
         // sessionKey: TTS 이벤트 라우팅용(SessionKey). 영구 저장은 이 메서드 내에서도 항상 UniqueId를 쓴다.
-        private async UniTask<string> GenerateResponseAsync(
+        private async UniTask<(string text, EquipmentItem recommended)> GenerateResponseAsync(
             string userInput, string sessionKey, CancellationToken ct = default)
         {
             if (_llmService == null || !_llmService.IsReady)
             {
                 Debug.LogWarning("[NPCBrain] LLM 서비스가 아직 준비되지 않았습니다.");
-                return string.Empty;
+                return (string.Empty, null);
             }
 
             float t0 = Time.realtimeSinceStartup;
@@ -261,6 +313,12 @@ namespace MySecondWorld.AI
             int lastSentEnd = 0;
             Action<string> onToken = token =>
             {
+                // 추천 태그 "[[추천:n]]"가 TTS로 읽히지 않게, 태그가 시작되는 곳부터 잘라 낸다
+                // 로컬 LLM은 글자가 조금씩 오므로 "[["가 완성되기 전의 "[" 한 글자는 걸러지지 않지만 문장 끝 검사에 걸리지 않아 읽히지 않는다
+                int tagStart = token.IndexOf("[[", StringComparison.Ordinal);
+                if (tagStart >= 0) token = token[..tagStart];
+                if (token.Length == 0) return;
+
                 lastToken = token; // 누적 전체 텍스트 갱신
                                    // 마지막 문자가 문장 끝이면 token[lastSentEnd..]만 TTS로 발행하고 커서 전진
                 string lastchar = token[token.Length - 1].ToString();
@@ -289,6 +347,7 @@ namespace MySecondWorld.AI
             //     token[20..] = " 무엇을 도와드릴까요?"  → TTS 발행
             //     lastSentEnd = 34
 
+            var listAtRequest = new List<EquipmentItem>(_recommendable);   // 이 요청의 프롬프트가 쓴 목록을 고정해 둔다
             string response = await _llmService.ChatAsync(userInput, BuildLlmHistory(), onToken, ct);
 
             // 마침표 없이 끝나는 경우 대비
@@ -306,17 +365,16 @@ namespace MySecondWorld.AI
             Debug.Log($"[{_llmService.GetType().Name}] 추론 시간: {Time.realtimeSinceStartup - t0:F2}s");
 
             if (this == null)
-                return string.Empty;
+                return (string.Empty, null);
 
             _memory?.IncrementConversationCount();
-            return response;
+
+            int pick = ExtractRecommend(response ?? "", listAtRequest.Count, out string clean);
+            return (clean, pick >= 0 ? listAtRequest[pick] : null);   // 번호 → 아이템으로 바꿔서 돌려줌
         }
         #endregion
 
         #region 팩트 추출 및 메모리 관리
-
-        // 대화 세션 버퍼 — 창 닫힐 때 한 번에 팩트 추출
-        private readonly List<(string user, string npc)> _sessionBuffer = new();
 
         // 대화 메뉴를 열 때 호출 — 서버에서 이 NPC와의 대화 기록을 받아 온다
         public void PrefetchMemory() => NpcMemoryClient.Request(UniqueId);
