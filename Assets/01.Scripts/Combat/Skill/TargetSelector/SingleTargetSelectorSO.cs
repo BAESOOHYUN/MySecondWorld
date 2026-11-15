@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace MySecondWorld.Combat
 {
+    [SkillPart("후보 중 가장 가까운 대상 1명만 고른다")]
     [CreateAssetMenu(fileName = "SingleTargetSelectorSO", menuName = "Combat/Target Selector/Single Target")]
     public class SingleTargetSelectorSO : TargetSelectorSO
     {

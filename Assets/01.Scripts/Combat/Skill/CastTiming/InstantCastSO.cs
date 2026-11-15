@@ -3,11 +3,12 @@ using UnityEngine;
 
 namespace MySecondWorld.Combat
 {
+    [SkillPart("즉시 발동. 기다리지 않고 바로 효과를 적용한다 (근접 공격 등)")]
     [CreateAssetMenu(fileName = "InstantCastSO", menuName = "Combat/Cast Timing/Instant")]
     public class InstantCastSO : CastTimingSO
     {
         // 즉시 발동 = 바로 리턴 — 대기도, 대상 교체도 없다.
-        // 탐지 단계가 채워둔 ctx.Candidates가 그대로 축1로 넘어간다.
+        // 탐지 단계가 채워둔 ctx.Candidates가 그대로 축2로 넘어간다.
         public override UniTask WaitBeforeExecute(SkillContext ctx) => UniTask.CompletedTask;
     }
 }

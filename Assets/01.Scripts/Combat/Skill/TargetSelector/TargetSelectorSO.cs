@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace MySecondWorld.Combat
 {
-    // 축1 구현체를 SO 에셋으로 만들기 위한 베이스.
+    // 축2 구현체를 SO 에셋으로 만들기 위한 베이스.
     //
     // ★ 무상태 규칙: 인스턴스 필드를 두지 않는다.
     //   SO는 프로젝트 전역 단일 인스턴스라 모든 캐스터가 같은 객체를 공유한다.

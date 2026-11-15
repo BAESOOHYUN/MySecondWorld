@@ -8,6 +8,7 @@ namespace MySecondWorld.Combat
     // - Epicenter가 없으면 단일 대상에게 고정 데미지를 준다.
     // - Epicenter가 있으면 중심에서 가까울수록 데미지가 크고,
     //   반경 끝에 가까울수록 데미지가 줄어든다. (중심: 100% → 반경 끝: 0%)
+    [SkillPart("폭심지에서 가까울수록 크게 데미지를 준다 (중심 100% → 반경 끝 0%)")]
     [CreateAssetMenu(fileName = "SplashDamageEffectSO", menuName = "Combat/Effect/Splash Damage")]
     public class SplashDamageEffectSO : SkillEffectSO
     {

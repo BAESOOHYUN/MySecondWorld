@@ -11,6 +11,7 @@ namespace MySecondWorld.Combat
     // - 충돌 대상이 없거나 스플래시 반경이 없으면 단일 대상만 후보로 설정한다.
     // - 충돌 대상이 있고 스플래시 반경이 있으면, 충돌 지점을 중심으로
     //   SphereAttackResolver를 통해 범위 내 모든 적 후보를 탐색한다. 
+    [SkillPart("투사체가 맞은 지점을 중심으로 범위 안의 모든 대상을 후보로 만든다 (폭발 화살)")]
     [CreateAssetMenu(fileName = "ProjectileSplashCastSO", menuName = "Combat/Cast Timing/Projectile Splash")]
     public class ProjectileSplashCastSO : CastTimingSO
     {

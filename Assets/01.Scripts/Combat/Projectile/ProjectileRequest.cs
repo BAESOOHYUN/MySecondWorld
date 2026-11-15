@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace MySecondWorld.Combat
 {
-    // 캐스터가 축2(ProjectileCastSO)에 넘기는 발사 정보 일체.
+    // 캐스터가 축1(ProjectileCastSO)에 넘기는 발사 정보 일체.
     // 이 값들이 SO 필드가 아니라 여기 있는 이유가 4축 설계의 핵심 제약이다 —
     // ProjectileCastSO 에셋 하나를 모든 몬스터와 플레이어가 공유하므로,
     // SO가 화살·속도를 필드로 들면 캐스터끼리 서로 덮어쓴다.

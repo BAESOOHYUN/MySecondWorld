@@ -99,7 +99,7 @@ namespace MySecondWorld.Combat.Monster
                 },
             };
 
-            // 후보는 비워서 보낸다 — 누구를 맞혔는지는 축2가 화살이 도착한 뒤에 채운다.
+            // 후보는 비워서 보낸다 — 누구를 맞혔는지는 축1이 화살이 도착한 뒤에 채운다.
             var ctx = new SkillContext(gameObject, Array.Empty<IDamageable>(), _stats.Attack, request);
             _stats.AttackSkill.Execute(ctx).Forget();
         }

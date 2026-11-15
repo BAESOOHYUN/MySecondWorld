@@ -10,13 +10,14 @@ namespace MySecondWorld.Combat
         public GameObject Caster { get; }
         public float Power { get; }
 
-        // 축1이 최종적으로 읽는 대상 후보.
+        // 축2가 최종적으로 읽는 대상 후보.
         // 탐지 단계(OverlapSphere 등)가 채운 값으로 시작하고,
-        // 축2가 "대기 중에 대상을 확정하는" 종류라면 SetCandidates로 덮어쓴다.
+        // 축1이 "대기 중에 대상을 확정하는" 종류라면 SetCandidates로 덮어쓴다.
         public IReadOnlyList<IDamageable> Candidates { get; private set; }
 
         // 투사체 스킬의 발사 정보. 즉시발동(InstantCast) 스킬은 사용하지 않아 기본값 null.
         public ProjectileRequest? Shot { get; }
+        public Animator CasterAnimator { get; }
 
         // 스플래시 판정의 폭심지/반경. 값이 없으면(null) 스플래시가 아니므로
         // SplashDamageEffectSO는 감쇠 없이 Power를 그대로 적용한다.
@@ -28,16 +29,18 @@ namespace MySecondWorld.Combat
             GameObject caster,
             IReadOnlyList<IDamageable> candidates,
             float power,
-            ProjectileRequest? shot = null
+            ProjectileRequest? shot = null,
+            Animator casterAnimator = null
             )
         {
             Caster = caster;
             Candidates = candidates;
             Power = power;
             Shot = shot;
+            CasterAnimator = casterAnimator;
         }
 
-        // 축2 전용 — 대기가 끝난 시점에 확정된 대상으로 후보를 교체한다.
+        // 축1 전용 — 대기가 끝난 시점에 확정된 대상으로 후보를 교체한다.
         public void SetCandidates(IReadOnlyList<IDamageable> candidates) => Candidates = candidates;
 
         public void SetEpicenter(Vector3 point, float radius)

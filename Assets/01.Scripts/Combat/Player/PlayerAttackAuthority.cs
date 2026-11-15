@@ -15,7 +15,7 @@ namespace MySecondWorld.Combat.Player
         [Tooltip("근접 공격 스킬. 보통 Skill_MeleeAttack.")]
         [SerializeField] private SkillDefinition _meleeSkill;
 
-        [Tooltip("원거리 공격 스킬. 보통 Skill_RangedShoot (축2가 ProjectileCastSO).")]
+        [Tooltip("원거리 공격 스킬. 보통 Skill_RangedShoot (축1이 ProjectileCastSO).")]
         [SerializeField] private SkillDefinition _rangedSkill;
 
         [Header("수치")]
@@ -27,6 +27,7 @@ namespace MySecondWorld.Combat.Player
         private NetworkWeaponEquip _weaponEquip;
         private ArrowNockPoint _nockPoint;             // 호스트에서 손 화살을 그대로 쏘기 위해 필요
         private NetworkProjectileRelay _relay;         // 투사체 프리팹 소유 + 명중 Rpc
+        private Animator _animator;                // AnimClip이 쓰는 시전자 Animator. 무기 교체 때는 컨트롤러만 바뀌어 참조는 그대로 유효
 
         // 동기화
         // 원격 피어가 자기 발사 프레임에 읽는 조준 방향.
@@ -63,6 +64,7 @@ namespace MySecondWorld.Combat.Player
             _weaponEquip = GetComponent<NetworkWeaponEquip>();
             _nockPoint = GetComponent<ArrowNockPoint>();
             _relay = GetComponent<NetworkProjectileRelay>();
+            _animator = GetComponentInChildren<Animator>();
 
             if (_meleeSkill == null)
                 Debug.LogError($"PlayerAttackAuthority: _meleeSkill 미할당 on {gameObject.name}", this);
@@ -215,7 +217,7 @@ namespace MySecondWorld.Combat.Player
                 },
             };
 
-            var ctx = new SkillContext(gameObject, System.Array.Empty<IDamageable>(), power, request);
+            var ctx = new SkillContext(gameObject, System.Array.Empty<IDamageable>(), power, request, _animator);
             _rangedSkill.Execute(ctx).Forget();
         }
     }

@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace MySecondWorld.Combat
 {
-    // 축1: 타겟팅 — "확정된 대상 후보 중 실제로 이 스킬을 적용할 대상"을 결정하는 전략 인터페이스
+    // 축2: 타겟팅 — "확정된 대상 후보 중 실제로 이 스킬을 적용할 대상"을 결정하는 전략 인터페이스
     public interface ITargetSelector
     {
         // IEnumerable<T>는 "0개든, 1개든, N개든 순회(foreach)할 수 있다"는 것만 약속하는 가장 느슨한 타입
