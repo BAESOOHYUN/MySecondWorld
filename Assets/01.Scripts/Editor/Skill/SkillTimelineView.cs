@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.UIElements;
@@ -17,7 +18,7 @@ namespace MySecondWorld.Combat.EditorTools
         private const float TrackHeight = 28f;
         private const float RulerHeight = 20f;
         private const float LabelWidth = 64f;
-        private const float MinClipWidth = 18f;
+        private const float MinClipWidth = 34f;   // 시작 시간 숫자(0.00)가 잘리지 않을 최소 폭
         private const float TickInterval = 0.5f;  // 눈금 간격(초)
 
         private static readonly (Type type, string label, Color color)[] Tracks =
@@ -231,11 +232,108 @@ namespace MySecondWorld.Combat.EditorTools
                 { style = { unityFontStyleAndWeight = FontStyle.Bold } });
 
             var element = _list.GetArrayElementAtIndex(_selected);
+            if (clip is EffectClip)
+            {
+                box.Add(BuildEffectClipEditor(element));
+                return box;
+            }
+
             element.isExpanded = true;
             var field = new PropertyField(element, "상세");
             field.Bind(_so);
             box.Add(field);
             return box;
+        }
+
+        // 효과 클립 — 시작 시간 + 축2(타겟팅) 슬롯 + 축3(효과) 슬롯. 보관함 카드를 끌어다 놓는다.
+        private VisualElement BuildEffectClipEditor(SerializedProperty element)
+        {
+            var root = new VisualElement();
+
+            var start = new PropertyField(element.FindPropertyRelative("_startTime"), "시작 시간(초)");
+            start.style.marginTop = 6;
+            start.Bind(_so);
+            root.Add(start);
+
+            // 축2 · 타겟팅 (하나)
+            var targetProp = element.FindPropertyRelative("_targetSelector");
+            var targetSlot = SkillEditorWindow.BuildSlot("축2 · 타겟팅", "누구를 맞히나?",
+                SkillEditorWindow.TargetColor, typeof(TargetSelectorSO), out var targetContent, dropped =>
+                {
+                    _so.Update();
+                    targetProp.objectReferenceValue = dropped;
+                    _so.ApplyModifiedProperties();
+                    _onChanged(_selected);
+                });
+            if (targetProp.objectReferenceValue is ScriptableObject target)
+            {
+                targetContent.Add(SkillEditorWindow.BuildCard(target, SkillEditorWindow.TargetColor, () =>
+                {
+                    _so.Update();
+                    targetProp.objectReferenceValue = null;
+                    _so.ApplyModifiedProperties();
+                    _onChanged(_selected);
+                }));
+            }
+            else targetContent.Add(SkillEditorWindow.EmptyHint());
+            root.Add(targetSlot);
+
+            // 축3 · 효과 (여러 개)
+            var effectsProp = element.FindPropertyRelative("_effects");
+            var effectSlot = SkillEditorWindow.BuildSlot("축3 · 효과", "맞으면 무슨 일이 생기나? (여러 개 가능)",
+                SkillEditorWindow.EffectColor, typeof(SkillEffectSO), out var effectContent, dropped =>
+                {
+                    _so.Update();
+                    effectsProp.arraySize++;
+                    effectsProp.GetArrayElementAtIndex(effectsProp.arraySize - 1).objectReferenceValue = dropped;
+                    _so.ApplyModifiedProperties();
+                    _onChanged(_selected);
+                });
+
+            bool any = false;
+            for (int i = 0; i < effectsProp.arraySize; i++)
+            {
+                int index = i;
+                if (effectsProp.GetArrayElementAtIndex(i).objectReferenceValue is not ScriptableObject effect) continue;
+                any = true;
+                effectContent.Add(SkillEditorWindow.BuildCard(effect, SkillEditorWindow.EffectColor, () =>
+                {
+                    _so.Update();
+                    effectsProp.GetArrayElementAtIndex(index).objectReferenceValue = null; // 참조 배열은 null로 비운 뒤 삭제해야 칸이 사라진다
+                    effectsProp.DeleteArrayElementAtIndex(index);
+                    _so.ApplyModifiedProperties();
+                    _onChanged(_selected);
+                }));
+            }
+            if (!any) effectContent.Add(SkillEditorWindow.EmptyHint());
+
+            // 같은 종류(예: 데미지)의 효과가 둘 이상이면 효과가 겹쳐 적용되므로 슬롯 맨 위에 경고를 띄운다.
+            string conflict = FindExclusiveConflict(effectsProp);
+            if (conflict != null)
+            {
+                var warning = new HelpBox($"'{conflict}' 종류의 효과가 2개 이상이라 겹쳐서 적용됩니다. 하나만 남기세요.", HelpBoxMessageType.Warning);
+                warning.style.marginTop = 6;
+                effectContent.Insert(0, warning);
+            }
+            root.Add(effectSlot);
+
+            return root;
+        }
+
+        // 효과 목록에서 ExclusiveGroup이 같은 부품이 두 번 나오면 그 그룹 이름을, 없으면 null을 돌려준다.
+        private static string FindExclusiveConflict(SerializedProperty effects)
+        {
+            var seen = new HashSet<string>();
+            for (int i = 0; i < effects.arraySize; i++)
+            {
+                var effect = effects.GetArrayElementAtIndex(i).objectReferenceValue;
+                if (effect == null) continue;
+
+                var attr = (SkillPartAttribute)Attribute.GetCustomAttribute(effect.GetType(), typeof(SkillPartAttribute));
+                if (attr?.ExclusiveGroup == null) continue;
+                if (!seen.Add(attr.ExclusiveGroup)) return attr.ExclusiveGroup;
+            }
+            return null;
         }
 
         // ── 도우미 ──────────────────────────────────────────────

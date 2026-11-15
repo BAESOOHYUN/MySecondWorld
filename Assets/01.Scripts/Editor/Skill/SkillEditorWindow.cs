@@ -14,10 +14,11 @@ namespace MySecondWorld.Combat.EditorTools
     // 필드 이름을 바꾸면 여기도 같이 고쳐야 한다.
     public class SkillEditorWindow : EditorWindow
     {
-        private static readonly Color CastColor = new(0.35f, 0.62f, 0.95f);
-        private static readonly Color TargetColor = new(0.95f, 0.62f, 0.25f);
-        private static readonly Color EffectColor = new(0.85f, 0.38f, 0.38f);
-        private static readonly Color PanelColor = new(1f, 1f, 1f, 0.05f);
+        // 타임라인 보기(SkillTimelineView)도 같은 색과 슬롯 모양을 쓰므로 internal로 둔다.
+        internal static readonly Color CastColor = new(0.35f, 0.62f, 0.95f);
+        internal static readonly Color TargetColor = new(0.95f, 0.62f, 0.25f);
+        internal static readonly Color EffectColor = new(0.85f, 0.38f, 0.38f);
+        internal static readonly Color PanelColor = new(1f, 1f, 1f, 0.05f);
         private const string DefaultSkillFolder = "Assets/06.ScriptableObject/Skill"; // '새 스킬' 저장 창의 기본 위치
 
         private readonly List<SkillDefinition> _skills = new();
@@ -144,7 +145,7 @@ namespace MySecondWorld.Combat.EditorTools
         }
 
         // 보관함 카드와 슬롯 안 카드를 같은 모양으로 쓴다. onRemove가 있으면 ✕ 버튼이 붙는다.
-        private static VisualElement BuildCard(ScriptableObject asset, Color accent, Action onRemove)
+        internal static VisualElement BuildCard(ScriptableObject asset, Color accent, Action onRemove)
         {
             var card = new VisualElement();
             card.style.marginTop = 4;
@@ -228,9 +229,8 @@ namespace MySecondWorld.Combat.EditorTools
             var so = new SerializedObject(skill);
             _detail.Add(Title(skill.name, 16));
 
+            // 축2·축3은 타임라인의 효과 클립 안에서 고른다.
             AddSingleSlot(so, "_castTiming", "축1 · 발동 타이밍", "언제 효과가 터지나?", CastColor, typeof(CastTimingSO));
-            AddSingleSlot(so, "_targetSelector", "축2 · 타겟팅", "누구를 맞히나?", TargetColor, typeof(TargetSelectorSO));
-            AddEffectSlot(so);
 
             _detail.Add(new SkillTimelineView(so, skill, _selectedClip, SelectClip));
         }
@@ -264,41 +264,8 @@ namespace MySecondWorld.Combat.EditorTools
             _detail.Add(slot);
         }
 
-        private void AddEffectSlot(SerializedObject so)
-        {
-            var prop = so.FindProperty("_effects");
-
-            var slot = BuildSlot("축3 · 효과", "맞으면 무슨 일이 생기나? (여러 개 가능)", EffectColor, typeof(SkillEffectSO), out var content, dropped =>
-            {
-                so.Update();
-                prop.arraySize++;
-                prop.GetArrayElementAtIndex(prop.arraySize - 1).objectReferenceValue = dropped;
-                so.ApplyModifiedProperties();
-                Redraw();
-            });
-
-            bool any = false;
-            for (int i = 0; i < prop.arraySize; i++)
-            {
-                int index = i;
-                if (prop.GetArrayElementAtIndex(i).objectReferenceValue is not ScriptableObject effect) continue;
-                any = true;
-                content.Add(BuildCard(effect, EffectColor, () =>
-                {
-                    so.Update();
-                    var element = prop.GetArrayElementAtIndex(index);
-                    element.objectReferenceValue = null; // 오브젝트 참조 배열은 null로 비운 뒤 삭제해야 칸이 실제로 사라진다
-                    prop.DeleteArrayElementAtIndex(index);
-                    so.ApplyModifiedProperties();
-                    Redraw();
-                }));
-            }
-            if (!any) content.Add(EmptyHint());
-            _detail.Add(slot);
-        }
-
         // 슬롯 틀 — 제목/힌트 + 드롭 영역. 맞는 타입만 받는다.
-        private static VisualElement BuildSlot(string title, string hint, Color accent, Type accept,
+        internal static VisualElement BuildSlot(string title, string hint, Color accent, Type accept,
             out VisualElement content, Action<Object> onDrop)
         {
             var slot = new VisualElement();
@@ -383,7 +350,7 @@ namespace MySecondWorld.Combat.EditorTools
             return label;
         }
 
-        private static Label EmptyHint()
+        internal static Label EmptyHint()
         {
             var label = new Label("여기로 끌어다 놓기");
             label.style.marginTop = 6;

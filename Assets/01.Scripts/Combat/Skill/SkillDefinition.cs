@@ -3,14 +3,13 @@ using UnityEngine;
 
 namespace MySecondWorld.Combat
 {
-    // 스킬 하나 = 축2(타겟팅) + 축1(타이밍) + 축3(효과)의 조합.
-    // 새 스킬을 만들 때 코드가 늘어나지 않는다 — 에셋에서 세 축을 골라 끼우면 끝.
+    // 스킬 하나 = 축1(발동 타이밍) + 타임라인(시퀀스).
+    // 축2(타겟팅)·축3(효과)는 타임라인의 효과 클립(EffectClip) 안에 있다 — 때리는 순간마다 한 벌씩.
+    // 새 스킬을 만들 때 코드가 늘어나지 않는다 — 에셋에서 부품을 골라 끼우고 시간에 배치하면 끝.
     [CreateAssetMenu(fileName = "Skill_", menuName = "Combat/Skill Definition")]
     public class SkillDefinition : ScriptableObject, ISkill
     {
-        [SerializeField] private CastTimingSO _castTiming;         // 축1
-        [SerializeField] private TargetSelectorSO _targetSelector; // 축2
-        [SerializeField] private SkillEffectSO[] _effects;         // 축3
+        [SerializeField] private CastTimingSO _castTiming; // 축1
         [SerializeReference] private System.Collections.Generic.List<SkillClip> _timeline = new(); // 시퀀스: 스킬 안의 시간 배치
 
         // 타임라인 툴이 클립 종류·시작 시간·길이를 읽는 통로(읽기 전용).
@@ -24,12 +23,8 @@ namespace MySecondWorld.Combat
             //   즉시발동(InstantCast)은 대기가 없어 순서가 결과에 영향을 주지 않는다.
             await _castTiming.WaitBeforeExecute(ctx);
 
-            if (_timeline.Count > 0)
-                await SkillTimelinePlayer.Play(_timeline, ctx);
-
-            foreach (var target in _targetSelector.GetTargets(ctx))
-                foreach (var effect in _effects)
-                    effect.Apply(target, ctx);
+            // 타격(축2+축3)은 타임라인의 효과 클립이 자기 시각에 실행한다.
+            await SkillTimelinePlayer.Play(_timeline, ctx);
         }
     }
 }

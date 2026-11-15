@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace MySecondWorld.Combat
 {
-    [SkillPart("대상에게 공격력만큼 데미지를 준다")]
+    [SkillPart("대상에게 공격력만큼 데미지를 준다", ExclusiveGroup = "데미지")]
     [CreateAssetMenu(fileName = "DamageEffectSO", menuName = "Combat/Effect/Damage")]
     public class DamageEffectSO : SkillEffectSO
     {

@@ -14,6 +14,9 @@ namespace MySecondWorld.Combat
 
         public override void Execute(SkillContext ctx)
         {
+            // 툴에서 막 추가한 빈 클립은 슬롯이 비어 있다 — 예외 대신 조용히 건너뛴다.
+            if (_targetSelector == null || _effects == null) return;
+
             foreach (var target in _targetSelector.GetTargets(ctx))
                 foreach (var effect in _effects)
                     effect.Apply(target, ctx);
