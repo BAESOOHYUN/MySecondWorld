@@ -19,7 +19,8 @@ namespace MySecondWorld.Combat.Player
         [Tooltip("공격력 폴백용. 무기가 없을 때 쓴다.")]
         [SerializeField] private PlayerCombatStatsSO _stats;
 
-        private const float MaxCastReach = 6f;     // 시전자와 조준 지점의 최대 거리(조작 방어)
+        private const float DefaultAimDistance = 2f; // 대상을 안 골랐을 때 캐릭터 앞 조준 거리
+        private const float MaxCastReach = 6f;    // 시전자와 조준 지점의 최대 거리(조작 방어)
         private const float CooldownTolerance = 0.9f; // 네트워크 지연을 감안해 서버 쿨다운을 10% 느슨하게
 
         private NetworkWeaponEquip _weaponEquip;
@@ -27,8 +28,29 @@ namespace MySecondWorld.Combat.Player
         private static int _monsterLayerMask = -1;
         private static int MonsterLayerMask => _monsterLayerMask != -1 ? _monsterLayerMask : (_monsterLayerMask = LayerMask.GetMask("Monster"));
 
+        // 슬롯 UI가 "내 플레이어"를 찾는 통로. HUD가 먼저 살아 있어도, 플레이어가 먼저 스폰돼도 둘 다 처리할 수 있게 둘을 같이 연다.
+        public static PlayerSkillSlots Local { get; private set; }
+        public static event Action<PlayerSkillSlots> LocalReady;
+
+        // Domain Reload OFF — static이 플레이 세션을 넘어 살아남으면 파괴된 객체를 가리킨다.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetCache() => _monsterLayerMask = -1;
+        private static void ResetCache()
+        {
+            _monsterLayerMask = -1;
+            Local = null;
+            LocalReady = null;
+        }
+
+        public override void OnStartLocalPlayer()
+        {
+            Local = this;
+            LocalReady?.Invoke(this);
+        }
+
+        public override void OnStopLocalPlayer()
+        {
+            if (Local == this) Local = null;
+        }
 
         // 슬롯별 진행 상태(콤보 단계·쿨다운). Host는 클라와 서버가 같은 오브젝트라서, 한 배열을 같이 쓰면
         // 클라가 갱신한 상태를 서버가 보고 거부한다. 반드시 분리.
@@ -67,8 +89,27 @@ namespace MySecondWorld.Combat.Player
             if (step == null) { Debug.Log($"[Slot] 클라 차단: 쿨다운 {GetCooldownRemaining(slot):F2}초 남음"); return; }
             Debug.Log($"[Slot] 클라 전송: 슬롯 {slot} ({step.DisplayName}), 조준 지점 {aimPoint}");
 
-            SlotCast?.Invoke(slot, skill.Cooldown);
+            // 쿨다운 오버레이는 "실제로 다시 누를 수 있기까지"를 그려야 한다(콤보는 단계 길이가 곧 대기 시간).
+            SlotCast?.Invoke(slot, GetCooldownRemaining(slot));
             CmdCastSlot(slot, aimPoint, preferredNetId);
+        }
+
+        // 버튼/키 입력이 쓰는 편한 진입점: 조준 지점과 대상을 알아서 정한다.
+        // 탭으로 고른 대상이 가까이 있으면 그 위치를, 아니면 캐릭터 앞쪽을 조준한다.
+        public void TryCastSlot(int slot)
+        {
+            uint netId = 0;
+            Vector3 aim = transform.position + transform.forward * DefaultAimDistance;
+
+            if (TryGetComponent(out PlayerAttackController attack) && attack.SelectedTarget != null)
+            {
+                var target = attack.SelectedTarget;
+                if (target.TryGetComponent(out NetworkIdentity identity)) netId = identity.netId;
+                // 서버 검증(MaxCastReach)에서 거절되지 않도록 여유를 두고 안쪽만 허용
+                if (Vector3.Distance(transform.position, target.position) <= MaxCastReach - 1f)
+                    aim = target.position;
+            }
+            TryCastSlot(slot, aim, netId);
         }
 
         [Command]
