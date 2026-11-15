@@ -7,23 +7,35 @@ namespace MySecondWorld.Combat
     // 축2(타겟팅)·축3(효과)는 타임라인의 효과 클립(EffectClip) 안에 있다 — 때리는 순간마다 한 벌씩.
     // 새 스킬을 만들 때 코드가 늘어나지 않는다 — 에셋에서 부품을 골라 끼우고 시간에 배치하면 끝.
     [CreateAssetMenu(fileName = "Skill_", menuName = "Combat/Skill Definition")]
-    public class SkillDefinition : ScriptableObject, ISkill
+    public class SkillDefinition : SlotSkill, ISkill
     {
-        [Header("슬롯 표시·제한")]
-        [SerializeField] private string _displayName;   // 슬롯 UI에 보일 이름. 비우면 에셋 이름을 쓴다
-        [SerializeField] private Sprite _icon;          // 슬롯 UI 아이콘
-        [Min(0f)] [SerializeField] private float _cooldown = 1f; // 재사용 대기(초). 서버가 슬롯 시전 때 검증한다
-
+        // 이름·아이콘·쿨다운 필드는 부모(SlotSkill)에 있다.
         [Header("구성")]
         [SerializeField] private CastTimingSO _castTiming; // 축1
         [SerializeReference] private System.Collections.Generic.List<SkillClip> _timeline = new(); // 시퀀스: 스킬 안의 시간 배치
 
-        public string DisplayName => string.IsNullOrEmpty(_displayName) ? name : _displayName;
-        public Sprite Icon => _icon;
-        public float Cooldown => _cooldown;
-
         // 타임라인 툴이 클립 종류·시작 시간·길이를 읽는 통로(읽기 전용).
         public System.Collections.Generic.IReadOnlyList<SkillClip> Timeline => _timeline;
+
+        // 스킬이 끝나는 시각(초): 가장 늦게 끝나는 클립 기준. 콤보가 "이전 단계가 끝났나"를 잴 때 쓴다.
+        public float TotalDuration
+        {
+            get
+            {
+                float end = 0f;
+                foreach (var clip in _timeline)
+                    if (clip != null) end = Mathf.Max(end, clip.StartTime + clip.Duration);
+                return end;
+            }
+        }
+
+        // 단일 스킬은 쿨다운만 본다.
+        public override SkillDefinition TryAdvance(ref SlotCursor cursor, float now, float cooldownScale)
+        {
+            if (now < cursor.ReadyAt) return null;
+            cursor.ReadyAt = now + Cooldown * cooldownScale;
+            return this;
+        }
 
         public async UniTask Execute(SkillContext ctx)
         {

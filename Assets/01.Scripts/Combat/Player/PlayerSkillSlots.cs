@@ -11,7 +11,7 @@ namespace MySecondWorld.Combat.Player
     public class PlayerSkillSlots : NetworkBehaviour
     {
         [Header("슬롯 (배열 순서 = 슬롯 번호. PC 숫자키 1~N)")]
-        [SerializeField] private SkillDefinition[] _slots = new SkillDefinition[4];
+        [SerializeField] private SlotSkill[] _slots = new SlotSkill[4];
 
         [Header("판정")]
         [Tooltip("슬롯 스킬이 대상 후보를 찾는 반경. 중심은 클라가 보낸 조준 지점(서버가 거리 검증).")]
@@ -30,13 +30,13 @@ namespace MySecondWorld.Combat.Player
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetCache() => _monsterLayerMask = -1;
 
-        // 서버: 슬롯별 다음 사용 가능 시각 / 클라: UI 표시와 입력 차단용 로컬 시각
-        // Host는 클라와 서버가 같은 오브젝트라서, 한 배열을 같이 쓰면 클라가 건 쿨다운을 서버가 보고 거부한다. 반드시 분리.
-        private float[] _readyTime;        // 클라(UI·입력 차단용)
-        private float[] _serverReadyTime;  // 서버(검증용)
+        // 슬롯별 진행 상태(콤보 단계·쿨다운). Host는 클라와 서버가 같은 오브젝트라서, 한 배열을 같이 쓰면
+        // 클라가 갱신한 상태를 서버가 보고 거부한다. 반드시 분리.
+        private SlotCursor[] _clientCursor;  // 클라(UI·입력 차단용)
+        private SlotCursor[] _serverCursor;  // 서버(검증용)
 
         public int SlotCount => _slots.Length;
-        public SkillDefinition GetSkill(int slot) => (slot >= 0 && slot < _slots.Length) ? _slots[slot] : null;
+        public SlotSkill GetSkill(int slot) => (slot >= 0 && slot < _slots.Length) ? _slots[slot] : null;
 
         // 슬롯 UI가 쿨다운 오버레이를 그릴 때 쓴다. (슬롯 번호, 쿨다운 길이)
         public event Action<int, float> SlotCast;
@@ -45,14 +45,14 @@ namespace MySecondWorld.Combat.Player
         {
             _weaponEquip = GetComponent<NetworkWeaponEquip>();
             _animator = GetComponentInChildren<Animator>();
-            _readyTime = new float[_slots.Length];
-            _serverReadyTime = new float[_slots.Length];
+            _clientCursor = new SlotCursor[_slots.Length];
+            _serverCursor = new SlotCursor[_slots.Length];
         }
 
         public float GetCooldownRemaining(int slot)
         {
-            if (slot < 0 || slot >= _readyTime.Length) return 0f;
-            return Mathf.Max(0f, _readyTime[slot] - Time.time);
+            if (slot < 0 || slot >= _clientCursor.Length) return 0f;
+            return Mathf.Max(0f, _clientCursor[slot].ReadyAt - Time.time);
         }
 
         // 입력(숫자키/아이콘 터치)이 부르는 클라 진입점. 로컬 플레이어만.
@@ -62,10 +62,11 @@ namespace MySecondWorld.Combat.Player
             if (!isLocalPlayer) { Debug.LogWarning($"[Slot] 클라 차단: 로컬 플레이어가 아님 ({name})"); return; }
             var skill = GetSkill(slot);
             if (skill == null) { Debug.LogWarning($"[Slot] 클라 차단: 슬롯 {slot}이 비어 있음(_slots 연결 확인)"); return; }
-            if (GetCooldownRemaining(slot) > 0f) { Debug.Log($"[Slot] 클라 차단: 쿨다운 {GetCooldownRemaining(slot):F2}초 남음"); return; }
-            Debug.Log($"[Slot] 클라 전송: 슬롯 {slot}, 조준 지점 {aimPoint}");
+            // 콤보면 단계가 넘어가고 쿨다운이 걸린다. null이면 아직 입력을 받을 수 없는 상태.
+            var step = skill.TryAdvance(ref _clientCursor[slot], Time.time, 1f);
+            if (step == null) { Debug.Log($"[Slot] 클라 차단: 쿨다운 {GetCooldownRemaining(slot):F2}초 남음"); return; }
+            Debug.Log($"[Slot] 클라 전송: 슬롯 {slot} ({step.DisplayName}), 조준 지점 {aimPoint}");
 
-            _readyTime[slot] = Time.time + skill.Cooldown;
             SlotCast?.Invoke(slot, skill.Cooldown);
             CmdCastSlot(slot, aimPoint, preferredNetId);
         }
@@ -74,13 +75,14 @@ namespace MySecondWorld.Combat.Player
         private void CmdCastSlot(int slot, Vector3 aimPoint, uint preferredNetId)
         {
             // Command에서 예외가 나면 Mirror가 연결을 끊는다 — 범위 밖 값은 조용히 무시.
-            var skill = GetSkill(slot);
-            if (skill == null) { Debug.LogWarning($"[Slot] 거부: 슬롯 {slot} 비어 있음/범위 밖"); return; }
-            if (Time.time < _serverReadyTime[slot]) { Debug.LogWarning($"[Slot] 거부: 슬롯 {slot} 쿨다운 {_serverReadyTime[slot] - Time.time:F2}초 남음"); return; }
+            var entry = GetSkill(slot);
+            if (entry == null) { Debug.LogWarning($"[Slot] 거부: 슬롯 {slot} 비어 있음/범위 밖"); return; }
             float dist = Vector3.Distance(transform.position, aimPoint);
             if (dist > MaxCastReach) { Debug.LogWarning($"[Slot] 거부: 조준 지점이 {dist:F1}m (최대 {MaxCastReach}m)"); return; }
 
-            _serverReadyTime[slot] = Time.time + skill.Cooldown * CooldownTolerance;
+            // 서버가 자기 커서로 따로 판정한다. 콤보 몇 단계인지도 클라가 보낸 값이 아니라 서버 상태가 정한다.
+            var skill = entry.TryAdvance(ref _serverCursor[slot], Time.time, CooldownTolerance);
+            if (skill == null) { Debug.LogWarning($"[Slot] 거부: 슬롯 {slot} 쿨다운 {_serverCursor[slot].ReadyAt - Time.time:F2}초 남음"); return; }
 
             float power = _weaponEquip != null ? _weaponEquip.GetMainHandAttack() : 0f;
             if (power <= 0f && _stats != null) power = _stats.UnarmedAttack;

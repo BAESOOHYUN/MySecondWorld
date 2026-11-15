@@ -22,11 +22,14 @@ namespace MySecondWorld.Combat.EditorTools
         internal static readonly Color PanelColor = new(1f, 1f, 1f, 0.05f);
         private const string DefaultSkillFolder = "Assets/06.ScriptableObject/Skill"; // '새 스킬' 저장 창의 기본 위치
 
-        private readonly List<SkillDefinition> _skills = new();
+        internal static readonly Color ComboColor = new(0.65f, 0.45f, 0.9f);
+
+        private readonly List<SlotSkill> _skills = new(); // 단일 스킬과 콤보를 같이 보여 준다
         private ListView _list;
         private ScrollView _palette;
         private ScrollView _detail;
-        private SkillDefinition _current;
+        private SlotSkill _current;
+        private bool _paletteIsForCombo; // 보관함이 지금 어느 모드로 그려져 있나(콤보면 스킬 카드, 스킬이면 축1~3 부품)
         private int _selectedClip = -1; // 타임라인에서 선택한 클립 번호
 
         [MenuItem("Tools/Combat/Skill Editor")]
@@ -59,6 +62,7 @@ namespace MySecondWorld.Combat.EditorTools
 
             var toolbar = new UnityEditor.UIElements.Toolbar();
             toolbar.Add(new UnityEditor.UIElements.ToolbarButton(CreateSkill) { text = "새 스킬" });
+            toolbar.Add(new UnityEditor.UIElements.ToolbarButton(CreateCombo) { text = "새 콤보" });
             toolbar.Add(new UnityEditor.UIElements.ToolbarButton(RefreshAll) { text = "새로고침" });
             pane.Add(toolbar);
 
@@ -68,7 +72,13 @@ namespace MySecondWorld.Combat.EditorTools
                 fixedItemHeight = 22,
                 selectionType = SelectionType.Single,
                 makeItem = () => new Label { style = { unityTextAlign = TextAnchor.MiddleLeft, paddingLeft = 6 } },
-                bindItem = (element, index) => ((Label)element).text = _skills[index].name,
+                bindItem = (element, index) =>
+                {
+                    var label = (Label)element;
+                    bool isCombo = _skills[index] is ComboDefinition;
+                    label.text = isCombo ? $"[콤보] {_skills[index].name}" : _skills[index].name;
+                    label.style.color = isCombo ? ComboColor : StyleKeyword.Null;
+                },
             };
             _list.style.flexGrow = 1;
             _list.selectionChanged += OnSelectionChanged;
@@ -78,19 +88,19 @@ namespace MySecondWorld.Combat.EditorTools
 
         private void RefreshAll()
         {
-            var previous = _list.selectedItem as SkillDefinition;
+            var previous = _list.selectedItem as SlotSkill;
 
             _skills.Clear();
-            _skills.AddRange(FindAssets<SkillDefinition>());
+            _skills.AddRange(FindAssets<SlotSkill>());
             _list.RefreshItems();
 
-            RefreshPalette();
+            RefreshPalette(previous is ComboDefinition);
 
             if (previous != null && _skills.Contains(previous)) SelectSkill(previous);
             else ShowDetail(null);
         }
 
-        private void SelectSkill(SkillDefinition skill)
+        private void SelectSkill(SlotSkill skill)
         {
             int index = _skills.IndexOf(skill);
             if (index >= 0) _list.SetSelection(index);
@@ -98,7 +108,7 @@ namespace MySecondWorld.Combat.EditorTools
 
         private void OnSelectionChanged(IEnumerable<object> selection)
         {
-            var skill = selection.FirstOrDefault() as SkillDefinition;
+            var skill = selection.FirstOrDefault() as SlotSkill;
             _selectedClip = -1; // 다른 스킬로 넘어가면 클립 선택은 초기화
             ShowDetail(skill);
 
@@ -120,17 +130,52 @@ namespace MySecondWorld.Combat.EditorTools
             SelectSkill(skill);
         }
 
+        private void CreateCombo()
+        {
+            string path = EditorUtility.SaveFilePanelInProject(
+                "새 콤보", "Combo_New", "asset", "콤보 에셋을 저장할 위치를 고르세요.", DefaultSkillFolder);
+            if (string.IsNullOrEmpty(path)) return;
+
+            var combo = CreateInstance<ComboDefinition>();
+            AssetDatabase.CreateAsset(combo, path);
+            AssetDatabase.SaveAssets();
+
+            RefreshAll();
+            SelectSkill(combo);
+        }
+
         // ── 가운데: 부품 보관함 ──────────────────────────────────
 
-        private void RefreshPalette()
+        // 스킬을 편집 중이면 축1~3 부품, 콤보를 편집 중이면 단계로 넣을 스킬 카드를 보여 준다.
+        private void RefreshPalette(bool forCombo)
         {
+            _paletteIsForCombo = forCombo;
             _palette.Clear();
+
+            if (forCombo)
+            {
+                _palette.Add(Title("스킬 보관함", 14));
+                _palette.Add(Hint("스킬 카드를 오른쪽 '단계' 칸으로 끌어다 놓으세요."));
+                foreach (var skill in FindAssets<SkillDefinition>())
+                    _palette.Add(BuildSkillCard(skill));
+                return;
+            }
+
             _palette.Add(Title("부품 보관함", 14));
             _palette.Add(Hint("카드를 오른쪽 슬롯으로 끌어다 놓으세요."));
 
             AddPaletteSection<CastTimingSO>("축1 · 발동 타이밍", "언제 효과가 터지나?", CastColor);
             AddPaletteSection<TargetSelectorSO>("축2 · 타겟팅", "누구를 맞히나?", TargetColor);
             AddPaletteSection<SkillEffectSO>("축3 · 효과", "맞으면 무슨 일이 생기나?", EffectColor);
+        }
+
+        // 스킬 카드: 설명 줄 대신 길이를 보여 준다.
+        private static VisualElement BuildSkillCard(SkillDefinition skill, Action onRemove = null)
+        {
+            var card = BuildCard(skill, ComboColor, onRemove);
+            if (card.childCount > 1 && card[1] is Label desc)
+                desc.text = $"길이 {skill.TotalDuration:0.##}초 · 쿨다운 {skill.Cooldown:0.##}초";
+            return card;
         }
 
         private void AddPaletteSection<T>(string title, string hint, Color accent) where T : ScriptableObject
@@ -216,32 +261,119 @@ namespace MySecondWorld.Combat.EditorTools
 
         // ── 오른쪽: 조합 중인 스킬 ───────────────────────────────
 
-        private void ShowDetail(SkillDefinition skill)
+        private void ShowDetail(SlotSkill entry)
         {
-            _current = skill;
+            _current = entry;
             _detail.Clear();
 
-            if (skill == null)
+            // 스킬 ↔ 콤보를 오갈 때만 보관함을 다시 그린다.
+            bool forCombo = entry is ComboDefinition;
+            if (forCombo != _paletteIsForCombo) RefreshPalette(forCombo);
+
+            if (entry == null)
             {
-                _detail.Add(new Label("왼쪽에서 스킬을 고르거나 '새 스킬'을 만드세요."));
+                _detail.Add(new Label("왼쪽에서 스킬·콤보를 고르거나 '새 스킬' / '새 콤보'를 만드세요."));
                 return;
             }
 
-            var so = new SerializedObject(skill);
-            _detail.Add(Title(skill.name, 16));
+            var so = new SerializedObject(entry);
+            _detail.Add(Title(entry.name, 16));
 
             // 슬롯 UI에 쓰이는 정보(이름·아이콘·쿨다운)
-            foreach (var field in new[] { "_displayName", "_icon", "_cooldown" })
+            AddFields(so, "_displayName", "_icon", "_cooldown");
+
+            if (entry is ComboDefinition combo)
             {
-                var pf = new PropertyField(so.FindProperty(field));
-                pf.Bind(so);
-                _detail.Add(pf);
+                ShowComboDetail(so, combo);
+                return;
             }
 
             // 축2·축3은 타임라인의 효과 클립 안에서 고른다.
             AddSingleSlot(so, "_castTiming", "축1 · 발동 타이밍", "언제 효과가 터지나?", CastColor, typeof(CastTimingSO));
 
-            _detail.Add(new SkillTimelineView(so, skill, _selectedClip, SelectClip));
+            _detail.Add(new SkillTimelineView(so, (SkillDefinition)entry, _selectedClip, SelectClip));
+        }
+
+        private void AddFields(SerializedObject so, params string[] names)
+        {
+            foreach (var name in names)
+            {
+                var pf = new PropertyField(so.FindProperty(name));
+                pf.Bind(so);
+                _detail.Add(pf);
+            }
+        }
+
+        // ── 콤보 편집 ───────────────────────────────────────────
+
+        private void ShowComboDetail(SerializedObject so, ComboDefinition combo)
+        {
+            AddFields(so, "_comboWindow", "_minStepInterval");
+
+            var steps = so.FindProperty("_steps");
+            var slot = BuildSlot("단계 (위에서 아래 순서로 나감)", "스킬 카드를 끌어다 놓으면 맨 뒤에 추가됩니다.",
+                ComboColor, typeof(SkillDefinition), out var content, dropped =>
+                {
+                    so.Update();
+                    steps.arraySize++;
+                    // 배열을 늘리면 마지막 칸이 복제되므로, 새 칸에 반드시 직접 대입한다.
+                    steps.GetArrayElementAtIndex(steps.arraySize - 1).objectReferenceValue = dropped;
+                    so.ApplyModifiedProperties();
+                    Redraw();
+                });
+
+            if (steps.arraySize == 0) content.Add(EmptyHint());
+
+            float total = 0f;
+            for (int i = 0; i < steps.arraySize; i++)
+            {
+                int index = i; // 클로저가 반복 변수가 아닌 이 값을 잡도록
+                var skill = steps.GetArrayElementAtIndex(i).objectReferenceValue as SkillDefinition;
+                if (skill != null) total += Mathf.Max(skill.TotalDuration, combo.MinStepInterval);
+
+                var row = new VisualElement();
+                row.style.marginTop = 4;
+                row.Add(new Label($"{i + 1}단계") { style = { fontSize = 11, opacity = 0.7f } });
+                row.Add(skill != null
+                    ? BuildSkillCard(skill, () => RemoveStep(so, steps, index))
+                    : new Label("(비어 있음 — 인스펙터에서 지우거나 스킬을 끌어다 놓으세요)"));
+
+                var buttons = new VisualElement { style = { flexDirection = FlexDirection.Row } };
+                buttons.Add(new Button(() => MoveStep(so, steps, index, -1)) { text = "▲" });
+                buttons.Add(new Button(() => MoveStep(so, steps, index, +1)) { text = "▼" });
+                row.Add(buttons);
+                content.Add(row);
+            }
+            _detail.Add(slot);
+
+            if (steps.arraySize > 0)
+            {
+                var summary = Hint($"단계 {steps.arraySize}개 · 끝까지 나가는 데 약 {total:0.##}초 (이어 누를 시간 {combo.ComboWindow:0.##}초 포함 안 함) " +
+                                   $"· 끝난 뒤 콤보 쿨다운 {combo.Cooldown:0.##}초");
+                summary.style.marginTop = 8;
+                summary.style.whiteSpace = WhiteSpace.Normal;
+                _detail.Add(summary);
+            }
+        }
+
+        private void RemoveStep(SerializedObject so, SerializedProperty steps, int index)
+        {
+            so.Update();
+            // 오브젝트 참조 배열은 먼저 null로 비워야 칸이 실제로 지워진다.
+            steps.GetArrayElementAtIndex(index).objectReferenceValue = null;
+            steps.DeleteArrayElementAtIndex(index);
+            so.ApplyModifiedProperties();
+            Redraw();
+        }
+
+        private void MoveStep(SerializedObject so, SerializedProperty steps, int index, int delta)
+        {
+            int to = index + delta;
+            if (to < 0 || to >= steps.arraySize) return;
+            so.Update();
+            steps.MoveArrayElement(index, to);
+            so.ApplyModifiedProperties();
+            Redraw();
         }
 
         private void AddSingleSlot(SerializedObject so, string propertyName, string title, string hint, Color accent, Type accept)
