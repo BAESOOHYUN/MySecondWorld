@@ -24,7 +24,8 @@
         "Cleverous.VaultInventory",
         "MySecondWorld.Inventory.Items",
         "MySecondWorld.Inventory",
-        "Cleverous.VaultSystem"
+        "Cleverous.VaultSystem",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
