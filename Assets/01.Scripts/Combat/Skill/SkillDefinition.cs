@@ -9,8 +9,18 @@ namespace MySecondWorld.Combat
     [CreateAssetMenu(fileName = "Skill_", menuName = "Combat/Skill Definition")]
     public class SkillDefinition : ScriptableObject, ISkill
     {
+        [Header("슬롯 표시·제한")]
+        [SerializeField] private string _displayName;   // 슬롯 UI에 보일 이름. 비우면 에셋 이름을 쓴다
+        [SerializeField] private Sprite _icon;          // 슬롯 UI 아이콘
+        [Min(0f)] [SerializeField] private float _cooldown = 1f; // 재사용 대기(초). 서버가 슬롯 시전 때 검증한다
+
+        [Header("구성")]
         [SerializeField] private CastTimingSO _castTiming; // 축1
         [SerializeReference] private System.Collections.Generic.List<SkillClip> _timeline = new(); // 시퀀스: 스킬 안의 시간 배치
+
+        public string DisplayName => string.IsNullOrEmpty(_displayName) ? name : _displayName;
+        public Sprite Icon => _icon;
+        public float Cooldown => _cooldown;
 
         // 타임라인 툴이 클립 종류·시작 시간·길이를 읽는 통로(읽기 전용).
         public System.Collections.Generic.IReadOnlyList<SkillClip> Timeline => _timeline;

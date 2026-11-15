@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
+using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Object = UnityEngine.Object;
@@ -228,6 +229,14 @@ namespace MySecondWorld.Combat.EditorTools
 
             var so = new SerializedObject(skill);
             _detail.Add(Title(skill.name, 16));
+
+            // 슬롯 UI에 쓰이는 정보(이름·아이콘·쿨다운)
+            foreach (var field in new[] { "_displayName", "_icon", "_cooldown" })
+            {
+                var pf = new PropertyField(so.FindProperty(field));
+                pf.Bind(so);
+                _detail.Add(pf);
+            }
 
             // 축2·축3은 타임라인의 효과 클립 안에서 고른다.
             AddSingleSlot(so, "_castTiming", "축1 · 발동 타이밍", "언제 효과가 터지나?", CastColor, typeof(CastTimingSO));
