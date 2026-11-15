@@ -14,12 +14,10 @@ namespace MySecondWorld.AI
     {
         private const string API_URL = "https://api.groq.com/openai/v1/chat/completions";
         private static readonly string API_KEY = SecretKeyLoader.Load("groq_api_key");
-
-        // 원하는 모델 지정 (둘 다 Groq에서 정상 동작 확인 완료)
-        private const string MODEL = "qwen/qwen3.8-27b"; // ★ 가장 안정적인 한국어 지원 대화 모델
-
         private string _systemPrompt = "";
         private int _maxTokens = 40;
+        private readonly NPCCommonRulesSO _rules;
+        public GroqLLMService(NPCCommonRulesSO rules) { _rules = rules; }
         public bool IsReady => true;
 
         // 추론 모델이 답 앞에 붙이는 <think>...</think> 블록
@@ -39,7 +37,7 @@ namespace MySecondWorld.AI
         public async UniTask<string> ChatAsync(string userInput, IReadOnlyList<(string user, string npc)> history, 
                                             Action<string> onToken, CancellationToken ct)
         {
-            Debug.Log($"[GroqLLM] ChatAsync 호출됨! 입력: '{userInput}', 모델: '{MODEL}'");
+            Debug.Log($"[GroqLLM] ChatAsync 호출됨! 입력: '{userInput}', 모델: '{_rules.Model}'");
             string json = BuildJson(userInput, history);
 
             for (int attempt = 0; attempt < 3; attempt++) // 현재 몇 번째 시도인지를 나타냄. 최대 3회 재시도
@@ -159,11 +157,12 @@ namespace MySecondWorld.AI
         {
             using var sb = ZString.CreateStringBuilder();
             // NPC 성격, 규칙, 기억 요약
-            sb.Append("{\"model\":\""); sb.Append(MODEL);
+            sb.Append("{\"model\":\""); sb.Append(_rules.Model);
             sb.Append("\",\"stream\":false,\"max_tokens\":"); sb.Append(_maxTokens);
-            sb.Append(",\"reasoning_effort\":\"none\"");   // 생각 모드를 끄고 일반 대화 모드로 (토큰·시간 절약)
-            sb.Append(",\"messages\":[{\"role\":\"system\",\"content\":\""); sb.Append(EscapeJson(_systemPrompt)); sb.Append("\"}");
-            
+            sb.Append(_rules.SamplingJson);
+            sb.Append(",\"messages\":[{\"role\":\"system\",\"content\":\"");
+            sb.Append(EscapeJson(_systemPrompt)); sb.Append("\"}");
+
             if (history != null)
                 foreach (var (u, n) in history)
                 {

@@ -541,6 +541,7 @@ MonoBehaviour:
     TypeName: ProjectLifetimeScope
   autoRun: 1
   autoInjectGameObjects: []
+  _commonRules: {fileID: 11400000, guid: e94e3be750cb90f41ae2534251561451, type: 2}
 --- !u!4 &1968850488
 Transform:
   m_ObjectHideFlags: 0

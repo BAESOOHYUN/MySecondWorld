@@ -76,9 +76,10 @@ namespace MySecondWorld.AI
         private IPublisher<NPCDialogueEvent> _dialoguePub;
         private IPublisher<NPCTTSSentenceEvent> _ttsPub;
         private ILLMService _llmService;
+        private IItemRecommendUI _recommendUI;
+        private NPCCommonRulesSO _rules;
         private NPCInteractable _interactable;
         private CharacterAppearanceService _appearance;
-        private IItemRecommendUI _recommendUI;
 
         // [Inject]가 붙은 메서드를 VContainer(NPCLifetimeScope)가 찾아서
         // 파라미터 타입에 맞는 인스턴스를 컨테이너에서 꺼내 자동으로 호출한다.
@@ -94,6 +95,7 @@ namespace MySecondWorld.AI
             IPublisher<NPCTTSSentenceEvent> ttsPub,
             ILLMService llmService,
             IItemRecommendUI recommendUI,
+            NPCCommonRulesSO rules,
             NPCInteractable interactable,
             CharacterAppearanceService appearanceService = null
             )
@@ -105,6 +107,7 @@ namespace MySecondWorld.AI
             _ttsPub = ttsPub;
             _llmService = llmService;
             _recommendUI = recommendUI;
+            _rules = rules;
             _interactable = interactable;
             _appearance = appearanceService;
 
@@ -230,16 +233,7 @@ namespace MySecondWorld.AI
                 sb.AppendLine();
             }
             sb.Append("이 상점이 파는 부위: "); sb.AppendLine(string.Join(", ", parts));
-            sb.AppendLine("위 목록은 이 손님의 성별에 맞는 상품만 추린 것이다. 손님이 다른 성별 전용(예: 여성용/남성용)을 찾으면" +
-                " 그건 이 손님께 맞는 상품이 아니라서 보여 드릴 수 없다고 말하고, 목록에서 맞는 상품을 권한다.");
-            sb.AppendLine("손님이 상품을 추천해 달라고 하면 목록에서 하나만 골라 이유와 함께 한 문장으로 권하고," +
-                " 응답 맨 끝에 반드시 [[추천:번호]]를 붙인다. 예) 방어력이 좋은 철 투구를 추천해요! [[추천:3]]");
-            // 손님이 찾는 조건의 상품이 목록에 없을 때: 빈 응답도, 엉뚱한 상품을 억지로 권하는 것도 막는다.
-            // 없으면 "없다"고 말하고 파는 부위를 되묻는다(태그 없음). 같은 부위의 다른 상품이 있을 때만 권하고 태그를 붙인다.
-            sb.AppendLine("손님이 찾는 조건의 상품이 목록에 없으면(예: 없는 부위, 다른 성별 전용) 그런 상품은 없다고 짧게 말하고," +
-                " 위의 '이 상점이 파는 부위' 중 무엇을 보여 드릴지 되묻는다. 이때는 [[추천:번호]]를 붙이지 않는다." +
-                " 찾는 것과 같은 부위의 다른 상품이 목록에 있을 때만 그것을 권하고 [[추천:번호]]를 붙인다." +
-                " 직전에 권한 상품을 계속 다시 권하지 말고 다른 상품을 먼저 권한다. 어떤 경우에도 빈 답은 하지 않는다.");
+            sb.AppendLine(_rules.ShopRules);
             return sb.ToString();
         }
 
@@ -271,6 +265,8 @@ namespace MySecondWorld.AI
             }
             string shop = BuildShopSection();
             if (shop.Length > 0) { sb.AppendLine(); sb.Append(shop); }
+            sb.AppendLine();
+            sb.AppendLine(_rules.LanguageRule);
             return sb.ToString().Trim();
         }
 
@@ -419,7 +415,10 @@ namespace MySecondWorld.AI
             int pick = ExtractRecommend(response ?? "", listAtRequest.Count, out string clean);
             // pick == -1 일 때(태그가 없으면) → FindMentionedItem로 분기하여, 본문에서 '아이템 이름'으로 추천템을 찾는다.
             if (pick < 0) 
-                pick = FindMentionedItem(clean, listAtRequest); 
+                pick = FindMentionedItem(clean, listAtRequest);
+            // 유저의 "상점 관심" 키워드
+            if (!_rules.HasShopIntent(userInput)) pick = -1;
+
             return (clean, pick >= 0 ? listAtRequest[pick] : null);   // 번호 → 아이템으로 바꿔서 돌려줌
         }
         #endregion
