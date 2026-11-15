@@ -162,11 +162,41 @@ namespace MySecondWorld.Combat.EditorTools
             }
 
             _palette.Add(Title("부품 보관함", 14));
-            _palette.Add(Hint("카드를 오른쪽 슬롯으로 끌어다 놓으세요."));
 
-            AddPaletteSection<CastTimingSO>("축1 · 발동 타이밍", "언제 효과가 터지나?", CastColor);
-            AddPaletteSection<TargetSelectorSO>("축2 · 타겟팅", "누구를 맞히나?", TargetColor);
-            AddPaletteSection<SkillEffectSO>("축3 · 효과", "맞으면 무슨 일이 생기나?", EffectColor);
+            // 탭: 축1~3 부품 / VFX / SFX
+            var tabs = new VisualElement { style = { flexDirection = FlexDirection.Row, marginTop = 4 } };
+            tabs.Add(MakeTab("부품", PaletteTab.Parts));
+            tabs.Add(MakeTab("VFX", PaletteTab.Vfx));
+            tabs.Add(MakeTab("SFX", PaletteTab.Sfx));
+            _palette.Add(tabs);
+
+            switch (_paletteTab)
+            {
+                case PaletteTab.Vfx:
+                    _palette.Add(Hint("프리팹을 타임라인의 VFX 클립 '프리팹' 칸으로 끌어다 놓으세요."));
+                    _palette.Add(new AssetPaletteView(AssetPaletteView.Kind.Vfx));
+                    break;
+                case PaletteTab.Sfx:
+                    _palette.Add(Hint("▶로 미리 듣고, SFX 클립 '클립' 칸으로 끌어다 놓으세요."));
+                    _palette.Add(new AssetPaletteView(AssetPaletteView.Kind.Sfx));
+                    break;
+                default:
+                    _palette.Add(Hint("카드를 오른쪽 슬롯으로 끌어다 놓으세요."));
+                    AddPaletteSection<CastTimingSO>("축1 · 발동 타이밍", "언제 효과가 터지나?", CastColor);
+                    AddPaletteSection<TargetSelectorSO>("축2 · 타겟팅", "누구를 맞히나?", TargetColor);
+                    AddPaletteSection<SkillEffectSO>("축3 · 효과", "맞으면 무슨 일이 생기나?", EffectColor);
+                    break;
+            }
+        }
+
+        private enum PaletteTab { Parts, Vfx, Sfx }
+        private PaletteTab _paletteTab = PaletteTab.Parts;
+
+        private Button MakeTab(string text, PaletteTab tab)
+        {
+            var button = new Button(() => { _paletteTab = tab; RefreshPalette(false); }) { text = text };
+            button.SetEnabled(_paletteTab != tab); // 지금 보는 탭은 눌러도 소용없으니 비활성
+            return button;
         }
 
         // 스킬 카드: 설명 줄 대신 길이를 보여 준다.
@@ -228,7 +258,7 @@ namespace MySecondWorld.Combat.EditorTools
         }
 
         // 클릭 = 해당 SO 선택, 끌기 = 드래그 시작.
-        private static void MakeDraggable(VisualElement card, Object asset)
+        internal static void MakeDraggable(VisualElement card, Object asset)
         {
             bool pressed = false;
             Vector3 start = default;
@@ -292,6 +322,7 @@ namespace MySecondWorld.Combat.EditorTools
             AddSingleSlot(so, "_castTiming", "축1 · 발동 타이밍", "언제 효과가 터지나?", CastColor, typeof(CastTimingSO));
 
             _detail.Add(new SkillTimelineView(so, (SkillDefinition)entry, _selectedClip, SelectClip));
+            _detail.Add(new SkillPreviewView((SkillDefinition)entry));
         }
 
         private void AddFields(SerializedObject so, params string[] names)
@@ -309,6 +340,12 @@ namespace MySecondWorld.Combat.EditorTools
         private void ShowComboDetail(SerializedObject so, ComboDefinition combo)
         {
             AddFields(so, "_comboWindow", "_minStepInterval");
+
+            var previewNote = new HelpBox(
+                "콤보는 미리보기가 없습니다. 각 단계 스킬을 왼쪽 목록에서 따로 고르면 그 스킬의 미리보기를 볼 수 있습니다.",
+                HelpBoxMessageType.Info);
+            previewNote.style.marginTop = 6;
+            _detail.Add(previewNote);
 
             var steps = so.FindProperty("_steps");
             var slot = BuildSlot("단계 (위에서 아래 순서로 나감)", "스킬 카드를 끌어다 놓으면 맨 뒤에 추가됩니다.",

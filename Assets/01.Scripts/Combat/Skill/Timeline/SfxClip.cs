@@ -8,6 +8,8 @@ namespace MySecondWorld.Combat
         [SerializeField] private AudioClip _sound;
         [SerializeField, Range(0f, 1f)] private float _volume = 1f;
 
+        public AudioClip Sound => _sound; // 스킬 툴의 미리듣기용(읽기 전용)
+
         public override void Execute(SkillContext ctx)
         {
             if (_sound == null) return;

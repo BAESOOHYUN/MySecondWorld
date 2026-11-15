@@ -22,6 +22,11 @@ namespace MySecondWorld.Combat
 
         public override float Duration => _lifetime;
 
+        // 스킬 툴의 미리보기가 읽는 통로(읽기 전용).
+        public GameObject Prefab => _prefab;
+        public VfxAnchor Anchor => _anchor;
+        public Vector3 Offset => _offset;
+
         public override void Execute(SkillContext ctx)
         {
             if (_prefab == null) return;
