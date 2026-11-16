@@ -26,17 +26,17 @@ namespace MySecondWorld.Network
         private GUIStyle _style;
 
         [Server]
-        public void SetRoom(Guid roomId)
+        public void SetRoom(Guid roomId, string sceneName)
         {
             if (roomId == Guid.Empty)
             {
-                _roomLabel = "FIELD";
+                _roomLabel = $"FIELD  |  {sceneName}";
                 _roomColor = Color.white;
                 return;
             }
 
             string full = roomId.ToString("N");
-            _roomLabel = $"ROOM {full.Substring(0, 8)}";
+            _roomLabel = $"ROOM {full.Substring(0, 8)}  |  {sceneName}";
 
             // 같은 roomId면 어느 클라에서든 같은 색이 나온다(해시 기반).
             // 채도·명도를 고정해 어두운 던전 배경 위에서도 잘 읽히게 한다.

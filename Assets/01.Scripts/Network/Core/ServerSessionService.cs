@@ -284,7 +284,7 @@ namespace MySecondWorld.Network
                 session.roomId = roomId;
 
                 // 시연용 오버레이에 방을 알려준다(컴포넌트가 없으면 조용히 건너뜀)
-                conn.GetPlayerComponent<RoomIdDisplay>()?.SetRoom(roomId);
+                conn.GetPlayerComponent<RoomIdDisplay>()?.SetRoom(roomId, session.currentScene);
 
                 // matchId를 세팅한 '뒤에' 스폰을 알린다.
                 // 순서가 반대면 몬스터가 스폰되는 시점에 이 플레이어가 아직 옛 match라
@@ -297,7 +297,7 @@ namespace MySecondWorld.Network
                 // session.roomId는 Guid.Empty 그대로 — 던전 방이 아니니까
                 conn.GetPlayerComponent<NetworkMatch>().matchId 
                     = SceneMatchId.GetMatchIdFromScene(session.currentScene);
-                conn.GetPlayerComponent<RoomIdDisplay>()?.SetRoom(Guid.Empty);
+                conn.GetPlayerComponent<RoomIdDisplay>()?.SetRoom(Guid.Empty, session.currentScene);
             }
 
             // 이미 영입한 컴패니언을 자동 재소환한다. (현재는 1마리만, 소환 해제 상태면 건너뜀)

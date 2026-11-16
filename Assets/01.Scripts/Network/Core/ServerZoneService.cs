@@ -338,7 +338,7 @@ namespace MySecondWorld.Network
                 session.roomId = roomId;       // 서버 내부 추적용
 
                 // 시연용 오버레이에 방을 알려준다(컴포넌트가 없으면 조용히 건너뜀)
-                conn.GetPlayerComponent<RoomIdDisplay>()?.SetRoom(roomId);
+                conn.GetPlayerComponent<RoomIdDisplay>()?.SetRoom(roomId, sceneName);
 
                 // matchId를 세팅한 '뒤에' 스폰을 알린다 — 순서가 반대면
                 // 몬스터 스폰 시점에 플레이어가 아직 옛 match라 옵저버에서 빠진다.
@@ -355,7 +355,7 @@ namespace MySecondWorld.Network
                 }
                 // 필드→필드, 던전→필드 모두 항상 갱신
                 networkMatch.matchId = SceneMatchId.GetMatchIdFromScene(sceneName);
-                conn.GetPlayerComponent<RoomIdDisplay>()?.SetRoom(Guid.Empty);
+                conn.GetPlayerComponent<RoomIdDisplay>()?.SetRoom(Guid.Empty, sceneName);
 
                 // 필드 복귀 시 죽어있던 companion 부활
                 if (session.companionIdentity != null
