@@ -28,6 +28,8 @@ namespace MySecondWorld.Network
         [Server]
         public void SetRoom(Guid roomId, string sceneName)
         {
+            sceneName = System.IO.Path.GetFileNameWithoutExtension(sceneName);
+
             if (roomId == Guid.Empty)
             {
                 _roomLabel = $"FIELD  |  {sceneName}";
