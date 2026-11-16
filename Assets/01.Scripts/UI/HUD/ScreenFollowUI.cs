@@ -47,7 +47,7 @@ namespace MySecondWorld.UI
             canvas = canvas.rootCanvas;
             _canvasCamera = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
 
-            // SetActive로 숨기면 LateUpdate가 멈춰서 다시 켜질 수 없다. 알파로 숨긴다.
+            // SetActive로 숨기면 Refresh 구독이 해제되어(OnDisable) 스스로 다시 켜질 수 없다. 알파로 숨긴다.
             if (!TryGetComponent(out _canvasGroup))
                 _canvasGroup = gameObject.AddComponent<CanvasGroup>();
 
@@ -57,8 +57,10 @@ namespace MySecondWorld.UI
 
             SetVisible(false);
         }
+        private void OnEnable() => Canvas.willRenderCanvases += Refresh;
+        private void OnDisable() => Canvas.willRenderCanvases -= Refresh;
 
-        private void LateUpdate()
+        private void Refresh()
         {
             // 풀 반납은 파괴가 아니라 SetActive(false)라서 null 검사만으론 못 거른다.
             if (_target == null || !_target.gameObject.activeInHierarchy)
