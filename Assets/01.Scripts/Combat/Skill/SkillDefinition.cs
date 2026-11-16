@@ -37,7 +37,20 @@ namespace MySecondWorld.Combat
             return this;
         }
 
-        public async UniTask Execute(SkillContext ctx)
+        // 타임라인에 이펙트·사운드·애니 클립이 하나라도 있는가(평타가 옛 이펙트 맵과 중복되지 않게 확인용).
+        public bool HasCosmeticClips
+        {
+            get
+            {
+                foreach (var c in _timeline) if (c != null && c.IsCosmetic) return true;
+                return false;
+            }
+        }
+
+        public UniTask Execute(SkillContext ctx) => Play(ctx, ClipFilter.All);
+
+        // 서버는 GameplayOnly, 각 클라이언트는 CosmeticOnly로 같은 타임라인을 나눠 실행한다.
+        public async UniTask Play(SkillContext ctx, ClipFilter filter)
         {
             // ★ 축1이 반드시 먼저다.
             //   투사체처럼 "도착하는 순간에야 대상이 정해지는" 스킬은,
@@ -46,7 +59,7 @@ namespace MySecondWorld.Combat
             await _castTiming.WaitBeforeExecute(ctx);
 
             // 타격(축2+축3)은 타임라인의 효과 클립이 자기 시각에 실행한다.
-            await SkillTimelinePlayer.Play(_timeline, ctx);
+            await SkillTimelinePlayer.Play(_timeline, ctx, filter);
         }
     }
 }

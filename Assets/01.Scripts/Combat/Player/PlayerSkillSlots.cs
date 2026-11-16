@@ -25,6 +25,7 @@ namespace MySecondWorld.Combat.Player
 
         private NetworkWeaponEquip _weaponEquip;
         private Animator _animator;
+        private Mirror.NetworkAnimator _networkAnimator;
         private static int _monsterLayerMask = -1;
         private static int MonsterLayerMask => _monsterLayerMask != -1 ? _monsterLayerMask : (_monsterLayerMask = LayerMask.GetMask("Monster"));
 
@@ -67,6 +68,7 @@ namespace MySecondWorld.Combat.Player
         {
             _weaponEquip = GetComponent<NetworkWeaponEquip>();
             _animator = GetComponentInChildren<Animator>();
+            _networkAnimator = GetComponent<Mirror.NetworkAnimator>();
             _clientCursor = new SlotCursor[_slots.Length];
             _serverCursor = new SlotCursor[_slots.Length];
         }
@@ -136,7 +138,35 @@ namespace MySecondWorld.Combat.Player
             var ctx = new SkillContext(gameObject, candidates, power, null, _animator);
             ctx.SetEpicenter(aimPoint, _castRadius);
             Debug.Log($"[Slot] 발동: 슬롯 {slot} {skill.DisplayName}, power={power}, 후보 {candidates.Count}명");
-            skill.Execute(ctx).Forget();
+            skill.Play(ctx, ClipFilter.GameplayOnly).Forget(); // 타격 판정만 서버에서
+
+            // 이펙트·사운드·애니는 모든 클라이언트가 각자 재생한다(서버에서 만들면 화면에 안 보인다).
+            int stepIndex = -1;
+            if (entry is ComboDefinition combo)
+                for (int i = 0; i < combo.Steps.Count; i++)
+                    if (combo.Steps[i] == skill) { stepIndex = i; break; }
+            RpcPlayCosmetics(slot, stepIndex, aimPoint);
+        }
+
+        [ClientRpc]
+        private void RpcPlayCosmetics(int slot, int stepIndex, Vector3 aimPoint)
+        {
+            var entry = GetSkill(slot);
+            SkillDefinition skill = entry as SkillDefinition;
+            if (entry is ComboDefinition combo)
+                skill = (stepIndex >= 0 && stepIndex < combo.Steps.Count) ? combo.Steps[stepIndex] : null;
+            if (skill == null) return;
+
+            var ctx = new SkillContext(gameObject, System.Array.Empty<IDamageable>(), 0f, null, _animator);
+            ctx.SetEpicenter(aimPoint, _castRadius);
+            // 애니메이션은 시전자 본인 클라만 건다. 다른 사람 화면에는 NetworkAnimator가 퍼뜨린다.
+            ctx.PlayAnimation = trigger =>
+            {
+                if (!isOwned) return;
+                if (_networkAnimator != null) _networkAnimator.SetTrigger(trigger);
+                else if (_animator != null) _animator.SetTrigger(trigger);
+            };
+            skill.Play(ctx, ClipFilter.CosmeticOnly).Forget();
         }
     }
 }

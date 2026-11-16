@@ -27,6 +27,8 @@ namespace MySecondWorld.Combat
         public VfxAnchor Anchor => _anchor;
         public Vector3 Offset => _offset;
 
+        public override bool IsCosmetic => true;
+
         public override void Execute(SkillContext ctx)
         {
             if (_prefab == null) return;

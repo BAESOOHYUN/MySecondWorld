@@ -1,3 +1,4 @@
+using Cysharp.Threading.Tasks;
 using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -396,9 +397,20 @@ namespace MySecondWorld.Combat.Player
 
             // NetworkAnimator가 애니메이터 상태를 동기화해 이 메서드는 모든 피어에서 각자 호출된다
             // (isLocalPlayer 가드 이전 지점) — 그래서 별도 RPC 없이 전원 화면에 스윙 VFX가 뜬다.
-            var vfxPrefab = _vfxMap != null ? _vfxMap.GetVfxPrefab(_weaponEquip.GetMainHandCategory()) : null;
-            if (vfxPrefab != null)
-                CombatVfxSpawner.Spawn(vfxPrefab, _attackPoint.position, _attackPoint.rotation);
+            // 근접 스킬 SO에 연출 클립이 있으면 그걸 재생하고, 아직 없으면 예전 무기별 이펙트 맵을 쓴다(이중 재생 방지).
+            var meleeSkill = _attackAuthority != null ? _attackAuthority.MeleeSkill : null;
+            if (meleeSkill != null && meleeSkill.HasCosmeticClips)
+            {
+                var ctx = new SkillContext(gameObject, Array.Empty<IDamageable>(), 0f);
+                ctx.SetEpicenter(_attackPoint.position, _stats.AttackRadius);
+                meleeSkill.Play(ctx, ClipFilter.CosmeticOnly).Forget();
+            }
+            else
+            {
+                var vfxPrefab = _vfxMap != null ? _vfxMap.GetVfxPrefab(_weaponEquip.GetMainHandCategory()) : null;
+                if (vfxPrefab != null)
+                    CombatVfxSpawner.Spawn(vfxPrefab, _attackPoint.position, _attackPoint.rotation);
+            }
 
             if (!_weaponEquip.isLocalPlayer) return;
 

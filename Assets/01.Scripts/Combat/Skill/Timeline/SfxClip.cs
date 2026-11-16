@@ -10,6 +10,8 @@ namespace MySecondWorld.Combat
 
         public AudioClip Sound => _sound; // 스킬 툴의 미리듣기용(읽기 전용)
 
+        public override bool IsCosmetic => true;
+
         public override void Execute(SkillContext ctx)
         {
             if (_sound == null) return;

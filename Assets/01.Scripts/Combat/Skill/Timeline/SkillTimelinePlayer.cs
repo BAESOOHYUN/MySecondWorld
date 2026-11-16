@@ -5,13 +5,18 @@ using Cysharp.Threading.Tasks;
 
 namespace MySecondWorld.Combat
 {
+    // 어떤 클립을 실행할지: 전부 / 서버용(타격 판정 등) / 클라용(이펙트·사운드·애니)
+    public enum ClipFilter { All, GameplayOnly, CosmeticOnly }
+
     public static class SkillTimelinePlayer
     {
         // 클립 목록을 시간순으로 훑으면서, 각 클립의 시각이 될 때까지 기다렸다가 실행
-        public static async UniTask Play(IReadOnlyList<SkillClip> clips, SkillContext ctx)
+        public static async UniTask Play(IReadOnlyList<SkillClip> clips, SkillContext ctx, ClipFilter filter = ClipFilter.All)
         {
             var sorted = new List<SkillClip>(clips);
-            sorted.RemoveAll(c => c == null);
+            sorted.RemoveAll(c => c == null
+                || (filter == ClipFilter.GameplayOnly && c.IsCosmetic)
+                || (filter == ClipFilter.CosmeticOnly && !c.IsCosmetic));
             sorted.Sort((a,b) => a.StartTime.CompareTo(b.StartTime));
 
             // elapsed(경과시간)로 "지난 시간"을 직접 추적하는 이유는

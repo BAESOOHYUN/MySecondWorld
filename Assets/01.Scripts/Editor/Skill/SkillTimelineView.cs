@@ -255,6 +255,14 @@ namespace MySecondWorld.Combat.EditorTools
             start.Bind(_so);
             root.Add(start);
 
+            // 판정 기준 — 마법은 조준 지점, 근접은 이 순간 시전자 몸 앞
+            foreach (var (name, label) in new[] { ("_hitBasis", "판정 기준"), ("_hitForward", "앞 거리(m)"), ("_hitRadius", "판정 반경(m)") })
+            {
+                var f = new PropertyField(element.FindPropertyRelative(name), label);
+                f.Bind(_so);
+                root.Add(f);
+            }
+
             // 축2 · 타겟팅 (하나)
             var targetProp = element.FindPropertyRelative("_targetSelector");
             var targetSlot = SkillEditorWindow.BuildSlot("축2 · 타겟팅", "누구를 맞히나?",

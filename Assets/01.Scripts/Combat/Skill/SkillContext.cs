@@ -19,6 +19,9 @@ namespace MySecondWorld.Combat
         public ProjectileRequest? Shot { get; }
         public Animator CasterAnimator { get; }
 
+        // 서버에서 실행되는 스킬이 시전자 화면의 애니메이션을 재생하게 하는 통로(없으면 CasterAnimator 직접 사용).
+        public System.Action<string> PlayAnimation { get; set; }
+
         // 스플래시 판정의 폭심지/반경. 값이 없으면(null) 스플래시가 아니므로
         // SplashDamageEffectSO는 감쇠 없이 Power를 그대로 적용한다.
         public Vector3? Epicenter { get; private set; }
@@ -45,8 +48,8 @@ namespace MySecondWorld.Combat
 
         public void SetEpicenter(Vector3 point, float radius)
         {
-            Epicenter = point;
-            SplashRadius = radius;
+            Epicenter = point;      // 폭심지(중심 좌표)
+            SplashRadius = radius;  // 스플래시 반경
         }
     }
 }

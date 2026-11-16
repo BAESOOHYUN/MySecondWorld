@@ -41,13 +41,15 @@ namespace MySecondWorld.Combat
         }
 
         public static void ResolveAndExecute(GameObject caster, Vector3 attackPoint, float attackRadius,
-         LayerMask targetLayerMask, float power, ISkill skill, Transform preferred = null)
+         LayerMask targetLayerMask, float power, ISkill skill, Transform preferred = null, bool gameplayOnly = false)
         {
             var candidates = QueryCandidates(caster, attackPoint, attackRadius, targetLayerMask, preferred);
 
             var ctx = new SkillContext(caster, candidates, power);
             ctx.SetEpicenter(attackPoint, attackRadius);
-            skill.Execute(ctx).Forget();
+            // 플레이어 평타: 서버는 판정만, 이펙트·사운드는 각 클라가 타격 프레임(OnAttackHit)에서 직접 재생한다.
+            if (gameplayOnly && skill is SkillDefinition def) def.Play(ctx, ClipFilter.GameplayOnly).Forget();
+            else skill.Execute(ctx).Forget();
         }
     }
 }

@@ -15,6 +15,8 @@ namespace MySecondWorld.Combat.Player
         [Tooltip("근접 공격 스킬. 보통 Skill_MeleeAttack.")]
         [SerializeField] private SkillDefinition _meleeSkill;
 
+        public SkillDefinition MeleeSkill => _meleeSkill;
+
         [Tooltip("원거리 공격 스킬. 보통 Skill_RangedShoot (축1이 ProjectileCastSO).")]
         [SerializeField] private SkillDefinition _rangedSkill;
 
@@ -117,7 +119,7 @@ namespace MySecondWorld.Combat.Player
                 preferred = identity.transform;
 
             SphereAttackResolver.ResolveAndExecute(
-                this.gameObject, attackPointPosition, attackRadius, MonsterLayerMask, power, _meleeSkill, preferred);
+                this.gameObject, attackPointPosition, attackRadius, MonsterLayerMask, power, _meleeSkill, preferred, gameplayOnly: true);
         }
 
         // 공격 입력 시점에 호출된다. 발사보다 먼저 도착해야 원격 피어가 제 방향으로 쏜다.
