@@ -103,15 +103,36 @@ namespace MySecondWorld.Combat.Player
             uint netId = 0;
             Vector3 aim = transform.position + transform.forward * DefaultAimDistance;
 
-            if (TryGetComponent(out PlayerAttackController attack) && attack.SelectedTarget != null)
+            // 선택 대상이 없어도 가장 가까운 몬스터를 바라보고 조준한다(맞고 있는 상대를 향해 휘두르게).
+            if (TryGetComponent(out PlayerAttackController attack))
             {
-                var target = attack.SelectedTarget;
-                if (target.TryGetComponent(out NetworkIdentity identity)) netId = identity.netId;
-                // 서버 검증(MaxCastReach)에서 거절되지 않도록 여유를 두고 안쪽만 허용
-                if (Vector3.Distance(transform.position, target.position) <= MaxCastReach - 1f)
-                    aim = target.position;
+                var target = attack.FaceTargetForSkill();
+                if (target != null)
+                {
+                    var identity = target.GetComponentInParent<NetworkIdentity>();
+                    if (identity != null) netId = identity.netId;
+                    // 서버 검증(MaxCastReach)에서 거절되지 않도록 여유를 두고 안쪽만 허용
+                    if (Vector3.Distance(transform.position, target.position) <= MaxCastReach - 1f)
+                        aim = target.position;
+                }
             }
             TryCastSlot(slot, aim, netId);
+        }
+
+        // 공격 애니메이션 클립에 박힌 OnAttackHit 이벤트의 시각(초). 무기별로 클립이 바뀔 수 있어 매번 읽는다.
+        // 여러 클립에 있으면 가장 이른 값. 못 찾으면 0(예전처럼 즉시).
+        private float GetAttackHitDelay()
+        {
+            var controller = _animator != null ? _animator.runtimeAnimatorController : null;
+            if (controller == null) return 0f;
+
+            float best = float.MaxValue;
+            foreach (var clip in controller.animationClips)
+                foreach (var ev in clip.events)
+                    if (ev.functionName == "OnAttackHit" && ev.time > 0f && ev.time < best)
+                        best = ev.time;
+
+            return best == float.MaxValue ? 0f : best;
         }
 
         [Command]
@@ -137,6 +158,7 @@ namespace MySecondWorld.Combat.Player
             var candidates = SphereAttackResolver.QueryCandidates(gameObject, aimPoint, _castRadius, MonsterLayerMask, preferred);
             var ctx = new SkillContext(gameObject, candidates, power, null, _animator);
             ctx.SetEpicenter(aimPoint, _castRadius);
+            ctx.TimeOffset = GetAttackHitDelay();
             Debug.Log($"[Slot] 발동: 슬롯 {slot} {skill.DisplayName}, power={power}, 후보 {candidates.Count}명");
             skill.Play(ctx, ClipFilter.GameplayOnly).Forget(); // 타격 판정만 서버에서
 
@@ -159,10 +181,11 @@ namespace MySecondWorld.Combat.Player
 
             var ctx = new SkillContext(gameObject, System.Array.Empty<IDamageable>(), 0f, null, _animator);
             ctx.SetEpicenter(aimPoint, _castRadius);
+            ctx.TimeOffset = GetAttackHitDelay(); // 이펙트·사운드가 애니메이션의 타격 프레임에 맞춰 나오게
             // 애니메이션은 시전자 본인 클라만 건다. 다른 사람 화면에는 NetworkAnimator가 퍼뜨린다.
             ctx.PlayAnimation = trigger =>
             {
-                if (!isOwned) return;
+                if (!isOwned) return; // 시전자 본인만
                 if (_networkAnimator != null) _networkAnimator.SetTrigger(trigger);
                 else if (_animator != null) _animator.SetTrigger(trigger);
             };

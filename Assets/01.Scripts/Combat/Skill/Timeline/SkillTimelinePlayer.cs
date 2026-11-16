@@ -17,18 +17,21 @@ namespace MySecondWorld.Combat
             sorted.RemoveAll(c => c == null
                 || (filter == ClipFilter.GameplayOnly && c.IsCosmetic)
                 || (filter == ClipFilter.CosmeticOnly && !c.IsCosmetic));
-            sorted.Sort((a,b) => a.StartTime.CompareTo(b.StartTime));
+            // 애니메이션 클립은 제때(0초) 재생하고, 나머지는 타격 프레임까지의 시간(TimeOffset)만큼 늦춘다.
+            float Start(SkillClip c) => c is AnimClip ? c.StartTime : c.StartTime + ctx.TimeOffset;
+            sorted.Sort((a,b) => Start(a).CompareTo(Start(b)));
 
             // elapsed(경과시간)로 "지난 시간"을 직접 추적하는 이유는
             // 클립마다 처음부터 기다리면 시간이 누적돼서 밀리기 때문
             float elapsed = 0f;
             foreach (var clip in sorted)
             {
-                float wait = clip.StartTime - elapsed;
+                float start = Start(clip);
+                float wait = start - elapsed;
                 if (wait > 0f)
                 {
                     await UniTask.Delay(TimeSpan.FromSeconds(wait));
-                    elapsed = clip.StartTime;
+                    elapsed = start;
                 }
                 clip.Execute(ctx);
             }

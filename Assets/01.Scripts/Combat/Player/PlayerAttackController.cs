@@ -218,6 +218,17 @@ namespace MySecondWorld.Combat.Player
             EndAimChargeAndShoot();
         }
 
+        // 슬롯 스킬 시전 시 호출: 대상(선택 대상 우선, 없으면 가장 가까운 몬스터)을 즉시 바라보고,
+        // 타격 프레임(OnAttackHit)까지 Update가 계속 따라 돌게 한다. 대상이 없으면 null.
+        public Transform FaceTargetForSkill()
+        {
+            _meleeTarget = FindAttackTarget(_stats.MeleeFacingRange);
+            SetCurrentTarget(_meleeTarget);
+            if (_meleeTarget != null)
+                FaceTarget(_meleeTarget);
+            return _meleeTarget;
+        }
+
         // 탭 공격(PlayerTapAttack)과 공격 입력이 반드시 같은 경로를 지나게 하려고 분리했다.
         // 쿨다운·회차 토큰을 우회하는 두 번째 경로가 생기면 연사 방지가 무너진다.
         // 활에서는 "대상이 없어 충전할 게 없을 때"의 즉시발사 폴백으로도 쓰인다(게이지 0%와 동일).

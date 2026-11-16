@@ -22,6 +22,10 @@ namespace MySecondWorld.Combat
         // 서버에서 실행되는 스킬이 시전자 화면의 애니메이션을 재생하게 하는 통로(없으면 CasterAnimator 직접 사용).
         public System.Action<string> PlayAnimation { get; set; }
 
+        // 애니메이션 클립을 뺀 모든 클립(이펙트·사운드·타격)을 이만큼 늦춘다.
+        // = 공격 애니메이션의 타격 프레임(OnAttackHit)까지 걸리는 시간. 타임라인의 시간은 "타격 순간 기준 상대값"이 된다.
+        public float TimeOffset { get; set; }
+
         // 스플래시 판정의 폭심지/반경. 값이 없으면(null) 스플래시가 아니므로
         // SplashDamageEffectSO는 감쇠 없이 Power를 그대로 적용한다.
         public Vector3? Epicenter { get; private set; }
