@@ -67271,37 +67271,6 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 146900660}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &147082597
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 147082598}
-  m_Layer: 0
-  m_Name: SpawnPoint_02
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &147082598
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 147082597}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
-  m_LocalPosition: {x: 40.38, y: 26, z: 44.41}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 453876622}
-  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!1001 &147152568
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -204731,62 +204700,6 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 453726382}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &453876620
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 453876622}
-  - component: {fileID: 453876621}
-  m_Layer: 0
-  m_Name: MonsterWaveSpawner_01
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &453876621
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 453876620}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cd1510ffaddd1b542ad8c9eb8003c6d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MySecondWorld.Combat.Monster.MonsterWaveSpawner
-  _spawnMode: 1
-  _waveDefinition: {fileID: 11400000, guid: 3300b81502908c94ab4312fd6b56f607, type: 2}
-  _spawnPoints:
-  - {fileID: 1461570879}
-  - {fileID: 147082598}
-  _spawnRadius: 3
-  _autoStartOnServer: 1
-  _individualRespawnDelay: 5
-  _loopDungeonWaves: 1
-  _waveDelay: 3
---- !u!4 &453876622
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 453876620}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1461570879}
-  - {fileID: 147082598}
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &453952706
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -644057,37 +643970,6 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 1461311531}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &1461570878
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1461570879}
-  m_Layer: 0
-  m_Name: SpawnPoint_01
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1461570879
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1461570878}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
-  m_LocalPosition: {x: 15.57, y: 26, z: 24.31}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 453876622}
-  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!1001 &1461878925
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -941817,5 +941699,4 @@ SceneRoots:
   - {fileID: 1001816890409495545}
   - {fileID: 1821594886}
   - {fileID: 1921059537}
-  - {fileID: 453876622}
   - {fileID: 1335720705}
