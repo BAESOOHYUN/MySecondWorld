@@ -17,6 +17,7 @@ namespace MySecondWorld.AI.Voice
         private CancellationTokenSource _playCts; // stopSub가 재생 루프 자체를 취소할 수 있게
         private bool _isPlaying = false;
         public bool IsPlaying => _isPlaying;
+        public static float DebugT0; // 진단용(응답 지연 측정): NPCBrain이 메시지 처리 시작 시각을 기록
         public event Action OnSpeakStarted;
         public event Action OnSpeakFinished;
         private ITTSService _tts;
@@ -128,6 +129,7 @@ namespace MySecondWorld.AI.Voice
                     // 예약만 함. Play() 별도 호출 불필요(Play()시 오히려 예약 취소됨)
                     _sources[i % 2].PlayScheduled(startTime);
                     Debug.Log($"[VoicePlayer] PlayScheduled source={i % 2}, startTime={startTime}");
+                    if (i == 0) Debug.Log($"[Latency] 메시지 전송→첫 소리 예약 {Time.realtimeSinceStartup - DebugT0:F2}s"); // 진단용
                     
                     // 재생 예약 직후 버블 표시 (실제 재생과 ~100ms 차이, 체감 불가)
                     _sentenceStartedPub.Publish(new NPCSentenceStartedEvent(_interactable?.SessionKey, text));

@@ -175,6 +175,7 @@ namespace MySecondWorld.AI
             {
                 // 새 질문을 하면 이전 카드를 치운다
                 _recommendUI?.HideRecommend();
+                MySecondWorld.AI.Voice.NPCVoicePlayer.DebugT0 = Time.realtimeSinceStartup; // 진단용(응답 지연 측정)
                 _thinkingPub.Publish(new NPCThinkingStartedEvent(key)); // UI에서 ...(생각신호) 말풍선을 띄우는 용도
         
                 var (response, recommended) = await GenerateResponseAsync(evt.Text, key, evt.CT);
@@ -390,6 +391,7 @@ namespace MySecondWorld.AI
 
             var listAtRequest = new List<EquipmentItem>(_recommendable);   // 이 요청의 프롬프트가 쓴 목록을 고정해 둔다
             string response = await _llmService.ChatAsync(userInput, BuildLlmHistory(), onToken, ct);
+            Debug.Log($"[Latency] LLM 응답 수신까지 {Time.realtimeSinceStartup - t0:F2}s"); // 진단용(t0는 GenerateResponseAsync 시작 시각)
 
             // 마침표 없이 끝나는 경우 대비
             // ex)"안녕하세요. 저는 의사입니다. 무엇을 도와드릴까요"
