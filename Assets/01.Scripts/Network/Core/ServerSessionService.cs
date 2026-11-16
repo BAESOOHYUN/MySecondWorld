@@ -237,6 +237,12 @@ namespace MySecondWorld.Network
                     appearance.ServerRestoreAppearance(saved.Value.appearance);
             }
 
+            // AddPlayerForConnection이 불리면 스폰 메시지가 만들어져 나간다.
+            // 그 전에 SyncVar를 채워 두면 처음 보는 클라이언트도 이름을 한 번에 받을수 있다.
+            // session.playerId는 로그인 때 conn.authenticationData에서 가져온 아이디다.
+            if (player.TryGetComponent(out NameTag nameTag))
+                nameTag.ServerSetName(session.playerId);
+
             NetworkServer.AddPlayerForConnection(conn, player);
 
             // 신규 플레이어에게만 시작 골드 지급 (재접속 시 중복 지급 방지)
