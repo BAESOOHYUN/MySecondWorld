@@ -217,12 +217,16 @@ namespace MySecondWorld.Customization
             if (item == null) return null;
             foreach (var entry in Entries)
             {
-                if (entry.MaleRequiredItems != null && entry.MaleRequiredItems.Contains(item)) return Gender.Male;
-                if (entry.FemaleRequiredItems != null && entry.FemaleRequiredItems.Contains(item)) return Gender.Female;
+                // Exists를 쓰려면 리스트 타입이 List<EquipmentItem>이어야 함
+                if (entry.MaleRequiredItems != null && entry.MaleRequiredItems.Exists(x => SameItem(x, item))) return Gender.Male;
+                if (entry.FemaleRequiredItems != null && entry.FemaleRequiredItems.Exists(x => SameItem(x, item))) return Gender.Female;
             }
             return null;
         }
 
+        // 참조가 달라도(빌드에서 SO가 복제됨) DbKey가 같으면 같은 아이템으로 본다
+        private static bool SameItem(EquipmentItem a, EquipmentItem b)
+            => a != null && b != null && (a == b || a.GetDbKey() == b.GetDbKey());
 
 #if UNITY_EDITOR
         [ContextMenu("Auto-Populate Thumbnail Names")]

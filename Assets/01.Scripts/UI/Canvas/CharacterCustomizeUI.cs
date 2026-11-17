@@ -82,7 +82,7 @@ namespace MySecondWorld.UI
         // ── 탭 상태 ──
         private bool _isSwitchingTab;
         private Gender _currentGender = Gender.Male;
-        private PartType _currentTab = PartType.Hair;
+        private PartType _currentTab = PartType.Head;
 
         // ── 파츠 인덱스 ──
         private readonly Dictionary<PartType, int> _currentIndices = new();
@@ -519,6 +519,13 @@ namespace MySecondWorld.UI
             // 같은 파츠 처리중이면 무시
             if (_pendingParts.Contains(part)) return;
 
+            // 도감에서 이미 입어 본 걸 한 번 더 누르면 저장된 파츠로 되돌린다 (두 번째 클릭 = 해제)
+            var saved = _appearanceCache.Get();
+            if (saved.Gender == _currentGender)
+            {
+                if (saved[part] == index) return;   // 이미 저장된 파츠 → 할 일 없음
+                index = saved[part];
+            }
             _currentIndices[part] = index;
             UpdateThumbnailSelection();
             ApplyPartChange(part, index).Forget();
