@@ -321,10 +321,17 @@ namespace MySecondWorld.AI
             DialogueCameraController.Instance?.ReleaseFocus();
 
             OnConversationStateChanged(false);
+
+            // 범위 안에 플레이어가 남아있다면 하이라이트 UI 복구
+            if (_playerInProximity)
+            {
+                _highlightUI?.SetActive(true);
+            }
         }
 
         private void OnEnterMenu()
         {
+            _highlightUI?.SetActive(false);
             // 새 NPC가 Menu에 진입하는 순간, 이전에 활성화돼있던 다른 NPC를 강제로 정리
             if (_activeInteraction != null && _activeInteraction != this)
                 _activeInteraction.ForceReset();
@@ -352,6 +359,7 @@ namespace MySecondWorld.AI
         //                    빈 응답은 responseSub, TTS 재생이 끝나면 speakFinishedSub, TTS 장애면 2초 안전망.
         private void OnEnterTalking(StateMachine<NpcState, NpcTrigger>.Transition t)
         {
+            _highlightUI?.SetActive(false);
             if (t.Trigger == NpcTrigger.SelectTalk)
             {
                 _stopTTSPub.Publish(new NPCStopTTSEvent(SessionKey));   // 이전 대화의 남은 음성을 끊고 새 대화를 시작한다
@@ -417,6 +425,7 @@ namespace MySecondWorld.AI
         //   OnEnterIdle이 InRange의 OnEntry로도 걸려있어 cts 정리 + _shopUI.Close()까지 같이 처리된다.
         private void OnEnterShopping()
         {
+            _highlightUI?.SetActive(false);
             _cts?.Cancel();
             _cts?.Dispose();
             _cts = new CancellationTokenSource();

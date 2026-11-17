@@ -794867,7 +794867,7 @@ PrefabInstance:
     - target: {fileID: 6205510044624858007, guid: 301df057ffda16644a17fdacb19192bc,
         type: 3}
       propertyPath: m_text
-      value: "\uBAA8\uC6E8"
+      value: "\uB300\uD654\uD558\uAE30"
       objectReference: {fileID: 0}
     - target: {fileID: 6259059971245221573, guid: 301df057ffda16644a17fdacb19192bc,
         type: 3}
@@ -941420,7 +941420,7 @@ PrefabInstance:
     - target: {fileID: 6205510044624858007, guid: 301df057ffda16644a17fdacb19192bc,
         type: 3}
       propertyPath: m_text
-      value: "\uC544\uB9AC"
+      value: "\uB300\uD654\uD558\uAE30"
       objectReference: {fileID: 0}
     - target: {fileID: 6259059971245221573, guid: 301df057ffda16644a17fdacb19192bc,
         type: 3}
