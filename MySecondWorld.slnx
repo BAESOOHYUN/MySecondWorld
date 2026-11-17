@@ -7,9 +7,8 @@
   <Project Path="ZString.csproj" />
   <Project Path="Unity.ShaderGraph.Editor.csproj" />
   <Project Path="Unity.RenderPipelines.Core.Runtime.csproj" />
-  <Project Path="MySecondWorld.UI.csproj" />
-  <Project Path="Mirror.csproj" />
   <Project Path="Unity.ScriptableBuildPipeline.Editor.csproj" />
+  <Project Path="Mirror.csproj" />
   <Project Path="Unity.Mathematics.csproj" />
   <Project Path="Unity.Timeline.Editor.csproj" />
   <Project Path="Unity.Cinemachine.Editor.csproj" />
@@ -74,6 +73,7 @@
   <Project Path="MySecondWorld.Inventory.Items.csproj" />
   <Project Path="MySecondWorld.Foundation.csproj" />
   <Project Path="Unity.SysrootPackage.Editor.csproj" />
+  <Project Path="MySecondWorld.UI.csproj" />
   <Project Path="UnityEditor.UI.csproj" />
   <Project Path="Unity.RenderPipelines.Universal.2D.Editor.Overrides.csproj" />
   <Project Path="undream.llmunity.Runtime.csproj" />
@@ -135,15 +135,16 @@
   <Project Path="MySecondWorld.Interaction.csproj" />
   <Project Path="Unity.Services.Core.Device.csproj" />
   <Project Path="Unity.Services.Core.Analytics.csproj" />
+  <Project Path="MySecondWorld.Combat.Editor.csproj" />
   <Project Path="com.IvanMurzak.Unity.MCP.TestFiles.csproj" />
   <Project Path="Unity.DedicatedServer.MultiplayerRoles.csproj" />
   <Project Path="CFXREditor.csproj" />
   <Project Path="Unity.DedicatedServer.MultiplayerRoles.Editor.csproj" />
   <Project Path="MessagePipe.Editor.csproj" />
+  <Project Path="MySecondWorld.Utils.csproj" />
   <Project Path="endel.nativewebsocket.csproj" />
   <Project Path="Unity.CollabProxy.Editor.csproj" />
   <Project Path="Unity.DedicatedServer.CliArguments.Editor.csproj" />
-  <Project Path="MySecondWorld.Utils.csproj" />
   <Project Path="Unity.RenderPipeline.Universal.ShaderLibrary.csproj" />
   <Project Path="FlexibleColorPicker.csproj" />
   <Project Path="MySecondWorld.Bundle.csproj" />
