@@ -19,9 +19,9 @@ namespace MySecondWorld.AI
         // Configure()는 컨테이너를 만드는 단계라 [Inject]를 쓸 수 없어서 Resolve를 직접 쓴다.
         protected override void Configure(IContainerBuilder builder)
         {
+            builder.RegisterInstance(_commonRules);
 #if !UNITY_SERVER || UNITY_EDITOR
             var options = builder.RegisterMessagePipe();
-            builder.RegisterInstance(_commonRules);
             builder.RegisterMessageBroker<string, PlayerMessageSentEvent>(options);
             builder.RegisterMessageBroker<NPCResponseReceivedEvent>(options);
             builder.RegisterMessageBroker<NPCThinkingStartedEvent>(options);
