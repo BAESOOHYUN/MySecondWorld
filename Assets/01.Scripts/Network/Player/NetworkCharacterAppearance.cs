@@ -45,7 +45,7 @@ namespace MySecondWorld.Network
         private readonly HashSet<int> _unlockedItemKeys = new();
         // 로그인 때 첫 전체 전송을 한 뒤에만 true. 복원 중 DoAdd마다 전송하는 것을 막는다
         private bool _unlockSyncEnabled;
-
+        private bool _screenRevealed = false;
         private Inventory _inventory;
 
         #endregion
@@ -180,17 +180,62 @@ namespace MySecondWorld.Network
             base.OnStartLocalPlayer();
 
             _localInventoryProvider.SetLocal(_inventory);
+            SetupInitialAppearanceAsync().Forget();
+        }
+
+        #endregion
+
+        #region Screen
+
+
+        // 외형 완료 대기 및 타임아웃 안전장치 비동기 메서드 추가
+        private async UniTaskVoid SetupInitialAppearanceAsync()
+        {
+            var ct = this.GetCancellationTokenOnDestroy();
+            UniTask.Delay(System.TimeSpan.FromSeconds(5f), cancellationToken: ct)
+                .ContinueWith(() => RevealScreenOnce())
+                .Forget();
+
+            try
+            {
+                if (_hasServerAppearance)
+                {
+                    _appearanceCache.Set(_serverAppearance);
+                    await _customizer.ApplyAppearance(_serverAppearance);
+                    LocalAppearanceReady?.Invoke();
+                }
+                else
+                {
+                    _appearanceCache.Clear();
+                    await _customizer.ApplyAppearance(_appearanceCache.Get());
+                    LocalAppearanceReady?.Invoke();
+                    _initialCustomizePublisher.Publish(new RequestInitialCustomizeEvent());
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[NetAppearance] 초기 외형 적용 중 예외 발생: {ex}");
+            }
+            finally
+            {
+                RevealScreenOnce();
+            }
+        }
+
+        // 아바타 로딩 과정에서는 다음처럼 여러 상황이 겹쳐서 발생할 수 있다:
+        //   - 정상적으로 외형 로딩이 완료된 순간(ApplyAppearance 완료)
+        //   - 서버 동기화 훅이 실행된 순간(OnAppearanceChanged)
+        //   - 만약 네트워크 랙이나 에셋 로딩 지연으로 5초 타임아웃 타이머가 울린 순간
+        //
+        // 이 세 가지 중 "가장 먼저 완료된 타이밍"에 딱 한 번만 화면을 밝히고,
+        // 나머지 뒤늦게 도착한 신호들이 화면을 다시 깜빡거리게(중복 페이드인) 하지 않도록
+        // 안전하게 1회만 실행시키는 목적
+        private void RevealScreenOnce()
+        {
+            if (_screenRevealed) return;
+            _screenRevealed = true;
             if (NetworkManager.singleton is GameNetworkManager gnm)
                 gnm.RevealScreen();
-
-            if (_hasServerAppearance)
-                _appearanceCache.Set(_serverAppearance);                // 서버 값을 이 클라의 기억에 넣는다
-            else                                               // 최초 접속(미커스터마이징) 유저
-            {
-                _appearanceCache.Clear();                          // 이전 계정의 기억이 남아 있으면 지운다
-                ApplyAndNotify(_appearanceCache.Get()).Forget();  // 기본 외형 (로컬에만 표시, 서버엔 저장 안 함)
-                _initialCustomizePublisher.Publish(new RequestInitialCustomizeEvent());
-            }
         }
 
         #endregion
@@ -473,10 +518,14 @@ namespace MySecondWorld.Network
         }
 
         // 외형을 모델에 입히고, 다 입혀지면 얼굴 사진(HUD 썸네일) 촬영 신호를 보낸다
-        private async Cysharp.Threading.Tasks.UniTaskVoid ApplyAndNotify(CharacterAppearanceData next)
+        private async UniTaskVoid ApplyAndNotify(CharacterAppearanceData next)
         {
-            await _customizer.ApplyAppearance(next); // 1.머리, 눈, 투구 등 모든 파츠가 다 로딩 될 때까지 기다림
-            if (isLocalPlayer) LocalAppearanceReady?.Invoke(); // 2. 완벽하게 다 입혀진 순간 사진(썸네일) 촬영
+            await _customizer.ApplyAppearance(next); // 모든 파츠 로딩 대기
+            if (isLocalPlayer)
+            {
+                LocalAppearanceReady?.Invoke(); // 완벽하게 다 입혀진 순간 사진(썸네일) 촬영
+                RevealScreenOnce();             // 외형 완성 시 화면 밝힘
+            }
         }
 
         // 외부에서 얼굴 캡처 신호를 안전하게 쏠 수 있는 정적 함수
