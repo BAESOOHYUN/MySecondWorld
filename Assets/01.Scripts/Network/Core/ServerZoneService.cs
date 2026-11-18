@@ -106,10 +106,16 @@ namespace MySecondWorld.Network
                         try
                         {
                             Vector3 playerPos = conn.identity.transform.position;
+                            string currentWorld = WorldOf(session.Value.currentScene) ?? WorldOf(_manager.defaultSubScene);
+
                             // 던전 씬이 로드되면서 각 PortalTrigger가 스스로 켜지고 꺼질 때마다 알아서 리스트를 갱신하는 방식
                             // Active를 읽을 때는 이미 최신 상태가 보장
                             foreach (var trigger in ZonePortalTrigger.Active)
                             {
+                                // 플레이어가 현재 소속된 월드의 트리거만 검사 (반대편 씬의 트리거가 방어벽 플래그를 오작동시키는 버그 방지)
+                                if (trigger.SourceZone == null || trigger.SourceZone.WorldId != currentWorld)
+                                    continue;
+
                                 bool inside = trigger.Bounds.Contains(playerPos);
 
                                 if (trigger.Portal == session.Value.lastUsedPortal)
