@@ -12,6 +12,7 @@ namespace MySecondWorld.UI
         public void OnGrantGoldClicked() => WithLocalPlayer(c => c.RequestStartingGold());
         public void OnGrantWeaponTestKitClicked() => WithLocalPlayer(c => c.RequestWeaponTestKit());
         public void OnGrantArmorTestKitClicked() => WithLocalPlayer(c => c.RequestArmorTestKit());
+        public void OnSpawnDummyClicked() => WithLocalPlayer(c => c.RequestSpawnDummy());
 
         // 동작 실패 원인
         // 클라이언트 버튼 클릭 ➜ CmdGrantArmorTestKit 패킷을 AWS EC2 서버로 전송.

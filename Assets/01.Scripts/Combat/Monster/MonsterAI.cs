@@ -123,6 +123,12 @@ namespace MySecondWorld.Combat.Monster
                 }
             }
         }
+        public static bool GlobalAIFrozen { get; set; } = false; // 디버그용.
+
+        static MonsterAI()
+        {
+            MonsterDummySpawner.Init(); // 샌드백 스포너 명시적 초기화 및 이벤트 연결
+        }
 
         #endregion
 
@@ -184,7 +190,15 @@ namespace MySecondWorld.Combat.Monster
             OnTick();
             UpdateMoveAnimation();
 
-            if (IsUpdatePaused) return;
+            if (IsUpdatePaused)
+            {
+                if (_agent != null && _agent.isOnNavMesh && !_agent.isStopped)
+                {
+                    _agent.isStopped = true;
+                    SetMovingAnimation(false);
+                }
+                return;
+            }
 
             switch (_stateMachine.State)
             {
@@ -970,7 +984,7 @@ namespace MySecondWorld.Combat.Monster
 
         protected virtual int GetDeathTriggerHash() => DeathTrigger;
         protected virtual void OnTick() { }
-        protected virtual bool IsUpdatePaused => _actionLocked || _movementLocked;
+        protected virtual bool IsUpdatePaused => GlobalAIFrozen || _actionLocked || _movementLocked;
         protected virtual void OnIdleUpdate() { }
         protected virtual void OnEnterIdle() { }
         protected virtual void OnPlayerFirstDetected() { }

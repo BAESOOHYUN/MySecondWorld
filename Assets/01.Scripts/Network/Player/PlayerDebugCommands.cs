@@ -1,5 +1,8 @@
+using System;
 using Mirror;
+using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 namespace MySecondWorld.Network.Player
 {
@@ -10,12 +13,16 @@ namespace MySecondWorld.Network.Player
     {
         private static GameNetworkManager Manager => (GameNetworkManager)NetworkManager.singleton;
 
+        // 다른 어셈블리(Combat 등)에서 구독할 수 있도록 이벤트 노출 (순환참조 방지)
+        public static event Action<Vector3, Quaternion, Guid, Scene> OnSpawnDummyRequested;
+
         #region 버튼 진입점 (DebugButtonRelay가 호출)
 
         public void RequestStartingGold() { if (isOwned) CmdGrantStartingGold(); }
 
         public void RequestWeaponTestKit() { if (isOwned) CmdGrantWeaponTestKit(); }
         public void RequestArmorTestKit() { if (isOwned) CmdGrantArmorTestKit(); }
+        public void RequestSpawnDummy() { if (isOwned) CmdSpawnDummy(); }
 
         #endregion
 
@@ -28,6 +35,7 @@ namespace MySecondWorld.Network.Player
             if (keyboard == null) return;
 
             if (keyboard.f7Key.wasPressedThisFrame) RequestStartingGold();
+            if (keyboard.f8Key.wasPressedThisFrame) RequestSpawnDummy();
             if (keyboard.f11Key.wasPressedThisFrame) RequestArmorTestKit();
             if (keyboard.f12Key.wasPressedThisFrame) RequestWeaponTestKit();
         }
@@ -52,6 +60,23 @@ namespace MySecondWorld.Network.Player
         private void CmdGrantArmorTestKit()
         {
             Manager.SessionService.GrantArmorTestKit(connectionToClient);
+        }
+
+        [Command]
+        private void CmdSpawnDummy()
+        {
+            // 플레이어 앞 2.0미터 지점 및 플레이어를 마주보는 각도 계산
+            Vector3 spawnPos = transform.position + transform.forward * 2.0f;
+            Quaternion spawnRot = Quaternion.LookRotation(-transform.forward, Vector3.up);
+
+            // 네비메시 유효 위치 샘플링
+            if (UnityEngine.AI.NavMesh.SamplePosition(spawnPos, out var hit, 3.0f, UnityEngine.AI.NavMesh.AllAreas))
+            {
+                spawnPos = hit.position;
+            }
+
+            Guid matchId = TryGetComponent(out NetworkMatch m) ? m.matchId : Guid.Empty;
+            OnSpawnDummyRequested?.Invoke(spawnPos, spawnRot, matchId, gameObject.scene);
         }
         #endregion
     }
