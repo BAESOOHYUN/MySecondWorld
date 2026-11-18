@@ -217,8 +217,11 @@ namespace MySecondWorld.Network
             var list = vendor.ShopCatalog;
             if (list == null) return false;
             foreach (var e in list)
-                if (e == item)
-                    return true;
+            {
+                if (e == null) continue;
+                if (e == item) return true;
+                if (e.GetDbKey() == item.GetDbKey()) return true; // 빌드에서 SO가 복제돼도 같은 아이템으로 본다
+            }
             return false;
         }
 
