@@ -71,18 +71,28 @@ namespace MySecondWorld.Network.Player
             {
                 const float timeout = 10f;
                 float elapsed = 0f;
-                string targetScene = ResolveSpawnScene();
-                // 타겟 씬(FieldScene 등)이 메모리에 로드될 때까지 대기
-                while (!SceneManager.GetSceneByPath(targetScene).isLoaded && elapsed < timeout)
+                string targetScene = ResolveSpawnScene(); // "Assets/00.Scenes/Dungeon/02.Center_Hall.unity"
+                string sceneNameOnly = System.IO.Path.GetFileNameWithoutExtension(targetScene); // "02.Center_Hall"
+                Debug.Log($"[SceneCheck-Start] 🔍 검사 시작: targetScene(Path)='{targetScene}', sceneNameOnly='{sceneNameOnly}'");
+                // 1. 타겟 씬(FieldScene 등)이 메모리에 로드될 때까지 대기
+                while (!IsSceneLoaded(targetScene, sceneNameOnly) && elapsed < timeout)
                 {
                     await UniTask.Delay(100, cancellationToken: ct);
                     elapsed += 0.1f;
                 }
+                // ★ 여기에 로그 딱 한 줄: 몇 초 걸려서 통과했는지 확인!
+                Debug.Log($"[SceneCheck-Done] ⏱️ 대기 완료! 경과시간: {elapsed:F2}초 (로드된 씬 총 {SceneManager.sceneCount}개)");
 
-                // 플레이어 자신이 서 있는 씬(Entrance_Stairs)으로만 1회 안전하게 쏙 들어감
+
+                // 2. 플레이어 자신이 서 있는 씬(Entrance_Stairs)으로 안전하게 이동
                 if (!NetworkServer.active)
                 {
-                    var subScene = SceneManager.GetSceneByPath(targetScene);
+                    // 이름으로 먼저 찾고, 없으면 경로 찾기.
+                    var subScene = SceneManager.GetSceneByName(sceneNameOnly);
+                    if (!subScene.IsValid() || !subScene.isLoaded)
+                        subScene = SceneManager.GetSceneByPath(targetScene);
+                    Debug.Log($"[SceneCheck-Move] 서브씬 이동 시도: subScene='{subScene.name}', Valid={subScene.IsValid()}, Loaded={subScene.isLoaded}");
+                    // 유효하고 로드되었으며, 아직 그 씬에 없을 때만 이동
                     if (subScene.IsValid() && subScene.isLoaded && gameObject.scene != subScene)
                     {
                         if (transform.parent != null)
@@ -101,6 +111,7 @@ namespace MySecondWorld.Network.Player
             _movementController.enabled = true;
             _cameraController.enabled = true;
             _cameraController.ActiveCinemachine(true);
+            _cameraController.SnapToTarget(); // 즉시 플레이어 뒤에 착 달라붙도록 스냅
             _movementController.GetCameraYAngle = () => _cameraController.CameraYAngle;// 카메라 각도 함수 주입
         }
 
@@ -159,12 +170,28 @@ namespace MySecondWorld.Network.Player
             if (_movementController != null)
                 _movementController.ResetVerticalVelocity();
 
+            // 텔레포트/스폰 이동 시 카메라 즉시 스냅
+            if (_cameraController != null)
+                _cameraController.SnapToTarget();
+
             // ApplyForcedMove는 소유 클라 한 곳에서만 실행되지 않는다.
             // isOwned는 "이 객체의 소유자가 나(이 프로세스)인가"를 묻는다.
             // 서버 사본이나 남의 객체에서는 false라서 거기서는 신호가 안 나간다.
             // 이 이벤트는 내 화면의 존 UI를 닫으려는 것이므로 isOwned ==true일때만 발생시킨다.
             if (isOwned) 
                 LocalTeleported?.Invoke();
+        }
+
+        // 씬 로드 안전망 헬퍼 함수
+        // GetSceneByPath는 이름을 경로 함수에 넣어서 항상 false가 뜸
+        // GetSceneByName 씬 이름으로 정상 검사 -> 씬이 이미 로드되어 있으므로 대기 없이 즉시 통과
+        private bool IsSceneLoaded(string fullPath, string nameOnly)
+        {
+            var sByName = SceneManager.GetSceneByName(nameOnly);
+            if (sByName.IsValid() && sByName.isLoaded) return true;
+            var sByPath = SceneManager.GetSceneByPath(fullPath);
+            if (sByPath.IsValid() && sByPath.isLoaded) return true;
+            return false;
         }
     }
 }

@@ -73,6 +73,35 @@ namespace MySecondWorld.CameraSystem
         public void ActiveCinemachine(bool isActitve)
         {
             _cinemachineCamera.enabled = isActitve;
+            if (isActitve)
+            {
+                SnapToTarget(); // 켜지는 순간 블렌딩 끊고 즉시 스냅
+            }
+        }
+
+        /// <summary>
+        /// 씬 진입, 스폰, 순간이동 시 카메라 블렌딩(2초)과 감쇠(Damping)를 끊고
+        /// 플레이어 등 뒤 원래 시점으로 즉시 스냅(Cut)시킵니다.
+        /// </summary>
+        public void SnapToTarget()
+        {
+            if (_cinemachineCamera != null)
+            {
+                // CinemachineVirtualCameraBase.cs 에 있는 ForceCameraPosition 함수 내부를 보면
+                // PreviousStateIsValid를 true로 세팅해주고 있음
+                // ForceCameraPosition로 다음 방으로 위치 옮기고
+                // 바로 다음 줄에 PreviousStateIsValid = false 해주면 됨
+                // false로 두면 이전 프레임 위치값이 유효하지 않은걸로 처리해서 카메라 위치를 옮겨도 blend 하지 않음
+                _cinemachineCamera.PreviousStateIsValid = false;
+                _cinemachineCamera.CancelDamping();
+            }
+            // CinemachineBrain이 2초 동안 날아오고 있다면 즉시 완료(Cut)
+            // 2초 : 컴포넌트의 인스펙터(씬 데이터)에서 설정됨
+            var brain = UnityEngine.Object.FindFirstObjectByType<Unity.Cinemachine.CinemachineBrain>();
+            if (brain != null && brain.IsBlending)
+            {
+                brain.ActiveBlend = null;
+            }
         }
 
         // Rotation
