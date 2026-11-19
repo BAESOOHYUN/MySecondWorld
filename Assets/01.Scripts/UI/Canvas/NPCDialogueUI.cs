@@ -89,6 +89,8 @@ namespace MySecondWorld.UI
         private ISTTService _stt;
 
         private readonly Subject<Unit> _closeSubject = new();
+        private CompositeDisposable _scopeSubs;   // 접속(스코프)마다 새로 거는 MessagePipe 구독 — 다음 Construct 때 통째로 해제
+        private bool _uiWired;                    // 버튼·입력창·STT 연결은 객체당 한 번만
 
         // R3 구독
         public Observable<string> OnSubmit => _submitButton.OnClickAsObservable()
@@ -112,8 +114,14 @@ namespace MySecondWorld.UI
             )
         {
             Debug.Log($"[NPCDialogueUI] Construct 호출(임시 진단) 누적 {++_dbgConstructCount}회, instance={GetInstanceID()}");
+
+            // 재접속 때마다 새 NPCLifetimeScope가 같은 UI에 다시 주입한다 → 이전 접속의 구독을 먼저 끊는다.
+            // (destroyCancellationToken에 묶으면 UI가 파괴되지 않아 접속 횟수만큼 구독이 쌓였다: 말풍선 N개 버그)
+            _scopeSubs?.Dispose();
+            _scopeSubs = new CompositeDisposable();
+
             // 스트리밍 중 문장 단위로 텍스트 누적 — TTS와 동시에 표시
-            sentenceStartedSub
+            _scopeSubs.Add(sentenceStartedSub
                 .Subscribe(evt =>
                 {
                     if (evt.NpcGuid != _currentNpcGuid) return;
@@ -121,24 +129,22 @@ namespace MySecondWorld.UI
                     Debug.Log($"[NPCDialogueUI] TTS 문장 시작(임시 진단) t={Time.realtimeSinceStartup:F2}: {evt.Text}");
                     if (!_fallbackShown)            // 안전망이 이미 띄웠다면 건너뜀 (음성은 그대로 재생된다)
                         AppendSentence(evt.Text);   // 음성 타이밍에 맞춰 문장 추가
-                })
-                .AddTo(destroyCancellationToken);
+                }));
 
             // NPCSpeakFinishedEvent = NPCVoicePlayer의 TTS 재생 큐가 비고 마지막 클립 재생이 끝났을 때(또는 정지 버튼으로 취소됐을 때) 발행된다.
             // LLM이 문장을 아직 보내는 중에 큐가 잠깐 비어도 발행되므로, 이 신호만으로는 "대답이 끝났다"고 볼 수 없다.
             // 응답 전체가 도착한 뒤(_llmResponseCompleted)에 온 신호일 때만 입력창을 다시 연다.
-            speakFinishedSub
+            _scopeSubs.Add(speakFinishedSub
                 .Subscribe(evt =>
                 {
                     if (evt.NpcGuid != _currentNpcGuid) return;
                     if (!_llmResponseCompleted) return;   // 응답이 아직 오는 중의 "TTS 재생 큐 비었음"은 무시
                     SetInputEnabled(true);
-                })
-                .AddTo(destroyCancellationToken);
+                }));
 
             // responseSub: LLM 응답이 끝까지 도착했을 때 발행된다. 도착 즉시 _llmResponseCompleted를 true로 하고 화면에 대화를 표시한다.
             // TTS 장애 안전망: 도착 후 2초가 지나도 TTS 문장이 시작되지 않으면 텍스트를 즉시 출력하고 입력을 연다(FallbackEnsureDialogueAsync)
-            responseSub
+            _scopeSubs.Add(responseSub
                 .Subscribe(evt =>
                 {
                     if (evt.NpcGuid != _currentNpcGuid) return;
@@ -159,18 +165,32 @@ namespace MySecondWorld.UI
                     }
 
                     UpdateMemoryView(_currentMemory, _currentSystemPrompt);
-                })
-                .AddTo(destroyCancellationToken);
+                }));
 
-            thinkingSub
+            _scopeSubs.Add(thinkingSub
                 .Subscribe(evt =>
                 {
                     if (evt.NpcGuid != _currentNpcGuid) return;
                     ShowThinking();
                     SetInputEnabled(false);
-                })
-                .AddTo(destroyCancellationToken);
+                }));
 
+            _stopTTSPub = stopTTSPub;
+            _stt = stt;
+            _shopUI = shopUI;
+
+            // 버튼 연결은 객체당 한 번만 — 이 UI는 파괴되지 않고 재접속 때마다 Construct가 다시 불린다
+            if (!_uiWired)
+            {
+                WireUIOnce();
+                _uiWired = true;
+            }
+        }
+
+        // 버튼·입력창·STT 트리거 연결. Construct가 여러 번 불려도 한 번만 실행된다(_uiWired).
+        // 클릭 시점에 필드(_stt, _stopTTSPub)를 읽으므로 재접속 후 새로 주입된 서비스가 그대로 쓰인다.
+        private void WireUIOnce()
+        {
             _submitButton.OnClickAsObservable()
                 .Select(_ => _playerInputField.text.Trim())
                 .Where(t => t.Length > 0)
@@ -182,10 +202,9 @@ namespace MySecondWorld.UI
                             })
                 .AddTo(destroyCancellationToken);
 
-            _stopTTSPub = stopTTSPub;
             if (_ttsStopButton != null)
                 _ttsStopButton.OnClickAsObservable()
-                        .Subscribe(_ => _stopTTSPub.Publish(new NPCStopTTSEvent(_currentNpcGuid))) // NPCVoicePlayer가 구독
+                        .Subscribe(_ => _stopTTSPub?.Publish(new NPCStopTTSEvent(_currentNpcGuid))) // NPCVoicePlayer가 구독
                         .AddTo(destroyCancellationToken);
 
             // Enter로 바로 전송
@@ -195,7 +214,6 @@ namespace MySecondWorld.UI
                     _submitButton.onClick.Invoke();
             });
 
-            _stt = stt;
             if (_sttButton != null)
             {
                 var trigger = _sttButton.GetComponent<EventTrigger>() ?? _sttButton.gameObject.AddComponent<EventTrigger>();
@@ -203,11 +221,9 @@ namespace MySecondWorld.UI
                 down.callback.AddListener(_ => StartSTT());
                 trigger.triggers.Add(down);
                 var up = new EventTrigger.Entry {  eventID= EventTriggerType.PointerUp };
-                up.callback.AddListener(_ => stt.StopListening());
+                up.callback.AddListener(_ => _stt?.StopListening());
                 trigger.triggers.Add(up);
             }
-
-            _shopUI = shopUI;
         }
 
         #endregion
@@ -279,6 +295,7 @@ namespace MySecondWorld.UI
             if (_backdropButton != null)
                 _backdropButton.onClick.RemoveListener(Close);
             _closeSubject?.Dispose();
+            _scopeSubs?.Dispose();
         }
 
         private void Update()
