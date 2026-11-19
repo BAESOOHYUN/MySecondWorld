@@ -1,4 +1,5 @@
 using UnityEngine;
+using Cysharp.Threading.Tasks;
 using UnityEngine.UI;
 using TMPro;
 using MySecondWorld.Combat.Player;
@@ -65,6 +66,14 @@ namespace MySecondWorld.UI
         private void HandleAppearanceReady()
         {
             UpdateUsername();
+            CaptureNextFrameAsync().Forget();
+        }
+
+        // 벗은 파츠는 Destroy(=Addressables.ReleaseInstance)가 프레임 끝에야 실제로 사라진다.
+        // 같은 프레임에 찍으면 "벗기 직전 모습"이 찍히므로 한 프레임 뒤에 촬영한다.
+        private async UniTaskVoid CaptureNextFrameAsync()
+        {
+            await UniTask.NextFrame(destroyCancellationToken);
 
             var local = PlayerHealthState.Local;
             if (local != null)
