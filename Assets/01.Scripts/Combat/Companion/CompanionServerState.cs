@@ -77,6 +77,10 @@ namespace MySecondWorld.Combat.Companion
             ClientSceneSyncService.OnDestinationSceneActivated += HandleDestinationSceneActivated;
             ClientSceneSyncService.OnAdditiveSceneUnloading += HandleAdditiveSceneUnloading;
             WaitForLocalPlayerThenMark().Forget();
+
+            // 늦게 접속한 클라는 이미 바뀐 값을 처음부터 받으므로 SyncVar 훅이 안 불린다
+            // (A가 소환해제한 뒤 B가 접속하면 B 화면에만 보이던 버그) → 현재 상태를 직접 한 번 적용
+            ApplyPresenceVisual(_isPresent);
         }
 
         public override void OnStopClient()
@@ -300,17 +304,24 @@ namespace MySecondWorld.Combat.Companion
             if (hitbox != null) hitbox.enabled = activeState;
         }
 
+        // 렌더러·콜라이더·타겟 가능 여부를 present 값에 맞춘다.
+        // 값이 "바뀔 때"(OnPresentChanged 훅)와 "처음 받을 때"(OnStartClient) 양쪽에서 쓴다.
+        private void ApplyPresenceVisual(bool present)
+        {
+            foreach (var r in GetComponentsInChildren<Renderer>(true))
+                r.enabled = present;
+            foreach (var c in GetComponentsInChildren<Collider>(true))
+                c.enabled = present;
+
+            if (_health == null) _health = GetComponent<Health>();
+            _health.SetTargetable(present);
+        }
+
         // 화면 표시만 담당 — gameObject는 항상 active로 유지한다.
         // SetActive(false)로 껐다 켜면 Health.OnEnable()이 HP를 리셋해버려서 "죽은 채 재소환"이 깨진다.
         private void OnPresentChanged(bool oldValue, bool newValue)
         {
-            foreach (var r in GetComponentsInChildren<Renderer>(true))
-                r.enabled = newValue;
-            foreach (var c in GetComponentsInChildren<Collider>(true))
-                c.enabled = newValue;
-
-            if (_health == null) _health = GetComponent<Health>();
-                _health.SetTargetable(newValue); // 서버/클라 상관없이 즉시 반영
+            ApplyPresenceVisual(newValue); // 서버/클라 상관없이 즉시 반영
 
             if (!isServer) return;
 
