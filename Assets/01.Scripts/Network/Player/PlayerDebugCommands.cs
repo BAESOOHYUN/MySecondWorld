@@ -22,7 +22,11 @@ namespace MySecondWorld.Network.Player
 
         public void RequestWeaponTestKit() { if (isOwned) CmdGrantWeaponTestKit(); }
         public void RequestArmorTestKit() { if (isOwned) CmdGrantArmorTestKit(); }
-        public void RequestSpawnDummy() { if (isOwned) CmdSpawnDummy(); }
+        public void RequestSpawnDummy() 
+        { 
+            Debug.Log($"[DebugClient] 🎯 샌드백 소환 버튼 클릭됨! isOwned={isOwned}, isLocalPlayer={isLocalPlayer}");
+            if (isOwned) CmdSpawnDummy(); 
+        }
 
         #endregion
 
@@ -65,17 +69,27 @@ namespace MySecondWorld.Network.Player
         [Command]
         private void CmdSpawnDummy()
         {
+            Debug.Log($"[DebugServer] 📩 CmdSpawnDummy 서버 도착! 플레이어={gameObject.name}, 위치={transform.position}");
+
             // 플레이어 앞 2.0미터 지점 및 플레이어를 마주보는 각도 계산
             Vector3 spawnPos = transform.position + transform.forward * 2.0f;
             Quaternion spawnRot = Quaternion.LookRotation(-transform.forward, Vector3.up);
 
             // 네비메시 유효 위치 샘플링
-            if (UnityEngine.AI.NavMesh.SamplePosition(spawnPos, out var hit, 3.0f, UnityEngine.AI.NavMesh.AllAreas))
+            if (UnityEngine.AI.NavMesh.SamplePosition(spawnPos, out var hit, 5.0f, UnityEngine.AI.NavMesh.AllAreas))
             {
                 spawnPos = hit.position;
             }
 
             Guid matchId = TryGetComponent(out NetworkMatch m) ? m.matchId : Guid.Empty;
+            int listenerCount = OnSpawnDummyRequested != null ? OnSpawnDummyRequested.GetInvocationList().Length : 0;
+            Debug.Log($"[DebugServer] 🚀 OnSpawnDummyRequested 이벤트 발송: 구독자={listenerCount}명, matchId={matchId}, scene={gameObject.scene.name}, pos={spawnPos}");
+
+            if (listenerCount == 0)
+            {
+                Debug.LogError("[DebugServer] ❌ OnSpawnDummyRequested 구독자가 0명입니다! MonsterDummySpawner가 초기화되지 않았습니다.");
+            }
+
             OnSpawnDummyRequested?.Invoke(spawnPos, spawnRot, matchId, gameObject.scene);
         }
         #endregion
