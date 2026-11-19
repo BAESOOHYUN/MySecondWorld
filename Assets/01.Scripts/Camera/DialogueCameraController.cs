@@ -106,13 +106,15 @@ namespace MySecondWorld.CameraSystem
             Vector3 lookTarget = targetFocusPos - camPos;
             Quaternion camRot = lookTarget.sqrMagnitude > 0.001f ? Quaternion.LookRotation(lookTarget) : Quaternion.identity;
 
-            _dialogueCamera.transform.position = camPos;
-            _dialogueCamera.transform.rotation = camRot;
-            _dialogueCamera.ForceCameraPosition(camPos, camRot);
-
-            // 4. 가상 카메라 활성화 및 우선순위 상향
+            // 4. 먼저 켠다 — 꺼진 채로 위치를 넣으면 켜질 때 이전 대화(예: 던전 입구) 상태가 되살아나
+            //    그 위치에서 블렌드되어 카메라가 날아간다
             _dialogueCamera.Priority = _activePriority;
             _dialogueCamera.gameObject.SetActive(true);
+
+            // 이전 대화의 상태를 버리고 이번 위치로 즉시 확정
+            _dialogueCamera.PreviousStateIsValid = false;
+            _dialogueCamera.transform.SetPositionAndRotation(camPos, camRot);
+            _dialogueCamera.ForceCameraPosition(camPos, camRot);
 
             Debug.Log($"[DialogueCameraController] '{npcTransform.name}' 대화 카메라 포커스 활성화 (Target: {headPos}, Cam: {camPos})");
         }
