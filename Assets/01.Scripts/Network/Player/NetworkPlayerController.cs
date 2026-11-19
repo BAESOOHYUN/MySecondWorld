@@ -71,11 +71,9 @@ namespace MySecondWorld.Network.Player
             {
                 const float timeout = 10f;
                 float elapsed = 0f;
-                string targetScene = ResolveSpawnScene(); // "Assets/00.Scenes/Dungeon/02.Center_Hall.unity"
-                string sceneNameOnly = System.IO.Path.GetFileNameWithoutExtension(targetScene); // "02.Center_Hall"
-                Debug.Log($"[SceneCheck-Start] 🔍 검사 시작: targetScene(Path)='{targetScene}', sceneNameOnly='{sceneNameOnly}'");
+                
                 // 1. 타겟 씬(FieldScene 등)이 메모리에 로드될 때까지 대기
-                while (!IsSceneLoaded(targetScene, sceneNameOnly) && elapsed < timeout)
+                while (!IsInZoneScene() && elapsed < timeout)
                 {
                     await UniTask.Delay(100, cancellationToken: ct);
                     elapsed += 0.1f;
@@ -83,24 +81,6 @@ namespace MySecondWorld.Network.Player
                 // ★ 여기에 로그 딱 한 줄: 몇 초 걸려서 통과했는지 확인!
                 Debug.Log($"[SceneCheck-Done] ⏱️ 대기 완료! 경과시간: {elapsed:F2}초 (로드된 씬 총 {SceneManager.sceneCount}개)");
 
-
-                // 2. 플레이어 자신이 서 있는 씬(Entrance_Stairs)으로 안전하게 이동
-                if (!NetworkServer.active)
-                {
-                    // 이름으로 먼저 찾고, 없으면 경로 찾기.
-                    var subScene = SceneManager.GetSceneByName(sceneNameOnly);
-                    if (!subScene.IsValid() || !subScene.isLoaded)
-                        subScene = SceneManager.GetSceneByPath(targetScene);
-                    Debug.Log($"[SceneCheck-Move] 서브씬 이동 시도: subScene='{subScene.name}', Valid={subScene.IsValid()}, Loaded={subScene.isLoaded}");
-                    // 유효하고 로드되었으며, 아직 그 씬에 없을 때만 이동
-                    if (subScene.IsValid() && subScene.isLoaded && gameObject.scene != subScene)
-                    {
-                        if (transform.parent != null)
-                            transform.SetParent(null);
-                        SceneManager.MoveGameObjectToScene(gameObject, subScene);
-                        Debug.Log($"[NetPlayerController] 클라이언트 플레이어 GameObject를 {subScene.name}으로 이동 완료");
-                    }
-                }
             }
             catch (OperationCanceledException)
             {
@@ -183,15 +163,37 @@ namespace MySecondWorld.Network.Player
         }
 
         // 씬 로드 안전망 헬퍼 함수
-        // GetSceneByPath는 이름을 경로 함수에 넣어서 항상 false가 뜸
-        // GetSceneByName 씬 이름으로 정상 검사 -> 씬이 이미 로드되어 있으므로 대기 없이 즉시 통과
+        // Addressables로 비동기 로드된 씬은 GetSceneByName/GetSceneByPath로 못 찾는 유니티 제약이 있음
+        // -> SceneManager.GetSceneAt(i)로 직접 순회하여 정확하고 즉각적으로 탐색
         private bool IsSceneLoaded(string fullPath, string nameOnly)
         {
-            var sByName = SceneManager.GetSceneByName(nameOnly);
-            if (sByName.IsValid() && sByName.isLoaded) return true;
-            var sByPath = SceneManager.GetSceneByPath(fullPath);
-            if (sByPath.IsValid() && sByPath.isLoaded) return true;
-            return false;
+            return FindLoadedScene(fullPath, nameOnly).isLoaded;
+        }
+
+        private Scene FindLoadedScene(string fullPath, string nameOnly)
+        {
+            int count = SceneManager.sceneCount;
+            for (int i = 0; i < count; i++)
+            {
+                var scene = SceneManager.GetSceneAt(i);
+                if (!scene.isLoaded) continue;
+
+                if (string.Equals(scene.name, nameOnly, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(scene.path, fullPath, StringComparison.OrdinalIgnoreCase) ||
+                    scene.name.IndexOf(nameOnly, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return scene;
+                }
+            }
+            return default;
+        }
+
+        // "내가 존 씬 안에 들어가 있나"를 좌표 대신 소속 씬으로 판정
+        private bool IsInZoneScene()
+        {
+            string current = gameObject.scene.name;
+            return _networkManager.zones.Any(z =>
+                System.IO.Path.GetFileNameWithoutExtension(z.sceneName) == current);
         }
     }
 }
