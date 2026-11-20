@@ -9,8 +9,18 @@
 | 📄 기술 문서 (Notion) | [MySecondWorld 포트폴리오 기술서](https://scythe-lavender-093.notion.site/2026-3d4c12defa4980f994a8da0cf10573a0) |
 | 🏗️ 아키텍처 도면 (13장) | [도면 바로 보기](https://viewer.diagrams.net/?lightbox=1&nav=1&layers=1&title=MySecondWorld#Uhttps%3A%2F%2Fraw.githubusercontent.com%2FBAESOOHYUN%2FMySecondWorld-Architecture%2Fmain%2Farchitecture.drawio) · [도면 저장소](https://github.com/BAESOOHYUN/MySecondWorld-Architecture) |
 | 🎥 플레이 영상 | [YouTube 재생목록](https://youtube.com/playlist?list=PLbzoJ0fZJVF8&si=b4vfPgADLcIZXj6A) |
-
+| 🧪 Android 테스트 참여 신청 | [신청 폼](https://docs.google.com/forms/d/e/1FAIpQLSc7dLQv6naQy12rBur6WWOuyEsjtPibRoI3Vie2M6x0AeVv4A/viewform) |
+| 💬 테스트 후기 · 오류 제보 | [후기 설문](https://docs.google.com/forms/d/e/1FAIpQLSf459-t9kofZmRQsau82uOc5B1CGIWXFLSUxk8iLvk_TkGqyA/viewform) |
 ---
+
+## Android 테스트 참여하기
+
+Google Play 출시를 앞두고 **14일간 함께 테스트해 주실 분**을 찾고 있습니다. 안드로이드 폰(Android 7.1 이상)과 Play 스토어에 로그인한 구글 계정이 필요하고, 테스트 기간 동안 테스트 탈퇴와 앱 삭제를 하지 않아 주시면 됩니다.
+
+| 테스터 신청 | 후기 · 오류 제보 |
+|:---:|:---:|
+| <a href="https://docs.google.com/forms/d/e/1FAIpQLSc7dLQv6naQy12rBur6WWOuyEsjtPibRoI3Vie2M6x0AeVv4A/viewform"><img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https%3A%2F%2Fdocs.google.com%2Fforms%2Fd%2Fe%2F1FAIpQLSc7dLQv6naQy12rBur6WWOuyEsjtPibRoI3Vie2M6x0AeVv4A%2Fviewform" width="180" alt="테스터 신청 QR"></a> | <a href="https://docs.google.com/forms/d/e/1FAIpQLSf459-t9kofZmRQsau82uOc5B1CGIWXFLSUxk8iLvk_TkGqyA/viewform"><img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https%3A%2F%2Fdocs.google.com%2Fforms%2Fd%2Fe%2F1FAIpQLSf459-t9kofZmRQsau82uOc5B1CGIWXFLSUxk8iLvk_TkGqyA%2Fviewform" width="180" alt="후기 설문 QR"></a> |
+| [신청 폼 열기](https://docs.google.com/forms/d/e/1FAIpQLSc7dLQv6naQy12rBur6WWOuyEsjtPibRoI3Vie2M6x0AeVv4A/viewform) | [후기 설문 열기](https://docs.google.com/forms/d/e/1FAIpQLSf459-t9kofZmRQsau82uOc5B1CGIWXFLSUxk8iLvk_TkGqyA/viewform) |
 
 ## 핵심 기술 5건
 
@@ -24,6 +34,7 @@
 | **아바타 동기화와 552개 모듈러 파츠** | 데디서버에서 아바타가 사라지던 버그의 원인이 VContainer DI 주입 누락임을 규명. 552개 파츠 파이프라인과 0ms 클라이언트 예측 |
 | **대화면 파일 공유** | Mirror 패킷 한계로 64KB 시도 후 크래시를 발견해 12,000바이트 청크로 조정. Outer Zone 관심 영역 기반 공유, 전송 중 입장자 처리, 서버 입력 검증 |
 
+---
 ### 그 밖에 직접 구현한 것
 
 | 영역 | 내용 |
